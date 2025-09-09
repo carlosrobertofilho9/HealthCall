@@ -141,40 +141,59 @@ const DisplayPage: React.FC = () => {
 						<h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
 					</div>
 				</header>
-				<main className="flex-grow p-6 md:p-10 w-full max-w-7xl mx-auto">
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-						<div className="md:col-span-2 bg-gray-800 rounded-2xl p-8 text-center animate-slide-in">
+				<main className="flex-grow p-6 md:p-10 w-full max-w-7xl mx-auto flex flex-col">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch flex-grow">
+						<div className="md:col-span-2 bg-gray-800 rounded-2xl p-8 text-center flex flex-col justify-center animate-slide-in">
 							<h2 className="text-4xl md:text-5xl font-bold text-[#38e07b] mb-4">
-								{calledPatient ? 'Chamando' : 'Aguardando chamada'}
+								{calledPatient ? 'Chamado' : 'Aguardando chamada'}
 							</h2>
 							<p className="text-5xl md:text-6xl font-black mb-6">{patientName}</p>
-							<div className="inline-flex items-center gap-4 bg-gray-700 rounded-full px-8 py-4">
+							<div className="inline-flex items-center justify-center gap-4 bg-gray-700 rounded-full px-8 py-4">
 								<span className="material-symbols-outlined text-4xl md:text-5xl text-[#38e07b]">meeting_room</span>
 								<p className="text-4xl md:text-5xl font-bold">{room}</p>
 							</div>
 						</div>
-						<aside className="bg-gray-800 rounded-2xl p-6">
+						<aside className="bg-gray-800 rounded-2xl p-6 flex flex-col">
 							<div className="flex items-center justify-between mb-4">
-								<h3 className="text-xl font-bold">Última chamada</h3>
-								<span className="text-sm text-gray-400">Histórico</span>
+								<h3 className="text-xl font-bold">Histórico de Chamadas</h3>
 							</div>
-							<div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-								{callHistory.length === 0 && (
-									<p className="text-gray-400">Nenhuma chamada registrada.</p>
+							<div className="space-y-3 pr-2 flex-grow">
+								{callHistory.slice(0, 5).length === 0 && (
+									<div className="flex items-center justify-center h-full">
+										<p className="text-gray-400">Nenhuma chamada registrada.</p>
+									</div>
 								)}
-								{callHistory.map((rec, idx) => (
+								{callHistory.slice(0, 5).map((rec, idx) => (
 									<div
 										key={`${rec.id}-${rec.callCount}-${rec.calledAt}`}
-										className={`flex items-center justify-between rounded-lg px-4 py-3 ${idx === 0 ? 'bg-[#264532]' : 'bg-gray-700/60'}`}
+										className={`p-4 rounded-lg transition-all duration-300 ${
+											idx === 0
+												? 'bg-green-800/50 border border-green-600 shadow-lg'
+												: 'bg-gray-700/60 hover:bg-gray-700/90'
+										}`}
 									>
-										<div>
-											<p className="font-semibold">{rec.name}</p>
-											<p className="text-sm text-gray-300">{rec.destination}</p>
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-3">
+												<span className="material-symbols-outlined text-2xl text-green-400">
+													{idx === 0 ? 'campaign' : 'history'}
+												</span>
+												<div>
+													<p className="font-bold text-white">{rec.name}</p>
+													<p className="text-sm text-gray-300">{rec.destination}</p>
+												</div>
+											</div>
+											<div className="text-right">
+												<p className="text-sm font-semibold text-green-300">
+													{new Date(rec.calledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+												</p>
+												<span className="text-xs text-gray-400">{rec.callCount}ª chamada</span>
+											</div>
 										</div>
-										<div className="text-right">
-											<span className="text-xs text-[#38e07b] font-semibold">{rec.callCount}ª</span>
-											<p className="text-[10px] text-gray-400">{new Date(rec.calledAt).toLocaleTimeString()}</p>
-										</div>
+										{idx === 0 && calledPatient && (
+											<div className="mt-2 text-center">
+												<p className="text-sm font-semibold text-green-300 animate-pulse">Chamado</p>
+											</div>
+										)}
 									</div>
 								))}
 							</div>
@@ -182,9 +201,9 @@ const DisplayPage: React.FC = () => {
 					</div>
 					<section className="mt-8 bg-gray-800 rounded-2xl p-6">
 						<h3 className="text-xl font-bold mb-4">Próximos pacientes</h3>
-						{nextPatients.length > 0 ? (
+						{nextPatients.slice(0, 3).length > 0 ? (
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-								{nextPatients.map((p) => (
+								{nextPatients.slice(0, 3).map((p) => (
 									<div key={p.id} className="bg-gray-700 rounded-xl p-4 flex items-center justify-between">
 										<div>
 											<p className="font-semibold">{p.name}</p>
