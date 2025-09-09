@@ -12,7 +12,14 @@ const PatientCard: React.FC<{
     return (
         <div className={`bg-[#264532] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-opacity ${isFinished ? 'opacity-60' : ''}`}>
             <div className="flex-1">
-                <p className="text-white font-bold text-lg">{patient.name}</p>
+                <div className="flex items-center gap-2">
+                    <p className="text-white font-bold text-lg">{patient.name}</p>
+                    {patient.callCount > 0 && (
+                        <span className="bg-blue-500/20 text-blue-300 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                            {patient.callCount}ª chamada
+                        </span>
+                    )}
+                </div>
                 <p className="text-[#96c5a9] text-sm">Destino: {patient.destination}</p>
                 <PatientStatusBadge status={patient.status} />
             </div>

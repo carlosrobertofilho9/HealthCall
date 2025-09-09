@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from "react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Header from "./components/Header";
 import AddPatientForm from "./components/AddPatientForm";
 import PatientQueue from "./components/PatientQueue";
@@ -11,18 +13,21 @@ const initialPatients: Patient[] = [
     name: "Maria da Silva",
     destination: "Consultório Médico",
     status: "Em Atendimento",
+    callCount: 0,
   },
   {
     id: 2,
     name: "João Pereira",
     destination: "Triagem",
     status: "Aguardando",
+    callCount: 0,
   },
   {
     id: 3,
     name: "Ana Souza",
     destination: "Sala de Vacinação",
     status: "Atendimento Finalizado",
+    callCount: 0,
   },
 ];
 
@@ -34,14 +39,19 @@ const App = () => {
   const [selectedDestination, setSelectedDestination] = useState("");
 
   const handleAddPatient = (name: string, destination: string) => {
-    if (!name || !destination) return;
+    if (!name || !destination) {
+      toast.error("Nome e destino são obrigatórios!");
+      return;
+    }
     const newPatient: Patient = {
       id: Date.now(),
       name,
       destination,
       status: "Aguardando",
+      callCount: 0,
     };
     setPatients([newPatient, ...patients]);
+    toast.success("Paciente adicionado com sucesso!");
   };
 
   const handleUpdatePatient = (updatedPatient: Patient) => {
@@ -49,16 +59,37 @@ const App = () => {
       patients.map((p) => (p.id === updatedPatient.id ? updatedPatient : p))
     );
     closeModal();
+    toast.info("Paciente atualizado com sucesso!");
   };
 
   const handleUpdateStatus = (id: number, status: PatientStatus) => {
+    let patientName = "";
+    let updatedCallCount = 0;
+
     setPatients(
-      patients.map((p) => (p.id === id ? { ...p, status } : p))
+      patients.map((p) => {
+        if (p.id === id) {
+          const isBeingCalled = status === "Em Atendimento";
+          updatedCallCount = isBeingCalled ? p.callCount + 1 : p.callCount;
+          patientName = p.name;
+          return { ...p, status, callCount: updatedCallCount };
+        }
+        return p;
+      })
     );
+
+    if (status === "Em Atendimento") {
+      const time =
+        updatedCallCount > 1 ? ` pela ${updatedCallCount}ª vez` : "";
+      toast.success(`${patientName} foi chamado(a)${time}!`);
+    } else {
+      toast.info(`Status de ${patientName} alterado para "${status}"!`);
+    }
   };
 
   const handleRemovePatient = (id: number) => {
     setPatients(patients.filter((p) => p.id !== id));
+    toast.warning("Paciente removido da fila!");
   };
 
   const openModal = (patient: Patient) => {
@@ -83,6 +114,18 @@ const App = () => {
 
   return (
     <div className="relative flex size-full min-h-screen flex-col">
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        aria-label="notificações"
+      />
       <Header />
       <main className="flex-1 px-4 py-10 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl mx-auto">
