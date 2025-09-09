@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DESTINATION_ROOMS } from '@/constants';
 
-const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: string) => void }> = ({ onAddPatient }) => {
+const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: string) => void; defaultDestination?: string | null }> = ({ onAddPatient, defaultDestination }) => {
   const [name, setName] = useState('');
   const [destination, setDestination] = useState('');
+
+  useEffect(() => {
+    if (defaultDestination) {
+      setDestination(defaultDestination);
+    }
+  }, [defaultDestination]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -11,6 +17,13 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
     setName('');
     setDestination('');
   };
+
+  const rooms = React.useMemo(() => {
+    if (defaultDestination && !DESTINATION_ROOMS.includes(defaultDestination)) {
+      return [defaultDestination, ...DESTINATION_ROOMS];
+    }
+    return DESTINATION_ROOMS;
+  }, [defaultDestination]);
 
   return (
     <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl h-fit">
@@ -52,7 +65,7 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
               <option value="" disabled>
                 Selecione a sala
               </option>
-              {DESTINATION_ROOMS.map((room) => (
+              {rooms.map((room) => (
                 <option key={room} value={room}>
                   {room}
                 </option>

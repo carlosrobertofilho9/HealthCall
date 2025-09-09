@@ -5,9 +5,9 @@ import type { Patient, PatientStatus } from '@/types';
 const PatientCard: React.FC<{
   patient: Patient;
   onEdit: (patient: Patient) => void;
-  onCall: (id: number) => void;
-  onUpdateStatus: (id: number, status: PatientStatus) => void;
-  onRemove: (id: number) => void;
+  onCall: (id: string, destination: string) => void;
+  onUpdateStatus: (id: string, status: PatientStatus) => void;
+  onRemove: (id: string) => void;
 }> = ({ patient, onEdit, onCall, onUpdateStatus, onRemove }) => {
   const isFinished = patient.status === 'Atendimento Finalizado';
   const canStartService =
@@ -34,7 +34,7 @@ const PatientCard: React.FC<{
             isFinished ? 'bg-primary/10 text-primary/50 cursor-not-allowed' : 'bg-primary/20 text-primary hover:bg-primary/30 transition-colors'
           }`}
           title={patient.status === 'Aguardando' ? 'Chamar Paciente' : 'Chamar Novamente'}
-          onClick={() => onCall(patient.id)}
+          onClick={() => onCall(patient.id, patient.destination)}
           disabled={isFinished}
           aria-label="Chamar Paciente"
         >

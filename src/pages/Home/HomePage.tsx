@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import { getPatients, addPatient, updatePatient, removePatient, callPatient } from '@/actions/patients';
 import { storage } from '@/actions/storage';
 import { CALL_HISTORY_LIMIT, STORAGE_KEYS } from '@/constants';
+import { useUserProfile } from '@/contexts/UserProfileContext';
 
 // The appendCallHistory function is not available in the new actions file, so we define it here.
 // In a real application, this would be in a shared utility file.
@@ -28,6 +29,7 @@ function appendCallHistory(history: CallRecord[], called: Patient, limit = 20): 
 }
 
 const HomePage: React.FC = () => {
+	const { profile } = useUserProfile();
 	const [patients, setPatients] = useState<Patient[]>([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -104,6 +106,8 @@ const HomePage: React.FC = () => {
 			if (result) {
 				setPatients(patients.map((p) => (p.id === id ? result : p)));
 				toast.info(`Status de ${result.name} alterado para "${status}"!`);
+			} else {
+				toast.error('Erro ao atualizar status! Verifique permissões no banco.');
 			}
 		}
 	};
@@ -114,7 +118,7 @@ const HomePage: React.FC = () => {
 			setPatients(patients.filter((p) => p.id !== id));
 			toast.warning('Paciente removido da fila!');
 		} else {
-			toast.error('Erro ao remover paciente!');
+		toast.error('Erro ao remover paciente! Verifique permissões no banco.');
 		}
 	};
 
@@ -140,8 +144,8 @@ const HomePage: React.FC = () => {
 
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
-			<div className="lg:col-span-1">
-				<AddPatientForm onAddPatient={handleAddPatient} />
+					<div className="lg:col-span-1">
+						<AddPatientForm onAddPatient={handleAddPatient} defaultDestination={profile?.default_destination ?? undefined} />
 			</div>
 			<PatientQueue
 				patients={filteredPatients}

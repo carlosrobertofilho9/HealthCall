@@ -28,11 +28,18 @@ export async function addPatient(name: string, destination: string) {
 }
 
 export async function updatePatient(patient: Patient) {
+  // Só envie campos atualizáveis explicitamente
+  const payload = {
+    name: patient.name,
+    destination: patient.destination,
+    status: patient.status,
+    callCount: patient.callCount,
+  };
   const { data, error } = await supabase
     .from('patients')
-    .update(patient)
+    .update(payload)
     .eq('id', patient.id)
-    .select();
+    .select('*');
 
   if (error || !data) {
     console.error('Error updating patient:', error);

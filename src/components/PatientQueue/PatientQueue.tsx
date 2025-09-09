@@ -6,7 +6,7 @@ import { DESTINATION_ROOMS } from '@/constants';
 interface PatientQueueProps {
   patients: Patient[];
   onEdit: (patient: Patient) => void;
-  onCall: (id: number) => void;
+  onCall: (id: string, destination: string) => void;
   onUpdateStatus: (id: number, status: PatientStatus) => void;
   onRemove: (id: number) => void;
   searchTerm: string;

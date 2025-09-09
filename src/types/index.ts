@@ -1,7 +1,7 @@
-export type PatientStatus = 'Em Atendimento' | 'Aguardando' | 'Atendimento Finalizado';
+export type PatientStatus = 'Em Atendimento' | 'Aguardando' | 'Atendimento Finalizado' | 'Chamado';
 
 export type Patient = {
-	id: number;
+	id: string;
 	name: string;
 	destination: string;
 	status: PatientStatus;
@@ -10,7 +10,7 @@ export type Patient = {
 };
 
 export type CallRecord = {
-	id: number;
+	id: string;
 	name: string;
 	destination: string;
 	callCount: number;
