@@ -141,7 +141,7 @@ const DisplayPage: React.FC = () => {
 						<h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
 					</div>
 				</header>
-				<main className="flex-grow p-6 md:p-10 w-full max-w-7xl mx-auto flex flex-col">
+				<main className="flex-grow p-6 md:p-10 w-full flex flex-col">
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch flex-grow">
 						<div className="md:col-span-2 bg-gray-800 rounded-2xl p-8 text-center flex flex-col justify-center animate-slide-in">
 							<h2 className="text-4xl md:text-5xl font-bold text-[#38e07b] mb-4">
