@@ -6,4 +6,5 @@ export type Patient = {
   destination: string;
   status: PatientStatus;
   callCount: number;
+  lastCalled?: boolean;
 };

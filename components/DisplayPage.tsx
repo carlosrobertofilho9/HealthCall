@@ -1,14 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import type { Patient } from '../types';
 
 const DisplayPage: React.FC = () => {
-  // Dados mocados por enquanto
-  const patientName = "Sofia Oliveira";
-  const room = "Sala 2";
-  const nextPatients = [
-    "Carlos Mendes", "Ana Souza", "Lucas Pereira", "Mariana Costa", 
-    "Ricardo Almeida", "Isabela Santos", "Gabriel Lima", "Fernanda Rocha", 
-    "Rodrigo Martins", "Camila Fernandes"
-  ];
+  const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
+  const [nextPatients, setNextPatients] = useState<Patient[]>([]);
+
+  useEffect(() => {
+    const updateDisplay = () => {
+      const storedCalledPatient = localStorage.getItem('calledPatient');
+      const storedNextPatients = localStorage.getItem('nextPatients');
+
+      if (storedCalledPatient) {
+        setCalledPatient(JSON.parse(storedCalledPatient));
+      }
+      if (storedNextPatients) {
+        setNextPatients(JSON.parse(storedNextPatients));
+      }
+    };
+
+    updateDisplay();
+
+    window.addEventListener('storage', updateDisplay);
+
+    return () => {
+      window.removeEventListener('storage', updateDisplay);
+    };
+  }, []);
+
+  const patientName = calledPatient?.name || "Aguardando chamada...";
+  const room = calledPatient?.destination || "-";
+  const nextPatientNames = nextPatients.map(p => p.name);
 
   return (
     <div className="bg-gray-900 text-white" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
@@ -33,27 +54,33 @@ const DisplayPage: React.FC = () => {
         </main>
         <footer className="bg-gray-800 w-full overflow-hidden">
           <div className="flex items-center gap-12 p-4 animate-marquee">
-            <div className="flex items-center gap-4 flex-shrink-0">
-              <span className="font-semibold text-lg">Próximos:</span>
-              <p className="text-lg text-gray-300">{nextPatients[0]}</p>
-            </div>
-            {nextPatients.slice(1).map((patient, index) => (
-              <React.Fragment key={index}>
-                <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                <p className="text-lg text-gray-300">{patient}</p>
-              </React.Fragment>
-            ))}
-            {/* Duplicado para letreiro contínuo */}
-            <div className="flex items-center gap-4 flex-shrink-0 pl-12">
-                <span className="font-semibold text-lg">Próximos:</span>
-                <p className="text-lg text-gray-300">{nextPatients[0]}</p>
-            </div>
-            {nextPatients.slice(1).map((patient, index) => (
-                <React.Fragment key={`dup-${index}`}>
+            {nextPatientNames.length > 0 ? (
+              <>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <span className="font-semibold text-lg">Próximos:</span>
+                  <p className="text-lg text-gray-300">{nextPatientNames[0]}</p>
+                </div>
+                {nextPatientNames.slice(1).map((name, index) => (
+                  <React.Fragment key={index}>
                     <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                    <p className="text-lg text-gray-300">{patient}</p>
-                </React.Fragment>
-            ))}
+                    <p className="text-lg text-gray-300">{name}</p>
+                  </React.Fragment>
+                ))}
+                {/* Duplicado para letreiro contínuo */}
+                <div className="flex items-center gap-4 flex-shrink-0 pl-12">
+                    <span className="font-semibold text-lg">Próximos:</span>
+                    <p className="text-lg text-gray-300">{nextPatientNames[0]}</p>
+                </div>
+                {nextPatientNames.slice(1).map((name, index) => (
+                    <React.Fragment key={`dup-${index}`}>
+                        <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
+                        <p className="text-lg text-gray-300">{name}</p>
+                    </React.Fragment>
+                ))}
+              </>
+            ) : (
+              <p className="text-lg text-gray-300">Não há pacientes na fila de espera.</p>
+            )}
           </div>
         </footer>
       </div>

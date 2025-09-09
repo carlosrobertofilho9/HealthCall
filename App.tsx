@@ -82,20 +82,38 @@ const MainApp = () => {
   const handleUpdateStatus = (id: number, status: PatientStatus) => {
     let patientName = "";
     let updatedCallCount = 0;
+    let calledPatient: Patient | null = null;
 
-    setPatients(
-      patients.map((p) => {
-        if (p.id === id) {
-          const isBeingCalled = status === "Em Atendimento";
-          updatedCallCount = isBeingCalled ? p.callCount + 1 : p.callCount;
-          patientName = p.name;
-          return { ...p, status, callCount: updatedCallCount };
-        }
-        return p;
-      })
-    );
+    const updatedPatients = patients.map((p) => {
+      const isTargetPatient = p.id === id;
+      const isBeingCalled = isTargetPatient && status === "Em Atendimento";
 
-    if (status === "Em Atendimento") {
+      if (isTargetPatient) {
+        updatedCallCount = isBeingCalled ? p.callCount + 1 : p.callCount;
+        patientName = p.name;
+      }
+
+      const newStatus = {
+        ...p,
+        status: isTargetPatient ? status : p.status,
+        callCount: isTargetPatient ? updatedCallCount : p.callCount,
+        lastCalled: isBeingCalled,
+      };
+
+      if (isBeingCalled) {
+        calledPatient = newStatus;
+      }
+      
+      return newStatus;
+    });
+
+    setPatients(updatedPatients);
+
+    if (calledPatient) {
+      const nextPatients = updatedPatients.filter(p => p.status === 'Aguardando' && p.id !== calledPatient?.id);
+      localStorage.setItem('calledPatient', JSON.stringify(calledPatient));
+      localStorage.setItem('nextPatients', JSON.stringify(nextPatients));
+
       const time =
         updatedCallCount > 1 ? ` pela ${updatedCallCount}ª vez` : "";
       toast.success(`${patientName} foi chamado(a)${time}!`);
