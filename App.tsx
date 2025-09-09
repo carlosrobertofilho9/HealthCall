@@ -11,7 +11,7 @@ import AddPatientForm from "./components/AddPatientForm";
 import PatientQueue from "./components/PatientQueue";
 import EditPatientModal from "./components/EditPatientModal";
 import DisplayPage from "./components/DisplayPage";
-import type { Patient, PatientStatus } from "./types";
+import type { Patient, PatientStatus, CallRecord } from "./types";
 
 const initialPatients: Patient[] = [
   {
@@ -83,6 +83,29 @@ const MainApp = () => {
       );
       localStorage.setItem("calledPatient", JSON.stringify(calledPatient));
       localStorage.setItem("nextPatients", JSON.stringify(nextPatients));
+
+      // Atualiza histórico de chamadas
+      try {
+        const current: CallRecord[] = JSON.parse(
+          localStorage.getItem("callHistory") || "[]"
+        );
+        const record: CallRecord = {
+          id: calledPatient.id,
+          name: calledPatient.name,
+          destination: calledPatient.destination,
+          callCount: calledPatient.callCount,
+          calledAt: Date.now(),
+        };
+        const updatedHistory = [record, ...current]
+          // evita entradas duplicadas consecutivas id+callCount
+          .filter((rec, idx, arr) =>
+            idx === 0 || !(rec.id === arr[idx - 1].id && rec.callCount === arr[idx - 1].callCount)
+          )
+          .slice(0, 20); // mantém as últimas 20
+        localStorage.setItem("callHistory", JSON.stringify(updatedHistory));
+      } catch (e) {
+        console.warn("Falha ao atualizar callHistory:", e);
+      }
 
       const time =
         calledPatient.callCount > 1

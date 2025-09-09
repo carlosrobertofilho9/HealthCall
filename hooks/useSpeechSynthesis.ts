@@ -23,18 +23,26 @@ export const useSpeechSynthesis = () => {
     loadVoices(); // Carrega as vozes inicialmente
   }, []);
 
-  const speak = (text: string) => {
-    if (!selectedVoice) {
-      console.warn("Nenhuma voz de síntese de fala selecionada.");
-      return;
-    }
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = selectedVoice;
-    utterance.lang = selectedVoice.lang;
-    utterance.rate = 0.9; // Velocidade da fala
-    utterance.pitch = 1; // Tom da fala
-    window.speechSynthesis.speak(utterance);
+  const speak = (text: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!selectedVoice) {
+        console.warn("Nenhuma voz de síntese de fala selecionada.");
+        // Resolve mesmo assim para não travar o fluxo
+        return resolve();
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+      utterance.rate = 0.9; // Velocidade da fala
+      utterance.pitch = 1; // Tom da fala
+      utterance.onend = () => resolve();
+      utterance.onerror = () => reject(new Error("Falha na síntese de fala"));
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        resolve();
+      }
+    });
   };
 
   return { speak, voices, selectedVoice, setSelectedVoice };
