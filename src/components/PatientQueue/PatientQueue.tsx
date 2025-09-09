@@ -1,0 +1,87 @@
+import React from 'react';
+import PatientCard from './PatientCard';
+import type { Patient, PatientStatus } from '@/types';
+import { DESTINATION_ROOMS } from '@/constants';
+
+interface PatientQueueProps {
+  patients: Patient[];
+  onEdit: (patient: Patient) => void;
+  onCall: (id: number) => void;
+  onUpdateStatus: (id: number, status: PatientStatus) => void;
+  onRemove: (id: number) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  selectedDestination: string;
+  setSelectedDestination: (destination: string) => void;
+}
+
+const PatientQueue: React.FC<PatientQueueProps> = ({
+  patients,
+  onEdit,
+  onCall,
+  onUpdateStatus,
+  onRemove,
+  searchTerm,
+  setSearchTerm,
+  selectedDestination,
+  setSelectedDestination,
+}) => (
+  <div className="lg:col-span-2 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl">
+    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+      <div className="text-left">
+        <h2 className="text-white text-2xl font-bold leading-tight">Fila de Espera</h2>
+        <p className="text-[#96c5a9] mt-1">Gerencie os pacientes na fila de atendimento.</p>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+        <div className="relative w-full sm:w-64">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">search</span>
+          <input
+            className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all"
+            id="search-patient"
+            placeholder="Pesquisar paciente..."
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className="relative w-full sm:w-64">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">meeting_room</span>
+          <select
+            className="form-select appearance-none w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-10 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all"
+            id="filter-destination-room"
+            value={selectedDestination}
+            onChange={(e) => setSelectedDestination(e.target.value)}
+          >
+            <option value="">Todas as Salas</option>
+            {DESTINATION_ROOMS.map((room) => (
+              <option key={room} value={room}>
+                {room}
+              </option>
+            ))}
+          </select>
+          <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#96c5a9] pointer-events-none">expand_more</span>
+        </div>
+      </div>
+    </div>
+    <div className="space-y-4 max-h-[calc(100vh-22rem)] overflow-y-auto pr-2">
+      {patients.length > 0 ? (
+        patients.map((patient) => (
+          <PatientCard
+            key={patient.id}
+            patient={patient}
+            onEdit={onEdit}
+            onCall={onCall}
+            onUpdateStatus={onUpdateStatus}
+            onRemove={onRemove}
+          />
+        ))
+      ) : (
+        <div className="text-center py-10 text-[#96c5a9]">
+          <p>Nenhum paciente encontrado na fila com os filtros atuais.</p>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+export default PatientQueue;
