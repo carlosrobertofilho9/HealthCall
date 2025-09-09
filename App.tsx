@@ -1,10 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+} from "react-router-dom";
 import Header from "./components/Header";
 import AddPatientForm from "./components/AddPatientForm";
 import PatientQueue from "./components/PatientQueue";
 import EditPatientModal from "./components/EditPatientModal";
+import DisplayPage from "./components/DisplayPage";
 import type { Patient, PatientStatus } from "./types";
 
 const initialPatients: Patient[] = [
@@ -32,6 +38,17 @@ const initialPatients: Patient[] = [
 ];
 
 const App = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<MainApp />} />
+        <Route path="/display" element={<DisplayPage />} />
+      </Routes>
+    </Router>
+  );
+};
+
+const MainApp = () => {
   const [patients, setPatients] = useState<Patient[]>(initialPatients);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
