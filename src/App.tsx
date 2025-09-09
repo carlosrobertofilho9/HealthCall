@@ -1,10 +1,29 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { supabase } from './lib/supabaseClient';
 
 const App: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        if (window.location.pathname === '/login') {
+          navigate('/');
+        }
+      } else {
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
   return (
     <div className="relative flex size-full min-h-screen flex-col">
       <ToastContainer

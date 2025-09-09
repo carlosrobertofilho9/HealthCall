@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { CallRecord, Patient } from '@/types';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+import { supabase } from '@/lib/supabaseClient';
+import { appendCallHistory } from '@/actions/patients';
 
 const DisplayPage: React.FC = () => {
 	const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
@@ -84,6 +86,54 @@ const DisplayPage: React.FC = () => {
 		window.addEventListener('storage', updateDisplay);
 		return () => window.removeEventListener('storage', updateDisplay);
 	}, [isReady, speak]);
+
+	useEffect(() => {
+		if (!isReady) return;
+
+		const channel = supabase
+			.channel('realtime-calls')
+			.on(
+				'postgres_changes',
+				{ event: 'INSERT', schema: 'public', table: 'calls' },
+				async (payload) => {
+					const newCall = payload.new as { id: string; patient_id: string; location: string };
+
+					const { data: patientData, error } = await supabase
+						.from('patients')
+						.select('*, calls(count)')
+						.eq('id', newCall.patient_id)
+						.single();
+
+					if (error || !patientData) {
+						console.error('Error fetching patient for call:', error);
+						return;
+					}
+
+					const patient: Patient = {
+						id: patientData.id,
+						name: patientData.name,
+						destination: newCall.location,
+						status: 'Chamado',
+						callCount: patientData.calls.length > 0 ? patientData.calls[0].count : 1,
+					};
+
+					localStorage.setItem('calledPatient', JSON.stringify(patient));
+
+					const currentHistoryStr = localStorage.getItem('callHistory');
+					const currentHistory: CallRecord[] = currentHistoryStr ? JSON.parse(currentHistoryStr) : [];
+
+					
+
+					const newHistory = appendCallHistory(currentHistory, patient);
+					localStorage.setItem('callHistory', JSON.stringify(newHistory));
+				}
+			)
+			.subscribe();
+
+		return () => {
+			supabase.removeChannel(channel);
+		};
+	}, [isReady]);
 
 	const patientName = calledPatient?.name || 'Aguardando chamada...';
 	const room = calledPatient?.destination || '-';
@@ -224,4 +274,3 @@ const DisplayPage: React.FC = () => {
 };
 
 export default DisplayPage;
-

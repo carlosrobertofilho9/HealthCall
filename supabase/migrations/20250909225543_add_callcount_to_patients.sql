@@ -1,0 +1,1 @@
+ALTER TABLE patients ADD COLUMN "callCount" integer DEFAULT 0;

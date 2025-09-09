@@ -19,6 +19,11 @@ const PatientStatusBadge: React.FC<{ status: PatientStatus }> = ({ status }) => 
       text: 'text-gray-400',
       dot: 'bg-gray-400',
     },
+    Chamado: {
+      bg: 'bg-green-500/20',
+      text: 'text-green-400',
+      dot: 'bg-green-400',
+    },
   } as const;
   const { bg, text, dot } = statusInfo[status];
   return (
