@@ -6,6 +6,7 @@ import { DESTINATION_ROOMS } from '../constants';
 interface PatientQueueProps {
     patients: Patient[];
     onEdit: (patient: Patient) => void;
+    onCall: (id: number) => void;
     onUpdateStatus: (id: number, status: PatientStatus) => void;
     onRemove: (id: number) => void;
     searchTerm: string;
@@ -17,6 +18,7 @@ interface PatientQueueProps {
 const PatientQueue: React.FC<PatientQueueProps> = ({ 
     patients, 
     onEdit, 
+    onCall,
     onUpdateStatus, 
     onRemove, 
     searchTerm, 
@@ -52,7 +54,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
         </div>
         <div className="space-y-4 max-h-[calc(100vh-22rem)] overflow-y-auto pr-2">
             {patients.length > 0 ? patients.map(patient => (
-                <PatientCard key={patient.id} patient={patient} onEdit={onEdit} onUpdateStatus={onUpdateStatus} onRemove={onRemove} />
+                <PatientCard key={patient.id} patient={patient} onEdit={onEdit} onCall={onCall} onUpdateStatus={onUpdateStatus} onRemove={onRemove} />
             )) : (
                 <div className="text-center py-10 text-[#96c5a9]">
                     <p>Nenhum paciente encontrado na fila com os filtros atuais.</p>

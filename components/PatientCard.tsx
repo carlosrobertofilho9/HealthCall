@@ -5,10 +5,12 @@ import type { Patient, PatientStatus } from '../types';
 const PatientCard: React.FC<{
     patient: Patient;
     onEdit: (patient: Patient) => void;
+    onCall: (id: number) => void;
     onUpdateStatus: (id: number, status: PatientStatus) => void;
     onRemove: (id: number) => void;
-}> = ({ patient, onEdit, onUpdateStatus, onRemove }) => {
+}> = ({ patient, onEdit, onCall, onUpdateStatus, onRemove }) => {
     const isFinished = patient.status === 'Atendimento Finalizado';
+    const canStartService = patient.status !== 'Atendimento Finalizado' && patient.status !== 'Em Atendimento';
     return (
         <div className={`bg-[#264532] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-opacity ${isFinished ? 'opacity-60' : ''}`}>
             <div className="flex-1">
@@ -27,11 +29,20 @@ const PatientCard: React.FC<{
                 <button 
                     className={`flex items-center justify-center rounded-full h-10 w-10 ${isFinished ? 'bg-primary/10 text-primary/50 cursor-not-allowed' : 'bg-primary/20 text-primary hover:bg-primary/30 transition-colors'}`} 
                     title={patient.status === 'Aguardando' ? 'Chamar Paciente' : 'Chamar Novamente'}
-                    onClick={() => onUpdateStatus(patient.id, 'Em Atendimento')}
+                    onClick={() => onCall(patient.id)}
                     disabled={isFinished}
                     aria-label="Chamar Paciente"
                 >
                     <span className="material-symbols-outlined text-base">campaign</span>
+                </button>
+                <button
+                    className={`flex items-center justify-center rounded-full h-10 w-10 ${canStartService ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30' : 'bg-blue-500/10 text-blue-300/50 cursor-not-allowed'} transition-colors`}
+                    title="Iniciar Atendimento"
+                    onClick={() => onUpdateStatus(patient.id, 'Em Atendimento')}
+                    disabled={!canStartService}
+                    aria-label="Iniciar Atendimento"
+                >
+                    <span className="material-symbols-outlined text-base">play_circle</span>
                 </button>
                 <button 
                     className={`edit-patient-btn flex items-center justify-center rounded-full h-10 w-10 ${isFinished ? 'bg-yellow-500/10 text-yellow-400/50 cursor-not-allowed' : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors'}`} 

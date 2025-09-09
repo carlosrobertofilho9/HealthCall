@@ -55,6 +55,43 @@ const MainApp = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDestination, setSelectedDestination] = useState("");
 
+  // Chama o paciente (toca som/voz na tela de exibição), incrementa contagem,
+  // marca como lastCalled, mas NÃO muda o status para "Em Atendimento".
+  const handleCallPatient = (id: number) => {
+    let calledPatient: Patient | null = null;
+
+    const updatedPatients = patients.map((p) => {
+      if (p.id === id) {
+        const updated = {
+          ...p,
+          callCount: p.callCount + 1,
+          lastCalled: true,
+        } as Patient;
+        calledPatient = updated;
+        return updated;
+      }
+      // Remove marcação de último chamado dos demais
+      const { lastCalled, ...rest } = p;
+      return { ...rest } as Patient;
+    });
+
+    setPatients(updatedPatients);
+
+    if (calledPatient) {
+      const nextPatients = updatedPatients.filter(
+        (p) => p.status === "Aguardando" && p.id !== calledPatient!.id
+      );
+      localStorage.setItem("calledPatient", JSON.stringify(calledPatient));
+      localStorage.setItem("nextPatients", JSON.stringify(nextPatients));
+
+      const time =
+        calledPatient.callCount > 1
+          ? ` pela ${calledPatient.callCount}ª vez`
+          : "";
+      toast.success(`${calledPatient.name} foi chamado(a)${time}!`);
+    }
+  };
+
   const handleAddPatient = (name: string, destination: string) => {
     if (!name || !destination) {
       toast.error("Nome e destino são obrigatórios!");
@@ -80,46 +117,14 @@ const MainApp = () => {
   };
 
   const handleUpdateStatus = (id: number, status: PatientStatus) => {
-    let calledPatient: Patient | null = null;
-
-    const updatedPatients = patients.map((p) => {
-      const isTargetPatient = p.id === id;
-      const isBeingCalled = isTargetPatient && status === "Em Atendimento";
-
-      // Se este é o paciente sendo chamado, atualiza o status e a contagem
-      if (isTargetPatient) {
-        const updatedCallCount = isBeingCalled ? p.callCount + 1 : p.callCount;
-        calledPatient = {
-          ...p,
-          status,
-          callCount: updatedCallCount,
-          lastCalled: isBeingCalled,
-        };
-        return calledPatient;
-      }
-
-      // Garante que nenhum outro paciente tenha o status lastCalled
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { lastCalled, ...rest } = p;
-      return rest;
-    });
-
+    const updatedPatients = patients.map((p) =>
+      p.id === id ? { ...p, status } : p
+    );
     setPatients(updatedPatients);
 
-    if (calledPatient) {
-      const nextPatients = updatedPatients.filter(p => p.status === 'Aguardando' && p.id !== calledPatient?.id);
-      localStorage.setItem('calledPatient', JSON.stringify(calledPatient));
-      localStorage.setItem('nextPatients', JSON.stringify(nextPatients));
-
-      const time =
-        calledPatient.callCount > 1 ? ` pela ${calledPatient.callCount}ª vez` : "";
-      toast.success(`${calledPatient.name} foi chamado(a)${time}!`);
-    } else {
-      // Lógica para quando o status é alterado para algo diferente de "Em Atendimento"
-      const patient = patients.find(p => p.id === id);
-      if (patient) {
-        toast.info(`Status de ${patient.name} alterado para "${status}"!`);
-      }
+    const patient = patients.find((p) => p.id === id);
+    if (patient) {
+      toast.info(`Status de ${patient.name} alterado para "${status}"!`);
     }
   };
 
@@ -169,6 +174,7 @@ const MainApp = () => {
           <PatientQueue
             patients={filteredPatients}
             onEdit={openModal}
+            onCall={handleCallPatient}
             onUpdateStatus={handleUpdateStatus}
             onRemove={handleRemovePatient}
             searchTerm={searchTerm}
