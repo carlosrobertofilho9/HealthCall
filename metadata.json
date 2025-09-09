@@ -1,0 +1,5 @@
+{
+  "name": "HealthCall",
+  "description": "Uma aplicação para gerenciar a fila de atendimento de pacientes em um ambiente de saúde.",
+  "requestFramePermissions": []
+}
