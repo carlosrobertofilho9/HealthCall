@@ -7,8 +7,8 @@ interface PatientQueueProps {
   patients: Patient[];
   onEdit: (patient: Patient) => void;
   onCall: (id: string, destination: string) => void;
-  onUpdateStatus: (id: number, status: PatientStatus) => void;
-  onRemove: (id: number) => void;
+  onUpdateStatus: (id: string, status: PatientStatus) => void;
+  onRemove: (id: string) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   selectedDestination: string;
