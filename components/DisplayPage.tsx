@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Patient } from '../types';
+import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 
 const DisplayPage: React.FC = () => {
   const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
   const [nextPatients, setNextPatients] = useState<Patient[]>([]);
+  const { speak } = useSpeechSynthesis();
+  const lastCalledId = useRef<number | null>(null);
 
   useEffect(() => {
     const updateDisplay = () => {
@@ -11,7 +14,14 @@ const DisplayPage: React.FC = () => {
       const storedNextPatients = localStorage.getItem('nextPatients');
 
       if (storedCalledPatient) {
-        setCalledPatient(JSON.parse(storedCalledPatient));
+        const patient: Patient = JSON.parse(storedCalledPatient);
+        
+        if (patient.id !== lastCalledId.current) {
+          setCalledPatient(patient);
+          const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
+          speak(textToSpeak);
+          lastCalledId.current = patient.id;
+        }
       }
       if (storedNextPatients) {
         setNextPatients(JSON.parse(storedNextPatients));
@@ -25,7 +35,7 @@ const DisplayPage: React.FC = () => {
     return () => {
       window.removeEventListener('storage', updateDisplay);
     };
-  }, []);
+  }, [speak]);
 
   const patientName = calledPatient?.name || "Aguardando chamada...";
   const room = calledPatient?.destination || "-";
