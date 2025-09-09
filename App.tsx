@@ -80,31 +80,28 @@ const MainApp = () => {
   };
 
   const handleUpdateStatus = (id: number, status: PatientStatus) => {
-    let patientName = "";
-    let updatedCallCount = 0;
     let calledPatient: Patient | null = null;
 
     const updatedPatients = patients.map((p) => {
       const isTargetPatient = p.id === id;
       const isBeingCalled = isTargetPatient && status === "Em Atendimento";
 
+      // Se este é o paciente sendo chamado, atualiza o status e a contagem
       if (isTargetPatient) {
-        updatedCallCount = isBeingCalled ? p.callCount + 1 : p.callCount;
-        patientName = p.name;
+        const updatedCallCount = isBeingCalled ? p.callCount + 1 : p.callCount;
+        calledPatient = {
+          ...p,
+          status,
+          callCount: updatedCallCount,
+          lastCalled: isBeingCalled,
+        };
+        return calledPatient;
       }
 
-      const newStatus = {
-        ...p,
-        status: isTargetPatient ? status : p.status,
-        callCount: isTargetPatient ? updatedCallCount : p.callCount,
-        lastCalled: isBeingCalled,
-      };
-
-      if (isBeingCalled) {
-        calledPatient = newStatus;
-      }
-      
-      return newStatus;
+      // Garante que nenhum outro paciente tenha o status lastCalled
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { lastCalled, ...rest } = p;
+      return rest;
     });
 
     setPatients(updatedPatients);
@@ -115,10 +112,14 @@ const MainApp = () => {
       localStorage.setItem('nextPatients', JSON.stringify(nextPatients));
 
       const time =
-        updatedCallCount > 1 ? ` pela ${updatedCallCount}ª vez` : "";
-      toast.success(`${patientName} foi chamado(a)${time}!`);
+        calledPatient.callCount > 1 ? ` pela ${calledPatient.callCount}ª vez` : "";
+      toast.success(`${calledPatient.name} foi chamado(a)${time}!`);
     } else {
-      toast.info(`Status de ${patientName} alterado para "${status}"!`);
+      // Lógica para quando o status é alterado para algo diferente de "Em Atendimento"
+      const patient = patients.find(p => p.id === id);
+      if (patient) {
+        toast.info(`Status de ${patient.name} alterado para "${status}"!`);
+      }
     }
   };
 

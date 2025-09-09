@@ -5,10 +5,34 @@ import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 const DisplayPage: React.FC = () => {
   const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
   const [nextPatients, setNextPatients] = useState<Patient[]>([]);
+  const [isReady, setIsReady] = useState(false); // Estado para controlar a permissão de áudio
   const { speak } = useSpeechSynthesis();
-  const lastCalledId = useRef<number | null>(null);
+  const lastCalledRef = useRef<{ id: number; callCount: number } | null>(null);
+
+  // Função para iniciar o áudio com interação do usuário
+  const handleStart = () => {
+    setIsReady(true);
+    // Toca um som silencioso para "acordar" o contexto de áudio
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const buffer = audioContext.createBuffer(1, 1, 22050);
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.start(0);
+  };
 
   useEffect(() => {
+    if (!isReady) return; // Não faz nada se o usuário ainda não clicou em "Play"
+
+    const playBellAndSpeak = (patient: Patient) => {
+      const bell = new Audio('/bell.mp3');
+      bell.play().catch(error => console.error("Erro ao tocar o som da campainha:", error));
+      bell.onended = () => {
+        const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
+        speak(textToSpeak);
+      };
+    };
+
     const updateDisplay = () => {
       const storedCalledPatient = localStorage.getItem('calledPatient');
       const storedNextPatients = localStorage.getItem('nextPatients');
@@ -16,11 +40,13 @@ const DisplayPage: React.FC = () => {
       if (storedCalledPatient) {
         const patient: Patient = JSON.parse(storedCalledPatient);
         
-        if (patient.id !== lastCalledId.current) {
+        if (
+          patient.id !== lastCalledRef.current?.id ||
+          patient.callCount !== lastCalledRef.current?.callCount
+        ) {
           setCalledPatient(patient);
-          const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
-          speak(textToSpeak);
-          lastCalledId.current = patient.id;
+          playBellAndSpeak(patient);
+          lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
         }
       }
       if (storedNextPatients) {
@@ -28,18 +54,41 @@ const DisplayPage: React.FC = () => {
       }
     };
 
-    updateDisplay();
+    // Carrega os dados iniciais sem tocar o som
+    const initialLoad = () => {
+        const storedCalledPatient = localStorage.getItem('calledPatient');
+        const storedNextPatients = localStorage.getItem('nextPatients');
+        if (storedCalledPatient) setCalledPatient(JSON.parse(storedCalledPatient));
+        if (storedNextPatients) setNextPatients(JSON.parse(storedNextPatients));
+    };
+    
+    initialLoad();
 
     window.addEventListener('storage', updateDisplay);
 
     return () => {
       window.removeEventListener('storage', updateDisplay);
     };
-  }, [speak]);
+  }, [isReady, speak]);
 
   const patientName = calledPatient?.name || "Aguardando chamada...";
   const room = calledPatient?.destination || "-";
   const nextPatientNames = nextPatients.map(p => p.name);
+
+  if (!isReady) {
+    return (
+      <div className="bg-gray-900 text-white flex flex-col min-h-screen items-center justify-center">
+        <h1 className="text-4xl mb-8">Tela de Chamada de Pacientes</h1>
+        <button
+          onClick={handleStart}
+          className="bg-[#38e07b] text-gray-900 font-bold text-2xl px-12 py-6 rounded-lg shadow-lg hover:bg-green-400 transition-transform transform hover:scale-105"
+        >
+          ▶ Iniciar Tela
+        </button>
+        <p className="mt-4 text-gray-400">Clique para habilitar o som</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-900 text-white" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
