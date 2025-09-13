@@ -1,334 +1,316 @@
-# Guia de Integração: HealthCall Display com WebView Android (Kotlin)
+# Guia de Construção para IA: WebView Android para HealthCall Display
 
-Este guia detalha o processo para encapsular a página de display do HealthCall em um aplicativo Android nativo usando um WebView, com foco em duas funcionalidades críticas: **login automático** e **suporte a Text-to-Speech (TTS) nativo**.
+**Objetivo:** Construir um aplicativo Android nativo (em Kotlin) que funcione como um invólucro (wrapper) para a aplicação web React "HealthCall". O foco é a página de display (`/display`), que será exibida em uma Android TV.
 
-## Visão Geral da Estratégia
-
-A integração será feita de forma transparente para o usuário, eliminando a necessidade de interação manual com a tela de login na Android TV.
-
-1.  **Login Automático via Injeção de Token**: O aplicativo Kotlin será responsável por autenticar-se diretamente com o Supabase usando as credenciais fornecidas. Após obter o token de sessão (JWT), ele o injetará no `localStorage` do WebView. Ao carregar a página, o cliente Supabase do lado da web encontrará o token e considerará a sessão como ativa, pulando a tela de login.
-2.  **TTS Nativo via JavaScript Interface**: Criaremos uma "ponte" de comunicação entre o JavaScript do WebView e o código Kotlin. O código da web poderá detectar se está rodando dentro do nosso WebView e, em caso afirmativo, em vez de usar a API de TTS do navegador, ele chamará uma função nativa do Kotlin que utilizará o motor de TTS do Android.
+**Funcionalidades Críticas a Implementar:**
+1.  **Login Automático e Transparente:** O usuário final nunca deve ver uma tela de login. O aplicativo nativo será responsável por autenticar-se e passar a sessão para a aplicação web.
+2.  **Text-to-Speech (TTS) Nativo:** As chamadas de voz (anúncios de pacientes) devem usar o motor de TTS nativo do Android para garantir alta qualidade e confiabilidade, em vez da API de síntese de voz do navegador.
 
 ---
 
-## Passo 1: Configuração do Projeto Android (Kotlin)
+## Visão Geral da Arquitetura de Integração
 
-### 1.1. Adicionar Dependências
+Antes de começar, é crucial entender como as partes nativa (Kotlin) e web (React) se comunicarão.
 
-No arquivo `build.gradle.kts` (ou `build.gradle`) do seu módulo do app, adicione a dependência do cliente Supabase para Kotlin e garanta que a permissão `INTERNET` seja solicitada no `AndroidManifest.xml`.
+1.  **Para o Login Automático:**
+    *   O aplicativo Kotlin conterá as credenciais de login para uma conta de serviço específica do display.
+    *   Ao iniciar, o app Kotlin se autenticará diretamente com o Supabase (nosso backend) e obterá um token de sessão (JWT).
+    *   Este token será injetado no `localStorage` do WebView antes que a página web termine de carregar.
+    *   O cliente Supabase na aplicação React é projetado para verificar o `localStorage` em busca de um token válido. Ao encontrá-lo, ele considerará a sessão autenticada, pulando completamente a tela de login. A chave exata do `localStorage` é `sb-itxvexnhoafehwmlhulo-auth-token`.
 
-**`build.gradle.kts`**
-```kotlin
-dependencies {
-    // ... outras dependências
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.3.3") // Para autenticação
-    implementation("io.ktor:ktor-client-cio:2.3.10") // Engine HTTP para o Supabase
-}
-```
+2.  **Para o TTS Nativo:**
+    *   Criaremos uma "ponte" de comunicação usando a funcionalidade `JavascriptInterface` do Android.
+    *   Uma classe Kotlin será exposta ao ambiente JavaScript do WebView sob um nome global (ex: `AndroidTTS`).
+    *   Esta classe terá um método público, `speak(text: String)`, que o JavaScript poderá invocar.
+    *   A aplicação React (especificamente o hook `useSpeechSynthesis`) já foi modificada para detectar a presença do objeto `window.AndroidTTS`. Se ele existir, em vez de usar a API `window.speechSynthesis` do navegador, ele chamará `window.AndroidTTS.speak(text)`.
+    *   A implementação Kotlin desse método usará o motor `TextToSpeech` nativo do Android para vocalizar o texto recebido.
 
-**`app/src/main/AndroidManifest.xml`**
-```xml
-<manifest ...>
-    <uses-permission android:name="android.permission.INTERNET" />
-    <application ...>
-        ...
-    </application>
-</manifest>
-```
+---
 
-### 1.2. Inicializar e Autenticar com Supabase
+## Passo a Passo Detalhado para Implementação
 
-Crie um cliente Supabase e uma função para realizar o login. Isso pode ser feito na sua `MainActivity` ou em uma classe ViewModel.
+Siga cada passo rigorosamente. Realize as verificações ao final de cada etapa para garantir que a base para o próximo passo está sólida.
 
-```kotlin
-import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.gotrue.GoTrue
-import io.github.jan.supabase.gotrue.auth
-import io.github.jan.supabase.gotrue.providers.builtin.Email
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import android.os.Bundle
-import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
+### **Passo 1: Configuração Inicial do Projeto Android**
 
-// ...
+**Tarefa:** Prepare o ambiente do projeto Android.
 
-class MainActivity : AppCompatActivity() {
+1.  **Crie o Projeto:** Inicie um novo projeto no Android Studio.
+    *   **Template:** "Empty Views Activity"
+    *   **Linguagem:** Kotlin
+    *   **Minimum SDK:** API 26 ou superior (para compatibilidade com Android TV).
+2.  **Adicione Permissões:** O aplicativo precisa de acesso à internet para carregar a página web e autenticar-se.
+    *   Abra o arquivo `app/src/main/AndroidManifest.xml`.
+    *   Adicione a seguinte linha dentro da tag `<manifest>`:
+        ```xml
+        <uses-permission android:name="android.permission.INTERNET" />
+        ```
+3.  **Adicione Dependências:** Precisamos de bibliotecas para autenticação com Supabase e para realizar as chamadas de rede.
+    *   Abra o arquivo `build.gradle.kts` (nível do módulo `app`).
+    *   Adicione as seguintes implementações ao bloco `dependencies`:
+        ```kotlin
+        // BOM (Bill of Materials) do Supabase para gerenciar as versões
+        val supabaseVersion = "3.2.3"
+        implementation(platform("io.github.jan-tennert.supabase:bom:$supabaseVersion"))
 
-    private lateinit var supabaseClient: SupabaseClient
-    private var sessionToken: String? = null
+        // Módulo de autenticação do Supabase
+        implementation("io.github.jan-tennert.supabase:auth-kt")
+        
+        // Engine Ktor para as chamadas HTTP. Use uma versão compatível com o Supabase-kt 3.x
+        val ktorVersion = "3.0.0-beta-1" // Verifique a versão mais recente compatível
+        implementation("io.ktor:ktor-client-cio:$ktorVersion") 
+        ```
+4.  **Adicione o WebView ao Layout:**
+    *   Abra o arquivo `app/src/main/res/layout/activity_main.xml`.
+    *   Adicione um `WebView` que ocupe a tela inteira.
+        ```xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <androidx.constraintlayout.widget.ConstraintLayout 
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context=".MainActivity">
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // ...
+            <WebView
+                android:id="@+id/webview"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        // 1. Inicializa o cliente Supabase
-        initializeSupabase()
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        ```
 
-        // 2. Realiza o login para obter o token
-        // É crucial fazer isso fora da thread principal (UI)
-        lifecycleScope.launch(Dispatchers.IO) {
-            fetchSupabaseSession()
-            
-            // 3. Após obter o token, configure e carregue o WebView na thread principal
-            withContext(Dispatchers.Main) {
-                setupWebView()
+**✅ Verificação do Passo 1:**
+*   Sincronize o Gradle. O projeto deve compilar e construir sem erros.
+*   Execute o aplicativo em um emulador ou dispositivo. Ele deve exibir uma tela em branco, o que é esperado.
+
+---
+
+### **Passo 2: Implementação da Autenticação Supabase**
+
+**Tarefa:** Autenticar com o Supabase no lado nativo para obter o token de sessão.
+
+1.  **Orquestre a Lógica na `MainActivity`:** A `MainActivity` coordenará a inicialização, o login e a configuração do WebView.
+    *   Abra `MainActivity.kt`.
+    *   Adicione as propriedades para o cliente Supabase e o token.
+        ```kotlin
+        private lateinit var supabaseClient: SupabaseClient
+        private var sessionJson: String? = null
+        ```
+    *   Modifique o método `onCreate` para orquestrar as chamadas na ordem correta, usando coroutines para as operações de rede.
+        ```kotlin
+        override fun onCreate(savedInstanceState: Bundle?) {
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_main)
+
+            // 1. Inicializa o cliente Supabase
+            initializeSupabase()
+
+            // 2. Lança uma coroutine para realizar o login em background
+            lifecycleScope.launch(Dispatchers.IO) {
+                fetchSupabaseSession()
+                
+                // 3. Após obter o token, volta para a thread principal para configurar o WebView
+                withContext(Dispatchers.Main) {
+                    setupWebView()
+                }
             }
         }
-    }
-
+        ```
+2.  **Implemente a Inicialização do Cliente:** Crie a função que configura o cliente Supabase com as credenciais do projeto.
+    ```kotlin
     private fun initializeSupabase() {
         supabaseClient = createSupabaseClient(
             supabaseUrl = "https://itxvexnhoafehwmlhulo.supabase.co",
             supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0eHZleG5ob2FmZWh3bWxodWxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NTE5NjksImV4cCI6MjA3MzAyNzk2OX0.EZItfCLMovKUzEobllrVO314Vekx96fJ8mMrU09f1Tk"
         ) {
-            install(GoTrue)
+            install(Auth)
         }
     }
+    ```
+    // Adicione estas importações no início do seu arquivo MainActivity.kt
+    import io.github.jan.supabase.gotrue.auth.providers.builtin.Email
+    import io.github.jan.supabase.gotrue.auth.signInWith
+    import kotlinx.serialization.json.Json
+    import kotlinx.serialization.encodeToString
 
+    // ...
+
+3.  **Implemente a Função de Login:** Crie a função `suspend` que realiza o login e armazena a sessão como uma string JSON.
+    ```kotlin
     private suspend fun fetchSupabaseSession() {
         try {
-            // Autentica com as credenciais fornecidas
+            // Autentica com as credenciais de serviço do display
             val session = supabaseClient.auth.signInWith(Email) {
                 email = "healthcalltv@adminhctv.com"
                 password = "vunjat-Gaqsac-nozhy1"
             }
-            sessionToken = session.accessToken
-            Log.d("SupabaseAuth", "Login bem-sucedido, token obtido!")
+            // A biblioteca JS espera o objeto de sessão completo, não apenas o token.
+            // Serializamos o objeto de sessão para uma string JSON.
+            sessionJson = Json.encodeToString(session)
+            Log.d("SupabaseAuth", "Login bem-sucedido! Objeto de sessão serializado.")
         } catch (e: Exception) {
-            Log.e("SupabaseAuth", "Falha no login: ${e.message}")
-            // Tratar falha de login (ex: mostrar mensagem de erro, tentar novamente)
+            Log.e("SupabaseAuth", "Falha no login do Supabase: ${e.message}", e)
+            // Ação recomendada: Implementar uma política de retry ou exibir um estado de erro no WebView.
         }
     }
-    
-    // ... setupWebView() será definido no próximo passo
-}
-```
+    ```
+
+**✅ Verificação do Passo 2:**
+*   Execute o aplicativo.
+*   Abra o Logcat no Android Studio e filtre pela tag `SupabaseAuth`.
+*   Você deve ver a mensagem "Login bem-sucedido! Objeto de sessão serializado.". Se vir uma falha, verifique a conexão com a internet e as credenciais.
 
 ---
 
-## Passo 2: Configuração do WebView e Injeção de Token
+### **Passo 3: Configuração do WebView e Injeção do Token**
 
-### 2.1. Configurar o WebView
+**Tarefa:** Configurar o WebView para executar JavaScript, injetar o token de login e carregar a página.
 
-Dentro da `MainActivity`, adicione a função `setupWebView`.
+1.  **Implemente `setupWebView`:** Crie a função que será chamada após o login bem-sucedido.
+    ```kotlin
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupWebView() {
+        val myWebView: WebView = findViewById(R.id.webview)
 
-```kotlin
-import android.annotation.SuppressLint
-import android.webkit.WebView
-import android.webkit.WebViewClient
+        // Habilitar JavaScript e DOM Storage é essencial
+        myWebView.settings.javaScriptEnabled = true
+        myWebView.settings.domStorageEnabled = true // Para que o localStorage funcione
 
-// ...
-
-@SuppressLint("SetJavaScriptEnabled")
-private fun setupWebView() {
-    val myWebView: WebView = findViewById(R.id.webview) // Assumindo que você tem um WebView com este ID no seu layout
-
-    myWebView.settings.javaScriptEnabled = true
-    myWebView.settings.domStorageEnabled = true // Essencial para o localStorage
-
-    // O WebViewClient é necessário para injetar o JavaScript antes da página carregar
-    myWebView.webViewClient = object : WebViewClient() {
-        override fun onPageFinished(view: WebView?, url: String?) {
-            super.onPageFinished(view, url)
-            
-            // Somente injeta o token se ele foi obtido com sucesso
-            sessionToken?.let { token ->
-                // **AQUI ACONTECE A MÁGICA DO LOGIN AUTOMÁTICO**
-                val script = """
-                    localStorage.setItem('sb-itxvexnhoafehwmlhulo-auth-token', '$token');
-                    console.log('Token do Supabase injetado com sucesso.');
-                """.trimIndent()
+        // O WebViewClient nos permite interceptar eventos de carregamento da página
+        myWebView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
                 
-                view?.evaluateJavascript(script, null)
+                sessionJson?.let { session ->
+                    // **INJEÇÃO DA SESSÃO**
+                    // A chave do localStorage é `sb-PROJECT_REF-auth-token`.
+                    // O valor deve ser a string JSON completa da sessão, que já foi serializada.
+                    val script = "localStorage.setItem('sb-itxvexnhoafehwmlhulo-auth-token', '${session}'); console.log('Sessão do Supabase injetada via WebView.');"
+                    
+                    view?.evaluateJavascript(script, null)
+                }
             }
         }
-    }
-    
-    // Adiciona a interface para o TTS (próximo passo)
-    addTTSInterface(myWebView)
+        
+        // Adiciona a interface para o TTS (será criada no próximo passo)
+        addTTSInterface(myWebView)
 
-    // Carrega a URL final (substitua pela URL de produção/deploy do seu app)
-    myWebView.loadUrl("https://healthcall-23d13.web.app/display")
-}
-```
+        // Carrega a URL de produção da aplicação React
+        myWebView.loadUrl("https://healthcall-23d13.web.app/display")
+    }
+    ```
+    
+
+**✅ Verificação do Passo 3:**
+*   Execute o aplicativo. A página de display do HealthCall deve carregar.
+*   **Crucial:** A página **não deve** redirecionar para a tela de login. Ela deve ir direto para a fila de pacientes (mesmo que vazia).
+*   Para uma verificação mais profunda, conecte o Chrome DevTools ao WebView do emulador/dispositivo (`chrome://inspect`), vá até a aba "Application", selecione "Local Storage" e confirme que a chave `sb-itxvexnhoafehwmlhulo-auth-token` existe e contém um valor.
 
 ---
 
-## Passo 3: Integração com TTS Nativo do Android
+### **Passo 4: Criação da Ponte TTS Nativa**
 
-### 3.1. Criar a Classe de Interface JavaScript
+**Tarefa:** Criar a classe Kotlin que expõe a funcionalidade de TTS nativo ao JavaScript.
 
-Esta classe conterá os métodos que o JavaScript poderá chamar. Ela também gerenciará a instância do `TextToSpeech` do Android.
+1.  **Crie a Classe `WebAppInterface`:** Crie um novo arquivo Kotlin chamado `WebAppInterface.kt`.
+    ```kotlin
+    import android.content.Context
+    import android.speech.tts.TextToSpeech
+    import android.util.Log
+    import android.webkit.JavascriptInterface
+    import java.util.Locale
 
-```kotlin
-import android.content.Context
-import android.speech.tts.TextToSpeech
-import android.util.Log
-import android.webkit.JavascriptInterface
-import java.util.Locale
+    class WebAppInterface(private val context: Context) : TextToSpeech.OnInitListener {
 
-class WebAppInterface(private val context: Context) : TextToSpeech.OnInitListener {
+        private var tts: TextToSpeech? = null
+        private var isTtsInitialized = false
 
-    private var tts: TextToSpeech? = null
-    private var isTtsInitialized = false
-
-    init {
-        tts = TextToSpeech(context, this)
-    }
-
-    // Método que será chamado pelo JavaScript
-    @JavascriptInterface
-    fun speak(text: String) {
-        if (isTtsInitialized) {
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
-            Log.d("WebAppInterface", "Falando: $text")
-        } else {
-            Log.e("WebAppInterface", "TTS não inicializado.")
+        init {
+            // Inicia o motor TTS assim que a classe é instanciada
+            tts = TextToSpeech(context, this)
         }
-    }
 
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            val result = tts?.setLanguage(Locale("pt", "BR"))
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.e("TTS", "Linguagem pt-BR não suportada.")
+        // Este é o método que o JavaScript chamará
+        @JavascriptInterface
+        fun speak(text: String) {
+            if (isTtsInitialized) {
+                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+                Log.d("WebAppInterface", "TTS Nativo falando: $text")
             } else {
-                isTtsInitialized = true
+                Log.e("WebAppInterface", "Comando 'speak' recebido, mas o TTS não está inicializado.")
             }
-        } else {
-            Log.e("TTS", "Falha na inicialização do TTS.")
+        }
+
+        // Callback chamado quando o motor TTS está pronto
+        override fun onInit(status: Int) {
+            if (status == TextToSpeech.SUCCESS) {
+                // Configura a linguagem para Português do Brasil
+                val result = tts?.setLanguage(Locale("pt", "BR"))
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e("TTS", "Erro: Linguagem pt-BR não é suportada neste dispositivo.")
+                } else {
+                    isTtsInitialized = true
+                    Log.i("TTS", "Motor TTS inicializado com sucesso em pt-BR.")
+                }
+            } else {
+                Log.e("TTS", "Falha na inicialização do motor TTS.")
+            }
+        }
+        
+        // Método para liberar recursos quando a Activity for destruída
+        fun shutdown() {
+            tts?.stop()
+            tts?.shutdown()
+            Log.i("TTS", "Motor TTS desligado.")
         }
     }
-    
-    // Método para liberar os recursos do TTS quando a Activity for destruída
-    fun shutdown() {
-        tts?.stop()
-        tts?.shutdown()
-    }
-}
-```
+    ```
+2.  **Registre a Interface no WebView:** Volte para `MainActivity.kt`.
+    *   Declare uma propriedade para a interface.
+        ```kotlin
+        private lateinit var webAppInterface: WebAppInterface
+        ```
+    *   Crie a função `addTTSInterface` e chame-a de dentro de `setupWebView`.
+        ```kotlin
+        private fun addTTSInterface(webView: WebView) {
+            webAppInterface = WebAppInterface(this)
+            // "AndroidTTS" é o nome do objeto global que será criado no `window` do JavaScript
+            webView.addJavascriptInterface(webAppInterface, "AndroidTTS")
+        }
+        ```
+    *   **Importante:** Libere os recursos do TTS para evitar vazamentos de memória.
+        ```kotlin
+        override fun onDestroy() {
+            super.onDestroy()
+            if (::webAppInterface.isInitialized) {
+                webAppInterface.shutdown()
+            }
+        }
+        ```
 
-### 3.2. Registrar a Interface no WebView
-
-Na `MainActivity`, crie a instância da interface e a adicione ao WebView.
-
-```kotlin
-// ... dentro da MainActivity
-
-private lateinit var webAppInterface: WebAppInterface
-
-private fun addTTSInterface(webView: WebView) {
-    webAppInterface = WebAppInterface(this)
-    // "AndroidTTS" é o nome que será usado no JavaScript para acessar a interface
-    webView.addJavascriptInterface(webAppInterface, "AndroidTTS")
-}
-
-// Não se esqueça de liberar os recursos do TTS
-override fun onDestroy() {
-    super.onDestroy()
-    if (::webAppInterface.isInitialized) {
-        webAppInterface.shutdown()
-    }
-}
-```
+**✅ Verificação do Passo 4:**
+*   Execute o aplicativo.
+*   No Logcat, filtre por "TTS" e "WebAppInterface". Você deve ver as mensagens de inicialização do motor TTS.
+*   Para testar a ponte, use o `chrome://inspect` para abrir o console do WebView e execute manualmente: `window.AndroidTTS.speak('Teste de som nativo')`. Você deve ouvir a frase sendo falada pelo sistema Android, e uma mensagem aparecerá no Logcat.
 
 ---
 
-## Passo 4: Modificar o Código da Web (React)
+## Conclusão e Teste Final
 
-Agora, ajuste o hook `useSpeechSynthesis.ts` para usar a interface nativa quando disponível.
+Após completar todos os passos, o aplicativo Android estará totalmente integrado.
 
-**`src/hooks/useSpeechSynthesis.ts`**
+**Teste de Aceitação Final:**
+1.  Inicie o aplicativo.
+2.  Ele deve carregar a página `/display` sem mostrar a tela de login.
+3.  Use a aplicação web de gerenciamento (em um computador ou celular) para adicionar um novo paciente à fila.
+4.  Quando o paciente for chamado, a Android TV deve anunciar a chamada usando a voz do sistema Android, não uma voz de navegador.
 
-```typescript
-import { useEffect, useState } from 'react';
+Se todos esses pontos funcionarem, a integração foi um sucesso. Esta arquitetura cria uma experiência de usuário fluida e robusta, combinando o melhor da tecnologia web com o poder dos recursos nativos da plataforma Android.
 
-// Define a interface global para que o TypeScript reconheça nosso objeto injetado
-declare global {
-  interface Window {
-    AndroidTTS?: {
-      speak: (text: string) => void;
-    };
-  }
-}
-
-export const useSpeechSynthesis = () => {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
-  const isAndroidWebView = !!window.AndroidTTS;
-
-  useEffect(() => {
-    // Se estiver no WebView, não precisa carregar vozes do navegador
-    if (isAndroidWebView) return;
-
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      if (availableVoices.length > 0) {
-        setVoices(availableVoices);
-        const ptBRVoice = availableVoices.find((voice) => voice.lang === 'pt-BR');
-        setSelectedVoice(ptBRVoice || availableVoices[0]);
-      }
-    };
-
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-    loadVoices();
-  }, [isAndroidWebView]);
-
-  const speak = (text: string): Promise<void> => {
-    // **AQUI ACONTECE A MÁGICA DO TTS**
-    if (isAndroidWebView) {
-      try {
-        window.AndroidTTS?.speak(text);
-        return Promise.resolve();
-      } catch (e) {
-        console.error("Erro ao chamar a interface nativa AndroidTTS", e);
-        return Promise.reject(e);
-      }
-    }
-
-    // Fallback para o navegador padrão
-    return new Promise((resolve, reject) => {
-      if (!selectedVoice) {
-        console.warn('Nenhuma voz de síntese de fala selecionada.');
-        return resolve();
-      }
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = selectedVoice;
-      utterance.lang = selectedVoice.lang;
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.onend = () => resolve();
-      utterance.onerror = (e) => reject(new Error(`Falha na síntese de fala: ${e.error}`));
-      
-      try {
-        window.speechSynthesis.speak(utterance);
-      } catch (e) {
-        resolve();
-      }
-    });
-  };
-
-  return { speak, voices, selectedVoice, setSelectedVoice, isAndroidWebView };
-};
-
-export default useSpeechSynthesis;
-```
-
-## Considerações de Segurança
-
-Hardcoding (fixar no código) as credenciais de login é geralmente uma prática ruim. No entanto, para este caso de uso específico — um dispositivo de display controlado (Android TV) onde o aplicativo é o único usuário da conta de "display" — essa abordagem é um *trade-off* aceitável em nome da simplicidade e da experiência do usuário. **Nunca** use esta abordagem para credenciais de usuários finais.
-
-## Conclusão
-
-Seguindo estes passos, você terá um aplicativo Android que:
-1.  Abre a página `/display` **sem nunca mostrar a tela de login**.
-2.  Utiliza o motor de **TTS nativo do Android**, que geralmente oferece maior qualidade e melhor integração com o sistema operacional.
-3.  Mantém a base de código da web praticamente inalterada, com uma modificação inteligente e isolada no hook `useSpeechSynthesis`.
-
-Esta solução oferece uma integração robusta e profissional entre sua aplicação web React e a plataforma Android.
+---
