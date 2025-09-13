@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 
 const LoginPage = () => {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 	const [email, setEmail] = useState('');
 	const [password, setPassword] = useState('');
 	const [loading, setLoading] = useState(false);
@@ -17,7 +18,8 @@ const LoginPage = () => {
 		if (error) {
 			setError(error.message);
 		} else {
-			navigate('/');
+			const redirectUrl = searchParams.get('redirect') || '/';
+			navigate(redirectUrl);
 		}
 		setLoading(false);
 	};

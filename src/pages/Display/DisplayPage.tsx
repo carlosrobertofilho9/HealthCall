@@ -1,30 +1,61 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { Session } from '@supabase/supabase-js';
 import type { CallRecord, Patient } from '@/types';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { supabase } from '@/lib/supabaseClient';
 import { appendCallHistory } from '@/actions/patients';
 
 const DisplayPage: React.FC = () => {
+	const [session, setSession] = useState<Session | null>(null);
+	const [loading, setLoading] = useState(true);
+	const navigate = useNavigate();
+
 	const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
 	const [nextPatients, setNextPatients] = useState<Patient[]>([]);
-	const [isReady, setIsReady] = useState(false);
 	const [callHistory, setCallHistory] = useState<CallRecord[]>([]);
 	const { speak } = useSpeechSynthesis();
 	const lastCalledRef = useRef<{ id: number; callCount: number } | null>(null);
 	const [isCalling, setIsCalling] = useState(false);
 
-	const handleStart = () => {
-		setIsReady(true);
-		const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-		const buffer = audioContext.createBuffer(1, 1, 22050);
-		const source = audioContext.createBufferSource();
-		source.buffer = buffer;
-		source.connect(audioContext.destination);
-		source.start(0);
-	};
+	useEffect(() => {
+		const getSession = async () => {
+			const {
+				data: { session },
+			} = await supabase.auth.getSession();
+			setSession(session);
+			setLoading(false);
+
+			// Iniciar o contexto de áudio com um gesto do usuário, se necessário.
+			// Isso pode ser movido para um clique de botão se a reprodução automática falhar.
+			const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+			if (audioContext.state === 'suspended') {
+				audioContext.resume();
+			}
+		};
+
+		getSession();
+
+		const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+			setSession(session);
+			if (!session) {
+				navigate('/login?redirect=/display');
+			}
+		});
+
+		return () => {
+			authListener?.subscription.unsubscribe();
+		};
+	}, [navigate]);
 
 	useEffect(() => {
-		if (!isReady) return;
+		if (!loading && !session) {
+			navigate('/login?redirect=/display');
+		}
+	}, [session, loading, navigate]);
+
+	useEffect(() => {
+		if (!session) return;
 
 		const playBellAndSpeak = async (patient: Patient) => {
 			setIsCalling(true);
@@ -85,10 +116,10 @@ const DisplayPage: React.FC = () => {
 		initialLoad();
 		window.addEventListener('storage', updateDisplay);
 		return () => window.removeEventListener('storage', updateDisplay);
-	}, [isReady, speak]);
+	}, [session, speak]);
 
 	useEffect(() => {
-		if (!isReady) return;
+		if (!session) return;
 
 		const channel = supabase
 			.channel('realtime-calls')
@@ -122,8 +153,6 @@ const DisplayPage: React.FC = () => {
 					const currentHistoryStr = localStorage.getItem('callHistory');
 					const currentHistory: CallRecord[] = currentHistoryStr ? JSON.parse(currentHistoryStr) : [];
 
-					
-
 					const newHistory = appendCallHistory(currentHistory, patient);
 					localStorage.setItem('callHistory', JSON.stringify(newHistory));
 				}
@@ -133,22 +162,16 @@ const DisplayPage: React.FC = () => {
 		return () => {
 			supabase.removeChannel(channel);
 		};
-	}, [isReady]);
+	}, [session]);
 
 	const patientName = calledPatient?.name || 'Aguardando chamada...';
 	const room = calledPatient?.destination || '-';
 
-	if (!isReady) {
+	if (loading || !session) {
 		return (
 			<div className="bg-gray-900 text-white flex flex-col min-h-screen items-center justify-center">
-				<h1 className="text-4xl mb-8">Tela de Chamada de Pacientes</h1>
-				<button
-					onClick={() => setIsReady(true)}
-					className="bg-[#38e07b] text-gray-900 font-bold text-2xl px-12 py-6 rounded-lg shadow-lg hover:bg-green-400 transition-transform transform hover:scale-105"
-				>
-					▶ Iniciar Tela
-				</button>
-				<p className="mt-4 text-gray-400">Clique para habilitar o som</p>
+				<h1 className="text-4xl mb-8">Carregando...</h1>
+				<p className="mt-4 text-gray-400">Verificando autenticação.</p>
 			</div>
 		);
 	}
