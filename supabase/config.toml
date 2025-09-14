@@ -1,0 +1,5 @@
+[functions.cleanup-tts-bucket]
+cron = "0 0 * * *"
+
+[functions.cleanup-database]
+cron = "0 0 * * *"
