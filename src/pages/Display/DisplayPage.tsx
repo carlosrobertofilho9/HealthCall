@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import type { CallRecord, Patient } from '@/types';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { supabase } from '@/lib/supabaseClient';
+import CastButton from '@/components/CastButton';
 import { appendCallHistory } from '@/actions/patients';
 
 const DisplayPage: React.FC = () => {
@@ -58,22 +59,58 @@ const DisplayPage: React.FC = () => {
 		if (!session) return;
 
 		const playBellAndSpeak = async (patient: Patient) => {
-			setIsCalling(true);
-			const bell = new Audio('/bell.mp3');
-			try {
-				await bell.play();
-			} catch (error) {
-				console.error('Erro ao tocar o som da campainha:', error);
+			const castSession = window.cast?.framework.CastContext.getInstance().getCurrentSession();
+
+			// Se houver uma sessão de cast ativa, use a nova lógica
+			if (castSession) {
+				try {
+					// 1. Chame sua função serverless para gerar/obter o áudio
+					const ttsResponse = await fetch(
+						'YOUR_SUPABASE_FUNCTION_URL/generate-tts',
+						{
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({ text: `Chamando ${patient.name}, para ${patient.destination}` }),
+						}
+					);
+
+					if (!ttsResponse.ok) throw new Error('Failed to generate TTS audio.');
+
+					const { speechUrl } = await ttsResponse.json();
+
+					// 2. Envie a mensagem para o receiver com as URLs públicas
+					const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
+					castSession.sendMessage(CUSTOM_NAMESPACE, {
+						type: 'PLAY_CALL_AUDIO',
+						payload: {
+							bell: new URL('/bell.mp3', window.location.origin).href, // URL absoluta e pública
+							speech: speechUrl, // URL pública retornada pela função
+						},
+					});
+
+				} catch (error) {
+					console.error('Failed to send message to Chromecast:', error);
+					// Considere um fallback para o áudio local se a transmissão falhar
+				}
+			} else {
+				// Lógica original de TTS para quando não estiver transmitindo
+				setIsCalling(true);
+				const bell = new Audio('/bell.mp3');
+				try {
+					await bell.play();
+				} catch (error) {
+					console.error('Erro ao tocar o som da campainha:', error);
+				}
+				await new Promise<void>((resolve) => {
+					bell.onended = () => resolve();
+					setTimeout(() => resolve(), 3000);
+				});
+				const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
+				try {
+					await speak(textToSpeak);
+				} catch {}
+				setTimeout(() => setIsCalling(false), 300);
 			}
-			await new Promise<void>((resolve) => {
-				bell.onended = () => resolve();
-				setTimeout(() => resolve(), 3000);
-			});
-			const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
-			try {
-				await speak(textToSpeak);
-			} catch {}
-			setTimeout(() => setIsCalling(false), 300);
 		};
 
 		const updateDisplay = () => {
@@ -187,6 +224,9 @@ const DisplayPage: React.FC = () => {
 							</svg>
 							<h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
 						</div>
+            <div className="flex items-center gap-4">
+              <CastButton />
+            </div>
 					</header>
 					<main className="flex-grow flex flex-col justify-center items-center text-center p-8">
 						<div className="animate-slide-in w-full max-w-4xl">
@@ -213,6 +253,9 @@ const DisplayPage: React.FC = () => {
 						</svg>
 						<h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
 					</div>
+          <div className="flex items-center gap-4">
+            <CastButton />
+          </div>
 				</header>
 				<main className="flex-grow p-6 md:p-10 w-full flex flex-col">
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch flex-grow">
