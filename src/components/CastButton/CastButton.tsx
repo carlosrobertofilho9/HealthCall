@@ -3,12 +3,6 @@ import React, { useEffect } from 'react';
 
 const APPLICATION_ID = 'A75B4462';
 
-declare global {
-	interface Window {
-		__onGCastApiAvailable?: (isAvailable: boolean) => void;
-	}
-}
-
 const CastButton: React.FC = () => {
 	useEffect(() => {
 		const initializeCastApi = (isAvailable: boolean) => {
@@ -27,6 +21,7 @@ const CastButton: React.FC = () => {
 			// Definir o callback para quando a API estiver disponível
 			window.__onGCastApiAvailable = initializeCastApi;
 		}
+
     return () => {
       // Limpar o callback quando o componente for desmontado
       delete window.__onGCastApiAvailable;
