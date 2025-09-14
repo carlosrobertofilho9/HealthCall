@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
+import { useCast } from '../Cast';
 
 const Header: React.FC = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,6 +9,7 @@ const Header: React.FC = () => {
 	const [initials, setInitials] = useState<string>('');
 	const navigate = useNavigate();
 	const menuRef = useRef<HTMLDivElement>(null);
+	const { isApiAvailable } = useCast();
 
 	const handleLogout = async () => {
 		const { error } = await supabase.auth.signOut();
@@ -110,9 +112,11 @@ const Header: React.FC = () => {
 				</NavLink>
 			</nav>
 			<div className="flex items-center gap-4">
-				<button className="flex cursor-pointer items-center justify-center rounded-full h-12 w-12 bg-[#264532] text-white hover:bg-[#325a42] transition-colors">
-					<span className="material-symbols-outlined">notifications</span>
-				</button>
+				{isApiAvailable && (
+					<div className="flex cursor-pointer items-center justify-center rounded-full h-12 w-12 bg-[#264532] text-white hover:bg-[#325a42] transition-colors">
+						<google-cast-launcher style={{ width: '24px', height: '24px' }} />
+					</div>
+				)}
 				<div className="relative" ref={menuRef}>
 					<button onClick={toggleMenu} className="focus:outline-none">
 						{avatarUrl ? (
