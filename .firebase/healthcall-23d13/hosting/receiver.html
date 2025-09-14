@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HealthCall Display</title>
+  <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+</head>
+<body style="background-color: #111827; color: white; display: flex; align-items: center; justify-content: center; font-family: sans-serif;">
+  
+  <!-- O player de mídia padrão do Chromecast -->
+  <cast-media-player></cast-media-player>
+
+  <script>
+    const context = cast.framework.CastReceiverContext.getInstance();
+    const playerManager = context.getPlayerManager();
+    
+    // Namespace customizado para nossa comunicação. Deve ser o mesmo no sender.
+    const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
+
+    context.addCustomMessageListener(CUSTOM_NAMESPACE, (event) => {
+      const { type, payload } = event.data;
+
+      if (type === 'PLAY_CALL_AUDIO') {
+        // Cria objetos de mídia para a campainha e para a fala
+        const bellSound = new cast.framework.messages.MediaInformation();
+        bellSound.contentUrl = payload.bell; // URL pública para o bell.mp3
+        bellSound.contentType = 'audio/mp3';
+
+        const speechSound = new cast.framework.messages.MediaInformation();
+        speechSound.contentUrl = payload.speech; // URL pública para o áudio gerado
+        speechSound.contentType = 'audio/mpeg';
+
+        const bellRequest = new cast.framework.messages.LoadRequest(bellSound);
+        
+        // Carrega e toca a campainha primeiro.
+        playerManager.load(bellRequest).then(() => {
+          // Quando o carregamento da campainha estiver concluído,
+          // adicionamos a fala à fila para tocar em seguida.
+          const speechQueueItem = new cast.framework.messages.QueueItem(speechSound);
+          playerManager.getQueueManager().insertItems([speechQueueItem]);
+        });
+      }
+    });
+
+    // Inicia o contexto do receiver
+    context.start();
+  </script>
+</body>
+</html>
