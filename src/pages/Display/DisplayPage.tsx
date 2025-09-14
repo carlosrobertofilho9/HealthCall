@@ -84,11 +84,24 @@ const DisplayPage: React.FC = () => {
 				// Se houver uma sessão de cast ativa, envie para o receiver
 				if (isSessionActive && currentSession) {
 					const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
+
+					// Ao chamar, enviamos o estado completo para o receiver
+					const storedNextPatients = localStorage.getItem('nextPatients');
+					const storedCallHistory = localStorage.getItem('callHistory');
+					const nextPatients = storedNextPatients ? JSON.parse(storedNextPatients) : [];
+					const callHistory = storedCallHistory ? JSON.parse(storedCallHistory) : [];
+					
+					const newHistory = appendCallHistory(callHistory, patient);
+
 					currentSession.sendMessage(CUSTOM_NAMESPACE, {
-						type: 'PLAY_CALL_AUDIO',
+						type: 'CALL_PATIENT',
 						payload: {
+							patient,
 							bell: new URL('/bell.mp3', window.location.origin).href,
 							speech: speechUrl,
+							// Inclui o estado atualizado para o receiver
+							nextPatients: nextPatients,
+							callHistory: newHistory,
 						},
 					});
 				} else {
@@ -124,8 +137,23 @@ const DisplayPage: React.FC = () => {
 			const storedNextPatients = localStorage.getItem('nextPatients');
 			const storedCallHistory = localStorage.getItem('callHistory');
 
-			if (storedCalledPatient) {
-				const patient: Patient = JSON.parse(storedCalledPatient);
+			const patient = storedCalledPatient ? JSON.parse(storedCalledPatient) : null;
+			const nextPatients = storedNextPatients ? JSON.parse(storedNextPatients) : [];
+			const callHistory = storedCallHistory ? JSON.parse(storedCallHistory) : [];
+
+			if (isSessionActive && currentSession) {
+				const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
+				currentSession.sendMessage(CUSTOM_NAMESPACE, {
+					type: 'UPDATE_STATE',
+					payload: {
+						calledPatient: patient,
+						nextPatients,
+						callHistory,
+					},
+				});
+			}
+
+			if (patient) {
 				if (
 					patient.id !== lastCalledRef.current?.id ||
 					patient.callCount !== lastCalledRef.current?.callCount
@@ -134,25 +162,36 @@ const DisplayPage: React.FC = () => {
 					playBellAndSpeak(patient);
 					lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
 				}
+			} else {
+				setCalledPatient(null);
 			}
-			if (storedNextPatients) setNextPatients(JSON.parse(storedNextPatients));
-			if (storedCallHistory) {
-				try {
-					setCallHistory(JSON.parse(storedCallHistory));
-				} catch {}
-			}
+			setNextPatients(nextPatients);
+			setCallHistory(callHistory);
 		};
 
 		const initialLoad = () => {
 			const storedCalledPatient = localStorage.getItem('calledPatient');
 			const storedNextPatients = localStorage.getItem('nextPatients');
 			const storedCallHistory = localStorage.getItem('callHistory');
-			if (storedCalledPatient) setCalledPatient(JSON.parse(storedCalledPatient));
-			if (storedNextPatients) setNextPatients(JSON.parse(storedNextPatients));
-			if (storedCallHistory) {
-				try {
-					setCallHistory(JSON.parse(storedCallHistory));
-				} catch {}
+
+			const patient = storedCalledPatient ? JSON.parse(storedCalledPatient) : null;
+			const nextPatients = storedNextPatients ? JSON.parse(storedNextPatients) : [];
+			const callHistory = storedCallHistory ? JSON.parse(storedCallHistory) : [];
+
+			setCalledPatient(patient);
+			setNextPatients(nextPatients);
+			setCallHistory(callHistory);
+
+			if (isSessionActive && currentSession) {
+				const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
+				currentSession.sendMessage(CUSTOM_NAMESPACE, {
+					type: 'UPDATE_STATE',
+					payload: {
+						calledPatient: patient,
+						nextPatients,
+						callHistory,
+					},
+				});
 			}
 		};
 
