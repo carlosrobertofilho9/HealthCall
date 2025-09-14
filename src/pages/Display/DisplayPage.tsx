@@ -2,9 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import type { CallRecord, Patient } from '@/types';
-import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
 import { supabase } from '@/lib/supabaseClient';
-import CastButton from '@/components/CastButton';
+import { CastButton, useCast } from '@/components/Cast';
 import { appendCallHistory } from '@/actions/patients';
 
 const DisplayPage: React.FC = () => {
@@ -15,9 +14,10 @@ const DisplayPage: React.FC = () => {
 	const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
 	const [nextPatients, setNextPatients] = useState<Patient[]>([]);
 	const [callHistory, setCallHistory] = useState<CallRecord[]>([]);
-	const { speak } = useSpeechSynthesis();
+	const { isSessionActive, currentSession } = useCast();
 	const lastCalledRef = useRef<{ id: number; callCount: number } | null>(null);
 	const [isCalling, setIsCalling] = useState(false);
+	const [audioActivated, setAudioActivated] = useState(false);
 
 	useEffect(() => {
 		const getSession = async () => {
@@ -26,13 +26,6 @@ const DisplayPage: React.FC = () => {
 			} = await supabase.auth.getSession();
 			setSession(session);
 			setLoading(false);
-
-			// Iniciar o contexto de áudio com um gesto do usuário, se necessário.
-			// Isso pode ser movido para um clique de botão se a reprodução automática falhar.
-			const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-			if (audioContext.state === 'suspended') {
-				audioContext.resume();
-			}
 		};
 
 		getSession();
@@ -49,6 +42,18 @@ const DisplayPage: React.FC = () => {
 		};
 	}, [navigate]);
 
+	const handleActivateAudio = () => {
+		const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+		if (audioContext.state === 'suspended') {
+			audioContext.resume();
+		}
+		// Toca um som de sino silencioso para "aquecer" o sistema de áudio
+		const bell = new Audio('/bell.mp3');
+		bell.volume = 0.01;
+		bell.play().catch(e => console.error("Erro ao pré-carregar áudio:", e));
+		setAudioActivated(true);
+	};
+
 	useEffect(() => {
 		if (!loading && !session) {
 			navigate('/login?redirect=/display');
@@ -56,60 +61,61 @@ const DisplayPage: React.FC = () => {
 	}, [session, loading, navigate]);
 
 	useEffect(() => {
-		if (!session) return;
+		if (!session || !audioActivated) return;
 
 		const playBellAndSpeak = async (patient: Patient) => {
-			const castSession = window.cast?.framework.CastContext.getInstance().getCurrentSession();
+			setIsCalling(true);
+			try {
+				// 1. Chame a função serverless usando o cliente Supabase
+				const { data, error } = await supabase.functions.invoke('generate-tts', {
+					body: { text: `Chamando ${patient.name}, para ${patient.destination}` },
+				});
 
-			// Se houver uma sessão de cast ativa, use a nova lógica
-			if (castSession) {
-				try {
-					// 1. Chame sua função serverless para gerar/obter o áudio
-					const ttsResponse = await fetch(
-						'YOUR_SUPABASE_FUNCTION_URL/generate-tts',
-						{
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify({ text: `Chamando ${patient.name}, para ${patient.destination}` }),
-						}
-					);
+				if (error) {
+					throw new Error(`Erro ao invocar função: ${error.message}`);
+				}
+				
+				const { speechUrl } = data;
 
-					if (!ttsResponse.ok) throw new Error('Failed to generate TTS audio.');
+				if (!speechUrl) {
+					throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
+				}
 
-					const { speechUrl } = await ttsResponse.json();
-
-					// 2. Envie a mensagem para o receiver com as URLs públicas
+				// Se houver uma sessão de cast ativa, envie para o receiver
+				if (isSessionActive && currentSession) {
 					const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
-					castSession.sendMessage(CUSTOM_NAMESPACE, {
+					currentSession.sendMessage(CUSTOM_NAMESPACE, {
 						type: 'PLAY_CALL_AUDIO',
 						payload: {
-							bell: new URL('/bell.mp3', window.location.origin).href, // URL absoluta e pública
-							speech: speechUrl, // URL pública retornada pela função
+							bell: new URL('/bell.mp3', window.location.origin).href,
+							speech: speechUrl,
 						},
 					});
-
-				} catch (error) {
-					console.error('Failed to send message to Chromecast:', error);
-					// Considere um fallback para o áudio local se a transmissão falhar
-				}
-			} else {
-				// Lógica original de TTS para quando não estiver transmitindo
-				setIsCalling(true);
-				const bell = new Audio('/bell.mp3');
-				try {
+				} else {
+					// Lógica para tocar o áudio localmente
+					const bell = new Audio('/bell.mp3');
 					await bell.play();
-				} catch (error) {
-					console.error('Erro ao tocar o som da campainha:', error);
+
+					await new Promise<void>((resolve) => {
+						bell.onended = () => {
+							const speechAudio = new Audio(speechUrl);
+							speechAudio.play();
+							speechAudio.onended = () => resolve();
+							speechAudio.onerror = (e) => {
+								console.error("Erro ao tocar áudio da fala:", e);
+								resolve();
+							};
+						};
+						bell.onerror = (e) => {
+							console.error("Erro ao tocar sino:", e);
+							resolve();
+						}
+					});
 				}
-				await new Promise<void>((resolve) => {
-					bell.onended = () => resolve();
-					setTimeout(() => resolve(), 3000);
-				});
-				const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
-				try {
-					await speak(textToSpeak);
-				} catch {}
-				setTimeout(() => setIsCalling(false), 300);
+			} catch (error) {
+				console.error('Erro durante a chamada de áudio:', error);
+			} finally {
+				setTimeout(() => setIsCalling(false), 500);
 			}
 		};
 
@@ -153,10 +159,10 @@ const DisplayPage: React.FC = () => {
 		initialLoad();
 		window.addEventListener('storage', updateDisplay);
 		return () => window.removeEventListener('storage', updateDisplay);
-	}, [session, speak]);
+	}, [session, audioActivated, isSessionActive, currentSession]);
 
 	useEffect(() => {
-		if (!session) return;
+		if (!session || !audioActivated) return;
 
 		const channel = supabase
 			.channel('realtime-calls')
@@ -199,7 +205,7 @@ const DisplayPage: React.FC = () => {
 		return () => {
 			supabase.removeChannel(channel);
 		};
-	}, [session]);
+	}, [session, audioActivated]);
 
 	const patientName = calledPatient?.name || 'Aguardando chamada...';
 	const room = calledPatient?.destination || '-';
@@ -209,6 +215,26 @@ const DisplayPage: React.FC = () => {
 			<div className="bg-gray-900 text-white flex flex-col min-h-screen items-center justify-center">
 				<h1 className="text-4xl mb-8">Carregando...</h1>
 				<p className="mt-4 text-gray-400">Verificando autenticação.</p>
+			</div>
+		);
+	}
+
+	if (!audioActivated) {
+		return (
+			<div className="bg-gray-900 text-white flex flex-col min-h-screen items-center justify-center">
+				<div className="text-center">
+					<h1 className="text-4xl mb-4">Bem-vindo à Tela de Chamadas</h1>
+					<p className="text-lg text-gray-400 mb-8">
+						Para garantir que os alertas sonoros funcionem, o navegador exige uma interação inicial.
+					</p>
+					<button
+						onClick={handleActivateAudio}
+						className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+					>
+						<span className="material-symbols-outlined align-middle mr-2">volume_up</span>
+						Ativar Som e Iniciar
+					</button>
+				</div>
 			</div>
 		);
 	}

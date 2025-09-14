@@ -1,59 +1,86 @@
-// supabase/functions/generate-tts/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { crypto } from "https://deno.land/std@0.159.0/crypto/mod.ts";
+import { crypto } from 'https://deno.land/std@0.159.0/crypto/mod.ts';
 
-const GOOGLE_TTS_API_KEY = Deno.env.get('GOOGLE_TTS_API_KEY');
-const TTS_API_URL = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`;
-const STORAGE_BUCKET = 'tts-audio'; // Crie este bucket no seu Supabase
+const STORAGE_BUCKET = 'tts-audio';
+
+const corsHeaders = {
+	'Access-Control-Allow-Origin': '*',
+	'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Função que busca o áudio do Google Translate
+async function getGoogleTranslateAudio(text: string): Promise<ArrayBuffer> {
+	const encodedText = encodeURIComponent(text);
+	const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=pt-BR&client=tw-ob`;
+
+	const response = await fetch(url, {
+		headers: {
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+		},
+	});
+
+	if (!response.ok) {
+		throw new Error(`Failed to fetch audio from Google Translate: ${response.statusText}`);
+	}
+
+	return response.arrayBuffer();
+}
 
 serve(async (req) => {
-  const { text } = await req.json();
-  if (!text) return new Response('Missing text', { status: 400 });
+	// Handle preflight OPTIONS request
+	if (req.method === 'OPTIONS') {
+		return new Response('ok', { headers: corsHeaders });
+	}
 
-  // Crie um hash do texto para usar como nome de arquivo (cache)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-  const fileName = `${hash}.mp3`;
+	try {
+		const { text } = await req.json();
+		if (!text) return new Response('Missing text', { status: 400, headers: corsHeaders });
 
-  const supabaseAdmin = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
+		// Crie um hash do texto para usar como nome de arquivo (cache)
+		const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+		const hash = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, '0')).join('');
+		const fileName = `${hash}.mp3`;
 
-  // Verifica se o arquivo já existe no Storage
-  const { data: existingFile } = await supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
-  if (existingFile && existingFile.publicUrl) {
-      return new Response(JSON.stringify({ speechUrl: existingFile.publicUrl }), {
-          headers: { 'Content-Type': 'application/json' },
-      });
-  }
+		const supabaseAdmin = createClient(
+			Deno.env.get('SUPABASE_URL') ?? '',
+			Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+		);
 
-  // Se não existe, gera o áudio
-  const ttsResponse = await fetch(TTS_API_URL, {
-    method: 'POST',
-    body: JSON.stringify({
-      input: { text },
-      voice: { languageCode: 'pt-BR', name: 'pt-BR-Wavenet-B' },
-      audioConfig: { audioEncoding: 'MP3' },
-    }),
-  });
-  if (!ttsResponse.ok) throw new Error(await ttsResponse.text());
+		// Verifica se o arquivo já existe no Storage
+		const { data: fileList } = await supabaseAdmin.storage.from(STORAGE_BUCKET).list(undefined, {
+			search: fileName,
+			limit: 1,
+		});
 
-  const { audioContent } = await ttsResponse.json();
-  const audioBuffer = Uint8Array.from(atob(audioContent), c => c.charCodeAt(0));
+		if (fileList && fileList.length > 0) {
+			const { data: publicUrlData } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
+			return new Response(JSON.stringify({ speechUrl: publicUrlData.publicUrl }), {
+				headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+			});
+		}
 
-  // Salva o novo áudio no Supabase Storage
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from(STORAGE_BUCKET)
-    .upload(fileName, audioBuffer, { contentType: 'audio/mpeg', upsert: true });
+		// Se não existe, gera o áudio
+		const audioBuffer = await getGoogleTranslateAudio(text);
 
-  if (uploadError) throw uploadError;
+		// Salva o novo áudio no Supabase Storage
+		const { error: uploadError } = await supabaseAdmin.storage
+			.from(STORAGE_BUCKET)
+			.upload(fileName, audioBuffer, { contentType: 'audio/mpeg', upsert: true });
 
-  // Retorna a URL pública do arquivo recém-criado
-  const { data: publicUrlData } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
+		if (uploadError) throw uploadError;
 
-  return new Response(JSON.stringify({ speechUrl: publicUrlData.publicUrl }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+		// Retorna a URL pública do arquivo recém-criado
+		const { data: publicUrlData } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
+
+		return new Response(JSON.stringify({ speechUrl: publicUrlData.publicUrl }), {
+			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+		});
+	} catch (error) {
+		console.error('Error in generate-tts function:', error);
+		return new Response(JSON.stringify({ error: error.message }), {
+			status: 500,
+			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+		});
+	}
 });
