@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
-import { useCast } from '../Cast';
 
 const Header: React.FC = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,7 +8,6 @@ const Header: React.FC = () => {
 	const [initials, setInitials] = useState<string>('');
 	const navigate = useNavigate();
 	const menuRef = useRef<HTMLDivElement>(null);
-	const { isApiAvailable } = useCast();
 
 	const handleLogout = async () => {
 		const { error } = await supabase.auth.signOut();
