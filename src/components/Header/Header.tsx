@@ -96,7 +96,7 @@ const Header: React.FC = () => {
 							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
 					}
 				>
-					Histórico
+					Display
 				</NavLink>
 				<NavLink
 					to="/settings"
