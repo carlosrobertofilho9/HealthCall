@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { DESTINATION_ROOMS } from '@/constants';
 
 const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: string) => void; defaultDestination?: string | null }> = ({ onAddPatient, defaultDestination }) => {
   const [name, setName] = useState('');
   const [destination, setDestination] = useState('');
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (defaultDestination) {
@@ -15,6 +16,7 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
     e.preventDefault();
     onAddPatient(name, destination);
     setName('');
+    nameInputRef.current?.focus();
   };
 
   const rooms = React.useMemo(() => {
@@ -38,6 +40,7 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
           <div className="relative">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">person</span>
             <input
+              ref={nameInputRef}
               className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all"
               id="patient-name"
               placeholder="Digite o nome do paciente"

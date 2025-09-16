@@ -35,7 +35,18 @@ const HomePage: React.FC = () => {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
 	const [searchTerm, setSearchTerm] = useState('');
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 	const [selectedDestination, setSelectedDestination] = useState('');
+
+	useEffect(() => {
+		const timerId = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm);
+		}, 300);
+
+		return () => {
+			clearTimeout(timerId);
+		};
+	}, [searchTerm]);
 
 	useEffect(() => {
 		const fetchPatients = async () => {
@@ -118,12 +129,14 @@ const HomePage: React.FC = () => {
 	};
 
 	const handleRemovePatient = async (id: string) => {
-		const success = await removePatient(id);
-		if (success) {
-			setPatients(patients.filter((p) => p.id !== id));
-			toast.warning('Paciente removido da fila!');
-		} else {
-		toast.error('Erro ao remover paciente! Verifique permissões no banco.');
+		if (window.confirm('Tem certeza que deseja remover este paciente da fila?')) {
+			const success = await removePatient(id);
+			if (success) {
+				setPatients(patients.filter((p) => p.id !== id));
+				toast.warning('Paciente removido da fila!');
+			} else {
+				toast.error('Erro ao remover paciente! Verifique permissões no banco.');
+			}
 		}
 	};
 
@@ -141,10 +154,10 @@ const HomePage: React.FC = () => {
 		() =>
 			patients.filter(
 				(p) =>
-					p.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+					p.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) &&
 					(selectedDestination === '' || p.destination === selectedDestination)
 			),
-		[patients, searchTerm, selectedDestination]
+		[patients, debouncedSearchTerm, selectedDestination]
 	);
 
 	return (
