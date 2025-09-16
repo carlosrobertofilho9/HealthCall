@@ -15,7 +15,6 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
     e.preventDefault();
     onAddPatient(name, destination);
     setName('');
-    setDestination('');
   };
 
   const rooms = React.useMemo(() => {
