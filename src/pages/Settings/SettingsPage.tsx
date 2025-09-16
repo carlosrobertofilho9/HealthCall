@@ -3,6 +3,7 @@ import { useUserProfile } from '@/contexts/UserProfileContext';
 import { getUniqueDestinations } from '@/actions/user';
 import { toast } from 'react-toastify';
 import { DESTINATION_ROOMS } from '@/constants';
+import CustomSelect from '@/components/CustomSelect';
 
 const SettingsPage: React.FC = () => {
   const { profile, setDefaultDestination, loading } = useUserProfile();
@@ -10,16 +11,31 @@ const SettingsPage: React.FC = () => {
   const [destinations, setDestinations] = useState<string[]>([...baseRooms]);
   const [selected, setSelected] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [loadingDestinations, setLoadingDestinations] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  const selectOptions = [
+    { value: '', label: 'Nenhum (selecionar ao adicionar)' },
+    ...destinations.map(d => ({ value: d, label: d }))
+  ];
 
   useEffect(() => {
-    // Mescla valores default (constantes) com valores existentes no banco
-    getUniqueDestinations().then((dbValues) => {
-      const set = new Set<string>([...baseRooms]);
-      for (const d of dbValues) set.add(d);
-      // Mantém ordem das constantes e adiciona extras (do banco) ordenados
-      const extras = [...set].filter((d) => !baseRooms.includes(d)).sort((a, b) => a.localeCompare(b));
-      setDestinations([...baseRooms, ...extras]);
-    });
+    const fetchDestinations = async () => {
+      setLoadingDestinations(true);
+      try {
+        const dbValues = await getUniqueDestinations();
+        const set = new Set<string>([...baseRooms]);
+        for (const d of dbValues) set.add(d);
+        const extras = [...set].filter((d) => !baseRooms.includes(d)).sort((a, b) => a.localeCompare(b));
+        setDestinations([...baseRooms, ...extras]);
+      } catch (error) {
+        toast.error('Erro ao carregar destinos.');
+        console.error('Error loading destinations:', error);
+      } finally {
+        setLoadingDestinations(false);
+      }
+    };
+    fetchDestinations();
   }, []);
 
   useEffect(() => {
@@ -28,9 +44,19 @@ const SettingsPage: React.FC = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    await setDefaultDestination(selected || null);
-    setSaving(false);
-    toast.success('Configurações salvas');
+    setSaveStatus('saving');
+    try {
+      await setDefaultDestination(selected || null);
+      setSaveStatus('saved');
+      toast.success('Configurações salvas');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (error) {
+      toast.error('Erro ao salvar configurações.');
+      console.error('Error saving settings:', error);
+      setSaveStatus('idle');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -41,33 +67,32 @@ const SettingsPage: React.FC = () => {
           <label className="text-white font-medium mb-2 block" htmlFor="default-destination">
             Destino Padrão
           </label>
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">meeting_room</span>
-            <select
-              id="default-destination"
-              className="form-select appearance-none w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-10 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all"
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
-              disabled={loading}
-            >
-              <option value="">Nenhum (selecionar ao adicionar)</option>
-              {destinations.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-            <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#96c5a9] pointer-events-none">expand_more</span>
-          </div>
+          <CustomSelect
+            id="default-destination"
+            options={selectOptions}
+            value={selected}
+            onChange={setSelected}
+            disabled={loading || loadingDestinations}
+            icon="meeting_room"
+            loading={loadingDestinations}
+          />
         </div>
         <div className="pt-2">
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || saveStatus === 'saved'}
             className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-primary text-[#122118] text-base font-bold hover:bg-opacity-80 transition-all disabled:opacity-60"
           >
-            <span className="material-symbols-outlined">save</span>
-            Salvar
+            {saveStatus === 'saving' && (
+              <span className="material-symbols-outlined animate-spin">progress_activity</span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="material-symbols-outlined">check_circle</span>
+            )}
+            {saveStatus === 'idle' && (
+              <span className="material-symbols-outlined">save</span>
+            )}
+            {saveStatus === 'saving' ? 'Salvando...' : saveStatus === 'saved' ? 'Salvo!' : 'Salvar'}
           </button>
         </div>
       </div>
