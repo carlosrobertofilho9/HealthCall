@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const useAnimation = (isOpen: boolean, duration = 300) => {
+const useAnimation = (isOpen: boolean, duration = 1000) => {
   const [shouldRender, setShouldRender] = useState(isOpen);
   const [isVisible, setIsVisible] = useState(isOpen);
 

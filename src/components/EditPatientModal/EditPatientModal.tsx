@@ -35,8 +35,8 @@ const EditPatientModal: React.FC<{
   if (!shouldRender) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} onClick={onClose}>
-      <div className={`bg-[#1a2c22] rounded-2xl p-8 shadow-2xl w-full max-w-lg m-4 transition-all duration-300 ease-out ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} onClick={(e) => e.stopPropagation()}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`} onClick={onClose}>
+      <div className={`bg-[#1a2c22] rounded-2xl p-8 shadow-2xl w-full max-w-lg m-4 transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} onClick={(e) => e.stopPropagation()}>
         <div className="text-left mb-8">
           <h2 className="text-white text-2xl font-bold leading-tight">Editar Paciente</h2>
           <p className="text-[#96c5a9] mt-1">Altere as informações do paciente e salve.</p>
