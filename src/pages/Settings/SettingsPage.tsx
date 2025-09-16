@@ -60,7 +60,7 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl max-w-xl">
+    <div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl max-w-xl mx-auto">
       <h2 className="text-white text-2xl font-bold leading-tight mb-6">Configurações</h2>
       <div className="space-y-6">
         <div>
