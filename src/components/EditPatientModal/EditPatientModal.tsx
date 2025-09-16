@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import type { Patient } from '@/types';
 import { DESTINATION_ROOMS } from '@/constants';
+import useAnimation from '@/hooks/useAnimation';
 
 const EditPatientModal: React.FC<{
   patient: Patient;
   onSave: (patient: Patient) => void;
   onClose: () => void;
-}> = ({ patient, onSave, onClose }) => {
+  isOpen: boolean; // Add isOpen prop
+}> = ({ patient, onSave, onClose, isOpen }) => {
   const [name, setName] = useState(patient.name);
   const [destination, setDestination] = useState(patient.destination);
+  const { shouldRender, isVisible } = useAnimation(isOpen);
 
   useEffect(() => {
+    if (!isVisible) return; // Only add listener if modal is visible
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onClose();
@@ -20,16 +25,18 @@ const EditPatientModal: React.FC<{
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, isVisible]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({ ...patient, name, destination });
   };
 
+  if (!shouldRender) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl w-full max-w-lg m-4" onClick={(e) => e.stopPropagation()}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} onClick={onClose}>
+      <div className={`bg-[#1a2c22] rounded-2xl p-8 shadow-2xl w-full max-w-lg m-4 transition-all duration-300 ease-out ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} onClick={(e) => e.stopPropagation()}>
         <div className="text-left mb-8">
           <h2 className="text-white text-2xl font-bold leading-tight">Editar Paciente</h2>
           <p className="text-[#96c5a9] mt-1">Altere as informações do paciente e salve.</p>

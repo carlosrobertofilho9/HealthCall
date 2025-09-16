@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import AddPatientForm from '@/components/AddPatientForm';
 import PatientQueue from '@/components/PatientQueue';
 import EditPatientModal from '@/components/EditPatientModal';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import type { Patient, PatientStatus, CallRecord } from '@/types';
 import { toast } from 'react-toastify';
 import { getPatients, addPatient, updatePatient, removePatient, callPatient } from '@/actions/patients';
@@ -34,6 +35,8 @@ const HomePage: React.FC = () => {
 	const [patients, setPatients] = useState<Patient[]>([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+	const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+	const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 	const [selectedDestination, setSelectedDestination] = useState('');
@@ -82,8 +85,6 @@ const HomePage: React.FC = () => {
 			const updatedPatient = { ...patient, status: 'Chamado' as PatientStatus, callCount: patient.callCount + 1 };
 			setPatients(patients.map((p) => (p.id === id ? updatedPatient : p)));
 
-			
-
 			const time = updatedPatient.callCount > 1 ? ` pela ${updatedPatient.callCount}ª vez` : '';
 			toast.success(`${updatedPatient.name} foi chamado(a)${time}!`);
 		}
@@ -128,16 +129,28 @@ const HomePage: React.FC = () => {
 		}
 	};
 
-	const handleRemovePatient = async (id: string) => {
-		if (window.confirm('Tem certeza que deseja remover este paciente da fila?')) {
-			const success = await removePatient(id);
+	const handleRemovePatient = (patient: Patient) => {
+		setPatientToDelete(patient);
+		setIsConfirmModalOpen(true);
+	};
+
+	const handleConfirmDelete = async () => {
+		if (patientToDelete) {
+			const success = await removePatient(patientToDelete.id);
 			if (success) {
-				setPatients(patients.filter((p) => p.id !== id));
+				setPatients(patients.filter((p) => p.id !== patientToDelete.id));
 				toast.warning('Paciente removido da fila!');
 			} else {
 				toast.error('Erro ao remover paciente! Verifique permissões no banco.');
 			}
+			setPatientToDelete(null);
+			setIsConfirmModalOpen(false);
 		}
+	};
+
+	const handleCloseConfirmModal = () => {
+		setPatientToDelete(null);
+		setIsConfirmModalOpen(false);
 	};
 
 	const openModal = (patient: Patient) => {
@@ -162,8 +175,8 @@ const HomePage: React.FC = () => {
 
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
-					<div className="lg:col-span-1">
-						<AddPatientForm onAddPatient={handleAddPatient} defaultDestination={profile?.default_destination ?? undefined} />
+			<div className="lg:col-span-1">
+				<AddPatientForm onAddPatient={handleAddPatient} defaultDestination={profile?.default_destination ?? undefined} />
 			</div>
 			<PatientQueue
 				patients={filteredPatients}
@@ -177,7 +190,15 @@ const HomePage: React.FC = () => {
 				setSelectedDestination={setSelectedDestination}
 			/>
 			{isModalOpen && editingPatient && (
-				<EditPatientModal patient={editingPatient} onSave={handleUpdatePatient} onClose={closeModal} />
+				<EditPatientModal patient={editingPatient} onSave={handleUpdatePatient} onClose={closeModal} isOpen={isModalOpen} />
+			)}
+			{isConfirmModalOpen && patientToDelete && (
+				<ConfirmDeleteModal
+					isOpen={isConfirmModalOpen}
+					onClose={handleCloseConfirmModal}
+					onConfirm={handleConfirmDelete}
+					patientName={patientToDelete.name}
+				/>
 			)}
 		</div>
 	);
