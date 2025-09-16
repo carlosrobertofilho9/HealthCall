@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import type { Session } from '@supabase/supabase-js';
 import type { CallRecord, Patient } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
-import { CastButton, useCast } from '@/components/Cast';
 import { appendCallHistory } from '@/actions/patients';
 
 const DisplayPage: React.FC = () => {
@@ -14,7 +13,6 @@ const DisplayPage: React.FC = () => {
 	const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
 	const [nextPatients, setNextPatients] = useState<Patient[]>([]);
 	const [callHistory, setCallHistory] = useState<CallRecord[]>([]);
-	const { isSessionActive, currentSession } = useCast();
 	const lastCalledRef = useRef<{ id: number; callCount: number } | null>(null);
 	const [isCalling, setIsCalling] = useState(false);
 	const [audioActivated, setAudioActivated] = useState(false);
@@ -150,7 +148,7 @@ const DisplayPage: React.FC = () => {
 		initialLoad();
 		window.addEventListener('storage', updateDisplay);
 		return () => window.removeEventListener('storage', updateDisplay);
-	}, [session, audioActivated, isSessionActive, currentSession]);
+	}, [session, audioActivated]);
 
 	useEffect(() => {
 		if (!session || !audioActivated) return;
@@ -241,9 +239,6 @@ const DisplayPage: React.FC = () => {
 							</svg>
 							<h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
 						</div>
-            <div className="flex items-center gap-4">
-              <CastButton />
-            </div>
 					</header>
 					<main className="flex-grow flex flex-col justify-center items-center text-center p-8">
 						<div className="animate-slide-in w-full max-w-4xl">
@@ -270,9 +265,6 @@ const DisplayPage: React.FC = () => {
 						</svg>
 						<h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
 					</div>
-          <div className="flex items-center gap-4">
-            <CastButton />
-          </div>
 				</header>
 				<main className="flex-grow p-6 md:p-10 w-full flex flex-col">
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch flex-grow">
