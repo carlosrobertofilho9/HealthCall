@@ -17,7 +17,7 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ isOpen, onClose
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`} onClick={onClose}>
       <div className={`bg-[#1a2c22] rounded-2xl p-8 shadow-2xl w-full max-w-md mx-4 relative transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} onClick={(e) => e.stopPropagation()}>
         <button
-          className="absolute top-4 right-4 text-[#96c5a9] hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-[#96c5a9] hover:text-white transition-colors focus:outline-none"
           onClick={onClose}
         >
           <span className="material-symbols-outlined">close</span>
@@ -30,13 +30,13 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ isOpen, onClose
         </div>
         <div className="flex justify-end space-x-4">
           <button
-            className="px-6 py-3 rounded-full bg-[#264532] text-white font-bold hover:bg-[#3a6b4d] transition-colors"
+            className="px-6 py-3 rounded-full bg-[#264532] text-white font-bold hover:bg-[#3a6b4d] transition-colors focus:outline-none"
             onClick={onClose}
           >
             Cancelar
           </button>
           <button
-            className="px-6 py-3 rounded-full bg-red-600 text-white font-bold hover:bg-red-700 transition-colors"
+            className="px-6 py-3 rounded-full bg-red-600 text-white font-bold hover:bg-red-700 transition-colors focus:outline-none"
             onClick={onConfirm}
           >
             Confirmar

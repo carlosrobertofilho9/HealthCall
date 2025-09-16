@@ -81,7 +81,7 @@ const SettingsPage: React.FC = () => {
           <button
             onClick={handleSave}
             disabled={saving || saveStatus === 'saved'}
-            className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-primary text-[#122118] text-base font-bold hover:bg-opacity-80 transition-all disabled:opacity-60"
+            className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-primary text-[#122118] text-base font-bold hover:bg-opacity-80 transition-all disabled:opacity-60 focus:outline-none"
           >
             {saveStatus === 'saving' && (
               <span className="material-symbols-outlined animate-spin">progress_activity</span>

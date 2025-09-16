@@ -49,7 +49,7 @@ const EditPatientModal: React.FC<{
             <div className="relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">person</span>
               <input
-                className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all"
+                className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none"
                 id="edit-patient-name"
                 type="text"
                 value={name}
@@ -65,7 +65,7 @@ const EditPatientModal: React.FC<{
             <div className="relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">meeting_room</span>
               <select
-                className="form-select appearance-none w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-10 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all"
+                className="form-select appearance-none w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-10 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none"
                 id="edit-destination-room"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
@@ -81,11 +81,11 @@ const EditPatientModal: React.FC<{
             </div>
           </div>
           <div className="pt-4 flex items-center gap-4">
-            <button className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-primary text-[#122118] text-base font-bold hover:bg-opacity-80 transition-all" type="submit">
+            <button className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-primary text-[#122118] text-base font-bold hover:bg-opacity-80 transition-all focus:outline-none" type="submit">
               <span className="material-symbols-outlined">save</span>
               <span className="truncate">Salvar Alterações</span>
             </button>
-            <button onClick={onClose} className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-[#264532] text-white text-base font-bold hover:bg-[#325a42] transition-all" type="button">
+            <button onClick={onClose} className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-[#264532] text-white text-base font-bold hover:bg-[#325a42] transition-all focus:outline-none" type="button">
               <span className="material-symbols-outlined">cancel</span>
               <span className="truncate">Cancelar</span>
             </button>

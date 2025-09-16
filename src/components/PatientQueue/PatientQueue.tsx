@@ -43,7 +43,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
           <div className="relative w-full sm:w-64">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">search</span>
             <input
-              className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all"
+              className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none"
               id="search-patient"
               placeholder="Pesquisar paciente..."
               type="text"

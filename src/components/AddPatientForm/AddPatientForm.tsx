@@ -47,7 +47,7 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">person</span>
             <input
               ref={nameInputRef}
-              className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all"
+              className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none"
               id="patient-name"
               placeholder="Digite o nome do paciente"
               type="text"
@@ -72,7 +72,7 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
         </div>
         <div className="pt-4">
           <button
-            className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-primary text-[#122118] text-base font-bold hover:bg-opacity-80 transition-all"
+            className="w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 bg-primary text-[#122118] text-base font-bold hover:bg-opacity-80 transition-all focus:outline-none"
             type="submit"
           >
             <span className="material-symbols-outlined">add</span>

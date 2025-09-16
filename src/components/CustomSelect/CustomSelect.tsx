@@ -63,7 +63,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       <button
         type="button"
         id={id}
-        className={`form-select appearance-none w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-10 focus:ring-2 focus:ring-primary transition-all flex items-center justify-between ${disabled || loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+        className={`form-select appearance-none w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-10 focus:ring-2 focus:ring-primary transition-all flex items-center justify-between focus:outline-none ${disabled || loading ? 'opacity-60 cursor-not-allowed' : ''}`}
         onClick={handleToggle}
         disabled={disabled || loading}
       >

@@ -59,7 +59,7 @@ const LoginPage = () => {
 									placeholder="seu@email.com"
 									value={email}
 									onChange={(e) => setEmail(e.target.value)}
-									className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-[#38e07b] focus:border-[#38e07b] transition"
+									className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-[#38e07b] focus:border-[#38e07b] transition focus:outline-none"
 									required
 								/>
 							</div>
@@ -76,7 +76,7 @@ const LoginPage = () => {
 									placeholder="Sua senha"
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
-									className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-[#38e07b] focus:border-[#38e07b] transition"
+									className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-[#38e07b] focus:border-[#38e07b] transition focus:outline-none"
 									required
 								/>
 							</div>
@@ -84,7 +84,7 @@ const LoginPage = () => {
 							<button
 								type="submit"
 								disabled={loading}
-								className="w-full bg-[#38e07b] text-gray-900 font-bold text-lg py-3 rounded-lg shadow-lg hover:bg-green-400 transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed"
+								className="w-full bg-[#38e07b] text-gray-900 font-bold text-lg py-3 rounded-lg shadow-lg hover:bg-green-400 transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed focus:outline-none"
 							>
 								{loading ? 'Entrando...' : 'Entrar'}
 							</button>
