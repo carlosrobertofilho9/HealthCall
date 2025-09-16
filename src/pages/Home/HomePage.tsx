@@ -46,29 +46,9 @@ const HomePage: React.FC = () => {
 
 		const channel = supabase
 			.channel('realtime-patients')
-			.on(
-				'postgres_changes',
-				{ event: 'INSERT', schema: 'public', table: 'patients' },
-				(payload) => {
-					setPatients((prev) => [payload.new as Patient, ...prev]);
-				}
-			)
-			.on(
-				'postgres_changes',
-				{ event: 'UPDATE', schema: 'public', table: 'patients' },
-				(payload) => {
-					setPatients((prev) =>
-						prev.map((p) => (p.id === payload.new.id ? (payload.new as Patient) : p))
-					);
-				}
-			)
-			.on(
-				'postgres_changes',
-				{ event: 'DELETE', schema: 'public', table: 'patients' },
-				(payload) => {
-					setPatients((prev) => prev.filter((p) => p.id !== payload.old.id));
-				}
-			)
+			.on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, (payload) => {
+				fetchPatients();
+			})
 			.subscribe();
 
 		return () => {

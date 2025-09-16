@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabaseClient';
 import type { Patient, PatientStatus, CallRecord } from '@/types';
 
 export async function getPatients() {
-  const { data, error } = await supabase.from('patients').select('*');
+  const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false });
   if (error) {
     console.error('Error fetching patients:', error);
     return [];
