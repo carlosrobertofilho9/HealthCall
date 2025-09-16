@@ -81,67 +81,26 @@ const DisplayPage: React.FC = () => {
 					throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
 				}
 
-				// Se houver uma sessão de cast ativa, use o Default Media Receiver
-				if (isSessionActive && currentSession) {
-					const playMediaOnCast = (mediaUrl: string, contentType: string) => {
-						return new Promise<void>((resolve, reject) => {
-							const mediaInfo = new chrome.cast.media.MediaInfo(mediaUrl, contentType);
-							const request = new chrome.cast.media.LoadRequest(mediaInfo);
-							currentSession.loadMedia(request).then(
-								() => {
-									const player = new cast.framework.RemotePlayer();
-									const controller = new cast.framework.RemotePlayerController(player);
-									
-									const eventListener = (event: cast.framework.RemotePlayerChangedEvent) => {
-										if (event.field === 'playerState' && event.value === chrome.cast.media.PlayerState.IDLE) {
-											controller.removeEventListener(
-												cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
-												eventListener
-											);
-											resolve();
-										}
-									};
+				// Lógica para tocar o áudio localmente.
+				// Se a aba estiver sendo transmitida, o navegador enviará o áudio para o Chromecast.
+				const bell = new Audio('/bell.mp3');
+				await bell.play();
 
-									controller.addEventListener(
-										cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
-										eventListener
-									);
-								},
-								(errorCode) => {
-									console.error('Cast Error:', errorCode);
-									reject(new Error(`Cast error code: ${errorCode}`));
-								}
-							);
-						});
-					};
-
-					const bellUrl = new URL('/bell.mp3', window.location.origin).href;
-					
-					playMediaOnCast(bellUrl, 'audio/mp3')
-						.then(() => playMediaOnCast(speechUrl, 'audio/mpeg'))
-						.catch(error => console.error('Erro ao tocar mídia no Cast:', error));
-
-				} else {
-					// Lógica para tocar o áudio localmente
-					const bell = new Audio('/bell.mp3');
-					await bell.play();
-
-					await new Promise<void>((resolve) => {
-						bell.onended = () => {
-							const speechAudio = new Audio(speechUrl);
-							speechAudio.play();
-							speechAudio.onended = () => resolve();
-							speechAudio.onerror = (e) => {
-								console.error("Erro ao tocar áudio da fala:", e);
-								resolve();
-							};
-						};
-						bell.onerror = (e) => {
-							console.error("Erro ao tocar sino:", e);
+				await new Promise<void>((resolve) => {
+					bell.onended = () => {
+						const speechAudio = new Audio(speechUrl);
+						speechAudio.play();
+						speechAudio.onended = () => resolve();
+						speechAudio.onerror = (e) => {
+							console.error("Erro ao tocar áudio da fala:", e);
 							resolve();
-						}
-					});
-				}
+						};
+					};
+					bell.onerror = (e) => {
+						console.error("Erro ao tocar sino:", e);
+						resolve();
+					}
+				});
 			} catch (error) {
 				console.error('Erro durante a chamada de áudio:', error);
 			} finally {
