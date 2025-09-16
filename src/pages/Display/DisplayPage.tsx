@@ -60,44 +60,43 @@ const DisplayPage: React.FC = () => {
 
 	useEffect(() => {
 		if (!session || !audioActivated) return;
-
+	
 		const playBellAndSpeak = async (patient: Patient) => {
+			// Previne chamadas duplicadas se o evento for recebido múltiplas vezes
+			if (
+				patient.id === lastCalledRef.current?.id &&
+				patient.callCount === lastCalledRef.current?.callCount
+			) {
+				return;
+			}
+			lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
+	
 			setIsCalling(true);
 			try {
-				// 1. Chame a função serverless usando o cliente Supabase
 				const { data, error } = await supabase.functions.invoke('generate-tts', {
 					body: { text: `Chamando ${patient.name}, para ${patient.destination}` },
 				});
-
-				if (error) {
-					throw new Error(`Erro ao invocar função: ${error.message}`);
-				}
-				
-				const { speechUrl } = data;
-
-				if (!speechUrl) {
-					throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
-				}
-
-				// Lógica para tocar o áudio localmente.
-				// Se a aba estiver sendo transmitida, o navegador enviará o áudio para o Chromecast.
+	
+				if (error) throw new Error(`Erro ao invocar função: ${error.message}`);
+				if (!data?.speechUrl) throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
+	
 				const bell = new Audio('/bell.mp3');
 				await bell.play();
-
-				await new Promise<void>((resolve) => {
+	
+				await new Promise<void>((resolve, reject) => {
 					bell.onended = () => {
-						const speechAudio = new Audio(speechUrl);
+						const speechAudio = new Audio(data.speechUrl);
 						speechAudio.play();
 						speechAudio.onended = () => resolve();
 						speechAudio.onerror = (e) => {
 							console.error("Erro ao tocar áudio da fala:", e);
-							resolve();
+							reject(e);
 						};
 					};
 					bell.onerror = (e) => {
 						console.error("Erro ao tocar sino:", e);
-						resolve();
-					}
+						reject(e);
+					};
 				});
 			} catch (error) {
 				console.error('Erro durante a chamada de áudio:', error);
@@ -105,49 +104,133 @@ const DisplayPage: React.FC = () => {
 				setTimeout(() => setIsCalling(false), 500);
 			}
 		};
-
-		const updateDisplay = () => {
-			const storedCalledPatient = localStorage.getItem('calledPatient');
-			const storedNextPatients = localStorage.getItem('nextPatients');
-			const storedCallHistory = localStorage.getItem('callHistory');
-
-			const patient = storedCalledPatient ? JSON.parse(storedCalledPatient) : null;
-			const nextPatients = storedNextPatients ? JSON.parse(storedNextPatients) : [];
-			const callHistory = storedCallHistory ? JSON.parse(storedCallHistory) : [];
-
-			if (patient) {
-				if (
-					patient.id !== lastCalledRef.current?.id ||
-					patient.callCount !== lastCalledRef.current?.callCount
-				) {
+	
+		const fetchInitialData = async () => {
+			// Busca o último paciente chamado
+			const { data: lastCall, error: lastCallError } = await supabase
+				.from('calls')
+				.select('*, patients(*, calls(count))')
+				.order('created_at', { ascending: false })
+				.limit(1)
+				.single();
+	
+			if (lastCall && lastCall.patients) {
+				const patient: Patient = {
+					id: lastCall.patients.id,
+					name: lastCall.patients.name,
+					destination: lastCall.location,
+					status: 'Chamado',
+					callCount: lastCall.patients.calls[0]?.count ?? 1,
+				};
+				setCalledPatient(patient);
+			}
+	
+			// Busca o histórico de chamadas
+			const { data: historyData, error: historyError } = await supabase
+				.from('calls')
+				.select('*, patients(*)')
+				.order('created_at', { ascending: false })
+				.limit(10);
+	
+			if (historyData) {
+				const history: CallRecord[] = historyData
+					.map((call) => ({
+						id: call.patients.id,
+						name: call.patients.name,
+						destination: call.location,
+						callCount: 0, // Este valor não é diretamente acessível aqui, pode ser ajustado se necessário
+						calledAt: new Date(call.created_at).getTime(),
+					}))
+					.filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i); // Remove duplicados
+				setCallHistory(history);
+			}
+	
+			// Busca próximos pacientes
+			const { data: nextData, error: nextError } = await supabase
+				.from('patients')
+				.select('*')
+				.eq('status', 'Aguardando')
+				.order('created_at', { ascending: true });
+	
+			if (nextData) {
+				setNextPatients(nextData);
+			}
+		};
+	
+		fetchInitialData();
+	
+		const channel = supabase
+			.channel('realtime-calls')
+			.on(
+				'postgres_changes',
+				{ event: 'INSERT', schema: 'public', table: 'calls' },
+				async (payload) => {
+					const newCall = payload.new as { id: string; patient_id: string; location: string };
+	
+					const { data: patientData, error } = await supabase
+						.from('patients')
+						.select('*, calls(count)')
+						.eq('id', newCall.patient_id)
+						.single();
+	
+					if (error || !patientData) {
+						console.error('Error fetching patient for call:', error);
+						return;
+					}
+	
+					const patient: Patient = {
+						id: patientData.id,
+						name: patientData.name,
+						destination: newCall.location,
+						status: 'Chamado',
+						callCount: patientData.calls[0]?.count ?? 1,
+					};
+	
 					setCalledPatient(patient);
 					playBellAndSpeak(patient);
-					lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
+	
+					// Atualiza o histórico e a lista de próximos
+					setCallHistory((prevHistory) => appendCallHistory(prevHistory, patient));
+					setNextPatients((prevNext) => prevNext.filter((p) => p.id !== patient.id));
 				}
-			} else {
-				setCalledPatient(null);
-			}
-			setNextPatients(nextPatients);
-			setCallHistory(callHistory);
+			)
+			.on(
+				'postgres_changes',
+				{ event: 'INSERT', schema: 'public', table: 'patients' },
+				(payload) => {
+					setNextPatients((prevNext) => [...prevNext, payload.new as Patient]);
+				}
+			)
+			.on(
+				'postgres_changes',
+				{ event: 'UPDATE', schema: 'public', table: 'patients' },
+				(payload) => {
+					const updatedPatient = payload.new as Patient;
+					// Se o paciente foi redefinido para "Aguardando", adicione-o de volta à lista de próximos
+					if (updatedPatient.status === 'Aguardando') {
+						setNextPatients((prevNext) => {
+							if (prevNext.find(p => p.id === updatedPatient.id)) {
+								return prevNext.map(p => p.id === updatedPatient.id ? updatedPatient : p);
+							}
+							return [...prevNext, updatedPatient];
+						});
+					} else { // Se foi para outro status (ex: "Atendido"), remova-o
+						setNextPatients((prevNext) => prevNext.filter((p) => p.id !== updatedPatient.id));
+					}
+				}
+			)
+			.on(
+				'postgres_changes',
+				{ event: 'DELETE', schema: 'public', table: 'patients' },
+				(payload) => {
+					setNextPatients((prevNext) => prevNext.filter((p) => p.id !== payload.old.id));
+				}
+			)
+			.subscribe();
+	
+		return () => {
+			supabase.removeChannel(channel);
 		};
-
-		const initialLoad = () => {
-			const storedCalledPatient = localStorage.getItem('calledPatient');
-			const storedNextPatients = localStorage.getItem('nextPatients');
-			const storedCallHistory = localStorage.getItem('callHistory');
-
-			const patient = storedCalledPatient ? JSON.parse(storedCalledPatient) : null;
-			const nextPatients = storedNextPatients ? JSON.parse(storedNextPatients) : [];
-			const callHistory = storedCallHistory ? JSON.parse(storedCallHistory) : [];
-
-			setCalledPatient(patient);
-			setNextPatients(nextPatients);
-			setCallHistory(callHistory);
-		};
-
-		initialLoad();
-		window.addEventListener('storage', updateDisplay);
-		return () => window.removeEventListener('storage', updateDisplay);
 	}, [session, audioActivated]);
 
 	useEffect(() => {

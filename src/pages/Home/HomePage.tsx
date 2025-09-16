@@ -8,6 +8,7 @@ import { getPatients, addPatient, updatePatient, removePatient, callPatient } fr
 import { storage } from '@/actions/storage';
 import { CALL_HISTORY_LIMIT, STORAGE_KEYS } from '@/constants';
 import { useUserProfile } from '@/contexts/UserProfileContext';
+import { supabase } from '@/lib/supabaseClient';
 
 // The appendCallHistory function is not available in the new actions file, so we define it here.
 // In a real application, this would be in a shared utility file.
@@ -42,6 +43,37 @@ const HomePage: React.FC = () => {
 			setPatients(data);
 		};
 		fetchPatients();
+
+		const channel = supabase
+			.channel('realtime-patients')
+			.on(
+				'postgres_changes',
+				{ event: 'INSERT', schema: 'public', table: 'patients' },
+				(payload) => {
+					setPatients((prev) => [payload.new as Patient, ...prev]);
+				}
+			)
+			.on(
+				'postgres_changes',
+				{ event: 'UPDATE', schema: 'public', table: 'patients' },
+				(payload) => {
+					setPatients((prev) =>
+						prev.map((p) => (p.id === payload.new.id ? (payload.new as Patient) : p))
+					);
+				}
+			)
+			.on(
+				'postgres_changes',
+				{ event: 'DELETE', schema: 'public', table: 'patients' },
+				(payload) => {
+					setPatients((prev) => prev.filter((p) => p.id !== payload.old.id));
+				}
+			)
+			.subscribe();
+
+		return () => {
+			supabase.removeChannel(channel);
+		};
 	}, []);
 
 	const handleCallPatient = async (id: string, destination: string) => {
@@ -59,14 +91,7 @@ const HomePage: React.FC = () => {
 			const updatedPatient = { ...patient, status: 'Chamado' as PatientStatus, callCount: patient.callCount + 1 };
 			setPatients(patients.map((p) => (p.id === id ? updatedPatient : p)));
 
-			// Update localStorage for the display page
-			storage.set(STORAGE_KEYS.calledPatient, updatedPatient);
-			const next = patients.filter((p) => p.status === 'Aguardando' && p.id !== id);
-			storage.set(STORAGE_KEYS.nextPatients, next);
-
-			const currentHistory = storage.get<CallRecord[]>(STORAGE_KEYS.callHistory) ?? [];
-			const updatedHistory = appendCallHistory(currentHistory, updatedPatient, CALL_HISTORY_LIMIT);
-			storage.set(STORAGE_KEYS.callHistory, updatedHistory);
+			
 
 			const time = updatedPatient.callCount > 1 ? ` pela ${updatedPatient.callCount}ª vez` : '';
 			toast.success(`${updatedPatient.name} foi chamado(a)${time}!`);
