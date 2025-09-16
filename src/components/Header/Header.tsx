@@ -110,11 +110,6 @@ const Header: React.FC = () => {
 				</NavLink>
 			</nav>
 			<div className="flex items-center gap-4">
-				{isApiAvailable && (
-					<div className="flex cursor-pointer items-center justify-center rounded-full h-12 w-12 bg-[#264532] text-white hover:bg-[#325a42] transition-colors">
-						<google-cast-launcher style={{ width: '24px', height: '24px' }} />
-					</div>
-				)}
 				<div className="relative" ref={menuRef}>
 					<button onClick={toggleMenu} className="focus:outline-none">
 						{avatarUrl ? (
