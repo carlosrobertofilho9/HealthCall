@@ -107,12 +107,13 @@ const DisplayPage: React.FC = () => {
 
 		const fetchDisplayData = async () => {
 			// Busca o último paciente chamado
-			const { data: lastCall } = await supabase
+			const { data: lastCalls } = await supabase
 				.from('calls')
 				.select('*, patients(*)')
 				.order('created_at', { ascending: false })
-				.limit(1)
-				.single();
+				.limit(1);
+
+			const lastCall = lastCalls ? lastCalls[0] : null;
 
 			if (lastCall && lastCall.patients) {
 				const patient = {
@@ -164,11 +165,12 @@ const DisplayPage: React.FC = () => {
 			})
 			.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls' }, async (payload) => {
 				const newCall = payload.new as { patient_id: string; location: string };
-				const { data: patientData } = await supabase
+				const { data: patientDataArr } = await supabase
 					.from('patients')
 					.select('*')
-					.eq('id', newCall.patient_id)
-					.single();
+					.eq('id', newCall.patient_id);
+
+				const patientData = patientDataArr ? patientDataArr[0] : null;
 
 				if (patientData) {
 					const patient = {
