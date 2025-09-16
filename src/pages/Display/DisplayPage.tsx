@@ -81,29 +81,46 @@ const DisplayPage: React.FC = () => {
 					throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
 				}
 
-				// Se houver uma sessão de cast ativa, envie para o receiver
+				// Se houver uma sessão de cast ativa, use o Default Media Receiver
 				if (isSessionActive && currentSession) {
-					const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
+					const playMediaOnCast = (mediaUrl: string, contentType: string) => {
+						return new Promise<void>((resolve, reject) => {
+							const mediaInfo = new chrome.cast.media.MediaInfo(mediaUrl, contentType);
+							const request = new chrome.cast.media.LoadRequest(mediaInfo);
+							currentSession.loadMedia(request).then(
+								() => {
+									const player = new cast.framework.RemotePlayer();
+									const controller = new cast.framework.RemotePlayerController(player);
+									
+									const eventListener = (event: cast.framework.RemotePlayerChangedEvent) => {
+										if (event.field === 'playerState' && event.value === chrome.cast.media.PlayerState.IDLE) {
+											controller.removeEventListener(
+												cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
+												eventListener
+											);
+											resolve();
+										}
+									};
 
-					// Ao chamar, enviamos o estado completo para o receiver
-					const storedNextPatients = localStorage.getItem('nextPatients');
-					const storedCallHistory = localStorage.getItem('callHistory');
-					const nextPatients = storedNextPatients ? JSON.parse(storedNextPatients) : [];
-					const callHistory = storedCallHistory ? JSON.parse(storedCallHistory) : [];
+									controller.addEventListener(
+										cast.framework.RemotePlayerEventType.PLAYER_STATE_CHANGED,
+										eventListener
+									);
+								},
+								(errorCode) => {
+									console.error('Cast Error:', errorCode);
+									reject(new Error(`Cast error code: ${errorCode}`));
+								}
+							);
+						});
+					};
+
+					const bellUrl = new URL('/bell.mp3', window.location.origin).href;
 					
-					const newHistory = appendCallHistory(callHistory, patient);
+					playMediaOnCast(bellUrl, 'audio/mp3')
+						.then(() => playMediaOnCast(speechUrl, 'audio/mpeg'))
+						.catch(error => console.error('Erro ao tocar mídia no Cast:', error));
 
-					currentSession.sendMessage(CUSTOM_NAMESPACE, {
-						type: 'CALL_PATIENT',
-						payload: {
-							patient,
-							bell: new URL('/bell.mp3', window.location.origin).href,
-							speech: speechUrl,
-							// Inclui o estado atualizado para o receiver
-							nextPatients: nextPatients,
-							callHistory: newHistory,
-						},
-					});
 				} else {
 					// Lógica para tocar o áudio localmente
 					const bell = new Audio('/bell.mp3');
@@ -141,18 +158,6 @@ const DisplayPage: React.FC = () => {
 			const nextPatients = storedNextPatients ? JSON.parse(storedNextPatients) : [];
 			const callHistory = storedCallHistory ? JSON.parse(storedCallHistory) : [];
 
-			if (isSessionActive && currentSession) {
-				const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
-				currentSession.sendMessage(CUSTOM_NAMESPACE, {
-					type: 'UPDATE_STATE',
-					payload: {
-						calledPatient: patient,
-						nextPatients,
-						callHistory,
-					},
-				});
-			}
-
 			if (patient) {
 				if (
 					patient.id !== lastCalledRef.current?.id ||
@@ -181,18 +186,6 @@ const DisplayPage: React.FC = () => {
 			setCalledPatient(patient);
 			setNextPatients(nextPatients);
 			setCallHistory(callHistory);
-
-			if (isSessionActive && currentSession) {
-				const CUSTOM_NAMESPACE = 'urn:x-cast:com.example.healthcall';
-				currentSession.sendMessage(CUSTOM_NAMESPACE, {
-					type: 'UPDATE_STATE',
-					payload: {
-						calledPatient: patient,
-						nextPatients,
-						callHistory,
-					},
-				});
-			}
 		};
 
 		initialLoad();
