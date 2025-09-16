@@ -8,7 +8,7 @@ interface PatientQueueProps {
   onEdit: (patient: Patient) => void;
   onCall: (id: string, destination: string) => void;
   onUpdateStatus: (id: string, status: PatientStatus) => void;
-  onRemove: (id: string) => void;
+  onRemove: (patient: Patient) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   selectedDestination: string;
@@ -72,7 +72,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
             onEdit={onEdit}
             onCall={onCall}
             onUpdateStatus={onUpdateStatus}
-            onRemove={onRemove}
+            onRemove={() => onRemove(patient)}
           />
         ))
       ) : (
