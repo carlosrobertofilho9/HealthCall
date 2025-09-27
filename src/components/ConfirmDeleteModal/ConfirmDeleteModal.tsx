@@ -8,6 +8,14 @@ interface ConfirmDeleteModalProps {
   patientName: string;
 }
 
+/**
+ * A modal component to confirm the deletion of a patient.
+ * @param {ConfirmDeleteModalProps} props - The component props.
+ * @param {boolean} props.isOpen - Controls the visibility of the modal.
+ * @param {() => void} props.onClose - Callback function to close the modal.
+ * @param {() => void} props.onConfirm - Callback function to execute upon confirming deletion.
+ * @param {string} props.patientName - The name of the patient to be displayed in the confirmation message.
+ */
 const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ isOpen, onClose, onConfirm, patientName }) => {
   const { shouldRender, isVisible } = useAnimation(isOpen);
 

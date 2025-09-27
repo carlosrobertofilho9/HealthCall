@@ -5,31 +5,19 @@ import EditPatientModal from '@/components/EditPatientModal';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import type { Patient, PatientStatus, CallRecord } from '@/types';
 import { toast } from 'react-toastify';
-import { getPatients, addPatient, updatePatient, removePatient, callPatient } from '@/actions/patients';
+import { getPatients, addPatient, updatePatient, removePatient, callPatient, appendCallHistory } from '@/actions/patients';
 import { storage } from '@/actions/storage';
 import { CALL_HISTORY_LIMIT, STORAGE_KEYS } from '@/constants';
 import { useUserProfile } from '@/contexts/UserProfileContext';
 import { supabase } from '@/lib/supabaseClient';
 
-// The appendCallHistory function is not available in the new actions file, so we define it here.
-// In a real application, this would be in a shared utility file.
-function appendCallHistory(history: CallRecord[], called: Patient, limit = 20): CallRecord[] {
-	const record: CallRecord = {
-		id: called.id,
-		name: called.name,
-		destination: called.destination,
-		callCount: called.callCount,
-		calledAt: Date.now(),
-	};
-	const arr = [record, ...history]
-		.filter(
-			(rec, idx, arr2) =>
-				idx === 0 || !(rec.id === arr2[idx - 1].id && rec.callCount === arr2[idx - 1].callCount)
-		)
-		.slice(0, limit);
-	return arr;
-}
 
+/**
+ * The main administrative page for managing the patient queue.
+ * It combines the `AddPatientForm` and `PatientQueue` components,
+ * and handles all the state management and actions related to patients,
+ * including adding, updating, deleting, and calling them.
+ */
 const HomePage: React.FC = () => {
 	const { profile } = useUserProfile();
 	const [patients, setPatients] = useState<Patient[]>([]);

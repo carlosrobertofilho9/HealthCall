@@ -7,8 +7,15 @@ import SettingsPage from '@/pages/Settings/SettingsPage';
 import LoginPage from '@/pages/Login/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
+/**
+ * The main application router configuration.
+ * It defines all the routes for the application, including protected routes
+ * that require authentication.
+ *
+ * @see https://reactrouter.com/en/main/routers/create-browser-router
+ */
 export const router = createBrowserRouter([
-	// Árvore principal com layout do App
+	// Main application layout with protected routes
 	{
 		path: '/',
 		element: (
@@ -21,7 +28,7 @@ export const router = createBrowserRouter([
 			{ path: 'settings', element: <SettingsPage /> },
 		],
 	},
-	// Rota standalone para a tela de exibição, fora do layout/app
+	// Standalone route for the public display screen
 	{
 		path: '/display',
 		element: (
@@ -30,6 +37,7 @@ export const router = createBrowserRouter([
 			</ProtectedRoute>
 		),
 	},
+	// Public login page
 	{
 		path: '/login',
 		element: <LoginPage />,

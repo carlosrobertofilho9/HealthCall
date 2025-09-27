@@ -5,6 +5,12 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { supabase } from './lib/supabaseClient';
 
+/**
+ * The main layout component for the application.
+ * It includes the header, a main content area with nested routes (`Outlet`),
+ * and the notification container. It also handles authentication state changes,
+ * redirecting the user to the login page if they are not authenticated.
+ */
 const App: React.FC = () => {
   const navigate = useNavigate();
 

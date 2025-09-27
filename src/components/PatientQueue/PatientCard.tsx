@@ -2,6 +2,16 @@ import React from 'react';
 import PatientStatusBadge from './PatientStatusBadge';
 import type { Patient, PatientStatus } from '@/types';
 
+/**
+ * A card component that displays information about a single patient.
+ * It provides action buttons to call, edit, update status, and remove the patient.
+ * @param {object} props - The component props.
+ * @param {Patient} props.patient - The patient data to display.
+ * @param {(patient: Patient) => void} props.onEdit - Callback function to handle editing the patient.
+ * @param {(id: string, destination: string) => void} props.onCall - Callback function to handle calling the patient.
+ * @param {(id: string, status: PatientStatus) => void} props.onUpdateStatus - Callback function to handle updating the patient's status.
+ * @param {(id: string) => void} props.onRemove - Callback function to handle removing the patient.
+ */
 const PatientCard: React.FC<{
   patient: Patient;
   onEdit: (patient: Patient) => void;

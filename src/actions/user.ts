@@ -6,6 +6,10 @@ export type UserProfile = {
   default_destination: string | null;
 };
 
+/**
+ * Fetches the profile for the currently authenticated user.
+ * @returns {Promise<UserProfile | null>} A promise that resolves to the user's profile, or null if not found or an error occurs.
+ */
 export async function getUserProfile(): Promise<UserProfile | null> {
   const {
     data: { user },
@@ -26,6 +30,11 @@ export async function getUserProfile(): Promise<UserProfile | null> {
   return (data as UserProfile) ?? { id: user.id, updated_at: null, default_destination: null };
 }
 
+/**
+ * Updates the profile for the currently authenticated user.
+ * @param {Partial<UserProfile>} update - An object containing the profile fields to update.
+ * @returns {Promise<UserProfile | null>} A promise that resolves to the updated user profile, or null if an error occurs.
+ */
 export async function updateUserProfile(update: Partial<UserProfile>): Promise<UserProfile | null> {
   const {
     data: { user },
@@ -49,8 +58,12 @@ export async function updateUserProfile(update: Partial<UserProfile>): Promise<U
   return data as UserProfile;
 }
 
+/**
+ * Fetches a list of unique destination strings from the patients table.
+ * @returns {Promise<string[]>} A promise that resolves to an array of unique destination strings.
+ */
 export async function getUniqueDestinations(): Promise<string[]> {
-  // Busca destinos únicos da tabela patients para popular select
+  // Fetch unique destinations from the patients table to populate a select input
   const { data, error } = await supabase
     .from('patients')
     .select('destination')

@@ -16,6 +16,20 @@ interface PatientQueueProps {
   setSelectedDestination: (destination: string) => void;
 }
 
+/**
+ * A component that displays and manages the patient waiting queue.
+ * It includes functionality for searching, filtering, and performing actions on patients.
+ * @param {PatientQueueProps} props - The component props.
+ * @param {Patient[]} props.patients - The list of patients to display.
+ * @param {(patient: Patient) => void} props.onEdit - Callback function to edit a patient.
+ * @param {(id: string, destination: string) => void} props.onCall - Callback function to call a patient.
+ * @param {(id: string, status: PatientStatus) => void} props.onUpdateStatus - Callback function to update a patient's status.
+ * @param {(patient: Patient) => void} props.onRemove - Callback function to remove a patient.
+ * @param {string} props.searchTerm - The current search term for filtering patients.
+ * @param {(term: string) => void} props.setSearchTerm - Callback function to update the search term.
+ * @param {string} props.selectedDestination - The currently selected destination for filtering.
+ * @param {(destination: string) => void} props.setSelectedDestination - Callback function to update the selected destination.
+ */
 const PatientQueue: React.FC<PatientQueueProps> = ({
   patients,
   onEdit,
