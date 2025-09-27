@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 
+/**
+ * The main header component for the application.
+ * It displays the application logo, navigation links, and a user menu with a logout option.
+ */
 const Header: React.FC = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -9,6 +13,10 @@ const Header: React.FC = () => {
 	const navigate = useNavigate();
 	const menuRef = useRef<HTMLDivElement>(null);
 
+	/**
+	 * Handles the user logout process.
+	 * Signs the user out of Supabase and navigates to the login page.
+	 */
 	const handleLogout = async () => {
 		const { error } = await supabase.auth.signOut();
 		if (error) {
@@ -18,10 +26,16 @@ const Header: React.FC = () => {
 		}
 	};
 
+	/**
+	 * Toggles the visibility of the user dropdown menu.
+	 */
 	const toggleMenu = () => {
 		setIsMenuOpen(!isMenuOpen);
 	};
 
+	/**
+	 * Effect to handle clicks outside the user menu to close it.
+	 */
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -34,7 +48,16 @@ const Header: React.FC = () => {
 		};
 	}, []);
 
+	/**
+	 * Effect to fetch the current user's data on component mount
+	 * to display their avatar or initials.
+	 */
 	useEffect(() => {
+		/**
+		 * Computes user initials from a name or email string.
+		 * @param {string | null | undefined} text - The user's name or email.
+		 * @returns {string} The computed initials (e.g., "JD" for "John Doe").
+		 */
 		function computeInitials(text: string | null | undefined) {
 			const value = (text ?? '').trim();
 			if (!value) return '?';
@@ -44,7 +67,7 @@ const Header: React.FC = () => {
 				const last = parts[parts.length - 1][0] ?? '';
 				return (first + last).toUpperCase();
 			}
-			// email ou nome único
+			// email or single name
 			return value.slice(0, 2).toUpperCase();
 		}
 

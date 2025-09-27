@@ -1,6 +1,11 @@
 import React from 'react';
 import type { PatientStatus } from '@/types';
 
+/**
+ * A badge component to display the status of a patient.
+ * @param {object} props - The component props.
+ * @param {PatientStatus} props.status - The status of the patient.
+ */
 const PatientStatusBadge: React.FC<{ status: PatientStatus }> = ({ status }) => {
   const baseClasses = 'mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium';
   const statusInfo = {

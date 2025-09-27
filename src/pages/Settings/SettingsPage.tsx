@@ -5,6 +5,11 @@ import { toast } from 'react-toastify';
 import { DESTINATION_ROOMS } from '@/constants';
 import CustomSelect from '@/components/CustomSelect';
 
+/**
+ * A page for users to configure their application settings.
+ * Currently, it allows setting a default destination for new patients,
+ * which is saved to their user profile.
+ */
 const SettingsPage: React.FC = () => {
   const { profile, setDefaultDestination, loading } = useUserProfile();
   const baseRooms = [...DESTINATION_ROOMS] as string[];

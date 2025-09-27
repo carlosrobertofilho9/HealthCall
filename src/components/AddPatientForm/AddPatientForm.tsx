@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { DESTINATION_ROOMS } from '@/constants';
 import CustomSelect from '@/components/CustomSelect';
 
+/**
+ * A form component for adding a new patient to the queue.
+ * @param {object} props - The component props.
+ * @param {(name: string, destination: string) => void} props.onAddPatient - Callback function to execute when a patient is added.
+ * @param {string | null | undefined} [props.defaultDestination] - The default destination to be selected.
+ */
 const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: string) => void; defaultDestination?: string | null }> = ({ onAddPatient, defaultDestination }) => {
   const [name, setName] = useState('');
   const [destination, setDestination] = useState('');

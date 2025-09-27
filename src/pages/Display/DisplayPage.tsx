@@ -3,6 +3,11 @@ import { useDisplayData } from '@/contexts/DisplayDataContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * The public-facing display page for showing patient calls in real-time.
+ * It features a large display for the currently called patient, a history of recent calls,
+ * and a list of the next patients in the queue. It requires user interaction to enable audio.
+ */
 const DisplayPage: React.FC = () => {
   const {
     calledPatient,

@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 
+/**
+ * A page component for user login.
+ * It provides a form for email and password authentication using Supabase.
+ * On successful login, it redirects the user to their intended page or the homepage.
+ */
 const LoginPage = () => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();

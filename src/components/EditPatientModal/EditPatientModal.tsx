@@ -3,6 +3,14 @@ import type { Patient } from '@/types';
 import { DESTINATION_ROOMS } from '@/constants';
 import useAnimation from '@/hooks/useAnimation';
 
+/**
+ * A modal component for editing an existing patient's information.
+ * @param {object} props - The component props.
+ * @param {Patient} props.patient - The patient object to be edited.
+ * @param {(patient: Patient) => void} props.onSave - Callback function to save the updated patient data.
+ * @param {() => void} props.onClose - Callback function to close the modal.
+ * @param {boolean} props.isOpen - Controls the visibility of the modal.
+ */
 const EditPatientModal: React.FC<{
   patient: Patient;
   onSave: (patient: Patient) => void;

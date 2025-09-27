@@ -17,6 +17,19 @@ interface CustomSelectProps {
   loading?: boolean; // New prop
 }
 
+/**
+ * A custom select component with styling and additional features like icons and loading state.
+ * @param {CustomSelectProps} props - The component props.
+ * @param {Option[]} props.options - An array of options to display in the select dropdown.
+ * @param {string} props.value - The currently selected value.
+ * @param {(value: string) => void} props.onChange - Callback function when an option is selected.
+ * @param {string} [props.placeholder] - The placeholder text to display when no value is selected.
+ * @param {boolean} [props.disabled] - Whether the select component is disabled.
+ * @param {string} [props.icon] - The name of the Material Symbols icon to display.
+ * @param {string} [props.id] - The ID for the select button element.
+ * @param {string} [props.className] - Additional CSS classes to apply to the component.
+ * @param {boolean} [props.loading] - Whether the component is in a loading state.
+ */
 const CustomSelect: React.FC<CustomSelectProps> = ({
   options,
   value,
