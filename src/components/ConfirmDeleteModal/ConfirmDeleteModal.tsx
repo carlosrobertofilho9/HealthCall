@@ -1,5 +1,6 @@
 import React from 'react';
 import useAnimation from '@/hooks/useAnimation';
+import { Button } from '@/components/ui/button';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -37,18 +38,19 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ isOpen, onClose
           </p>
         </div>
         <div className="flex justify-end space-x-4">
-          <button
-            className="px-6 py-3 rounded-full bg-[#264532] text-white font-bold hover:bg-[#3a6b4d] transition-colors focus:outline-none"
+          <Button
             onClick={onClose}
+            variant="default"
+            className="bg-[#264532] text-white hover:bg-[#3a6b4d]"
           >
             Cancelar
-          </button>
-          <button
-            className="px-6 py-3 rounded-full bg-red-600 text-white font-bold hover:bg-red-700 transition-colors focus:outline-none"
+          </Button>
+          <Button
             onClick={onConfirm}
+            variant="destructive"
           >
             Confirmar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

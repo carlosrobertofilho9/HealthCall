@@ -3,9 +3,10 @@ import AddPatientForm from '@/components/AddPatientForm';
 import PatientQueue from '@/components/PatientQueue';
 import EditPatientModal from '@/components/EditPatientModal';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
+import QueueActions from '@/components/QueueActions';
 import type { Patient, PatientStatus, CallRecord } from '@/types';
 import { toast } from 'react-toastify';
-import { getPatients, addPatient, updatePatient, removePatient, callPatient, appendCallHistory } from '@/actions/patients';
+import { getPatients, addPatient, updatePatient, removePatient, callPatient, clearQueue, appendCallHistory } from '@/actions/patients';
 import { storage } from '@/actions/storage';
 import { CALL_HISTORY_LIMIT, STORAGE_KEYS } from '@/constants';
 import { useUserProfile } from '@/contexts/UserProfileContext';
@@ -25,6 +26,7 @@ const HomePage: React.FC = () => {
 	const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
 	const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 	const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+	const [isClearQueueModalOpen, setIsClearQueueModalOpen] = useState(false);
 	const [searchTerm, setSearchTerm] = useState('');
 	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 	const [selectedDestination, setSelectedDestination] = useState('');
@@ -136,9 +138,25 @@ const HomePage: React.FC = () => {
 		}
 	};
 
+	const handleClearQueue = () => {
+		setIsClearQueueModalOpen(true);
+	};
+
+	const handleConfirmClearQueue = async () => {
+		const success = await clearQueue();
+		if (success) {
+			setPatients([]);
+			toast.warning('Fila de pacientes limpa!');
+		} else {
+			toast.error('Erro ao limpar a fila! Verifique permissões no banco.');
+		}
+		setIsClearQueueModalOpen(false);
+	};
+
 	const handleCloseConfirmModal = () => {
 		setPatientToDelete(null);
 		setIsConfirmModalOpen(false);
+		setIsClearQueueModalOpen(false);
 	};
 
 	const openModal = (patient: Patient) => {
@@ -165,6 +183,7 @@ const HomePage: React.FC = () => {
 		<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
 			<div className="lg:col-span-1">
 				<AddPatientForm onAddPatient={handleAddPatient} defaultDestination={profile?.default_destination ?? undefined} />
+				<QueueActions onClearQueue={handleClearQueue} />
 			</div>
 			<PatientQueue
 				patients={filteredPatients}
@@ -186,6 +205,14 @@ const HomePage: React.FC = () => {
 					onClose={handleCloseConfirmModal}
 					onConfirm={handleConfirmDelete}
 					patientName={patientToDelete.name}
+				/>
+			)}
+			{isClearQueueModalOpen && (
+				<ConfirmDeleteModal
+					isOpen={isClearQueueModalOpen}
+					onClose={handleCloseConfirmModal}
+					onConfirm={handleConfirmClearQueue}
+					patientName="toda a fila"
 				/>
 			)}
 		</div>

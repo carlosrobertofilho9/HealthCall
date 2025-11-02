@@ -78,6 +78,19 @@ export async function removePatient(id: string) {
 }
 
 /**
+ * Removes all patients from the database.
+ * @returns {Promise<boolean>} A promise that resolves to true if successful, false otherwise.
+ */
+export async function clearQueue() {
+  const { error } = await supabase.from('patients').delete().neq('id', 0); // Hack to delete all rows
+  if (error) {
+    console.error('Error clearing queue:', error);
+    return false;
+  }
+  return true;
+}
+
+/**
  * Records a call for a patient, updating their status and call count.
  * @param {string} patientId - The ID of the patient being called.
  * @param {string} location - The location from where the call is made.
