@@ -5,3 +5,8 @@ export const DESTINATION_ROOMS = [
     "Consultorio Odontológico",
     "Sala de Vacinação",
 ];
+
+export const STORAGE_KEYS = {
+  CALL_HISTORY: 'callHistory',
+  USE_BROWSER_VOICE: 'useBrowserVoice',
+};

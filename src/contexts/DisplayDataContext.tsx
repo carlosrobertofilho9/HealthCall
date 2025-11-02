@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import type { CallRecord, Patient } from '@/types';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
+import { STORAGE_KEYS } from '@/constants';
 
 interface DisplayDataContextProps {
   calledPatient: Patient | null;
@@ -49,25 +51,42 @@ export const DisplayDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       setIsCalling(true);
       try {
-        const { data, error } = await supabase.functions.invoke('generate-tts', {
-          body: { text: `Chamando ${patient.name}, para ${patient.destination}` },
-        });
-
-        if (error) throw new Error(`Erro ao invocar função: ${error.message}`);
-        if (!data?.speechUrl) throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
+        const useBrowserVoice = JSON.parse(localStorage.getItem(STORAGE_KEYS.USE_BROWSER_VOICE) || 'false');
 
         const bell = new Audio('/bell.mp3');
         await bell.play();
 
         await new Promise<void>((resolve, reject) => {
-          bell.onended = () => {
-            const speechAudio = new Audio(data.speechUrl);
-            speechAudio.play();
-            speechAudio.onended = () => resolve();
-            speechAudio.onerror = (e) => {
-              console.error("Erro ao tocar áudio da fala:", e);
+          bell.onended = async () => {
+            try {
+              if (useBrowserVoice) {
+                const utterance = new SpeechSynthesisUtterance(`Chamando ${patient.name}, para ${patient.destination}`);
+                utterance.lang = 'pt-BR';
+                speechSynthesis.speak(utterance);
+                utterance.onend = () => resolve();
+                utterance.onerror = (e) => {
+                  console.error("Erro na síntese de voz:", e);
+                  reject(e);
+                };
+              } else {
+                const { data, error } = await supabase.functions.invoke('generate-tts', {
+                  body: { text: `Chamando ${patient.name}, para ${patient.destination}` },
+                });
+
+                if (error) throw new Error(`Erro ao invocar função: ${error.message}`);
+                if (!data?.speechUrl) throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
+
+                const speechAudio = new Audio(data.speechUrl);
+                speechAudio.play();
+                speechAudio.onended = () => resolve();
+                speechAudio.onerror = (e) => {
+                  console.error("Erro ao tocar áudio da fala:", e);
+                  reject(e);
+                };
+              }
+            } catch (e) {
               reject(e);
-            };
+            }
           };
           bell.onerror = (e) => {
             console.error("Erro ao tocar sino:", e);
