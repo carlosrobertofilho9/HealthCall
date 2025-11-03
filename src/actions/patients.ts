@@ -82,7 +82,7 @@ export async function removePatient(id: string) {
  * @returns {Promise<boolean>} A promise that resolves to true if successful, false otherwise.
  */
 export async function clearQueue() {
-  const { error } = await supabase.from('patients').delete().neq('id', 0); // Hack to delete all rows
+  const { error } = await supabase.rpc('truncate_patients');
   if (error) {
     console.error('Error clearing queue:', error);
     return false;

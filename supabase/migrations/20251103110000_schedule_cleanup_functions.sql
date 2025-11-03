@@ -1,0 +1,3 @@
+SELECT cron.schedule('cleanup-tts-bucket', '0 0 * * *', 'SELECT net.http_post("http://localhost:54321/functions/v1/cleanup-tts-bucket", '''{}''', '''{}''', '''{"Content-Type": "application/json"}''')');
+
+SELECT cron.schedule('cleanup-database', '0 0 * * *', 'SELECT net.http_post("http://localhost:54321/functions/v1/cleanup-database", '''{}''', '''{}''', '''{"Content-Type": "application/json"}''')');
