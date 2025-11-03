@@ -30,6 +30,7 @@ const HomePage: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState('');
 	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 	const [selectedDestination, setSelectedDestination] = useState('');
+	const [fichaCount, setFichaCount] = useState(1);
 
 	useEffect(() => {
 		const timerId = setTimeout(() => {
@@ -89,6 +90,19 @@ const HomePage: React.FC = () => {
 		if (newPatient) {
 			setPatients([newPatient, ...patients]);
 			toast.success('Paciente adicionado com sucesso!');
+		} else {
+			toast.error('Erro ao adicionar paciente!');
+		}
+	};
+
+	const handleAddPatientByNumber = async () => {
+		const destination = profile?.default_destination ?? 'Consultório';
+		const patientName = `Ficha ${fichaCount}`;
+		const newPatient = await addPatient(patientName, destination);
+		if (newPatient) {
+			setPatients([newPatient, ...patients]);
+			setFichaCount(fichaCount + 1);
+			toast.success(`Paciente ${patientName} adicionado com sucesso!`);
 		} else {
 			toast.error('Erro ao adicionar paciente!');
 		}
@@ -183,7 +197,7 @@ const HomePage: React.FC = () => {
 		<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
 			<div className="lg:col-span-1">
 				<AddPatientForm onAddPatient={handleAddPatient} defaultDestination={profile?.default_destination ?? undefined} />
-				<QueueActions onClearQueue={handleClearQueue} />
+				<QueueActions onClearQueue={handleClearQueue} onAddPatientByNumber={handleAddPatientByNumber} />
 			</div>
 			<PatientQueue
 				patients={filteredPatients}
