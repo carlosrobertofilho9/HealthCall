@@ -26,21 +26,13 @@ export const router = createBrowserRouter([
 		children: [
 			{ index: true, element: <HomePage /> },
 			{ path: 'settings', element: <SettingsPage /> },
+			{ path: 'login', element: <LoginPage /> },
 		],
 	},
 	// Standalone route for the public display screen
 	{
 		path: '/display',
-		element: (
-			<ProtectedRoute>
-				<DisplayPage />
-			</ProtectedRoute>
-		),
-	},
-	// Public login page
-	{
-		path: '/login',
-		element: <LoginPage />,
+		element: <DisplayPage />,
 	},
 ]);
 

@@ -1,5 +1,4 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import LoginPage from '@/pages/Login/LoginPage';
 import { useAuth } from '@/hooks/useAuth';
 
 type ProtectedRouteProps = {
@@ -14,7 +13,6 @@ type ProtectedRouteProps = {
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 	const { session, loading } = useAuth();
-	const location = useLocation();
 
 	if (loading) {
 		return (
@@ -26,7 +24,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 	}
 
 	if (!session) {
-		return <Navigate to={`/login?redirect=${location.pathname}`} replace />;
+		return <LoginPage />;
 	}
 
 	return <>{children}</>;
