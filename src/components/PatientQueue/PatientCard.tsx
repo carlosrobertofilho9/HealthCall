@@ -1,6 +1,7 @@
 import React from 'react';
 import PatientStatusBadge from './PatientStatusBadge';
 import type { Patient, PatientStatus } from '@/types';
+import FinishServiceButton from './FinishServiceButton';
 
 /**
  * A card component that displays information about a single patient.
@@ -11,6 +12,7 @@ import type { Patient, PatientStatus } from '@/types';
  * @param {(id: string, destination: string) => void} props.onCall - Callback function to handle calling the patient.
  * @param {(id: string, status: PatientStatus) => void} props.onUpdateStatus - Callback function to handle updating the patient's status.
  * @param {(id: string) => void} props.onRemove - Callback function to handle removing the patient.
+ * @param {(id: string, destination: string) => void} props.onUpdateDestination - Callback function to handle updating the patient's destination.
  */
 const PatientCard: React.FC<{
   patient: Patient;
@@ -18,7 +20,8 @@ const PatientCard: React.FC<{
   onCall: (id: string, destination: string) => void;
   onUpdateStatus: (id: string, status: PatientStatus) => void;
   onRemove: (id: string) => void;
-}> = ({ patient, onEdit, onCall, onUpdateStatus, onRemove }) => {
+  onUpdateDestination: (id: string, destination: string) => void;
+}> = ({ patient, onEdit, onCall, onUpdateStatus, onRemove, onUpdateDestination }) => {
   const isFinished = patient.status === 'Atendimento Finalizado';
   const canStartService =
     patient.status !== 'Atendimento Finalizado' && patient.status !== 'Em Atendimento';
@@ -84,19 +87,12 @@ const PatientCard: React.FC<{
         >
           <span className="material-symbols-outlined text-base">delete</span>
         </button>
-        <button
-          className={`flex items-center justify-center rounded-full h-10 w-10 ${
-            isFinished
-              ? 'bg-green-500/10 text-green-400/50 cursor-not-allowed'
-              : 'bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors'
-          }`}
-          title="Finalizar Atendimento"
-          onClick={() => onUpdateStatus(patient.id, 'Atendimento Finalizado')}
-          disabled={isFinished}
-          aria-label="Finalizar Atendimento"
-        >
-          <span className="material-symbols-outlined text-base">check_circle</span>
-        </button>
+        <FinishServiceButton
+          patientId={patient.id}
+          isFinished={isFinished}
+          onUpdateStatus={onUpdateStatus}
+          onUpdateDestination={onUpdateDestination}
+        />
       </div>
     </div>
   );

@@ -133,6 +133,21 @@ const HomePage: React.FC = () => {
 		}
 	};
 
+	const handleUpdateDestination = async (id: string, destination: string) => {
+		const patient = patients.find((p) => p.id === id);
+		if (patient) {
+			const updatedPatientData = { ...patient, destination };
+			const result = await updatePatient(updatedPatientData);
+			if (result) {
+				setPatients(patients.map((p) => (p.id === id ? result : p)));
+				toast.info(`Destino de ${result.name} alterado para "${destination}"!`);
+			} else {
+				toast.error('Erro ao atualizar destino! Verifique permissões no banco.');
+			}
+		}
+	};
+
+
 	const handleRemovePatient = (patient: Patient) => {
 		setPatientToDelete(patient);
 		setIsConfirmModalOpen(true);
@@ -204,6 +219,7 @@ const HomePage: React.FC = () => {
 				onEdit={openModal}
 				onCall={(id: string, destination: string) => handleCallPatient(id, destination)}
 				onUpdateStatus={handleUpdateStatus}
+				onUpdateDestination={handleUpdateDestination}
 				onRemove={handleRemovePatient}
 				searchTerm={searchTerm}
 				setSearchTerm={setSearchTerm}

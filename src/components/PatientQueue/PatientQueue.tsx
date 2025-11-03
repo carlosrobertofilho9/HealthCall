@@ -14,6 +14,7 @@ interface PatientQueueProps {
   setSearchTerm: (term: string) => void;
   selectedDestination: string;
   setSelectedDestination: (destination: string) => void;
+  onUpdateDestination: (id: string, destination: string) => void;
 }
 
 /**
@@ -29,6 +30,7 @@ interface PatientQueueProps {
  * @param {(term: string) => void} props.setSearchTerm - Callback function to update the search term.
  * @param {string} props.selectedDestination - The currently selected destination for filtering.
  * @param {(destination: string) => void} props.setSelectedDestination - Callback function to update the selected destination.
+ * @param {(id: string, destination: string) => void} props.onUpdateDestination - Callback function to update the patient's destination.
  */
 const PatientQueue: React.FC<PatientQueueProps> = ({
   patients,
@@ -40,6 +42,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
   setSearchTerm,
   selectedDestination,
   setSelectedDestination,
+  onUpdateDestination,
 }) => {
   const selectOptions = [
     { value: '', label: 'Todas as Salas' },
@@ -76,7 +79,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
           />
         </div>
       </div>
-      <div className="space-y-4 max-h-[calc(100vh-22rem)] overflow-y-auto pr-2">
+      <div className={`space-y-4 pr-2 ${patients.length > 4 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto' : ''}`}>
         {patients.length > 0 ? (
           patients.map((patient) => (
             <PatientCard
@@ -85,6 +88,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
               onEdit={onEdit}
               onCall={onCall}
               onUpdateStatus={onUpdateStatus}
+              onUpdateDestination={onUpdateDestination}
               onRemove={() => onRemove(patient)}
             />
           ))
