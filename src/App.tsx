@@ -1,15 +1,19 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Header from '@/components/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+const queryClient = new QueryClient();
+
 const App: React.FC = () => {
   return (
-    <div className="relative flex size-full min-h-screen flex-col">
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
+    <QueryClientProvider client={queryClient}>
+      <div className="relative flex size-full min-h-screen flex-col">
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick
@@ -26,6 +30,7 @@ const App: React.FC = () => {
         </div>
       </main>
     </div>
+    </QueryClientProvider>
   );
 };
 

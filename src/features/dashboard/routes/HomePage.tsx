@@ -6,10 +6,10 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import QueueActions from '@/components/QueueActions';
 import type { Patient } from '@/types';
 import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
-import { useUserProfile } from '@/contexts/UserProfileContext';
+import { useUserProfileStore } from '@/store/userProfile';
 
 const HomePage: React.FC = () => {
-	const { profile } = useUserProfile();
+	const { profile } = useUserProfileStore();
 	const {
     patients,
     searchTerm,

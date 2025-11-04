@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useUserProfile } from '@/contexts/UserProfileContext';
+import { useUserProfileStore } from '@/store/userProfile';
 import * as settingsService from '@/features/settings/services/settingsService';
 import { toast } from 'react-toastify';
 import { DESTINATION_ROOMS } from '@/constants';
 
 export function useSettings() {
-  const { profile, loading: profileLoading, setProfile } = useUserProfile();
+  const { profile, loading: profileLoading, setDefaultDestination } = useUserProfileStore();
   const [destinations, setDestinations] = useState<string[]>([...DESTINATION_ROOMS]);
   const [selected, setSelected] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -34,20 +34,16 @@ export function useSettings() {
   }, [profile]);
 
   const saveDefaultDestination = useCallback(async () => {
-    if (!profile) return;
     setSaving(true);
     try {
-      const updatedProfile = await settingsService.updateUserProfile(profile.id, { default_destination: selected || null });
-      if (updatedProfile) {
-        setProfile(updatedProfile);
-        toast.success('Configurações salvas!');
-      }
+      await setDefaultDestination(selected || null);
+      toast.success('Configurações salvas!');
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setSaving(false);
     }
-  }, [profile, selected, setProfile]);
+  }, [selected, setDefaultDestination]);
 
   return {
     destinations,
