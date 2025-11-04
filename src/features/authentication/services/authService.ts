@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { SignInWithPasswordCredentials } from '@supabase/supabase-js';
 
 export async function signInWithPassword(credentials: SignInWithPasswordCredentials) {
