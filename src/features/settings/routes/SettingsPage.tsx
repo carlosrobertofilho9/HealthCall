@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useSettings } from '@/features/settings/hooks/useSettings';
+import { useSettings as useLocalSettings } from '@/features/settings/hooks/useSettings';
+import { useSettings } from '@/contexts/SettingsContext';
 import {
   Select,
   SelectContent,
@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/Label';
 import { Switch } from '@/components/ui/switch';
-import { STORAGE_KEYS } from '@/constants';
 
 /**
  * A página de configurações da aplicação.
@@ -28,24 +27,14 @@ const SettingsPage: React.FC = () => {
     destinations,
     selected,
     setSelected,
-    loading,
+    loading: loadingDestination,
     saving,
     saveDefaultDestination,
-  } = useSettings();
+  } = useLocalSettings();
 
-  const [useBrowserVoice, setUseBrowserVoice] = useState(false);
+  const { useBrowserVoice, setUseBrowserVoice, loading: loadingVoiceSetting } = useSettings();
 
-  useEffect(() => {
-    const storedPreference = localStorage.getItem(STORAGE_KEYS.USE_BROWSER_VOICE);
-    if (storedPreference) {
-      setUseBrowserVoice(JSON.parse(storedPreference));
-    }
-  }, []);
-
-  const handleToggleChange = (value: boolean) => {
-    setUseBrowserVoice(value);
-    localStorage.setItem(STORAGE_KEYS.USE_BROWSER_VOICE, JSON.stringify(value));
-  };
+  const loading = loadingDestination || loadingVoiceSetting;
 
   return (
     <div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl max-w-xl mx-auto">
@@ -73,7 +62,12 @@ const SettingsPage: React.FC = () => {
           <Label htmlFor="browser-voice-switch" className="text-white">
             Usar chamador de voz do navegador
           </Label>
-          <Switch id="browser-voice-switch" checked={useBrowserVoice} onCheckedChange={handleToggleChange} />
+          <Switch
+            id="browser-voice-switch"
+            checked={useBrowserVoice}
+            onCheckedChange={setUseBrowserVoice}
+            disabled={loading}
+          />
         </div>
         <div className="pt-2">
           <Button

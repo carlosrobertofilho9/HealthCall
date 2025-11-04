@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Patient, CallRecord } from '@/types';
 import * as displayService from '@/features/display/services/displayService';
 import { supabase } from '@/lib/supabaseClient';
-import { STORAGE_KEYS } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 
 /**
  * Um hook para gerenciar toda a lógica e estado da página de exibição pública.
@@ -26,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
  */
 export function useDisplay() {
   const { session } = useAuth();
+  const { speak } = useTextToSpeech();
   const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
   const [nextPatients, setNextPatients] = useState<Patient[]>([]);
   const [callHistory, setCallHistory] = useState<CallRecord[]>([]);
@@ -58,46 +60,24 @@ export function useDisplay() {
 
       setIsCalling(true);
       try {
-        const useBrowserVoice = JSON.parse(
-          localStorage.getItem(STORAGE_KEYS.USE_BROWSER_VOICE) || 'false'
-        );
-
         const bell = new Audio('/bell.mp3');
         await bell.play();
 
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve) => {
           bell.onended = async () => {
-            try {
-              if (useBrowserVoice) {
-                const utterance = new SpeechSynthesisUtterance(
-                  `Chamando ${patient.name}, para ${patient.destination}`
-                );
-                utterance.lang = 'pt-BR';
-                speechSynthesis.speak(utterance);
-                utterance.onend = () => resolve();
-                utterance.onerror = (e) => reject(e);
-              } else {
-                const { data, error } = await supabase.functions.invoke('generate-tts', {
-                  body: { text: `Chamando ${patient.name}, para ${patient.destination}` },
-                });
-
-                if (error) throw new Error(`Erro ao invocar função: ${error.message}`);
-                if (!data?.speechUrl)
-                  throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
-
-                const speechAudio = new Audio(data.speechUrl);
-                speechAudio.play();
-                speechAudio.onended = () => resolve();
-                speechAudio.onerror = (e) => reject(e);
-              }
-            } catch (e) {
-              reject(e);
-            }
+            const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
+            await speak(textToSpeak);
+            resolve();
           };
-          bell.onerror = (e) => reject(e);
+          bell.onerror = (e) => {
+            toast.error('Erro ao tocar a campainha.', {
+              description: (e.target as HTMLAudioElement)?.error?.message,
+            });
+            resolve(); // Resolve mesmo em caso de erro da campainha para tentar falar
+          };
         });
       } catch (error) {
-        // Silently handle audio errors
+        toast.error('Ocorreu um erro ao reproduzir o áudio da chamada.');
       } finally {
         setTimeout(() => setIsCalling(false), 500);
       }
