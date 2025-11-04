@@ -106,6 +106,8 @@ export function useDisplay() {
       }
     };
 
+    fetchDisplayData();
+
     const refetchInterval = setInterval(fetchDisplayData, 60000);
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
