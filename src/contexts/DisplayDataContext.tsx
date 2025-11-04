@@ -13,16 +13,19 @@ interface DisplayDataContextProps {
 
 const DisplayDataContext = createContext<DisplayDataContextProps | undefined>(undefined);
 
-export const DisplayDataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function DisplayDataProvider({ children }: { children: React.ReactNode }) {
   const displayData = useDisplay();
 
   return <DisplayDataContext.Provider value={displayData}>{children}</DisplayDataContext.Provider>;
-};
+}
 
-export const useDisplayData = () => {
+// Hook exportado separadamente para compatibilidade com Fast Refresh
+function useDisplayDataHook() {
   const context = useContext(DisplayDataContext);
   if (context === undefined) {
     throw new Error('useDisplayData must be used within a DisplayDataProvider');
   }
   return context;
-};
+}
+
+export { useDisplayDataHook as useDisplayData };
