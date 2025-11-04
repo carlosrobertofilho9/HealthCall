@@ -6,6 +6,7 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import QueueActions from '@/components/QueueActions';
 import type { Patient } from '@/types';
 import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
+import { useFichaCounter } from '@/features/dashboard/hooks/useFichaCounter';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 const HomePage: React.FC = () => {
@@ -25,18 +26,18 @@ const HomePage: React.FC = () => {
     updatePatient
   } = usePatientQueue();
 
+	const fichaCount = useFichaCounter(patients);
+
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
 	const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 	const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 	const [isClearQueueModalOpen, setIsClearQueueModalOpen] = useState(false);
-  const [fichaCount, setFichaCount] = useState(1);
 
   const handleAddPatientByNumber = async () => {
 		const destination = profile?.default_destination ?? 'Consultório';
 		const patientName = `Ficha ${fichaCount}`;
 		await addPatient(patientName, destination);
-    setFichaCount(fichaCount + 1);
 	};
 
 	const handleRemovePatient = (patient: Patient) => {
