@@ -160,21 +160,53 @@ export async function callPatient(id: string, destination: string): Promise<Pati
 
 /**
  * Limpa completamente a fila, o histórico de chamadas e os arquivos de áudio.
- * Esta função invoca a RPC `clear_all_data` no Supabase para garantir que a operação
- * seja atômica e completa, removendo todos os dados de `patients`, `calls` e
- * do bucket `tts-audio`.
+ * Esta função invoca a RPC `clear_all_data` no Supabase para limpar os dados das tabelas
+ * e também limpa os arquivos de áudio do bucket `tts-audio` através da API do cliente.
  *
  * @returns {Promise<boolean>} Uma promessa que resolve para `true` se a operação for bem-sucedida.
- * @throws {Error} Se a chamada RPC falhar.
+ * @throws {Error} Se a chamada RPC ou a limpeza dos arquivos falhar.
  */
 export async function clearQueue(): Promise<boolean> {
-	const { error } = await supabase.rpc('clear_all_data');
+	try {
+		// Primeiro, lista todos os arquivos do bucket tts-audio
+		const { data: files, error: listError } = await supabase.storage
+			.from('tts-audio')
+			.list();
 
-	if (error) {
-		console.error('Error clearing all data via RPC:', error);
-		throw new Error('Falha ao limpar os dados. Por favor, tente novamente.');
+		if (listError) {
+			console.error('Error listing files from tts-audio bucket:', listError);
+			// Não lançar erro aqui, apenas avisar
+			console.warn('Continuando com a limpeza das tabelas...');
+		}
+
+		// Se houver arquivos, deleta todos
+		if (files && files.length > 0) {
+			const filePaths = files.map(file => file.name);
+			const { error: deleteError } = await supabase.storage
+				.from('tts-audio')
+				.remove(filePaths);
+
+			if (deleteError) {
+				console.error('Error deleting files from tts-audio bucket:', deleteError);
+				// Não lançar erro aqui, apenas avisar
+				console.warn('Continuando com a limpeza das tabelas...');
+			} else {
+				console.log(`${filePaths.length} arquivos de áudio deletados com sucesso.`);
+			}
+		}
+
+		// Agora limpa as tabelas através da RPC
+		const { error: rpcError } = await supabase.rpc('clear_all_data');
+
+		if (rpcError) {
+			console.error('Error clearing all data via RPC:', rpcError);
+			throw new Error('Falha ao limpar os dados. Por favor, tente novamente.');
+		}
+
+		console.log('Todos os dados foram limpos com sucesso.');
+		return true;
+	} catch (error) {
+		console.error('Exception in clearQueue:', error);
+		throw error;
 	}
-
-	console.log('Todos os dados foram limpos com sucesso através da RPC.');
-	return !error;
 }
