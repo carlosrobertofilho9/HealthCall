@@ -9,6 +9,19 @@ interface FinishServiceButtonProps {
   onUpdateDestination: (id: string, destination: string) => void;
 }
 
+/**
+ * Um botão com um menu suspenso para finalizar o atendimento de um paciente ou encaminhá-lo.
+ *
+ * Este componente exibe um ícone de verificação. Quando clicado, se o atendimento não estiver finalizado,
+ * ele abre um menu com opções para "Finalizar Atendimento" ou encaminhar o paciente para
+ * um destino diferente, atualizando seu status e destino conforme necessário.
+ *
+ * @param {FinishServiceButtonProps} props As propriedades do componente.
+ * @param {string} props.patientId O ID do paciente.
+ * @param {boolean} props.isFinished Indica se o atendimento do paciente já foi finalizado.
+ * @param {(id: string, status: PatientStatus) => void} props.onUpdateStatus Callback para atualizar o status do paciente.
+ * @param {(id: string, destination: string) => void} props.onUpdateDestination Callback para atualizar o destino do paciente.
+ */
 const FinishServiceButton: React.FC<FinishServiceButtonProps> = ({
   patientId,
   isFinished,

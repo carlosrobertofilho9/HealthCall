@@ -5,6 +5,18 @@ import { useAuth } from '@/hooks/useAuth';
 import { UserProfileContext } from '../hooks/useUserProfile';
 import { supabase } from '@/lib/supabaseClient';
 
+/**
+ * Um provedor de contexto que gerencia o perfil do usuário autenticado.
+ *
+ * Este componente busca o perfil do usuário, fornece uma função para atualizá-lo
+ * (especificamente o destino padrão), e escuta por atualizações em tempo real
+ * na tabela `profiles` do Supabase. O estado do perfil e as ações são
+ * disponibilizados para os componentes filhos através do `UserProfileContext`.
+ *
+ * @param {object} props As propriedades do componente.
+ * @param {React.ReactNode} props.children Os componentes filhos que terão acesso ao contexto.
+ * @returns {React.ReactElement} O componente provedor.
+ */
 export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);

@@ -4,6 +4,33 @@ import * as patientService from '@/features/dashboard/services/patientService';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 
+/**
+ * Um hook abrangente para gerenciar o estado e as interações da fila de pacientes.
+ *
+ * Este hook encapsula toda a lógica relacionada à fila de pacientes, incluindo:
+ * - Buscar a lista inicial de pacientes.
+ * - Inscrever-se para atualizações em tempo real do Supabase.
+ * - Gerenciar os estados de pesquisa e filtro.
+ * - Fornecer funções para adicionar, atualizar, remover, chamar e limpar pacientes.
+ * - Lidar com o estado de carregamento e exibir notificações de brinde para as ações.
+ *
+ * @returns {{
+ *   patients: Patient[],
+ *   searchTerm: string,
+ *   setSearchTerm: (term: string) => void,
+ *   selectedDestination: string,
+ *   setSelectedDestination: (destination: string) => void,
+ *   addPatientByName: (name: string, destination: string) => Promise<void>,
+ *   addPatientByNumber: (destination: string) => Promise<void>,
+ *   updatePatientStatus: (id: string, status: PatientStatus) => Promise<void>,
+ *   updatePatientDestination: (id: string, destination: string) => Promise<void>,
+ *   removePatient: (id: string) => Promise<void>,
+ *   callPatient: (id: string, destination: string) => Promise<void>,
+ *   clearQueue: () => Promise<void>,
+ *   updatePatient: (patient: Patient) => Promise<void>,
+ *   isAddingPatient: boolean
+ * }} Um objeto contendo o estado da fila e as funções para manipulá-la.
+ */
 export function usePatientQueue() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState('');

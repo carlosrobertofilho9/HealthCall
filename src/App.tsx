@@ -5,6 +5,16 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { useQueueCleaner } from './hooks/useQueueCleaner';
 import { Toaster } from '@/components/ui/sonner';
 
+/**
+ * O componente raiz de layout para as seções autenticadas da aplicação.
+ *
+ * Este componente define a estrutura visual principal, incluindo o `Header` e a área de conteúdo principal.
+ * Ele também inicializa hooks globais como `usePageTitle` para gerenciar o título da página
+ * e `useQueueCleaner` para a limpeza diária da fila. O `Outlet` do React Router é usado
+ * para renderizar as rotas filhas aninhadas.
+ *
+ * @returns {React.ReactElement} O componente de layout principal da aplicação.
+ */
 const App: React.FC = () => {
   usePageTitle();
   useQueueCleaner();

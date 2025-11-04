@@ -4,6 +4,10 @@ import { supabase } from '@/lib/supabaseClient';
 
 const MAX_RETRIES = 1; // Tenta a execução inicial + 1 repetição
 
+/**
+ * Registra um erro na tabela `logs` do Supabase.
+ * @param {unknown} error O erro a ser registrado. Pode ser de qualquer tipo.
+ */
 async function logError(error: unknown) {
   const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
   await supabase.from('logs').insert({
@@ -12,6 +16,11 @@ async function logError(error: unknown) {
   });
 }
 
+/**
+ * Executa o processo de limpeza da fila de pacientes com uma lógica de repetição.
+ * Tenta chamar `clearQueue` e, se falhar, tenta novamente até `MAX_RETRIES`.
+ * Se todas as tentativas falharem, registra o erro.
+ */
 async function runCleaning() {
   let attempts = 0;
   while (attempts <= MAX_RETRIES) {
@@ -31,6 +40,13 @@ async function runCleaning() {
   }
 }
 
+/**
+ * Um hook que garante que a fila de pacientes seja limpa uma vez por dia.
+ *
+ * Este hook verifica o `localStorage` para ver se a limpeza diária já foi executada.
+ * Se não, ele invoca a função `runCleaning`. Ele é projetado para ser chamado
+ * uma vez no nível superior da aplicação para automatizar a manutenção da fila.
+ */
 export function useQueueCleaner() {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD

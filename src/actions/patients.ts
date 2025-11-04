@@ -1,11 +1,11 @@
 import { supabase } from '../lib/supabaseClient';
-import type { Patient, PatientStatus, CallRecord } from '@/types';
+import type { Patient, CallRecord } from '@/types';
 
 /**
- * Fetches all patients from the database, ordered by creation date.
- * @returns {Promise<Patient[]>} A promise that resolves to an array of patient objects.
+ * Busca todos os pacientes da base de dados, ordenados por data de criação decrescente.
+ * @returns {Promise<Patient[]>} Uma promessa que resolve para um array de objetos de paciente.
  */
-export async function getPatients() {
+export async function getPatients(): Promise<Patient[]> {
   const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false });
   if (error) {
     console.error('Error fetching patients:', error);
@@ -15,12 +15,12 @@ export async function getPatients() {
 }
 
 /**
- * Adds a new patient to the database.
- * @param {string} name - The name of the patient.
- * @param {string} destination - The destination of the patient.
- * @returns {Promise<Patient | null>} A promise that resolves to the new patient object, or null if an error occurs.
+ * Adiciona um novo paciente à base de dados.
+ * @param {string} name - O nome do paciente.
+ * @param {string} destination - O destino do paciente.
+ * @returns {Promise<Patient | null>} Uma promessa que resolve para o novo objeto de paciente, ou nulo se ocorrer um erro.
  */
-export async function addPatient(name: string, destination: string) {
+export async function addPatient(name: string, destination: string): Promise<Patient | null> {
   const trimmed = name.trim();
   if (!trimmed || !destination) return null;
 
@@ -38,12 +38,17 @@ export async function addPatient(name: string, destination: string) {
 }
 
 /**
- * Updates an existing patient's data.
- * @param {Patient} patient - The patient object with updated information.
- * @returns {Promise<Patient | null>} A promise that resolves to the updated patient object, or null if an error occurs.
+ * Atualiza os dados de um paciente existente na base de dados.
+ *
+ * Esta função recebe um objeto de paciente e atualiza o registro correspondente
+ * na tabela `patients`. Apenas um subconjunto de campos (`name`, `destination`, `status`, `callCount`)
+ * é atualizado para prevenir a modificação acidental de campos imutáveis como `id`.
+ *
+ * @param {Patient} patient - O objeto de paciente contendo os dados atualizados. O campo `id` é usado para identificar o paciente a ser atualizado.
+ * @returns {Promise<Patient | null>} Uma promessa que resolve para o objeto de paciente atualizado, ou `null` se ocorrer um erro.
  */
-export async function updatePatient(patient: Patient) {
-  // Only send updatable fields explicitly
+export async function updatePatient(patient: Patient): Promise<Patient | null> {
+  // Envia explicitamente apenas os campos que podem ser atualizados
   const payload = {
     name: patient.name,
     destination: patient.destination,
@@ -64,11 +69,11 @@ export async function updatePatient(patient: Patient) {
 }
 
 /**
- * Removes a patient from the database.
- * @param {string} id - The ID of the patient to remove.
- * @returns {Promise<boolean>} A promise that resolves to true if successful, false otherwise.
+ * Remove um paciente da base de dados.
+ * @param {string} id - O ID do paciente a ser removido.
+ * @returns {Promise<boolean>} Uma promessa que resolve para `true` se a remoção for bem-sucedida, `false` caso contrário.
  */
-export async function removePatient(id: string) {
+export async function removePatient(id: string): Promise<boolean> {
   const { error } = await supabase.from('patients').delete().eq('id', id);
   if (error) {
     console.error('Error removing patient:', error);
@@ -78,10 +83,10 @@ export async function removePatient(id: string) {
 }
 
 /**
- * Removes all patients from the database.
- * @returns {Promise<boolean>} A promise that resolves to true if successful, false otherwise.
+ * Limpa a fila chamando a função RPC `truncate_patients` no Supabase.
+ * @returns {Promise<boolean>} Uma promessa que resolve para `true` se a operação for bem-sucedida, `false` caso contrário.
  */
-export async function clearQueue() {
+export async function clearQueue(): Promise<boolean> {
   const { error } = await supabase.rpc('truncate_patients');
   if (error) {
     console.error('Error clearing queue:', error);
@@ -91,13 +96,14 @@ export async function clearQueue() {
 }
 
 /**
- * Records a call for a patient, updating their status and call count.
- * @param {string} patientId - The ID of the patient being called.
- * @param {string} location - The location from where the call is made.
- * @returns {Promise<any | null>} A promise that resolves to the new call record, or null if an error occurs.
+ * Registra uma chamada para um paciente, atualizando seu status e contador de chamadas.
+ * Esta função primeiro busca o paciente para obter o contador de chamadas atual,
+ * depois atualiza o paciente e, finalmente, insere um novo registro na tabela `calls`.
+ * @param {string} patientId - O ID do paciente que está sendo chamado.
+ * @param {string} location - O local de onde a chamada está sendo feita.
+ * @returns {Promise<any | null>} Uma promessa que resolve para o novo registro de chamada, ou nulo se ocorrer um erro.
  */
-export async function callPatient(patientId: string, location: string) {
-  // First, get the current callCount
+export async function callPatient(patientId: string, location: string): Promise<any | null> {
   const { data: patientData, error: patientError } = await supabase
     .from('patients')
     .select('callCount')
@@ -111,7 +117,6 @@ export async function callPatient(patientId: string, location: string) {
 
   const newCallCount = patientData.callCount + 1;
 
-  // Update the patient's status and callCount
   const { error: updateError } = await supabase
     .from('patients')
     .update({ status: 'Chamado', callCount: newCallCount })
@@ -122,7 +127,6 @@ export async function callPatient(patientId: string, location: string) {
     return null;
   }
 
-  // Insert a new record in the calls table
   const { data, error: callError } = await supabase
     .from('calls')
     .insert([{ patient_id: patientId, location: location }])
@@ -130,85 +134,19 @@ export async function callPatient(patientId: string, location: string) {
 
   if (callError) {
     console.error('Error creating call:', callError);
-    // Potentially handle inconsistency, e.g., by trying to revert the patient status update
     return null;
   }
 
   return data[0];
 }
 
-/* 
-// Old functions (local state)
-
-export function addPatient(list: Patient[], payload: { name: string; destination: string }): Patient[] {
-  const { name, destination } = payload;
-  const trimmed = name.trim();
-  if (!trimmed || !destination) return list;
-  const newPatient: Patient = {
-    id: Date.now(),
-    name: trimmed,
-    destination,
-    status: 'Aguardando',
-    callCount: 0,
-  };
-  return [newPatient, ...list];
-}
-
-export function updatePatient(list: Patient[], patient: Patient): Patient[] {
-  return list.map((p) => (p.id === patient.id ? patient : p));
-}
-
-export function removePatient(list: Patient[], id: number): Patient[] {
-  return list.filter((p) => p.id !== id);
-}
-
-export function updateStatus(list: Patient[], id: number, status: PatientStatus): Patient[] {
-  return list.map((p) => (p.id === id ? { ...p, status } : p));
-}
-
-export function callPatient(
-  list: Patient[],
-  id: number
-): { updated: Patient[]; called: Patient; next: Patient[] } | null {
-  let calledPatient: Patient | null = null;
-  const updated = list.map((p) => {
-    if (p.id === id) {
-      const updatedP: Patient = { ...p, callCount: p.callCount + 1, lastCalled: true };
-      calledPatient = updatedP;
-      return updatedP;
-    }
-    const { lastCalled, ...rest } = p as any;
-    return { ...(rest as Patient) };
-  });
-
-  if (!calledPatient) return null;
-
-  const next = updated.filter((p) => p.status === 'Aguardando' && p.id !== calledPatient!.id);
-  return { updated, called: calledPatient, next };
-}
-
-export function appendCallHistory(history: CallRecord[], called: Patient, limit = 20): CallRecord[] {
-  const record: CallRecord = {
-    id: called.id,
-    name: called.name,
-    destination: called.destination,
-    callCount: called.callCount,
-    calledAt: Date.now(),
-  };
-  const arr = [record, ...history]
-    .filter((rec, idx, arr2) => idx === 0 || !(rec.id === arr2[idx - 1].id && rec.callCount === arr2[idx - 1].callCount))
-    .slice(0, limit);
-  return arr;
-}
-
-*/
-
 /**
- * Appends a new call record to the call history.
- * @param {CallRecord[]} history - The existing call history.
- * @param {Patient} called - The patient who was called.
- * @param {number} [limit=20] - The maximum number of records to keep in the history.
- * @returns {CallRecord[]} The updated call history.
+ * Adiciona um novo registro de chamada ao histórico de chamadas local.
+ * Esta função é um utilitário do lado do cliente para gerenciar uma lista de histórico em memória.
+ * @param {CallRecord[]} history - O histórico de chamadas existente.
+ * @param {Patient} called - O paciente que foi chamado.
+ * @param {number} [limit=20] - O número máximo de registros a serem mantidos no histórico.
+ * @returns {CallRecord[]} O histórico de chamadas atualizado.
  */
 export function appendCallHistory(history: CallRecord[], called: Patient, limit = 20): CallRecord[] {
   const record: CallRecord = {

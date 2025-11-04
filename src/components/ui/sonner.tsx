@@ -3,7 +3,21 @@ import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
+/**
+ * Um componente Toaster customizado que renderiza notificações (toasts).
+ *
+ * Este componente encapsula o componente `Toaster` da biblioteca `sonner`,
+ * aplicando estilos customizados para se alinhar com o design system do aplicativo.
+ * Ele também se integra com `next-themes` para adaptar a aparência do toast
+ * ao tema atual (claro ou escuro), embora o `next-themes` não pareça ser usado
+ * no restante da aplicação.
+ *
+ * @param {ToasterProps} props As propriedades a serem passadas para o componente `Sonner`.
+ * @returns {React.ReactElement} O componente Toaster renderizado.
+ */
 const Toaster = ({ ...props }: ToasterProps) => {
+  // @TODO: A dependência `next-themes` parece não ser utilizada no restante do projeto.
+  // Avaliar se ela é realmente necessária ou se pode ser removida para simplificar.
   const { theme = "system" } = useTheme()
 
   return (

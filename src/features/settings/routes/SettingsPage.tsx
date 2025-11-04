@@ -12,6 +12,17 @@ import { Label } from '@/components/ui/Label';
 import { Switch } from '@/components/ui/switch';
 import { STORAGE_KEYS } from '@/constants';
 
+/**
+ * A página de configurações da aplicação.
+ *
+ * Este componente permite que os usuários configurem suas preferências, como
+ * definir um destino padrão para novos pacientes e escolher se desejam usar
+ * a síntese de voz nativa do navegador para os anúncios.
+ * Ele utiliza o hook `useSettings` para gerenciar a lógica de carregamento e salvamento
+ * do destino padrão.
+ *
+ * @returns {React.ReactElement} O componente da página de configurações.
+ */
 const SettingsPage: React.FC = () => {
   const {
     destinations,

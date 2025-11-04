@@ -14,6 +14,17 @@ const switchVariants = cva(
   }
 );
 
+/**
+ * Um componente de interruptor (toggle switch) estilizado, construído sobre o Switch do Radix UI.
+ *
+ * Este componente fornece um controle de liga/desliga acessível, com estilos que
+ * variam com base em seu estado `checked`. Ele encaminha a `ref` e as propriedades
+ * para o componente `SwitchPrimitives.Root` subjacente.
+ *
+ * @param {object} props As propriedades do componente, que são as mesmas do `Switch` do Radix UI.
+ * @param {React.Ref<React.ElementRef<typeof SwitchPrimitives.Root>>} ref A ref a ser encaminhada para o elemento de switch.
+ * @returns {React.ReactElement} O componente de switch renderizado.
+ */
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
