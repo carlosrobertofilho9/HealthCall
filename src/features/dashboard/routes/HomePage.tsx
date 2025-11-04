@@ -8,6 +8,16 @@ import type { Patient } from '@/types';
 import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
+/**
+ * A página principal do painel de controle (dashboard).
+ *
+ * Este componente orquestra a interface principal para gerenciamento da fila de pacientes.
+ * Ele integra os componentes `AddPatientForm`, `PatientQueue` e `QueueActions`,
+ * e gerencia o estado dos modais para edição e exclusão de pacientes.
+ * A lógica de estado é principalmente fornecida pelos hooks `usePatientQueue` e `useUserProfile`.
+ *
+ * @returns {React.ReactElement} O componente da página inicial.
+ */
 const HomePage: React.FC = () => {
 	const { profile } = useUserProfile();
 	const {

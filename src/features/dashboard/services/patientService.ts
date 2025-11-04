@@ -1,6 +1,11 @@
 import { supabase } from '@/lib/supabaseClient';
 import { Patient, PatientStatus } from '@/types';
 
+/**
+ * Busca todos os pacientes da base de dados, ordenados por data de criação.
+ * @returns {Promise<Patient[]>} Uma promessa que resolve para um array de pacientes.
+ * @throws {Error} Se a busca falhar.
+ */
 export async function getPatients(): Promise<Patient[]> {
   try {
     const { data, error } = await supabase
@@ -20,6 +25,13 @@ export async function getPatients(): Promise<Patient[]> {
   }
 }
 
+/**
+ * Adiciona um novo paciente à base de dados.
+ * @param {string} name - O nome do paciente.
+ * @param {string} destination - O destino para o qual o paciente está indo.
+ * @returns {Promise<Patient | null>} Uma promessa que resolve para o novo paciente, ou nulo em caso de erro.
+ * @throws {Error} Se a inserção falhar.
+ */
 export async function addPatient(name: string, destination: string): Promise<Patient | null> {
   const { data, error } = await supabase
     .from('patients')
@@ -35,6 +47,13 @@ export async function addPatient(name: string, destination: string): Promise<Pat
   return data;
 }
 
+/**
+ * Adiciona um novo paciente usando um número de ficha sequencial.
+ * Ele obtém o próximo número disponível de uma função RPC do Supabase.
+ * @param {string} destination - O destino para o qual o paciente está indo.
+ * @returns {Promise<Patient | null>} Uma promessa que resolve para o novo paciente.
+ * @throws {Error} Se a função RPC ou a inserção falharem.
+ */
 export async function addPatientByNumber(destination: string): Promise<Patient | null> {
   const { data: nextNumber, error: rpcError } = await supabase.rpc('get_next_ficha_number');
 
@@ -47,6 +66,12 @@ export async function addPatientByNumber(destination: string): Promise<Patient |
   return addPatient(name, destination);
 }
 
+/**
+ * Atualiza os dados de um paciente existente.
+ * @param {Patient} patient - O objeto paciente com os dados atualizados.
+ * @returns {Promise<Patient | null>} Uma promessa que resolve para o paciente atualizado.
+ * @throws {Error} Se a atualização falhar.
+ */
 export async function updatePatient(patient: Patient): Promise<Patient | null> {
   const { data, error } = await supabase
     .from('patients')
@@ -63,11 +88,24 @@ export async function updatePatient(patient: Patient): Promise<Patient | null> {
   return data;
 }
 
+/**
+ * Remove um paciente da base de dados.
+ * @param {string} id - O ID do paciente a ser removido.
+ * @returns {Promise<boolean>} Uma promessa que resolve para `true` se bem-sucedido, `false` caso contrário.
+ */
 export async function removePatient(id: string): Promise<boolean> {
   const { error } = await supabase.from('patients').delete().eq('id', id);
   return !error;
 }
 
+/**
+ * Realiza o processo de chamada de um paciente.
+ * Isso inclui atualizar o status e o contador de chamadas do paciente e registrar a chamada na tabela `calls`.
+ * @param {string} id - O ID do paciente a ser chamado.
+ * @param {string} destination - O destino para o qual o paciente está sendo chamado.
+ * @returns {Promise<Patient | null>} Uma promessa que resolve para os dados do paciente atualizado.
+ * @throws {Error} Se qualquer uma das operações de base de dados falhar.
+ */
 export async function callPatient(id: string, destination: string): Promise<Patient | null> {
     // First, get the current callCount
     const { data: patient, error: fetchError } = await supabase
@@ -120,6 +158,11 @@ export async function callPatient(id: string, destination: string): Promise<Pati
     return updatedPatient;
 }
 
+/**
+ * Limpa a fila removendo todos os pacientes criados antes do dia de hoje.
+ * @returns {Promise<boolean>} Uma promessa que resolve para `true` se bem-sucedido.
+ * @throws {Error} Se a exclusão falhar.
+ */
 export async function clearQueue(): Promise<boolean> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);

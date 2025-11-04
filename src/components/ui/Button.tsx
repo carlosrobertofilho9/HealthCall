@@ -20,6 +20,17 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {}
 
+/**
+ * Um componente de botão reutilizável com variantes de estilo.
+ *
+ * Este componente usa `class-variance-authority` para aplicar diferentes estilos
+ * com base na propriedade `variant`. Ele encaminha a `ref` para o elemento de botão subjacente
+ * e passa todas as outras propriedades de botão padrão.
+ *
+ * @param {ButtonProps} props As propriedades do componente.
+ * @param {React.Ref<HTMLButtonElement>} ref A ref a ser encaminhada para o elemento de botão.
+ * @returns {React.ReactElement} O componente de botão renderizado.
+ */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, ...props }, ref) => {
     return (
