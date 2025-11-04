@@ -21,17 +21,12 @@ export function usePatientQueue() {
   }, [searchTerm]);
 
   useEffect(() => {
-    console.log('🔵 usePatientQueue: Iniciando fetch e subscription');
-    
     // Define fetchPatients inside useEffect to avoid dependency issues
     const fetchPatients = async () => {
       try {
-        console.log('📥 Fetching patients from database...');
         const data = await patientService.getPatients();
-        console.log('📋 Patients fetched:', data.length);
         setPatients(data);
       } catch (error: any) {
-        console.error('❌ Error fetching patients:', error);
         toast.error(error.message);
       }
     };
@@ -43,18 +38,11 @@ export function usePatientQueue() {
     const channel = supabase
       .channel('realtime-patients')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, (payload) => {
-        console.log('🟢 Realtime event received, refetching all patients:', payload);
         fetchPatients(); // Simple refetch like the old code
       })
-      .subscribe((status, err) => {
-        console.log('📡 Realtime subscription status:', status);
-        if (err) {
-          console.error('❌ Realtime subscription error:', err);
-        }
-      });
+      .subscribe();
 
     return () => {
-      console.log('🔴 usePatientQueue: Cleaning up subscription');
       supabase.removeChannel(channel);
     };
   }, []); // Empty dependency array - setup only once
@@ -64,22 +52,14 @@ export function usePatientQueue() {
       toast.error('Nome e destino são obrigatórios!');
       return;
     }
-    console.log('➕ addPatient called:', { name, destination });
     try {
       const newPatient = await patientService.addPatient(name, destination);
-      console.log('✅ Patient added to DB:', newPatient);
       if (newPatient) {
         // Atualização local otimista - adiciona imediatamente na UI
-        setPatients((current) => {
-          console.log('📝 Current patients count:', current.length);
-          const updated = [newPatient, ...current];
-          console.log('📝 Updated patients count:', updated.length);
-          return updated;
-        });
+        setPatients((current) => [newPatient, ...current]);
         toast.success('Paciente adicionado com sucesso!');
       }
     } catch (error: any) {
-      console.error('❌ Error adding patient:', error);
       toast.error(error.message);
     }
   }, []);
