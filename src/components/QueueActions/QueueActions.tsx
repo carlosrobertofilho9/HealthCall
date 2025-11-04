@@ -3,13 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { STORAGE_KEYS } from '@/constants';
+import { Loader2 } from 'lucide-react';
 
 interface QueueActionsProps {
 	onClearQueue: () => void;
 	onAddPatientByNumber: () => void;
+	isAddingPatient: boolean;
 }
 
-const QueueActions: React.FC<QueueActionsProps> = ({ onClearQueue, onAddPatientByNumber }) => {
+const QueueActions: React.FC<QueueActionsProps> = ({ onClearQueue, onAddPatientByNumber, isAddingPatient }) => {
 	const [useBrowserVoice, setUseBrowserVoice] = useState(false);
 
 	useEffect(() => {
@@ -27,8 +29,8 @@ const QueueActions: React.FC<QueueActionsProps> = ({ onClearQueue, onAddPatientB
 	return (
 		<div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl h-fit mt-8">
 			<div className="space-y-6">
-				<Button onClick={onAddPatientByNumber} className="w-full">
-					Adicionar Ficha
+				<Button onClick={onAddPatientByNumber} className="w-full" disabled={isAddingPatient}>
+					{isAddingPatient ? <Loader2 className="animate-spin" /> : 'Adicionar Ficha'}
 				</Button>
 				<Button variant="destructive" onClick={onClearQueue} className="w-full">
 					Limpar Fila

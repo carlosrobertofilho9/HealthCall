@@ -4,14 +4,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/Label';
+import { Loader2 } from 'lucide-react';
 
 /**
  * A form component for adding a new patient to the queue.
  * @param {object} props - The component props.
  * @param {(name: string, destination: string) => void} props.onAddPatient - Callback function to execute when a patient is added.
  * @param {string | null | undefined} [props.defaultDestination] - The default destination to be selected.
+ * @param {boolean} props.isAddingPatient - Flag to indicate if the patient is being added.
  */
-const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: string) => void; defaultDestination?: string | null }> = ({ onAddPatient, defaultDestination }) => {
+const AddPatientForm: React.FC<{
+  onAddPatient: (name: string, destination: string) => void;
+  defaultDestination?: string | null;
+  isAddingPatient: boolean;
+}> = ({ onAddPatient, defaultDestination, isAddingPatient }) => {
   const [name, setName] = useState('');
   const [destination, setDestination] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -80,9 +86,13 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
           </div>
         </div>
         <div className="pt-4">
-          <Button type="submit">
-            <span className="material-symbols-outlined">add</span>
-            <span className="truncate">Adicionar à Fila</span>
+          <Button type="submit" disabled={isAddingPatient}>
+            {isAddingPatient ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <span className="material-symbols-outlined">add</span>
+            )}
+            <span className="truncate">{isAddingPatient ? 'Adicionando...' : 'Adicionar à Fila'}</span>
           </Button>
         </div>
       </form>

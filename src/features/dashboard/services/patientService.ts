@@ -35,6 +35,18 @@ export async function addPatient(name: string, destination: string): Promise<Pat
   return data;
 }
 
+export async function addPatientByNumber(destination: string): Promise<Patient | null> {
+  const { data: nextNumber, error: rpcError } = await supabase.rpc('get_next_ficha_number');
+
+  if (rpcError) {
+    console.error('Error getting next ficha number:', rpcError);
+    throw rpcError;
+  }
+
+  const name = `Ficha ${nextNumber}`;
+  return addPatient(name, destination);
+}
+
 export async function updatePatient(patient: Patient): Promise<Patient | null> {
   const { data, error } = await supabase
     .from('patients')
@@ -109,6 +121,19 @@ export async function callPatient(id: string, destination: string): Promise<Pati
 }
 
 export async function clearQueue(): Promise<boolean> {
-  const { error } = await supabase.from('patients').delete().neq('status', 'Atendido');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayISO = today.toISOString();
+
+  const { error } = await supabase
+    .from('patients')
+    .delete()
+    .lt('created_at', todayISO);
+
+  if (error) {
+    console.error('Error clearing queue:', error);
+    throw error;
+  }
+
   return !error;
 }
