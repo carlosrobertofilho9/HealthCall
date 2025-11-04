@@ -109,6 +109,19 @@ export async function callPatient(id: string, destination: string): Promise<Pati
 }
 
 export async function clearQueue(): Promise<boolean> {
-  const { error } = await supabase.from('patients').delete().neq('status', 'Atendido');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayISO = today.toISOString();
+
+  const { error } = await supabase
+    .from('patients')
+    .delete()
+    .lt('created_at', todayISO);
+
+  if (error) {
+    console.error('Error clearing queue:', error);
+    throw error;
+  }
+
   return !error;
 }

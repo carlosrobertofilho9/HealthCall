@@ -4,9 +4,11 @@ import Header from '@/components/Header';
 import { ToastContainer } from 'react-toastify';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import 'react-toastify/dist/ReactToastify.css';
+import { useQueueCleaner } from './hooks/useQueueCleaner';
 
 const App: React.FC = () => {
   usePageTitle();
+  useQueueCleaner();
 
   return (
     <div className="relative flex size-full min-h-screen flex-col">
