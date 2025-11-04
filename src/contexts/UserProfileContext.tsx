@@ -1,17 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getUserProfile, updateUserProfile } from '@/features/settings/services/settingsService';
-import { UserProfile } from '@/types';
+import { UserProfile } from '@/actions/user';
 import { useAuth } from '@/hooks/useAuth';
-
-type Ctx = {
-  profile: UserProfile | null;
-  loading: boolean;
-  refresh: () => Promise<void>;
-  setDefaultDestination: (dest: string | null) => Promise<void>;
-  setProfile: (profile: UserProfile | null) => void;
-};
-
-const UserProfileContext = createContext<Ctx | undefined>(undefined);
+import { UserProfileContext } from '../hooks/useUserProfile';
 
 export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -42,9 +33,3 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     </UserProfileContext.Provider>
   );
 };
-
-export function useUserProfile() {
-  const ctx = useContext(UserProfileContext);
-  if (!ctx) throw new Error('useUserProfile deve ser usado dentro de UserProfileProvider');
-  return ctx;
-}

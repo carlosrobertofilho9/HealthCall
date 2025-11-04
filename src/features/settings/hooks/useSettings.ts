@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useUserProfile } from '@/contexts/UserProfileContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import * as settingsService from '@/features/settings/services/settingsService';
 import { toast } from 'react-toastify';
 import { DESTINATION_ROOMS } from '@/constants';

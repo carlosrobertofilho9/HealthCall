@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDisplayData } from '@/contexts/DisplayDataContext';
+import { useDisplayData } from '@/hooks/useDisplayData';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
