@@ -1,35 +1,10 @@
-import React, { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Outlet } from 'react-router-dom';
 import Header from '@/components/Header';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { supabase } from './lib/supabaseClient';
 
-/**
- * The main layout component for the application.
- * It includes the header, a main content area with nested routes (`Outlet`),
- * and the notification container. It also handles authentication state changes,
- * redirecting the user to the login page if they are not authenticated.
- */
 const App: React.FC = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        if (window.location.pathname === '/login') {
-          navigate('/');
-        }
-      } else {
-        navigate('/login');
-      }
-    });
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
-  }, [navigate]);
-
   return (
     <div className="relative flex size-full min-h-screen flex-col">
       <ToastContainer

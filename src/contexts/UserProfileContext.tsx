@@ -1,38 +1,43 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { getUserProfile, updateUserProfile, type UserProfile } from '@/actions/user';
+import { getUserProfile, updateUserProfile } from '@/features/settings/services/settingsService';
+import { UserProfile } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
 
 type Ctx = {
   profile: UserProfile | null;
   loading: boolean;
   refresh: () => Promise<void>;
   setDefaultDestination: (dest: string | null) => Promise<void>;
+  setProfile: (profile: UserProfile | null) => void;
 };
 
 const UserProfileContext = createContext<Ctx | undefined>(undefined);
 
 export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
-    const p = await getUserProfile();
+    const p = await getUserProfile(user.id);
     setProfile(p);
     setLoading(false);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    // Carregar no mount
     refresh();
   }, [refresh]);
 
   const setDefaultDestination = useCallback(async (dest: string | null) => {
-    const updated = await updateUserProfile({ default_destination: dest ?? null });
+    if (!user) return;
+    const updated = await updateUserProfile(user.id, { default_destination: dest ?? null });
     if (updated) setProfile(updated);
-  }, []);
+  }, [user]);
 
   return (
-    <UserProfileContext.Provider value={{ profile, loading, refresh, setDefaultDestination }}>
+    <UserProfileContext.Provider value={{ profile, loading, refresh, setDefaultDestination, setProfile }}>
       {children}
     </UserProfileContext.Provider>
   );
