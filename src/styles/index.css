@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@config "/tailwind.config.js";
 
 /* Variáveis de tema (necessárias pro shadcn/ui funcionar) */
 @theme {
@@ -9,12 +8,49 @@
   --input: 217.2 32.6% 17.5%;
   --ring: 142.1 76.2% 36.3%;
   --radius: 0.5rem;
+  
+  /* Cores do app antigo */
+  --primary-color: #38e07b;
+  --background-color: #f7f7f7;
+  --dark-background-color: #122118;
+  --text-color: #122118;
+  --dark-text-color: #ffffff;
 }
 
-body {
-  font-family: "Spline Sans", sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  body {
+    font-family: "Spline Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .dark {
+    background-color: var(--dark-background-color);
+    color: var(--dark-text-color);
+  }
+}
+
+@layer utilities {
+  .bg-primary {
+    background-color: var(--primary-color);
+  }
+
+  .text-primary {
+    color: var(--primary-color);
+  }
+
+  .border-primary {
+    border-color: var(--primary-color);
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.5s ease-out forwards;
+  }
+
+  .animate-marquee {
+    animation: marquee 20s linear infinite;
+    white-space: nowrap;
+  }
 }
 
 /* Custom scrollbar for better aesthetics */
@@ -33,4 +69,21 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #2dae60;
+}
+
+/* Animações customizadas */
+@keyframes slide-in {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
 }

@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   calledPatient: 'calledPatient',
   nextPatients: 'nextPatients',
   callHistory: 'callHistory',
+  USE_BROWSER_VOICE: 'useBrowserVoice',
 } as const;
 
 export const CALL_HISTORY_LIMIT = 20;
