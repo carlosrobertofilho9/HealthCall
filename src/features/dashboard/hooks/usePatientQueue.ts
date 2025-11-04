@@ -9,6 +9,7 @@ export function usePatientQueue() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedDestination, setSelectedDestination] = useState('');
+  const [isAddingPatient, setIsAddingPatient] = useState(false);
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -47,20 +48,37 @@ export function usePatientQueue() {
     };
   }, []); // Empty dependency array - setup only once
 
-  const addPatient = useCallback(async (name: string, destination: string) => {
+  const addPatientByName = useCallback(async (name: string, destination: string) => {
     if (!name || !destination) {
       toast.error('Nome e destino são obrigatórios!');
       return;
     }
+    setIsAddingPatient(true);
     try {
       const newPatient = await patientService.addPatient(name, destination);
       if (newPatient) {
-        // Atualização local otimista - adiciona imediatamente na UI
         setPatients((current) => [newPatient, ...current]);
         toast.success('Paciente adicionado com sucesso!');
       }
     } catch (error: any) {
       toast.error(error.message);
+    } finally {
+      setIsAddingPatient(false);
+    }
+  }, []);
+
+  const addPatientByNumber = useCallback(async (destination: string) => {
+    setIsAddingPatient(true);
+    try {
+      const newPatient = await patientService.addPatientByNumber(destination);
+      if (newPatient) {
+        setPatients((current) => [newPatient, ...current]);
+        toast.success(`${newPatient.name} adicionada com sucesso!`);
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsAddingPatient(false);
     }
   }, []);
 
@@ -209,12 +227,14 @@ export function usePatientQueue() {
     setSearchTerm,
     selectedDestination,
     setSelectedDestination,
-    addPatient,
+    addPatientByName,
+    addPatientByNumber,
     updatePatientStatus,
     updatePatientDestination,
     removePatient,
     callPatient,
     clearQueue,
-    updatePatient
+    updatePatient,
+    isAddingPatient,
   };
 }

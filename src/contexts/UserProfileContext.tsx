@@ -3,6 +3,7 @@ import { getUserProfile, updateUserProfile } from '@/features/settings/services/
 import { UserProfile } from '@/actions/user';
 import { useAuth } from '@/hooks/useAuth';
 import { UserProfileContext } from '../hooks/useUserProfile';
+import { supabase } from '@/lib/supabaseClient';
 
 export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -20,6 +21,30 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('realtime-profiles')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          setProfile(payload.new as UserProfile);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   const setDefaultDestination = useCallback(async (dest: string | null) => {
     if (!user) return;

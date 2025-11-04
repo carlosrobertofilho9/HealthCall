@@ -6,7 +6,6 @@ import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import QueueActions from '@/components/QueueActions';
 import type { Patient } from '@/types';
 import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
-import { useFichaCounter } from '@/features/dashboard/hooks/useFichaCounter';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 const HomePage: React.FC = () => {
@@ -17,16 +16,16 @@ const HomePage: React.FC = () => {
     setSearchTerm,
     selectedDestination,
     setSelectedDestination,
-    addPatient,
+    addPatientByName,
+    addPatientByNumber,
     updatePatientStatus,
     updatePatientDestination,
     removePatient,
     callPatient,
     clearQueue,
-    updatePatient
+    updatePatient,
+    isAddingPatient,
   } = usePatientQueue();
-
-	const fichaCount = useFichaCounter(patients);
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -36,8 +35,7 @@ const HomePage: React.FC = () => {
 
   const handleAddPatientByNumber = async () => {
 		const destination = profile?.default_destination ?? 'Consultório';
-		const patientName = `Ficha ${fichaCount}`;
-		await addPatient(patientName, destination);
+		await addPatientByNumber(destination);
 	};
 
 	const handleRemovePatient = (patient: Patient) => {
@@ -81,8 +79,16 @@ const HomePage: React.FC = () => {
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
 			<div className="lg:col-span-1">
-				<AddPatientForm onAddPatient={addPatient} defaultDestination={profile?.default_destination ?? undefined} />
-				<QueueActions onClearQueue={handleClearQueue} onAddPatientByNumber={handleAddPatientByNumber} />
+				<AddPatientForm
+					onAddPatient={addPatientByName}
+					defaultDestination={profile?.default_destination ?? undefined}
+					isAddingPatient={isAddingPatient}
+				/>
+				<QueueActions
+					onClearQueue={handleClearQueue}
+					onAddPatientByNumber={handleAddPatientByNumber}
+					isAddingPatient={isAddingPatient}
+				/>
 			</div>
 			<PatientQueue
 				patients={patients}
