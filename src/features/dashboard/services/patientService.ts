@@ -162,6 +162,8 @@ export async function callPatient(id: string, destination: string): Promise<Pati
  * Limpa completamente a fila, o histórico de chamadas e os arquivos de áudio.
  * Esta função invoca a RPC `clear_all_data` no Supabase para limpar os dados das tabelas
  * e também limpa os arquivos de áudio do bucket `tts-audio` através da API do cliente.
+ * 
+ * A limpeza do storage é feita em lotes para evitar timeouts e problemas com muitos arquivos.
  *
  * @returns {Promise<boolean>} Uma promessa que resolve para `true` se a operação for bem-sucedida.
  * @throws {Error} Se a chamada RPC ou a limpeza dos arquivos falhar.
@@ -169,9 +171,14 @@ export async function callPatient(id: string, destination: string): Promise<Pati
 export async function clearQueue(): Promise<boolean> {
 	try {
 		// Primeiro, lista todos os arquivos do bucket tts-audio
+		// Nota: o nome correto do bucket é 'tts-audio' (não 'tts')
 		const { data: files, error: listError } = await supabase.storage
 			.from('tts-audio')
-			.list();
+			.list('', {
+				limit: 1000, // Limite para evitar problemas com muitos arquivos
+				offset: 0,
+				sortBy: { column: 'name', order: 'asc' }
+			});
 
 		if (listError) {
 			console.error('Error listing files from tts-audio bucket:', listError);
@@ -179,19 +186,30 @@ export async function clearQueue(): Promise<boolean> {
 			console.warn('Continuando com a limpeza das tabelas...');
 		}
 
-		// Se houver arquivos, deleta todos
+		// Se houver arquivos, deleta todos em lotes
 		if (files && files.length > 0) {
-			const filePaths = files.map(file => file.name);
-			const { error: deleteError } = await supabase.storage
-				.from('tts-audio')
-				.remove(filePaths);
+			// Filtra apenas arquivos (ignora diretórios se houver)
+			const filePaths = files
+				.filter(file => file.name && !file.name.endsWith('/'))
+				.map(file => file.name);
 
-			if (deleteError) {
-				console.error('Error deleting files from tts-audio bucket:', deleteError);
-				// Não lançar erro aqui, apenas avisar
-				console.warn('Continuando com a limpeza das tabelas...');
-			} else {
-				console.log(`${filePaths.length} arquivos de áudio deletados com sucesso.`);
+			if (filePaths.length > 0) {
+				// Deleta em lotes de 100 para evitar timeouts
+				const BATCH_SIZE = 100;
+				for (let i = 0; i < filePaths.length; i += BATCH_SIZE) {
+					const batch = filePaths.slice(i, i + BATCH_SIZE);
+					const { error: deleteError } = await supabase.storage
+						.from('tts-audio')
+						.remove(batch);
+
+					if (deleteError) {
+						console.error(`Error deleting batch ${i / BATCH_SIZE + 1}:`, deleteError);
+						// Continua tentando deletar os próximos lotes
+					} else {
+						console.log(`Lote ${i / BATCH_SIZE + 1}: ${batch.length} arquivos deletados.`);
+					}
+				}
+				console.log(`Total: ${filePaths.length} arquivos de áudio processados.`);
 			}
 		}
 
