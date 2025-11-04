@@ -1,29 +1,25 @@
-import React from "react"
+import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
+  const { theme = "system" } = useTheme()
+
   return (
     <Sonner
-      theme="dark"
-      position="top-right"
+      theme={theme as ToasterProps["theme"]}
       className="toaster group"
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-[#1a2e23] group-[.toaster]:text-white group-[.toaster]:border-[#38e07b]/20 group-[.toaster]:border group-[.toaster]:shadow-xl group-[.toaster]:backdrop-blur-sm",
-          description: "group-[.toast]:text-gray-300",
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          description: "group-[.toast]:text-muted-foreground",
           actionButton:
-            "group-[.toast]:bg-[#38e07b] group-[.toast]:text-[#122118] group-[.toast]:font-semibold group-[.toast]:hover:bg-[#2dae60] group-[.toast]:transition-colors",
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
           cancelButton:
-            "group-[.toast]:bg-[#264532] group-[.toast]:text-gray-300 group-[.toast]:hover:bg-[#2d5539] group-[.toast]:transition-colors",
-          success: "group-[.toast]:border-[#38e07b]/40",
-          error: "group-[.toast]:border-red-500/40",
-          warning: "group-[.toast]:border-yellow-500/40",
-          info: "group-[.toast]:border-blue-500/40",
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
         },
-        duration: 4000,
       }}
       {...props}
     />

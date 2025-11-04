@@ -1,6 +1,6 @@
 import React from 'react';
 import useAnimation from '@/hooks/useAnimation';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
