@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { Patient } from '@/types';
 
 export async function getCalledPatient(): Promise<Patient | null> {
@@ -6,12 +6,15 @@ export async function getCalledPatient(): Promise<Patient | null> {
         .from('patients')
         .select('*')
         .eq('status', 'Chamado')
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
-        .single();
-    if (error && error.code !== 'PGRST116') { // Ignore 'PGRST116' (No rows found)
+        .maybeSingle();
+    
+    if (error) {
+        console.error('Error fetching called patient:', error);
         throw error;
     }
+    
     return data;
 }
 
@@ -21,6 +24,11 @@ export async function getNextPatients(): Promise<Patient[]> {
         .select('*')
         .eq('status', 'Aguardando')
         .order('created_at', { ascending: true });
-    if (error) throw error;
-    return data;
+    
+    if (error) {
+        console.error('Error fetching next patients:', error);
+        throw error;
+    }
+    
+    return data || [];
 }

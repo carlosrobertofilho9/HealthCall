@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Patient, PatientStatus } from '@/types';
 import * as patientService from '@/features/dashboard/services/patientService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'react-toastify';
 
 export function usePatientQueue() {

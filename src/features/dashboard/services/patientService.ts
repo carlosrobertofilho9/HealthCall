@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { Patient, PatientStatus } from '@/types';
 
 export async function getPatients(): Promise<Patient[]> {

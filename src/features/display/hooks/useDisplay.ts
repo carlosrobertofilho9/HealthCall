@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Patient } from '@/types';
 import * as displayService from '@/features/display/services/displayService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'react-toastify';
 
 export function useDisplay() {

@@ -16,4 +16,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
  *
  * @see https://supabase.com/docs/library/js/client
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: window.localStorage,
+    storageKey: 'healthcall-auth-token',
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'healthcall-web-app',
+    },
+  },
+})
