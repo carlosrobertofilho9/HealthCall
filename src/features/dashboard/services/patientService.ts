@@ -63,7 +63,10 @@ export async function callPatient(id: string, destination: string): Promise<Pati
         .eq('id', id)
         .single();
 
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+        console.error('Error fetching patient:', fetchError);
+        throw fetchError;
+    }
 
     const { data, error } = await supabase
         .from('patients')
@@ -71,7 +74,12 @@ export async function callPatient(id: string, destination: string): Promise<Pati
         .eq('id', id)
         .select()
         .single();
-    if (error) throw error;
+    
+    if (error) {
+        console.error('Error calling patient:', error);
+        throw error;
+    }
+    
     return data;
 }
 
