@@ -2,9 +2,12 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from '@/components/Header';
 import { ToastContainer } from 'react-toastify';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import 'react-toastify/dist/ReactToastify.css';
 
 const App: React.FC = () => {
+  usePageTitle();
+
   return (
     <div className="relative flex size-full min-h-screen flex-col">
       <ToastContainer

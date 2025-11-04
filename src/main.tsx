@@ -14,3 +14,13 @@ if (container) {
     </Providers>
   );
 }
+
+// Registrar Service Worker para PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.warn('Falha ao registrar Service Worker:', error);
+    });
+  });
+}
+
