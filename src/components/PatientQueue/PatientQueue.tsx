@@ -38,25 +38,31 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
           <p className="text-[#96c5a9] mt-1">Gerencie os pacientes na fila de atendimento.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-          <Input
-            id="search-patient"
-            placeholder="Pesquisar paciente..."
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-64"
-          />
-          <Select onValueChange={(value) => setSelectedDestination(value === 'all' ? '' : value)} value={selectedDestination || 'all'}>
-            <SelectTrigger id="filter-destination-room" className="w-full sm:w-64">
-              <SelectValue placeholder="Todas as Salas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as Salas</SelectItem>
-              {DESTINATION_ROOMS.map(room => (
-                <SelectItem key={room} value={room}>{room}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="relative w-full sm:w-64">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">search</span>
+            <Input
+              id="search-patient"
+              placeholder="Pesquisar paciente..."
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12"
+            />
+          </div>
+          <div className="relative w-full sm:w-64">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">filter_list</span>
+            <Select onValueChange={(value) => setSelectedDestination(value === 'all' ? '' : value)} value={selectedDestination || 'all'}>
+              <SelectTrigger id="filter-destination-room">
+                <SelectValue placeholder="Todas as Salas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as Salas</SelectItem>
+                {DESTINATION_ROOMS.map(room => (
+                  <SelectItem key={room} value={room}>{room}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
       <div className={`space-y-4 pr-2 ${patients.length > 4 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto' : ''}`}>

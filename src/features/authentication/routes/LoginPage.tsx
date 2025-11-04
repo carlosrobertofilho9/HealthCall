@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import { useAuthentication } from '@/features/authentication/hooks/useAuthentication';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
 import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
@@ -45,31 +42,41 @@ const LoginPage = () => {
             <h2 className="text-4xl font-bold text-center mb-8">Acessar Painel</h2>
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                  Email
+                </label>
+                <input
                   id="email"
                   type="email"
                   placeholder="seu@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-[#38e07b] focus:border-[#38e07b] transition focus:outline-none"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="password">Senha</Label>
-                <Input
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                  Senha
+                </label>
+                <input
                   id="password"
                   type="password"
                   placeholder="Sua senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-[#38e07b] focus:border-[#38e07b] transition focus:outline-none"
                   required
                 />
               </div>
               {error && <p className="text-red-400 text-sm text-center">{error.message}</p>}
-              <Button type="submit" disabled={loading} className="w-full">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#38e07b] text-gray-900 font-bold text-lg py-3 rounded-lg shadow-lg hover:bg-green-400 transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed focus:outline-none"
+              >
                 {loading ? 'Entrando...' : 'Entrar'}
-              </Button>
+              </button>
             </form>
           </div>
         </main>

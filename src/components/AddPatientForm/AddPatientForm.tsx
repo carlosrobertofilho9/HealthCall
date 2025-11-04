@@ -1,10 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { DESTINATION_ROOMS } from '@/constants';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/Label';
 
+/**
+ * A form component for adding a new patient to the queue.
+ * @param {object} props - The component props.
+ * @param {(name: string, destination: string) => void} props.onAddPatient - Callback function to execute when a patient is added.
+ * @param {string | null | undefined} [props.defaultDestination] - The default destination to be selected.
+ */
 const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: string) => void; defaultDestination?: string | null }> = ({ onAddPatient, defaultDestination }) => {
   const [name, setName] = useState('');
   const [destination, setDestination] = useState('');
@@ -38,33 +44,45 @@ const AddPatientForm: React.FC<{ onAddPatient: (name: string, destination: strin
       </div>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
-          <Label htmlFor="patient-name">Nome do Paciente</Label>
-          <Input
-            ref={nameInputRef}
-            id="patient-name"
-            placeholder="Digite o nome do paciente"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+          <Label htmlFor="patient-name" className="text-white font-medium mb-2 block">
+            Nome do Paciente
+          </Label>
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">person</span>
+            <Input
+              ref={nameInputRef}
+              id="patient-name"
+              placeholder="Digite o nome do paciente"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="pl-12"
+            />
+          </div>
         </div>
         <div>
-          <Label htmlFor="destination-room">Sala de Destino</Label>
-          <Select onValueChange={setDestination} value={destination}>
-            <SelectTrigger id="destination-room">
-              <SelectValue placeholder="Selecione a sala" />
-            </SelectTrigger>
-            <SelectContent>
-              {rooms.map(room => (
-                <SelectItem key={room} value={room}>{room}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="destination-room" className="text-white font-medium mb-2 block">
+            Sala de Destino
+          </Label>
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">meeting_room</span>
+            <Select onValueChange={setDestination} value={destination}>
+              <SelectTrigger id="destination-room">
+                <SelectValue placeholder="Selecione a sala" />
+              </SelectTrigger>
+              <SelectContent>
+                {rooms.map(room => (
+                  <SelectItem key={room} value={room}>{room}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="pt-4">
-          <Button type="submit" className="w-full">
-            Adicionar à Fila
+          <Button type="submit">
+            <span className="material-symbols-outlined">add</span>
+            <span className="truncate">Adicionar à Fila</span>
           </Button>
         </div>
       </form>

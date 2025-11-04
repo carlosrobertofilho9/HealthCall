@@ -25,17 +25,22 @@ const SettingsPage: React.FC = () => {
       <h2 className="text-white text-2xl font-bold leading-tight mb-6">Configurações</h2>
       <div className="space-y-6">
         <div>
-          <Label htmlFor="default-destination">Destino Padrão</Label>
-          <Select onValueChange={setSelected} value={selected} disabled={loading}>
-            <SelectTrigger id="default-destination">
-              <SelectValue placeholder="Nenhum (selecionar ao adicionar)" />
-            </SelectTrigger>
-            <SelectContent>
-              {destinations.map(d => (
-                <SelectItem key={d} value={d}>{d}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="default-destination" className="text-white font-medium mb-2 block">
+            Destino Padrão
+          </Label>
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">meeting_room</span>
+            <Select onValueChange={setSelected} value={selected} disabled={loading}>
+              <SelectTrigger id="default-destination">
+                <SelectValue placeholder="Nenhum (selecionar ao adicionar)" />
+              </SelectTrigger>
+              <SelectContent>
+                {destinations.map(d => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="pt-2">
           <Button
