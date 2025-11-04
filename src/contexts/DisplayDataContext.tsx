@@ -37,13 +37,16 @@ export const DisplayDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   useEffect(() => {
+    console.log('📺 DisplayDataContext: session =', session, 'audioActivated =', audioActivated);
     if (!session || !audioActivated) return;
 
     const playBellAndSpeak = async (patient: Patient) => {
+      console.log('🔔 playBellAndSpeak called for:', patient);
       if (
         patient.id === lastCalledRef.current?.id &&
         patient.callCount === lastCalledRef.current?.callCount
       ) {
+        console.log('⏭️ Skipping duplicate call');
         return;
       }
       lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
@@ -100,18 +103,21 @@ export const DisplayDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
 
     const fetchDisplayData = async () => {
+      console.log('📺 fetchDisplayData: Fetching display data...');
       const { data: lastCalls } = await supabase
         .from('calls')
         .select('*, patients(*)')
         .order('created_at', { ascending: false })
         .limit(1);
       const lastCall = lastCalls ? lastCalls[0] : null;
+      console.log('📺 Last call:', lastCall);
       if (lastCall && lastCall.patients) {
         const patient = {
           ...lastCall.patients,
           destination: lastCall.location,
           status: 'Chamado',
         };
+        console.log('📺 Setting called patient:', patient);
         setCalledPatient(patient as Patient);
       }
 
@@ -120,6 +126,7 @@ export const DisplayDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .select('*, patients(*)')
         .order('created_at', { ascending: false })
         .limit(10);
+      console.log('📺 History data:', historyData?.length, 'records');
       if (historyData) {
         const history = historyData
           .map((call) => ({
@@ -138,14 +145,17 @@ export const DisplayDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .select('*')
         .eq('status', 'Aguardando')
         .order('created_at', { ascending: true });
+      console.log('📺 Next patients:', nextData?.length, 'in queue');
       if (nextData) {
         setNextPatients(nextData);
       }
     };
 
+    console.log('📺 DisplayDataContext: Setting up subscriptions and intervals');
     const refetchInterval = setInterval(fetchDisplayData, 60000);
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        console.log('📺 Page became visible, refetching data');
         fetchDisplayData();
       }
     };
@@ -153,32 +163,46 @@ export const DisplayDataProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const channel = supabase
       .channel('realtime-display-global')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, fetchDisplayData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, (payload) => {
+        console.log('📺 Display: patients table changed:', payload);
+        fetchDisplayData();
+      })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'calls' }, async (payload) => {
+        console.log('📞 Display: NEW CALL detected!', payload);
         const newCall = payload.new as { patient_id: string; location: string };
         const { data: patientDataArr } = await supabase
           .from('patients')
           .select('*')
           .eq('id', newCall.patient_id);
         const patientData = patientDataArr ? patientDataArr[0] : null;
+        console.log('👤 Display: Patient data for call:', patientData);
         if (patientData) {
           const patient = {
             ...patientData,
             destination: newCall.location,
             status: 'Chamado',
           };
+          console.log('🔔 Display: Playing bell and speaking for:', patient);
           playBellAndSpeak(patient as Patient);
         }
         fetchDisplayData();
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls' }, fetchDisplayData)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'calls' }, fetchDisplayData)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls' }, (payload) => {
+        console.log('📺 Display: calls UPDATE:', payload);
+        fetchDisplayData();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'calls' }, (payload) => {
+        console.log('📺 Display: calls DELETE:', payload);
+        fetchDisplayData();
+      })
       .subscribe((status, err) => {
+        console.log('📡 Display: Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
+          console.log('✅ Display: Successfully subscribed to realtime');
           fetchDisplayData();
         }
         if (status === 'CHANNEL_ERROR') {
-          console.error('Realtime channel error. Attempting to reconnect...', err);
+          console.error('❌ Display: Realtime channel error. Attempting to reconnect...', err);
         }
       });
 

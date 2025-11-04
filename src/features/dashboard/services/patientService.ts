@@ -57,9 +57,10 @@ export async function removePatient(id: string): Promise<boolean> {
 }
 
 export async function callPatient(id: string, destination: string): Promise<Patient | null> {
+    // First, get the current callCount
     const { data: patient, error: fetchError } = await supabase
         .from('patients')
-        .select('callCount')
+        .select('callCount, name')
         .eq('id', id)
         .single();
 
@@ -68,19 +69,43 @@ export async function callPatient(id: string, destination: string): Promise<Pati
         throw fetchError;
     }
 
-    const { data, error } = await supabase
+    const newCallCount = patient.callCount + 1;
+
+    // Update the patient's status and callCount
+    const { error: updateError } = await supabase
         .from('patients')
-        .update({ status: 'Chamado', destination, callCount: patient.callCount + 1 })
+        .update({ status: 'Chamado', callCount: newCallCount })
+        .eq('id', id);
+    
+    if (updateError) {
+        console.error('Error updating patient:', updateError);
+        throw updateError;
+    }
+
+    // Insert a new record in the calls table - CRITICAL for DisplayPage realtime!
+    const { data: callData, error: callError } = await supabase
+        .from('calls')
+        .insert([{ patient_id: id, location: destination }])
+        .select();
+    
+    if (callError) {
+        console.error('Error creating call record:', callError);
+        throw callError;
+    }
+
+    // Return the updated patient data
+    const { data: updatedPatient, error: selectError } = await supabase
+        .from('patients')
+        .select('*')
         .eq('id', id)
-        .select()
         .single();
     
-    if (error) {
-        console.error('Error calling patient:', error);
-        throw error;
+    if (selectError) {
+        console.error('Error fetching updated patient:', selectError);
+        throw selectError;
     }
     
-    return data;
+    return updatedPatient;
 }
 
 export async function clearQueue(): Promise<boolean> {
