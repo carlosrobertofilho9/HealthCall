@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import * as settingsService from '@/features/settings/services/settingsService';
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { DESTINATION_ROOMS } from '@/constants';
 
 export function useSettings() {
@@ -16,7 +16,7 @@ export function useSettings() {
       setLoading(true);
       try {
         const dbValues = await settingsService.getUniqueDestinations();
-        const set = new Set<string>([...DESTINATION_ROOMS, ...dbValues.filter(d => d)]); // Filter out empty strings
+        const set = new Set<string>([...DESTINATION_ROOMS, ...dbValues.filter(d => d)]);
         setDestinations([...set].sort((a, b) => a.localeCompare(b)));
       } catch (error: any) {
         toast.error(error.message);
