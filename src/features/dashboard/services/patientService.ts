@@ -1,23 +1,13 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { Patient, PatientStatus } from '@/types';
 
 export async function getPatients(): Promise<Patient[]> {
-  try {
-    const { data, error } = await supabase
-      .from('patients')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching patients:', error);
-      throw error;
-    }
-    
-    return data || [];
-  } catch (error) {
-    console.error('Exception in getPatients:', error);
-    throw error;
-  }
+  const { data, error } = await supabase
+    .from('patients')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
 }
 
 export async function addPatient(name: string, destination: string): Promise<Patient | null> {
@@ -26,12 +16,7 @@ export async function addPatient(name: string, destination: string): Promise<Pat
     .insert([{ name, destination, status: 'Aguardando' }])
     .select()
     .single();
-  
-  if (error) {
-    console.error('Error adding patient:', error);
-    throw error;
-  }
-  
+  if (error) throw error;
   return data;
 }
 
@@ -42,12 +27,7 @@ export async function updatePatient(patient: Patient): Promise<Patient | null> {
     .eq('id', patient.id)
     .select()
     .single();
-  
-  if (error) {
-    console.error('Error updating patient:', error);
-    throw error;
-  }
-  
+  if (error) throw error;
   return data;
 }
 
@@ -57,55 +37,22 @@ export async function removePatient(id: string): Promise<boolean> {
 }
 
 export async function callPatient(id: string, destination: string): Promise<Patient | null> {
-    // First, get the current callCount
     const { data: patient, error: fetchError } = await supabase
         .from('patients')
-        .select('callCount, name')
+        .select('callCount')
         .eq('id', id)
         .single();
 
-    if (fetchError) {
-        console.error('Error fetching patient:', fetchError);
-        throw fetchError;
-    }
+    if (fetchError) throw fetchError;
 
-    const newCallCount = patient.callCount + 1;
-
-    // Update the patient's status and callCount
-    const { error: updateError } = await supabase
+    const { data, error } = await supabase
         .from('patients')
-        .update({ status: 'Chamado', callCount: newCallCount })
-        .eq('id', id);
-    
-    if (updateError) {
-        console.error('Error updating patient:', updateError);
-        throw updateError;
-    }
-
-    // Insert a new record in the calls table - CRITICAL for DisplayPage realtime!
-    const { data: callData, error: callError } = await supabase
-        .from('calls')
-        .insert([{ patient_id: id, location: destination }])
-        .select();
-    
-    if (callError) {
-        console.error('Error creating call record:', callError);
-        throw callError;
-    }
-
-    // Return the updated patient data
-    const { data: updatedPatient, error: selectError } = await supabase
-        .from('patients')
-        .select('*')
+        .update({ status: 'Chamado', destination, callCount: patient.callCount + 1 })
         .eq('id', id)
+        .select()
         .single();
-    
-    if (selectError) {
-        console.error('Error fetching updated patient:', selectError);
-        throw selectError;
-    }
-    
-    return updatedPatient;
+    if (error) throw error;
+    return data;
 }
 
 export async function clearQueue(): Promise<boolean> {

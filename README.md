@@ -1,150 +1,97 @@
-<div align="center">
-  <img width="1200" height="475" alt="HealthCall Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# HealthCall - Sistema de Gerenciamento de Fila de Pacientes
 
-# HealthCall - Patient Queue Management System
+O HealthCall é um sistema moderno de chamada e gerenciamento de filas de pacientes em tempo real, projetado para clínicas e hospitais. Ele permite que a equipe gerencie uma lista de espera de pacientes, chame pacientes para salas específicas e exiba as chamadas em uma tela pública, com anúncios de voz.
 
-HealthCall is a modern, real-time patient queue and calling system designed for clinics and hospitals. It allows staff to manage a patient waiting list, call patients to specific rooms, and display the calls on a public screen, complete with voice announcements.
+## ✨ Funcionalidades
 
-## ✨ Features
+-   **Gerenciamento de Pacientes:** Adicione, edite e remova pacientes da fila de espera.
+-   **Acompanhamento de Status:** Acompanhe o status do paciente de "Aguardando" para "Em Atendimento" e "Atendimento Finalizado".
+-   **Chamada em Tempo Real:** Chame pacientes para destinos específicos.
+-   **Exibição Pública:** Uma visualização de exibição dedicada (`/display`) mostra o último paciente chamado em tempo real.
+-   **Síntese de Voz:** Anuncia o nome e o destino do paciente na página de exibição.
+-   **Autenticação:** Login seguro para membros da equipe.
+-   **Filtragem e Pesquisa:** Encontre facilmente pacientes na fila.
+-   **Estado Persistente:** As preferências do usuário e o estado da fila são salvos.
 
--   **Patient Management:** Add, edit, and remove patients from the waiting queue.
--   **Status Tracking:** Track patient status from "Aguardando" (Waiting) to "Em Atendimento" (In Service) and "Atendimento Finalizado" (Finished).
--   **Real-time Calling:** Call patients to specific destinations.
--   **Public Display:** A dedicated display view (`/display`) shows the latest called patient in real-time.
--   **Voice Synthesis:** Announces the patient's name and destination on the display page.
--   **Authentication:** Secure login for staff members.
--   **Filtering and Searching:** Easily find patients in the queue.
--   **Persistent State:** User preferences and queue state are saved.
-
-## 🛠️ Tech Stack
+## 🛠️ Tecnologias
 
 -   **Frontend:** React, TypeScript, Vite
--   **Backend & Database:** Supabase (PostgreSQL, Auth, Realtime)
--   **Styling:** Tailwind CSS
--   **Routing:** React Router DOM
+-   **Backend & Banco de Dados:** Supabase (PostgreSQL, Auth, Realtime)
+-   **Estilização:** Tailwind CSS
+-   **Roteamento:** React Router DOM
 
-## 📋 Prerequisites
+## 🚀 Começando
 
-Before you begin, ensure you have the following installed on your system:
--   [Node.js](https://nodejs.org/) (v18 or later recommended)
--   [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+Siga estas etapas para colocar o projeto em funcionamento em sua máquina local.
 
-## 🚀 Getting Started
-
-Follow these steps to get the project up and running on your local machine.
-
-### 1. Clone the Repository
+### 1. Clone o Repositório
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
+git clone <URL_DO_SEU_REPOSITORIO>
 cd healthcall
 ```
 
-### 2. Install Dependencies
+### 2. Instale as Dependências
 
-Install the required npm packages.
+Instale os pacotes npm necessários.
 
 ```bash
 npm install
 ```
 
-### 3. Set up Supabase
+### 3. Configure o Supabase
 
-This project requires a Supabase backend for authentication, database, and real-time features.
+Este projeto requer um backend Supabase para autenticação, banco de dados e recursos em tempo real.
 
-#### a. Create a Supabase Project
+#### a. Crie um Projeto Supabase
 
--   Go to [supabase.com](https://supabase.com/) and create a new project.
--   Save your **Project URL** and **`anon` (public) key**.
+-   Acesse [supabase.com](https://supabase.com/) e crie um novo projeto.
+-   Salve o **URL do seu projeto** e a chave **`anon` (pública)**.
 
-#### b. Set up Environment Variables
+#### b. Configure as Variáveis de Ambiente
 
-Create a file named `.env.local` in the root of the project and add your Supabase credentials:
+Crie um arquivo chamado `.env` na raiz do projeto e adicione suas credenciais do Supabase:
 
 ```
-VITE_SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
-VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+VITE_SUPABASE_URL=URL_DO_SEU_PROJETO_SUPABASE
+VITE_SUPABASE_ANON_KEY=SUA_CHAVE_ANON_SUPABASE
 ```
 
-#### c. Database Schema
+### 4. Execute a Aplicação
 
-You need to create the necessary tables in your Supabase database. Go to the **SQL Editor** in your Supabase dashboard and run the following queries:
-
-**`patients` table:**
-```sql
-CREATE TABLE patients (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    name text NOT NULL,
-    destination text NOT NULL,
-    status text DEFAULT 'Aguardando'::text NOT NULL,
-    "callCount" integer DEFAULT 0 NOT NULL,
-    "lastCalled" boolean DEFAULT false
-);
-ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
-```
-
-**`calls` table:**
-```sql
-CREATE TABLE calls (
-    id bigint NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    patient_id uuid,
-    location text
-);
-ALTER TABLE calls ENABLE ROW LEVEL SECURITY;
-```
-
-**`profiles` table (for user settings):**
-```sql
-CREATE TABLE profiles (
-    id uuid NOT NULL,
-    updated_at timestamp with time zone,
-    default_destination text
-);
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-```
-
-*Note: You will also need to set up Row Level Security (RLS) policies to allow authenticated users to read and write data.*
-
-### 4. Run the Application
-
-Once the dependencies are installed and the environment variables are set, you can run the development server.
+Depois que as dependências estiverem instaladas e as variáveis de ambiente configuradas, você pode executar o servidor de desenvolvimento.
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`.
+A aplicação estará disponível em `http://localhost:5173`.
 
-## 📂 Project Structure
+## 📂 Estrutura do Projeto
 
-Here is an overview of the key directories in this project:
+O projeto segue uma arquitetura baseada em funcionalidades, projetada para escalabilidade e manutenibilidade.
 
 ```
 /
-├── public/              # Static assets
+├── public/              # Ativos estáticos
 ├── src/
-│   ├── actions/         # Functions for data fetching and mutations (Supabase)
-│   ├── components/      # Reusable React components
-│   ├── constants/       # Global constants
-│   ├── contexts/        # React contexts (e.g., Auth)
-│   ├── hooks/           # Custom React hooks
-│   ├── lib/             # Library initializations (e.g., Supabase client)
-│   ├── pages/           # Top-level page components
-│   ├── styles/          # Global styles
-│   ├── types/           # TypeScript type definitions
-│   ├── App.tsx          # Main application component with routing
-│   └── main.tsx         # Application entry point
-├── .env.local           # Local environment variables (untracked)
-├── package.json         # Project dependencies and scripts
-└── README.md            # This file
+│   ├── app/             # Configuração principal da aplicação (roteador, provedores)
+│   ├── components/      # Componentes de UI reutilizáveis (Botão, Input, etc.)
+│   ├── features/        # Módulos de funcionalidades (autenticação, dashboard, etc.)
+│   │   ├── authentication/
+│   │   ├── dashboard/
+│   │   └── ...
+│   ├── hooks/           # Hooks globais
+│   ├── lib/             # Inicializações de bibliotecas (cliente Supabase, utils)
+│   ├── styles/          # Estilos globais
+│   └── types/           # Definições de tipos TypeScript
+├── .env                 # Variáveis de ambiente
+├── package.json         # Dependências e scripts do projeto
+└── README.md            # Este arquivo
 ```
 
-## 📜 Available Scripts
+## 📜 Scripts Disponíveis
 
--   `npm run dev`: Starts the development server.
--   `npm run build`: Builds the application for production.
--   `npm run preview`: Serves the production build locally for preview.
--   `npm run lint`: Lints the codebase using ESLint.
+-   `npm run dev`: Inicia o servidor de desenvolvimento.
+-   `npm run build`: Compila a aplicação para produção.
+-   `npm run preview`: Serve a compilação de produção localmente para visualização.

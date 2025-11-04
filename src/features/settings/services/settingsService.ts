@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 
 export async function getUniqueDestinations(): Promise<string[]> {

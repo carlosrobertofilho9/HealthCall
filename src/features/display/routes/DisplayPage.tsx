@@ -1,5 +1,5 @@
 import React from 'react';
-import { useDisplayData } from '@/contexts/DisplayDataContext';
+import { useDisplay } from '@/features/display/hooks/useDisplay';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,7 +11,7 @@ const DisplayPage: React.FC = () => {
     isCalling,
     audioActivated,
     activateAudio,
-  } = useDisplayData();
+  } = useDisplay();
   const { session, loading } = useAuth();
   const navigate = useNavigate();
 
