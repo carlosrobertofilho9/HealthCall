@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSettings } from '@/features/settings/hooks/useSettings';
 import {
   Select,
@@ -9,7 +9,20 @@ import {
 } from "@/components/ui/Select"
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/Label';
+import { Switch } from '@/components/ui/switch';
+import { STORAGE_KEYS } from '@/constants';
 
+/**
+ * A página de configurações da aplicação.
+ *
+ * Este componente permite que os usuários configurem suas preferências, como
+ * definir um destino padrão para novos pacientes e escolher se desejam usar
+ * a síntese de voz nativa do navegador para os anúncios.
+ * Ele utiliza o hook `useSettings` para gerenciar a lógica de carregamento e salvamento
+ * do destino padrão.
+ *
+ * @returns {React.ReactElement} O componente da página de configurações.
+ */
 const SettingsPage: React.FC = () => {
   const {
     destinations,
@@ -19,6 +32,20 @@ const SettingsPage: React.FC = () => {
     saving,
     saveDefaultDestination,
   } = useSettings();
+
+  const [useBrowserVoice, setUseBrowserVoice] = useState(false);
+
+  useEffect(() => {
+    const storedPreference = localStorage.getItem(STORAGE_KEYS.USE_BROWSER_VOICE);
+    if (storedPreference) {
+      setUseBrowserVoice(JSON.parse(storedPreference));
+    }
+  }, []);
+
+  const handleToggleChange = (value: boolean) => {
+    setUseBrowserVoice(value);
+    localStorage.setItem(STORAGE_KEYS.USE_BROWSER_VOICE, JSON.stringify(value));
+  };
 
   return (
     <div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl max-w-xl mx-auto">
@@ -41,6 +68,12 @@ const SettingsPage: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="browser-voice-switch" className="text-white">
+            Usar chamador de voz do navegador
+          </Label>
+          <Switch id="browser-voice-switch" checked={useBrowserVoice} onCheckedChange={handleToggleChange} />
         </div>
         <div className="pt-2">
           <Button

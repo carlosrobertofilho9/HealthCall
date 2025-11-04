@@ -4,6 +4,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 
+/**
+ * A página de exibição pública para chamadas de pacientes.
+ *
+ * Este componente renderiza a interface principal que seria mostrada em uma TV ou monitor
+ * em uma área de espera. Ele exibe o paciente que está sendo chamado, um histórico de chamadas recentes
+ * e os próximos pacientes na fila. O componente também lida com a ativação de áudio,
+ * que é uma exigência do navegador para reproduzir som.
+ *
+ * @returns {React.ReactElement} O componente da página de exibição.
+ */
 const DisplayPage: React.FC = () => {
   usePageTitle();
   const {

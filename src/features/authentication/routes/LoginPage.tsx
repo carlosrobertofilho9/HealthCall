@@ -2,6 +2,16 @@ import React, { useState } from 'react';
 import { useAuthentication } from '@/features/authentication/hooks/useAuthentication';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * A página de login da aplicação.
+ *
+ * Este componente renderiza o formulário de email/senha e utiliza o hook `useAuthentication`
+ * para gerenciar o processo de login. Em caso de sucesso, ele redireciona o usuário
+ * para a página inicial. Ele também exibe o estado de carregamento e quaisquer erros
+ * de autenticação que ocorram.
+ *
+ * @returns {React.ReactElement} O componente da página de login.
+ */
 const LoginPage = () => {
   const { login, loading, error } = useAuthentication();
   const [email, setEmail] = useState('');

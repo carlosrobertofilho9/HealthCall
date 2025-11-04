@@ -5,6 +5,25 @@ import { supabase } from '@/lib/supabaseClient';
 import { STORAGE_KEYS } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 
+/**
+ * Um hook para gerenciar toda a lógica e estado da página de exibição pública.
+ *
+ * Este hook é responsável por:
+ * - Buscar o último paciente chamado, os próximos pacientes e o histórico de chamadas.
+ * - Inscrever-se em canais de tempo real do Supabase para receber atualizações de `patients` e `calls`.
+ * - Lidar com a lógica de anúncio de áudio, incluindo a reprodução de um som de sino e a síntese de voz.
+ * - Gerenciar o estado de ativação de áudio, que requer interação do usuário.
+ * - Implementar uma lógica para evitar a repetição de anúncios para a mesma chamada.
+ *
+ * @returns {{
+ *   calledPatient: Patient | null,
+ *   nextPatients: Patient[],
+ *   callHistory: CallRecord[],
+ *   isCalling: boolean,
+ *   audioActivated: boolean,
+ *   activateAudio: () => void
+ * }} Um objeto contendo o estado da página de exibição e funções de interação.
+ */
 export function useDisplay() {
   const { session } = useAuth();
   const [calledPatient, setCalledPatient] = useState<Patient | null>(null);

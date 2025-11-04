@@ -4,6 +4,25 @@ import * as settingsService from '@/features/settings/services/settingsService';
 import { toast } from 'sonner';
 import { DESTINATION_ROOMS } from '@/constants';
 
+/**
+ * Um hook para gerenciar a lógica e o estado da página de Configurações.
+ *
+ * Este hook é responsável por:
+ * - Buscar a lista de destinos de pacientes únicos para preencher o seletor.
+ * - Obter o perfil do usuário atual para preencher o destino padrão.
+ * - Gerenciar o estado do destino selecionado.
+ * - Fornecer uma função para salvar o destino padrão do usuário.
+ * - Lidar com os estados de carregamento e salvamento.
+ *
+ * @returns {{
+ *   destinations: string[],
+ *   selected: string,
+ *   setSelected: (value: string) => void,
+ *   loading: boolean,
+ *   saving: boolean,
+ *   saveDefaultDestination: () => Promise<void>
+ * }} Um objeto contendo o estado das configurações e as funções de interação.
+ */
 export function useSettings() {
   const { profile, loading: profileLoading, setProfile } = useUserProfile();
   const [destinations, setDestinations] = useState<string[]>([...DESTINATION_ROOMS]);

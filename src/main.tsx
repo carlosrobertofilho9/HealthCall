@@ -1,3 +1,14 @@
+/**
+ * @file O ponto de entrada principal da aplicação React.
+ *
+ * Este arquivo é responsável por:
+ * 1. Obter o elemento DOM raiz (`root`).
+ * 2. Renderizar a aplicação React dentro do elemento raiz.
+ * 3. Envolver a aplicação com todos os provedores de contexto necessários (`Providers`).
+ * 4. Configurar o `RouterProvider` do React Router para gerenciar as rotas.
+ * 5. Importar os estilos CSS globais.
+ * 6. Registrar o Service Worker para funcionalidades de Progressive Web App (PWA).
+ */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';

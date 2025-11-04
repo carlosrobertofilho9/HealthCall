@@ -18,6 +18,25 @@ interface PatientQueueProps {
   onUpdateDestination: (id: string, destination: string) => void;
 }
 
+/**
+ * Um componente que exibe a lista de pacientes na fila de espera.
+ *
+ * Este componente renderiza a fila de pacientes e inclui controles de interface do usuário para
+ * pesquisar por nome e filtrar por destino. Cada paciente é exibido usando o
+ * componente `PatientCard`.
+ *
+ * @param {PatientQueueProps} props As propriedades do componente.
+ * @param {Patient[]} props.patients A lista de pacientes a ser exibida.
+ * @param {(patient: Patient) => void} props.onEdit Callback acionado ao editar um paciente.
+ * @param {(id: string, destination: string) => void} props.onCall Callback acionado ao chamar um paciente.
+ * @param {(id: string, status: PatientStatus) => void} props.onUpdateStatus Callback acionado ao atualizar o status de um paciente.
+ * @param {(patient: Patient) => void} props.onRemove Callback acionado ao remover um paciente.
+ * @param {string} props.searchTerm O termo de pesquisa atual.
+ * @param {(term: string) => void} props.setSearchTerm Callback para atualizar o termo de pesquisa.
+ * @param {string} props.selectedDestination O destino atualmente selecionado para filtragem.
+ * @param {(destination: string) => void} props.setSelectedDestination Callback para atualizar o filtro de destino.
+ * @param {(id: string, destination: string) => void} props.onUpdateDestination Callback acionado ao atualizar o destino de um paciente.
+ */
 const PatientQueue: React.FC<PatientQueueProps> = ({
   patients,
   onEdit,
