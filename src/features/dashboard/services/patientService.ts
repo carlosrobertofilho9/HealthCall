@@ -159,24 +159,22 @@ export async function callPatient(id: string, destination: string): Promise<Pati
 }
 
 /**
- * Limpa a fila removendo todos os pacientes criados antes do dia de hoje.
- * @returns {Promise<boolean>} Uma promessa que resolve para `true` se bem-sucedido.
- * @throws {Error} Se a exclusão falhar.
+ * Limpa completamente a fila, o histórico de chamadas e os arquivos de áudio.
+ * Esta função invoca a RPC `clear_all_data` no Supabase para garantir que a operação
+ * seja atômica e completa, removendo todos os dados de `patients`, `calls` e
+ * do bucket `tts-audio`.
+ *
+ * @returns {Promise<boolean>} Uma promessa que resolve para `true` se a operação for bem-sucedida.
+ * @throws {Error} Se a chamada RPC falhar.
  */
 export async function clearQueue(): Promise<boolean> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayISO = today.toISOString();
+	const { error } = await supabase.rpc('clear_all_data');
 
-  const { error } = await supabase
-    .from('patients')
-    .delete()
-    .lt('created_at', todayISO);
+	if (error) {
+		console.error('Error clearing all data via RPC:', error);
+		throw new Error('Falha ao limpar os dados. Por favor, tente novamente.');
+	}
 
-  if (error) {
-    console.error('Error clearing queue:', error);
-    throw error;
-  }
-
-  return !error;
+	console.log('Todos os dados foram limpos com sucesso através da RPC.');
+	return !error;
 }
