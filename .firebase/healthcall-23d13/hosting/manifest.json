@@ -31,14 +31,27 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/healthcall-logo-header.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/healthcall-logo-header.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "/healthcall-logo.png",
+      "src": "/healthcall-logo-header.png",
       "sizes": "540x720",
       "type": "image/png",
       "form_factor": "narrow"
     }
   ]
 }
+
