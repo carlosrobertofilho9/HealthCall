@@ -2,12 +2,22 @@ import { supabase } from '@/lib/supabaseClient';
 import { Patient, PatientStatus } from '@/types';
 
 export async function getPatients(): Promise<Patient[]> {
-  const { data, error } = await supabase
-    .from('patients')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching patients:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Exception in getPatients:', error);
+    throw error;
+  }
 }
 
 export async function addPatient(name: string, destination: string): Promise<Patient | null> {
@@ -16,7 +26,12 @@ export async function addPatient(name: string, destination: string): Promise<Pat
     .insert([{ name, destination, status: 'Aguardando' }])
     .select()
     .single();
-  if (error) throw error;
+  
+  if (error) {
+    console.error('Error adding patient:', error);
+    throw error;
+  }
+  
   return data;
 }
 
@@ -27,7 +42,12 @@ export async function updatePatient(patient: Patient): Promise<Patient | null> {
     .eq('id', patient.id)
     .select()
     .single();
-  if (error) throw error;
+  
+  if (error) {
+    console.error('Error updating patient:', error);
+    throw error;
+  }
+  
   return data;
 }
 
