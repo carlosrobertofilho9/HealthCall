@@ -1,16 +1,11 @@
-import LoginPage from '@/pages/Login/LoginPage';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 type ProtectedRouteProps = {
 	children: React.ReactNode;
 };
 
-/**
- * A component that protects a route, redirecting to the login page if the user is not authenticated.
- * It displays a loading indicator while checking the authentication status.
- * @param {ProtectedRouteProps} props - The component props.
- * @param {React.ReactNode} props.children - The child components to render if the user is authenticated.
- */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 	const { session, loading } = useAuth();
 
@@ -24,7 +19,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 	}
 
 	if (!session) {
-		return <LoginPage />;
+		return <Navigate to="/auth/login" replace />;
 	}
 
 	return <>{children}</>;

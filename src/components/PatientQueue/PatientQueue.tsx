@@ -2,7 +2,8 @@ import React from 'react';
 import PatientCard from './PatientCard';
 import type { Patient, PatientStatus } from '@/types';
 import { DESTINATION_ROOMS } from '@/constants';
-import CustomSelect from '@/components/CustomSelect';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Input } from '@/components/ui/Input';
 
 interface PatientQueueProps {
   patients: Patient[];
@@ -17,21 +18,6 @@ interface PatientQueueProps {
   onUpdateDestination: (id: string, destination: string) => void;
 }
 
-/**
- * A component that displays and manages the patient waiting queue.
- * It includes functionality for searching, filtering, and performing actions on patients.
- * @param {PatientQueueProps} props - The component props.
- * @param {Patient[]} props.patients - The list of patients to display.
- * @param {(patient: Patient) => void} props.onEdit - Callback function to edit a patient.
- * @param {(id: string, destination: string) => void} props.onCall - Callback function to call a patient.
- * @param {(id: string, status: PatientStatus) => void} props.onUpdateStatus - Callback function to update a patient's status.
- * @param {(patient: Patient) => void} props.onRemove - Callback function to remove a patient.
- * @param {string} props.searchTerm - The current search term for filtering patients.
- * @param {(term: string) => void} props.setSearchTerm - Callback function to update the search term.
- * @param {string} props.selectedDestination - The currently selected destination for filtering.
- * @param {(destination: string) => void} props.setSelectedDestination - Callback function to update the selected destination.
- * @param {(id: string, destination: string) => void} props.onUpdateDestination - Callback function to update the patient's destination.
- */
 const PatientQueue: React.FC<PatientQueueProps> = ({
   patients,
   onEdit,
@@ -44,11 +30,6 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
   setSelectedDestination,
   onUpdateDestination,
 }) => {
-  const selectOptions = [
-    { value: '', label: 'Todas as Salas' },
-    ...DESTINATION_ROOMS.map(room => ({ value: room, label: room }))
-  ];
-
   return (
     <div className="lg:col-span-2 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
@@ -59,24 +40,29 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
         <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">search</span>
-            <input
-              className="form-input w-full rounded-full text-white bg-[#264532] border-none h-14 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none"
+            <Input
               id="search-patient"
               placeholder="Pesquisar paciente..."
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12"
             />
           </div>
-          <CustomSelect
-            id="filter-destination-room"
-            options={selectOptions}
-            value={selectedDestination}
-            onChange={setSelectedDestination}
-            icon="meeting_room"
-            placeholder="Todas as Salas"
-            className="w-full sm:w-64"
-          />
+          <div className="relative w-full sm:w-64">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">filter_list</span>
+            <Select onValueChange={(value) => setSelectedDestination(value === 'all' ? '' : value)} value={selectedDestination || 'all'}>
+              <SelectTrigger id="filter-destination-room">
+                <SelectValue placeholder="Todas as Salas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as Salas</SelectItem>
+                {DESTINATION_ROOMS.map(room => (
+                  <SelectItem key={room} value={room}>{room}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
       <div className={`space-y-4 pr-2 ${patients.length > 4 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto' : ''}`}>

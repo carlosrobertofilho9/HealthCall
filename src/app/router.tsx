@@ -1,10 +1,10 @@
 import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import App from '@/App';
-import { HomePage } from '@/pages/Home';
-import { DisplayPage } from '@/pages/Display';
-import SettingsPage from '@/pages/Settings/SettingsPage';
-import LoginPage from '@/pages/Login/LoginPage';
+import { HomePage } from '@/features/dashboard';
+import { DisplayPage } from '@/features/display';
+import SettingsPage from '@/features/settings/routes/SettingsPage';
+import LoginPage from '@/features/authentication/routes/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 /**
@@ -26,13 +26,17 @@ export const router = createBrowserRouter([
 		children: [
 			{ index: true, element: <HomePage /> },
 			{ path: 'settings', element: <SettingsPage /> },
-			{ path: 'login', element: <LoginPage /> },
 		],
 	},
 	// Standalone route for the public display screen
 	{
 		path: '/display',
 		element: <DisplayPage />,
+	},
+	// Authentication routes
+	{
+		path: '/auth/login',
+		element: <LoginPage />,
 	},
 ]);
 
