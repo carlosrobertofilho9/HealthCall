@@ -7,9 +7,11 @@ const ttsCache = new Map<string, string>();
 /**
  * Hook customizado para gerenciar a funcionalidade de Text-to-Speech (TTS).
  *
- * Este hook encapsula a lógica para converter texto em fala, utilizando a API
- * nativa do navegador (`speechSynthesis`) como primeira opção e fazendo fallback
- * para uma função TTS do Supabase em caso de falha ou indisponibilidade.
+ * Este hook converte texto em fala usando SEMPRE arquivos de áudio reais
+ * gerados via edge function do Supabase (Google Translate TTS).
+ *
+ * NOTA: Não usa speechSynthesis nativo do navegador porque esse áudio
+ * não é capturado pelo espelhamento do Chromecast.
  *
  * @returns {{
  *   speak: (text: string) => Promise<void>
@@ -19,31 +21,32 @@ export function useTextToSpeech() {
   /**
    * Converte uma string de texto em áudio falado.
    *
-   * A função primeiro tenta usar a API `speechSynthesis` do navegador. Se não
-   * estiver disponível ou se ocorrer um erro, ela automaticamente aciona um
-   * fallback para a função `generate-tts` do Supabase e notifica o usuário
-   * sobre o erro.
+   * Gera áudio através da edge function `generate-tts` do Supabase que usa
+   * a API do Google Translate. Os arquivos de áudio são armazenados em cache
+   * no Supabase Storage e também em memória para melhor performance.
+   *
+   * Os elementos de áudio são configurados com crossOrigin e preload para
+   * garantir compatibilidade com Chromecast durante espelhamento de tela.
    *
    * @param {string} text O texto a ser convertido em fala.
-   * @returns {Promise<void>} Uma promessa que é resolvida quando a fala termina,
-   * ou rejeitada se ambos os métodos (navegador e Supabase) falharem.
+   * @returns {Promise<void>} Uma promessa que é resolvida quando a fala termina.
    */
   const speak = (text: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const speakWithSupabase = async (errorMessage?: string) => {
-        if (errorMessage) {
-          toast.error('Erro na voz do navegador. Usando fallback.', {
-            description: errorMessage,
-          });
-        }
-
+      const speakWithSupabase = async () => {
         // Verifica o cache antes de invocar a função
         if (ttsCache.has(text)) {
           const speechUrl = ttsCache.get(text)!;
           const speechAudio = new Audio(speechUrl);
-          speechAudio.play();
+
+          // Configurações para Chromecast
+          speechAudio.crossOrigin = 'anonymous';
+          speechAudio.preload = 'auto';
+          speechAudio.volume = 1.0;
+
           speechAudio.onended = () => resolve();
           speechAudio.onerror = (e) => reject(e);
+          speechAudio.play().catch(reject);
           return;
         }
 
@@ -59,30 +62,23 @@ export function useTextToSpeech() {
           ttsCache.set(text, data.speechUrl);
 
           const speechAudio = new Audio(data.speechUrl);
-          speechAudio.play();
+
+          // Configurações para Chromecast
+          speechAudio.crossOrigin = 'anonymous';
+          speechAudio.preload = 'auto';
+          speechAudio.volume = 1.0;
+
           speechAudio.onended = () => resolve();
           speechAudio.onerror = (e) => reject(e);
+          speechAudio.play().catch(reject);
         } catch (e) {
           toast.error('Ocorreu um erro ao gerar o áudio da chamada no Supabase.');
           reject(e);
         }
       };
 
-      if ('speechSynthesis' in window) {
-        try {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = 'pt-BR';
-          utterance.onerror = (e) => {
-            speakWithSupabase(`Erro: ${e.error}`);
-          };
-          utterance.onend = () => resolve();
-          speechSynthesis.speak(utterance);
-        } catch (e: any) {
-          speakWithSupabase(e.message);
-        }
-      } else {
-        speakWithSupabase('API de voz do navegador não suportada.');
-      }
+      // SEMPRE usa áudio real (não speechSynthesis) para compatibilidade com Chromecast
+      speakWithSupabase();
     });
   };
 

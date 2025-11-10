@@ -41,6 +41,9 @@ export function useDisplay() {
       audioContext.resume();
     }
     const bell = new Audio('/bell.mp3');
+    // Configurações para Chromecast
+    bell.crossOrigin = 'anonymous';
+    bell.preload = 'auto';
     bell.volume = 0.01;
     bell.play().catch(() => {});
     setAudioActivated(true);
@@ -61,6 +64,11 @@ export function useDisplay() {
       setIsCalling(true);
       try {
         const bell = new Audio('/bell.mp3');
+        // Configurações para Chromecast
+        bell.crossOrigin = 'anonymous';
+        bell.preload = 'auto';
+        bell.volume = 1.0;
+
         await bell.play();
 
         await new Promise<void>((resolve) => {
