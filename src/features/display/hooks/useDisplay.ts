@@ -35,45 +35,85 @@ export function useDisplay() {
   const [audioActivated, setAudioActivated] = useState(false);
   const lastCalledRef = useRef<{ id: string; callCount: number } | null>(null);
 
-  const activateAudio = () => {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
+  const activateAudio = async () => {
+    try {
+      console.log('[Audio] Iniciando ativação de áudio...');
+
+      // Cria e ativa AudioContext
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+
+      // Toca campainha baixa para ativar áudio
+      const bell = new Audio('/bell.mp3');
+      bell.crossOrigin = 'anonymous';
+      bell.preload = 'auto';
+      bell.volume = 0.01;
+
+      // Aguarda confirmação de que o áudio foi ativado
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Timeout ao ativar áudio'));
+        }, 5000);
+
+        bell.onended = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+
+        bell.onerror = (e) => {
+          clearTimeout(timeout);
+          reject(new Error('Erro ao tocar campainha de ativação'));
+        };
+
+        bell.play().catch(reject);
+      });
+
+      setAudioActivated(true);
+      console.log('[Audio] Áudio ativado com sucesso!');
+      toast.success('Sistema de áudio ativado', {
+        description: 'Pronto para anunciar chamadas',
+      });
+    } catch (error) {
+      console.error('[Audio] Falha na ativação:', error);
+      toast.error('Falha ao ativar áudio', {
+        description: 'Tente novamente. Verifique permissões do navegador.',
+      });
+      setAudioActivated(false);
     }
-    const bell = new Audio('/bell.mp3');
-    // Configurações para Chromecast
-    bell.crossOrigin = 'anonymous';
-    bell.preload = 'auto';
-    bell.volume = 0.01;
-    bell.play().catch(() => {});
-    setAudioActivated(true);
   };
 
   useEffect(() => {
     if (!session || !audioActivated) return;
 
     const playBellAndSpeak = async (patient: Patient) => {
-      if (
+      // Verifica se é duplicata ANTES de atualizar ref
+      const isDuplicate =
         patient.id === lastCalledRef.current?.id &&
-        patient.callCount === lastCalledRef.current?.callCount
-      ) {
+        patient.callCount === lastCalledRef.current?.callCount;
+
+      if (isDuplicate) {
+        console.log('[Audio] Chamada duplicada ignorada:', patient.name);
         return;
       }
-      lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
 
+      console.log('[Audio] Iniciando chamada:', patient.name, '→', patient.destination);
       setIsCalling(true);
+
       try {
         const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
 
-        // Inicia o pré-carregamento do TTS imediatamente (em paralelo)
-        // Isso começa a gerar/baixar o áudio enquanto a campainha toca
-        const preloadPromise = preloadTTS(textToSpeak).catch(() => {
-          // Ignora erro no preload, speak() vai tentar novamente
+        // Inicia o pré-carregamento do TTS em paralelo com a campainha
+        let preloadError: Error | null = null;
+        const preloadPromise = preloadTTS(textToSpeak).catch((e) => {
+          preloadError = e;
+          console.error('[Audio] Erro no preload, speak() tentará novamente:', e);
+          return null; // Não propaga erro, speak() tentará
         });
 
         // Toca a campainha
         const bell = new Audio('/bell.mp3');
-        // Configurações para Chromecast
         bell.crossOrigin = 'anonymous';
         bell.preload = 'auto';
         bell.volume = 1.0;
@@ -81,23 +121,40 @@ export function useDisplay() {
         await bell.play();
 
         // Aguarda a campainha terminar
-        await new Promise<void>((resolve) => {
-          bell.onended = () => resolve();
+        await new Promise<void>((resolve, reject) => {
+          bell.onended = () => {
+            console.log('[Audio] Campainha concluída');
+            resolve();
+          };
           bell.onerror = (e) => {
-            toast.error('Erro ao tocar a campainha.', {
-              description: (e.target as HTMLAudioElement)?.error?.message,
+            console.error('[Audio] Erro na campainha:', e);
+            toast.error('Erro ao tocar a campainha', {
+              description: 'Continuando com o anúncio...',
             });
-            resolve(); // Resolve mesmo em caso de erro da campainha para tentar falar
+            resolve(); // Continua mesmo com erro na campainha
           };
         });
 
-        // Aguarda o preload estar completo (provavelmente já estará)
+        // Aguarda o preload estar completo
         await preloadPromise;
 
-        // Agora toca o TTS (que já está carregado/em cache)
+        // Se preload falhou, speak() tentará gerar novamente
+        if (preloadError) {
+          console.log('[Audio] Preload falhou, speak() tentará novamente');
+        }
+
+        // Toca o TTS (usa cache se preload foi bem-sucedido)
         await speak(textToSpeak);
+
+        // Atualiza ref SOMENTE após sucesso completo
+        lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
+        console.log('[Audio] Chamada concluída com sucesso');
       } catch (error) {
-        toast.error('Ocorreu um erro ao reproduzir o áudio da chamada.');
+        console.error('[Audio] Erro na chamada:', error);
+        toast.error('Erro ao reproduzir áudio da chamada', {
+          description: error instanceof Error ? error.message : 'Erro desconhecido',
+        });
+        // NÃO atualiza lastCalledRef em caso de erro para permitir retry
       } finally {
         setTimeout(() => setIsCalling(false), 500);
       }
