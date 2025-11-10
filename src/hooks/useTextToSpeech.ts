@@ -31,56 +31,56 @@ export function useTextToSpeech() {
    * @param {string} text O texto a ser convertido em fala.
    * @returns {Promise<void>} Uma promessa que é resolvida quando a fala termina.
    */
+  /**
+   * Pré-carrega o áudio TTS sem reproduzi-lo.
+   * Útil para reduzir latência ao carregar o áudio enquanto outra ação acontece.
+   */
+  const preloadTTS = async (text: string): Promise<string> => {
+    // Verifica o cache antes de invocar a função
+    if (ttsCache.has(text)) {
+      return ttsCache.get(text)!;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-tts', {
+        body: { text },
+      });
+
+      if (error) throw new Error(`Erro ao invocar função TTS: ${error.message}`);
+      if (!data?.speechUrl) throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
+
+      // Armazena a nova URL no cache
+      ttsCache.set(text, data.speechUrl);
+
+      return data.speechUrl;
+    } catch (e) {
+      toast.error('Ocorreu um erro ao gerar o áudio da chamada no Supabase.');
+      throw e;
+    }
+  };
+
   const speak = (text: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const speakWithSupabase = async () => {
-        // Verifica o cache antes de invocar a função
-        if (ttsCache.has(text)) {
-          const speechUrl = ttsCache.get(text)!;
-          const speechAudio = new Audio(speechUrl);
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Obtém a URL do áudio (usa cache se disponível)
+        const speechUrl = await preloadTTS(text);
 
-          // Configurações para Chromecast
-          speechAudio.crossOrigin = 'anonymous';
-          speechAudio.preload = 'auto';
-          speechAudio.volume = 1.0;
+        // Cria e configura o elemento de áudio
+        const speechAudio = new Audio(speechUrl);
 
-          speechAudio.onended = () => resolve();
-          speechAudio.onerror = (e) => reject(e);
-          speechAudio.play().catch(reject);
-          return;
-        }
+        // Configurações para Chromecast
+        speechAudio.crossOrigin = 'anonymous';
+        speechAudio.preload = 'auto';
+        speechAudio.volume = 1.0;
 
-        try {
-          const { data, error } = await supabase.functions.invoke('generate-tts', {
-            body: { text },
-          });
-
-          if (error) throw new Error(`Erro ao invocar função TTS: ${error.message}`);
-          if (!data?.speechUrl) throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
-
-          // Armazena a nova URL no cache
-          ttsCache.set(text, data.speechUrl);
-
-          const speechAudio = new Audio(data.speechUrl);
-
-          // Configurações para Chromecast
-          speechAudio.crossOrigin = 'anonymous';
-          speechAudio.preload = 'auto';
-          speechAudio.volume = 1.0;
-
-          speechAudio.onended = () => resolve();
-          speechAudio.onerror = (e) => reject(e);
-          speechAudio.play().catch(reject);
-        } catch (e) {
-          toast.error('Ocorreu um erro ao gerar o áudio da chamada no Supabase.');
-          reject(e);
-        }
-      };
-
-      // SEMPRE usa áudio real (não speechSynthesis) para compatibilidade com Chromecast
-      speakWithSupabase();
+        speechAudio.onended = () => resolve();
+        speechAudio.onerror = (e) => reject(e);
+        speechAudio.play().catch(reject);
+      } catch (e) {
+        reject(e);
+      }
     });
   };
 
-  return { speak };
+  return { speak, preloadTTS };
 }

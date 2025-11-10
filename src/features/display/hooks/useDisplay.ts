@@ -27,7 +27,7 @@ import { useTextToSpeech } from '@/hooks/useTextToSpeech';
  */
 export function useDisplay() {
   const { session } = useAuth();
-  const { speak } = useTextToSpeech();
+  const { speak, preloadTTS } = useTextToSpeech();
   const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
   const [nextPatients, setNextPatients] = useState<Patient[]>([]);
   const [callHistory, setCallHistory] = useState<CallRecord[]>([]);
@@ -63,6 +63,15 @@ export function useDisplay() {
 
       setIsCalling(true);
       try {
+        const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
+
+        // Inicia o pré-carregamento do TTS imediatamente (em paralelo)
+        // Isso começa a gerar/baixar o áudio enquanto a campainha toca
+        const preloadPromise = preloadTTS(textToSpeak).catch(() => {
+          // Ignora erro no preload, speak() vai tentar novamente
+        });
+
+        // Toca a campainha
         const bell = new Audio('/bell.mp3');
         // Configurações para Chromecast
         bell.crossOrigin = 'anonymous';
@@ -71,12 +80,9 @@ export function useDisplay() {
 
         await bell.play();
 
+        // Aguarda a campainha terminar
         await new Promise<void>((resolve) => {
-          bell.onended = async () => {
-            const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
-            await speak(textToSpeak);
-            resolve();
-          };
+          bell.onended = () => resolve();
           bell.onerror = (e) => {
             toast.error('Erro ao tocar a campainha.', {
               description: (e.target as HTMLAudioElement)?.error?.message,
@@ -84,6 +90,12 @@ export function useDisplay() {
             resolve(); // Resolve mesmo em caso de erro da campainha para tentar falar
           };
         });
+
+        // Aguarda o preload estar completo (provavelmente já estará)
+        await preloadPromise;
+
+        // Agora toca o TTS (que já está carregado/em cache)
+        await speak(textToSpeak);
       } catch (error) {
         toast.error('Ocorreu um erro ao reproduzir o áudio da chamada.');
       } finally {
