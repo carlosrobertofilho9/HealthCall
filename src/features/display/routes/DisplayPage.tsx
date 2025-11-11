@@ -23,6 +23,7 @@ const DisplayPage: React.FC = () => {
     isCalling,
     audioActivated,
     activateAudio,
+    isActivatingAudio,
   } = useDisplayData();
   const { session, loading } = useAuth();
   const navigate = useNavigate();
@@ -51,10 +52,20 @@ const DisplayPage: React.FC = () => {
           </p>
           <button
             onClick={activateAudio}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+            disabled={isActivatingAudio}
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            <span className="material-symbols-outlined align-middle mr-2">volume_up</span>
-            Ativar Som e Iniciar
+            {isActivatingAudio ? (
+              <>
+                <span className="material-symbols-outlined align-middle mr-2 animate-spin">refresh</span>
+                Ativando...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined align-middle mr-2">volume_up</span>
+                Ativar Som e Iniciar
+              </>
+            )}
           </button>
         </div>
       </div>

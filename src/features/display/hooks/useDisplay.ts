@@ -5,6 +5,9 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import { audioTelemetry } from '@/lib/audioTelemetry';
+import { useAudioContext } from '@/hooks/useAudioContext';
+import { audioMonitoring } from '@/lib/audioMonitoring';
 
 /**
  * Um hook para gerenciar toda a lógica e estado da página de exibição pública.
@@ -28,22 +31,30 @@ import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 export function useDisplay() {
   const { session } = useAuth();
   const { speak, preloadTTS } = useTextToSpeech();
+  const { contextRef: audioContextRef, isHealthy, resume: resumeAudioContext, startHealthCheck } = useAudioContext();
   const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
   const [nextPatients, setNextPatients] = useState<Patient[]>([]);
   const [callHistory, setCallHistory] = useState<CallRecord[]>([]);
   const [isCalling, setIsCalling] = useState(false);
   const [audioActivated, setAudioActivated] = useState(false);
+  const [isActivatingAudio, setIsActivatingAudio] = useState(false);
   const lastCalledRef = useRef<{ id: string; callCount: number } | null>(null);
+  const isPlayingRef = useRef(false);
 
   const activateAudio = async () => {
+    if (isActivatingAudio) {
+      console.log('[Audio] Ativação já em andamento, ignorando clique');
+      return;
+    }
+
+    setIsActivatingAudio(true);
+    const startTime = Date.now();
+
     try {
       console.log('[Audio] Iniciando ativação de áudio...');
 
-      // Cria e ativa AudioContext
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-      }
+      // Usa hook de AudioContext com health check
+      await resumeAudioContext();
 
       // Toca campainha baixa para ativar áudio
       const bell = new Audio('/bell.mp3');
@@ -51,19 +62,24 @@ export function useDisplay() {
       bell.preload = 'auto';
       bell.volume = 0.01;
 
-      // Aguarda confirmação de que o áudio foi ativado
+      // Aguarda confirmação de que o áudio foi ativado com timeout reduzido
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
+          bell.pause();
+          bell.src = '';
           reject(new Error('Timeout ao ativar áudio'));
-        }, 5000);
+        }, 3000); // Reduzido de 5s para 3s
 
         bell.onended = () => {
           clearTimeout(timeout);
+          bell.src = '';
           resolve();
         };
 
         bell.onerror = (e) => {
           clearTimeout(timeout);
+          bell.pause();
+          bell.src = '';
           reject(new Error('Erro ao tocar campainha de ativação'));
         };
 
@@ -71,23 +87,70 @@ export function useDisplay() {
       });
 
       setAudioActivated(true);
+
+      // Inicia health check periódico (a cada 30 segundos)
+      startHealthCheck(30000);
+
+      // Inicia monitoramento do sistema (a cada 1 minuto)
+      audioMonitoring.start();
+
       console.log('[Audio] Áudio ativado com sucesso!');
+      const latency = Date.now() - startTime;
+      audioTelemetry.trackActivation(true, latency);
       toast.success('Sistema de áudio ativado', {
         description: 'Pronto para anunciar chamadas',
       });
     } catch (error) {
       console.error('[Audio] Falha na ativação:', error);
+      const latency = Date.now() - startTime;
+      audioTelemetry.trackActivation(false, latency);
+      audioTelemetry.trackError('activation_error', error instanceof Error ? error.message : String(error));
       toast.error('Falha ao ativar áudio', {
         description: 'Tente novamente. Verifique permissões do navegador.',
       });
       setAudioActivated(false);
+    } finally {
+      setIsActivatingAudio(false);
     }
   };
+
+  // Pré-carregamento preditivo dos próximos pacientes
+  useEffect(() => {
+    if (!audioActivated || nextPatients.length === 0) return;
+
+    const preloadNextPatients = async () => {
+      console.log(`[Audio] Pré-carregando áudio dos próximos ${Math.min(3, nextPatients.length)} pacientes`);
+
+      // Pré-carrega áudio dos próximos 3 pacientes
+      const promises = nextPatients.slice(0, 3).map(async (patient) => {
+        try {
+          const text = `Chamando ${patient.name}, para ${patient.destination}`;
+          await preloadTTS(text);
+          console.log(`[Audio] Pré-carregado: ${patient.name}`);
+        } catch (error) {
+          // Falha silenciosa, tentará novamente quando chamar
+          console.warn(`[Audio] Falha ao pré-carregar ${patient.name}:`, error);
+        }
+      });
+
+      await Promise.allSettled(promises);
+    };
+
+    // Debounce para evitar múltiplas chamadas
+    const timeout = setTimeout(preloadNextPatients, 1000);
+    return () => clearTimeout(timeout);
+  }, [nextPatients, audioActivated, preloadTTS]);
 
   useEffect(() => {
     if (!session || !audioActivated) return;
 
     const playBellAndSpeak = async (patient: Patient) => {
+      // Mutex: Verifica se já está tocando
+      if (isPlayingRef.current) {
+        console.log('[Audio] Já existe uma reprodução em andamento, ignorando');
+        return;
+      }
+
       // Verifica se é duplicata ANTES de atualizar ref
       const isDuplicate =
         patient.id === lastCalledRef.current?.id &&
@@ -98,8 +161,14 @@ export function useDisplay() {
         return;
       }
 
+      // Ativa mutex
+      isPlayingRef.current = true;
+
       console.log('[Audio] Iniciando chamada:', patient.name, '→', patient.destination);
       setIsCalling(true);
+
+      // Garante que AudioContext está ativo usando hook de health check
+      await resumeAudioContext();
 
       try {
         const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
@@ -122,12 +191,21 @@ export function useDisplay() {
 
         // Aguarda a campainha terminar
         await new Promise<void>((resolve, reject) => {
+          const cleanup = () => {
+            bell.pause();
+            bell.onended = null;
+            bell.onerror = null;
+            bell.src = '';
+          };
+
           bell.onended = () => {
             console.log('[Audio] Campainha concluída');
+            cleanup();
             resolve();
           };
           bell.onerror = (e) => {
             console.error('[Audio] Erro na campainha:', e);
+            cleanup();
             toast.error('Erro ao tocar a campainha', {
               description: 'Continuando com o anúncio...',
             });
@@ -156,7 +234,13 @@ export function useDisplay() {
         });
         // NÃO atualiza lastCalledRef em caso de erro para permitir retry
       } finally {
-        setTimeout(() => setIsCalling(false), 500);
+        // Libera mutex imediatamente para permitir próximas chamadas
+        isPlayingRef.current = false;
+
+        // Mantém visual de "chamando" por 500ms
+        setTimeout(() => {
+          setIsCalling(false);
+        }, 500);
       }
     };
 
@@ -234,5 +318,6 @@ export function useDisplay() {
     isCalling,
     audioActivated,
     activateAudio,
+    isActivatingAudio,
   };
 }
