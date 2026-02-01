@@ -5,6 +5,11 @@ directories:
   output: dist-electron
   buildResources: build
 
+publish:
+  provider: github
+  owner: carlosrobertofilho9
+  repo: healthcall
+
 files:
   - dist/**/*
   - electron/**/*

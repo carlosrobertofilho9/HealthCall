@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification, protocol, net } from 'electron';
+import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -25,6 +26,49 @@ initializeTTS();
 startAudioServer();
 
 const isDev = !app.isPackaged;
+
+// Configuração do Auto Updater
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+// Events do Auto Updater
+autoUpdater.on('checking-for-update', () => {
+  console.log('[Updater] Checking for updates...');
+  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'checking' });
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('[Updater] Update available:', info);
+  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'available', info });
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  console.log('[Updater] Update not available');
+  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'not-available', info });
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('[Updater] Error:', err);
+  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'error', error: err.message });
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  console.log(`[Updater] Download progress: ${progressObj.percent}%`);
+  if (mainWindow) mainWindow.webContents.send('update:download-progress', progressObj);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('[Updater] Update downloaded');
+  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'downloaded', info });
+  
+  // Notificação nativa
+  if (Notification.isSupported()) {
+    new Notification({
+      title: 'Atualização Pronta',
+      body: 'Uma nova versão foi baixada e será instalada ao fechar o app.'
+    }).show();
+  }
+});
 
 let mainWindow = null;
 let displayWindows = []; // Array para múltiplas janelas de display
@@ -785,6 +829,23 @@ ipcMain.handle('auth:updateDestination', async (event, { userId, destination }) 
   }
 });
 
+// --- AUTO UPDATER ---
+ipcMain.handle('update:check', async () => {
+  if (!isDev) {
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      return { success: true, result };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+  return { success: false, error: 'Cannot check for updates in dev mode' };
+});
+
+ipcMain.handle('update:install', () => {
+  autoUpdater.quitAndInstall();
+});
+
 // App lifecycle
 app.whenReady().then(() => {
   // Registra o handler para o protocolo 'local://'
@@ -922,6 +983,14 @@ app.whenReady().then(() => {
   
   createWindow();
   createTray();
+
+  // Verificar atualizações após iniciar (apenas em produção)
+  if (!isDev) {
+    // Delay curto para garantir que a janela carregou
+    setTimeout(() => {
+      autoUpdater.checkForUpdatesAndNotify();
+    }, 3000);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
