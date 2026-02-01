@@ -32,6 +32,10 @@ describe('useTextToSpeech', () => {
       onended: (() => void) | null = null;
       onerror: ((e: any) => void) | null = null;
       onloadeddata: (() => void) | null = null;
+      oncanplay: (() => void) | null = null;
+      onprogress: (() => void) | null = null;
+      onstalled: (() => void) | null = null;
+      onwaiting: (() => void) | null = null;
       paused = true;
 
       async play() {
@@ -44,6 +48,14 @@ describe('useTextToSpeech', () => {
 
       pause() {
         this.paused = true;
+      }
+
+      load() {
+        // Mock implementation
+      }
+
+      remove() {
+        // Mock implementation
       }
     } as any;
   });

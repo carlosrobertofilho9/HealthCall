@@ -1,0 +1,7 @@
+{
+  "receiverApplicationId": "A75B4462",
+  "namespace": "urn:x-cast:com.healthcall.display",
+  "autoJoinPolicy": "origin_scoped",
+  "androidReceiverCompatible": true,
+  "language": "pt-BR"
+}

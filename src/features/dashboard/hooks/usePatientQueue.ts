@@ -3,6 +3,8 @@ import { Patient, PatientStatus } from '@/types';
 import * as patientService from '@/features/dashboard/services/patientService';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
+import { castService } from '@/services/castService';
+import { useElectron } from '@/hooks/useElectron';
 
 /**
  * Um hook abrangente para gerenciar o estado e as interações da fila de pacientes.
@@ -37,6 +39,7 @@ export function usePatientQueue() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedDestination, setSelectedDestination] = useState('');
   const [isAddingPatient, setIsAddingPatient] = useState(false);
+  const { generateTTS } = useElectron();
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -198,6 +201,27 @@ export function usePatientQueue() {
       if (calledPatient) {
         const time = calledPatient.callCount > 1 ? ` pela ${calledPatient.callCount}ª vez` : '';
         toast.success(`${calledPatient.name} foi chamado(a)${time}!`);
+        
+        // Send to Chromecast if connected
+        if (castService.isConnected()) {
+          console.log('[Cast] Sending patient call to receiver');
+          
+          let audioUrl = null;
+          
+          // Try to generate TTS audio if running in Electron
+          try {
+            const text = `Chamando ${calledPatient.name}, para ${destination}`;
+            console.log('[TTS] Generating audio for:', text);
+            audioUrl = await generateTTS(text);
+            if (audioUrl) {
+              console.log('[TTS] Audio generated:', audioUrl);
+            }
+          } catch (err) {
+            console.error('[TTS] Error generating audio:', err);
+          }
+
+          castService.sendPatientCall(calledPatient, destination, audioUrl);
+        }
       }
     } catch (error: any) {
       setPatients((current) =>

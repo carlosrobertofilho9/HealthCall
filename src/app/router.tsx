@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import App from '@/App';
-import { HomePage } from '@/features/dashboard';
+import { HomePage, WarningsPage } from '@/features/dashboard';
 import { DisplayPage } from '@/features/display';
 import SettingsPage from '@/features/settings/routes/SettingsPage';
 import LoginPage from '@/features/authentication/routes/LoginPage';
@@ -25,6 +25,7 @@ export const router = createBrowserRouter([
 		),
 		children: [
 			{ index: true, element: <HomePage /> },
+			{ path: 'dashboard/warnings', element: <WarningsPage /> },
 			{ path: 'settings', element: <SettingsPage /> },
 		],
 	},

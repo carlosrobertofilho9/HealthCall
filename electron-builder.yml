@@ -1,0 +1,28 @@
+appId: com.healthcall.app
+productName: HealthCall
+copyright: Copyright © 2026
+directories:
+  output: dist-electron
+  buildResources: build
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: public/healthcall-icon.png
+  artifactName: HealthCall-Setup-${version}.exe
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: HealthCall
+  displayLanguageSelector: false
+  installerIcon: public/healthcall-icon.png
+  uninstallerIcon: public/healthcall-icon.png

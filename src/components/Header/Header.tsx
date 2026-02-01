@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
+import { useElectron } from '@/hooks/useElectron';
+import { CastButton } from '@/components/CastButton';
 
 /**
  * The main header component for the application.
@@ -12,6 +14,7 @@ const Header: React.FC = () => {
 	const [initials, setInitials] = useState<string>('');
 	const navigate = useNavigate();
 	const menuRef = useRef<HTMLDivElement>(null);
+	const { isElectron, openDisplayWindow } = useElectron();
 
 	/**
 	 * Handles the user logout process.
@@ -106,15 +109,34 @@ const Header: React.FC = () => {
 				>
 					Fila de Atendimento
 				</NavLink>
+				{isElectron ? (
+					<button
+						onClick={() => openDisplayWindow()}
+						className="text-white text-base font-medium leading-normal hover:text-primary transition-colors cursor-pointer"
+					>
+						Display 🖥️
+					</button>
+				) : (
+					<NavLink
+						to="/display"
+						className={({ isActive }) =>
+							isActive
+								? 'text-primary text-base font-bold leading-normal'
+								: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
+						}
+					>
+						Display
+					</NavLink>
+				)}
 				<NavLink
-					to="/display"
+					to="/dashboard/warnings"
 					className={({ isActive }) =>
 						isActive
 							? 'text-primary text-base font-bold leading-normal'
 							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
 					}
 				>
-					Display
+					Avisos
 				</NavLink>
 				<NavLink
 					to="/settings"
@@ -128,6 +150,9 @@ const Header: React.FC = () => {
 				</NavLink>
 			</nav>
 			<div className="flex items-center gap-4">
+				{/* Chromecast Button */}
+				<CastButton />
+				
 				<div className="relative" ref={menuRef}>
 					<button onClick={toggleMenu} className="focus:outline-none">
 						{avatarUrl ? (

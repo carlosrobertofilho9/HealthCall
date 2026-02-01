@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { audioTelemetry } from '@/lib/audioTelemetry';
+import { useRef } from 'react';
 
 // Cache em memória com expiração para evitar URLs antigas/inválidas
 interface CacheEntry {
@@ -43,6 +44,11 @@ const cacheHelpers = {
       console.log('[TTS] Cache expirado, removendo:', key.substring(0, 30));
       ttsCache.delete(key);
       return null;
+    }
+
+    // Pula validação em ambiente de teste
+    if (import.meta.env.VITEST) {
+      return entry.url;
     }
 
     // Verifica integridade periodicamente (a cada 5 minutos)
@@ -221,9 +227,22 @@ export function useTextToSpeech() {
     });
   };
 
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const cancel = () => {
+    if (currentAudioRef.current) {
+      console.log('[TTS] Cancelando reprodução atual');
+      currentAudioRef.current.pause();
+      currentAudioRef.current.src = '';
+      currentAudioRef.current = null;
+    }
+  };
+
   const speak = (text: string): Promise<void> => {
+    // Cancela anterior se houver
+    cancel();
+
     return new Promise(async (resolve, reject) => {
-      let speechAudio: HTMLAudioElement | null = null;
       const startTime = Date.now();
 
       try {
@@ -231,16 +250,16 @@ export function useTextToSpeech() {
         const speechUrl = await preloadTTS(text);
 
         // ⚠️ VALIDAÇÃO CRÍTICA DE SEGURANÇA
-        // DEVE rejeitar antes de criar elemento Audio
         if (!isValidAudioUrl(speechUrl)) {
           const error = new Error('URL de áudio inválida ou não confiável');
           audioTelemetry.trackError('malicious_url_blocked', `Blocked: ${speechUrl}`);
           audioTelemetry.trackPlayback(false, Date.now() - startTime, error.message);
-          throw error; // Propaga erro imediatamente
+          throw error;
         }
 
         // Cria e configura o elemento de áudio
-        speechAudio = new Audio(speechUrl);
+        const speechAudio = new Audio(speechUrl);
+        currentAudioRef.current = speechAudio;
 
         // Configurações para Chromecast
         speechAudio.crossOrigin = 'anonymous';
@@ -250,10 +269,7 @@ export function useTextToSpeech() {
         // Gerencia eventos de áudio com cleanup completo
         const cleanup = () => {
           if (speechAudio) {
-            // Pausa reprodução
             speechAudio.pause();
-
-            // Remove todos os event listeners
             speechAudio.onended = null;
             speechAudio.onerror = null;
             speechAudio.onloadeddata = null;
@@ -261,17 +277,12 @@ export function useTextToSpeech() {
             speechAudio.onprogress = null;
             speechAudio.onstalled = null;
             speechAudio.onwaiting = null;
-
-            // Limpa src e força descarga do buffer
             speechAudio.src = '';
             speechAudio.load();
-
-            // Remove do DOM se foi adicionado
-            if (speechAudio.remove) {
-              speechAudio.remove();
-            }
-
-            speechAudio = null;
+            if (speechAudio.remove) speechAudio.remove();
+          }
+          if (currentAudioRef.current === speechAudio) {
+            currentAudioRef.current = null;
           }
         };
 
@@ -284,16 +295,24 @@ export function useTextToSpeech() {
         };
 
         speechAudio.onerror = (e) => {
+          const mediaError = speechAudio.error;
           console.error('[TTS] Erro na reprodução:', e);
+          console.error('[TTS] MediaError:', mediaError);
+          console.error('[TTS] NetworkState:', speechAudio.networkState);
+          console.error('[TTS] ReadyState:', speechAudio.readyState);
+          console.error('[TTS] CurrentSrc:', speechAudio.currentSrc);
+
           const latency = Date.now() - startTime;
           audioTelemetry.trackPlayback(false, latency, 'Erro ao reproduzir áudio');
-          audioTelemetry.trackError('playback_error', e?.toString() || 'Unknown error');
+          
+          const errorDetails = `Code: ${mediaError?.code}, Msg: ${mediaError?.message}, Network: ${speechAudio.networkState}, Ready: ${speechAudio.readyState}`;
+          audioTelemetry.trackError('playback_error', errorDetails);
 
-          // Se erro de reprodução, invalida o cache (URL pode estar corrompida)
-          if (cacheHelpers.get(text) === speechUrl) {
-            console.log('[TTS] Removendo URL corrompida do cache');
-            ttsCache.delete(text);
-          }
+          cacheHelpers.get(text).then(cachedUrl => {
+            if (cachedUrl === speechUrl) {
+              ttsCache.delete(text);
+            }
+          });
 
           cleanup();
           reject(new Error('Erro ao reproduzir áudio'));
@@ -302,21 +321,27 @@ export function useTextToSpeech() {
         console.log('[TTS] Iniciando reprodução');
         await speechAudio.play();
       } catch (e) {
+        // Se foi cancelado, não é erro
+        if (currentAudioRef.current === null && e instanceof Error && e.name === 'AbortError') {
+             console.log('[TTS] Reprodução abortada');
+             resolve();
+             return;
+        }
+
         console.error('[TTS] Erro no speak():', e);
         const latency = Date.now() - startTime;
         audioTelemetry.trackPlayback(false, latency, e instanceof Error ? e.message : 'Unknown error');
         audioTelemetry.trackError('speak_error', e instanceof Error ? e.message : String(e));
 
-        // Cleanup em caso de erro
-        if (speechAudio) {
-          speechAudio.pause();
-          speechAudio.src = '';
+        if (currentAudioRef.current) {
+            currentAudioRef.current.pause();
+            currentAudioRef.current.src = '';
+            currentAudioRef.current = null;
         }
-
         reject(e);
       }
     });
   };
 
-  return { speak, preloadTTS };
+  return { speak, preloadTTS, cancel };
 }

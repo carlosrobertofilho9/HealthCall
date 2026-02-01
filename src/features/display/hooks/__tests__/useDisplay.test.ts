@@ -26,6 +26,15 @@ vi.mock('@/hooks/useTextToSpeech', () => ({
   })),
 }));
 
+vi.mock('@/hooks/useAudioContext', () => ({
+  useAudioContext: vi.fn(() => ({
+    contextRef: { current: { state: 'running' } },
+    isHealthy: true,
+    resume: vi.fn().mockResolvedValue(undefined),
+    startHealthCheck: vi.fn(),
+  })),
+}));
+
 vi.mock('@/features/display/services/displayService', () => ({
   getLastCall: vi.fn(),
   getCallHistory: vi.fn(),
@@ -37,6 +46,23 @@ vi.mock('sonner', () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),
+  },
+}));
+
+vi.mock('@/lib/audioMonitoring', () => ({
+  audioMonitoring: {
+    start: vi.fn(),
+    stop: vi.fn(),
+    getMetrics: vi.fn(() => ({})),
+  },
+}));
+
+vi.mock('@/lib/audioTelemetry', () => ({
+  audioTelemetry: {
+    trackActivation: vi.fn(),
+    trackPlayback: vi.fn(),
+    trackCache: vi.fn(),
+    trackError: vi.fn(),
   },
 }));
 
@@ -91,6 +117,10 @@ describe('useDisplay - Audio System', () => {
       preload = 'auto';
       onended: (() => void) | null = null;
       onerror: ((e: any) => void) | null = null;
+      oncanplay: (() => void) | null = null;
+      onprogress: (() => void) | null = null;
+      onstalled: (() => void) | null = null;
+      onwaiting: (() => void) | null = null;
       paused = true;
 
       async play() {
@@ -103,6 +133,14 @@ describe('useDisplay - Audio System', () => {
 
       pause() {
         this.paused = true;
+      }
+
+      load() {
+        // Mock implementation
+      }
+
+      remove() {
+        // Mock implementation
       }
     } as any;
   });

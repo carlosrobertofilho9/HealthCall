@@ -16,3 +16,15 @@ export type CallRecord = {
 	callCount: number;
 	calledAt: number;
 };
+
+export interface Warning {
+	id: string;
+	text: string;
+	background_url: string | null;
+	active: boolean;
+	created_at: string;
+	media_type?: 'image' | 'video' | 'youtube';
+	qrcode_url?: string;
+	start_time?: string;
+	end_time?: string;
+}

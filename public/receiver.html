@@ -1,0 +1,1210 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HealthCall Display - Chromecast Receiver</title>
+
+    <!-- Google Cast Receiver SDK -->
+    <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+
+    <!-- Material Symbols -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+    />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Spline Sans", "Noto Sans", sans-serif;
+        background-color: #111827;
+        color: white;
+        overflow: hidden;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      /* Animations */
+      @keyframes slideIn {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(30px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes marquee {
+        0% {
+          transform: translateX(100%);
+        }
+        100% {
+          transform: translateX(-100%);
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .animate-slide-in {
+        animation: slideIn 0.5s ease-out forwards;
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-out forwards;
+      }
+      .animate-slide-up {
+        animation: slideUp 0.6s ease-out forwards;
+      }
+      .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      /* Layout */
+      .screen {
+        display: none;
+        width: 100vw;
+        height: 100vh;
+        flex-direction: column;
+      }
+
+      .screen.active {
+        display: flex;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid rgba(75, 85, 99, 0.5);
+        background: rgba(17, 24, 39, 0.5);
+        backdrop-filter: blur(8px);
+      }
+
+      .header-left {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .time {
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: "Courier New", monospace;
+        letter-spacing: 0.1em;
+      }
+
+      .date {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .logo {
+        height: 2rem;
+      }
+
+      .facility-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+
+      /* Call Screen */
+      .call-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 2rem;
+      }
+
+      .call-title {
+        font-size: 5rem;
+        font-weight: 700;
+        color: #38e07b;
+        margin-bottom: 1rem;
+      }
+
+      .patient-name {
+        font-size: 6rem;
+        font-weight: 900;
+        margin-bottom: 2rem;
+      }
+
+      .destination-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 1.5rem;
+        background: #1f2937;
+        border-radius: 9999px;
+        padding: 1.5rem 3rem;
+      }
+
+      .destination-badge .material-symbols-outlined {
+        font-size: 4rem;
+        color: #38e07b;
+      }
+
+      .destination-text {
+        font-size: 5rem;
+        font-weight: 700;
+      }
+
+      /* List Screen */
+      .list-main {
+        flex: 1;
+        padding: 2.5rem;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        padding-bottom: 7rem;
+      }
+
+      .current-call {
+        background: #1f2937;
+        border-radius: 1.5rem;
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .current-call-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: #38e07b;
+        margin-bottom: 1.5rem;
+      }
+
+      .current-call-name {
+        font-size: 4.5rem;
+        font-weight: 900;
+        margin-bottom: 2rem;
+      }
+
+      .call-history {
+        background: #1f2937;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .history-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+      }
+
+      .history-list {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .history-item {
+        background: rgba(55, 65, 81, 0.6);
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .history-item.latest {
+        background: rgba(34, 197, 94, 0.3);
+        border: 1px solid #22c55e;
+      }
+
+      .history-item-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .history-item-left .material-symbols-outlined {
+        font-size: 2rem;
+        color: #22c55e;
+      }
+
+      .history-patient-name {
+        font-weight: 700;
+      }
+
+      .history-destination {
+        font-size: 0.875rem;
+        color: #d1d5db;
+      }
+
+      .history-time {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #86efac;
+      }
+
+      .next-patients {
+        grid-column: 1 / -1;
+        background: #1f2937;
+        border-radius: 1.5rem;
+        padding: 2rem;
+      }
+
+      .next-patients-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+      }
+
+      .next-patients-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+      }
+
+      .next-patient-card {
+        background: #374151;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .next-patient-name {
+        font-weight: 600;
+      }
+
+      .next-patient-destination {
+        font-size: 0.875rem;
+        color: #d1d5db;
+      }
+
+      /* Warning Screen */
+      .warning-background {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background: black;
+      }
+
+      .warning-background img,
+      .warning-background video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.4;
+      }
+
+      .warning-background iframe {
+        width: 100%;
+        height: 100%;
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .warning-content {
+        position: relative;
+        z-index: 10;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .warning-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .warning-qrcode {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 2rem;
+        border-radius: 1.5rem;
+        margin-bottom: 3rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .warning-qrcode img {
+        width: 16rem;
+        height: 16rem;
+      }
+
+      .warning-qrcode-text {
+        color: #111827;
+        font-weight: 700;
+        margin-top: 1rem;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .warning-caption-bar {
+        width: 100%;
+        background: linear-gradient(
+          to top,
+          black,
+          rgba(0, 0, 0, 0.6),
+          transparent
+        );
+        padding: 8rem 3rem 3rem;
+        margin-top: auto;
+      }
+
+      .warning-caption-container {
+        max-width: 90rem;
+        margin: 0 auto;
+        text-align: left;
+      }
+
+      .warning-caption-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #38e07b;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .warning-caption-title::before {
+        content: "";
+        width: 0.5rem;
+        height: 2.5rem;
+        background: #38e07b;
+        border-radius: 9999px;
+      }
+
+      .warning-caption-text {
+        font-size: 3.5rem;
+        font-weight: 500;
+        line-height: 1.3;
+        text-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+      }
+
+      /* News Headline Screen */
+      .news-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 4rem;
+        position: relative;
+      }
+
+      .news-background {
+        position: absolute;
+        inset: 0;
+        opacity: 0.1;
+        background: radial-gradient(ellipse at center, #065f46, #111827, black);
+      }
+
+      .news-icon-container {
+        position: relative;
+        z-index: 10;
+        margin-bottom: 3rem;
+      }
+
+      .news-icon-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 8rem;
+        height: 8rem;
+        border-radius: 9999px;
+        background: rgba(59, 130, 246, 0.1);
+        border: 4px solid rgba(59, 130, 246, 0.3);
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      .news-icon-circle .material-symbols-outlined {
+        font-size: 4rem;
+        color: #3b82f6;
+      }
+
+      .news-content {
+        position: relative;
+        z-index: 10;
+        max-width: 80rem;
+      }
+
+      .news-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #3b82f6;
+        margin-bottom: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+      }
+
+      .news-title-dot {
+        width: 0.75rem;
+        height: 0.75rem;
+        background: #3b82f6;
+        border-radius: 9999px;
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      .news-text {
+        font-size: 4.5rem;
+        font-weight: 700;
+        line-height: 1.2;
+        text-shadow: 0 8px 16px rgba(0, 0, 0, 0.8);
+        padding: 0 3rem;
+      }
+
+      .news-indicators {
+        position: relative;
+        z-index: 10;
+        margin-top: 4rem;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+
+      .news-indicator {
+        height: 0.5rem;
+        background: #4b5563;
+        border-radius: 9999px;
+        transition: all 0.3s;
+      }
+
+      .news-indicator.inactive {
+        width: 0.5rem;
+      }
+
+      .news-indicator.active {
+        width: 2rem;
+        background: #3b82f6;
+      }
+
+      /* News Ticker */
+      .news-ticker {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(30, 58, 138, 0.9);
+        backdrop-filter: blur(12px);
+        color: white;
+        z-index: 20;
+        border-top: 1px solid #3b82f6;
+        padding: 0.75rem 0;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .ticker-container {
+        display: flex;
+        align-items: center;
+      }
+
+      .ticker-label {
+        background: #1e3a8a;
+        padding: 0.5rem 1.5rem;
+        z-index: 30;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.05em;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        border-radius: 0.25rem;
+        flex-shrink: 0;
+        margin: 0 1rem;
+      }
+
+      .ticker-content {
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+      }
+
+      .ticker-scroll {
+        animation: marquee 30s linear infinite;
+        white-space: nowrap;
+        display: flex;
+        gap: 6rem;
+        align-items: center;
+      }
+
+      .ticker-item {
+        font-size: 1.25rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .ticker-separator {
+        display: inline-block;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 9999px;
+        background: rgba(59, 130, 246, 0.5);
+        margin-left: 6rem;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Call Screen (Full Screen Call) -->
+    <div id="callScreen" class="screen">
+      <div class="header">
+        <div class="header-left"></div>
+        <div class="header-right">
+          <img
+            src="healthcall-logo-header.png"
+            alt="HealthCall Logo"
+            class="logo"
+          />
+          <h1 class="facility-name">PSF Maria Lucia da Silva</h1>
+        </div>
+      </div>
+      <div class="call-main">
+        <div class="animate-slide-in">
+          <h2 class="call-title">Chamando</h2>
+          <p class="patient-name" id="callPatientName">-</p>
+          <div class="destination-badge">
+            <span class="material-symbols-outlined">meeting_room</span>
+            <p class="destination-text" id="callDestination">-</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List Screen (Default View) -->
+    <div id="listScreen" class="screen active">
+      <div class="header">
+        <div class="header-left">
+          <span class="time" id="headerTime">00:00</span>
+          <span class="date" id="headerDate">-</span>
+        </div>
+        <div class="header-right">
+          <img
+            src="healthcall-logo-header.png"
+            alt="HealthCall Logo"
+            class="logo"
+          />
+          <h1 class="facility-name">PSF Maria Lucia da Silva</h1>
+        </div>
+      </div>
+      <div class="list-main">
+        <div class="current-call">
+          <h2 class="current-call-title" id="currentCallStatus">
+            Aguardando chamada
+          </h2>
+          <p class="current-call-name" id="currentPatientName">-</p>
+          <div class="destination-badge">
+            <span class="material-symbols-outlined">meeting_room</span>
+            <p class="destination-text" id="currentDestination">-</p>
+          </div>
+        </div>
+        <div class="call-history">
+          <h3 class="history-title">Histórico de Chamadas</h3>
+          <div class="history-list" id="historyList">
+            <p style="color: #9ca3af; text-align: center; margin-top: 2rem">
+              Nenhuma chamada registrada.
+            </p>
+          </div>
+        </div>
+        <div class="next-patients">
+          <h3 class="next-patients-title">Próximos pacientes</h3>
+          <div class="next-patients-grid" id="nextPatientsList">
+            <p style="color: #d1d5db">Não há pacientes na fila de espera.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Warning Screen -->
+    <div id="warningScreen" class="screen">
+      <div class="warning-background" id="warningBackground"></div>
+      <div class="warning-content">
+        <div class="header">
+          <div class="header-left">
+            <span class="time" id="warningHeaderTime">00:00</span>
+            <span class="date" id="warningHeaderDate">-</span>
+          </div>
+          <div class="header-right">
+            <img
+              src="healthcall-logo-header.png"
+              alt="HealthCall Logo"
+              class="logo"
+            />
+            <h1 class="facility-name">PSF Maria Lucia da Silva</h1>
+          </div>
+        </div>
+        <div class="warning-main">
+          <div id="warningQRCode" class="warning-qrcode hidden">
+            <img id="warningQRImage" src="" alt="QR Code" />
+            <p class="warning-qrcode-text">Leia com seu celular</p>
+          </div>
+          <div class="warning-caption-bar">
+            <div class="warning-caption-container">
+              <h2 class="warning-caption-title">Aviso Importante</h2>
+              <p class="warning-caption-text" id="warningText">-</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- News Headline Screen -->
+    <div id="newsScreen" class="screen">
+      <div class="news-background"></div>
+      <div class="header">
+        <div class="header-left">
+          <span class="time" id="newsHeaderTime">00:00</span>
+          <span class="date" id="newsHeaderDate">-</span>
+        </div>
+        <div class="header-right">
+          <img
+            src="healthcall-logo-header.png"
+            alt="HealthCall Logo"
+            class="logo"
+          />
+          <h1 class="facility-name">PSF Maria Lucia da Silva</h1>
+        </div>
+      </div>
+      <div class="news-main">
+        <div class="news-icon-container">
+          <div class="news-icon-circle">
+            <span class="material-symbols-outlined">newsmode</span>
+          </div>
+        </div>
+        <div class="news-content">
+          <h2 class="news-title">
+            <span class="news-title-dot"></span>
+            Notícias em Destaque
+            <span class="news-title-dot"></span>
+          </h2>
+          <p class="news-text" id="newsHeadline">-</p>
+        </div>
+        <div class="news-indicators" id="newsIndicators"></div>
+      </div>
+    </div>
+
+    <!-- News Ticker (Always Visible Except During Calls) -->
+    <div id="newsTicker" class="news-ticker">
+      <div class="ticker-container">
+        <div class="ticker-label">Notícias</div>
+        <div class="ticker-content">
+          <div class="ticker-scroll" id="tickerScroll"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Application State
+      const state = {
+        currentScreen: "list",
+        calledPatient: null,
+        callHistory: [],
+        nextPatients: [],
+        warnings: [],
+        newsItems: [],
+        currentNewsIndex: 0,
+        isCalling: false,
+        activeWarning: null,
+        lastActivityTime: Date.now(),
+        warningCycleCompleted: false,
+        newsCycleCompleted: false,
+        IDLE_THRESHOLD: 3000,
+        supabaseUrl: null,
+        supabaseKey: null,
+        audioContext: null,
+        ttsVoice: null,
+      };
+
+      // Initialize Cast Receiver
+      const context = cast.framework.CastReceiverContext.getInstance();
+      const playerManager = context.getPlayerManager();
+
+      // Custom namespace for HealthCall messages
+      const HEALTHCALL_NAMESPACE = "urn:x-cast:com.healthcall.display";
+
+      context.addCustomMessageListener(HEALTHCALL_NAMESPACE, (event) => {
+        console.log("[Receiver] Message received:", event.data);
+        handleCustomMessage(event.data);
+      });
+
+      function handleCustomMessage(message) {
+        const { type, data } = message;
+
+        switch (type) {
+          case "PATIENT_CALL":
+            handlePatientCall(data);
+            break;
+          case "WARNING_DISPLAY":
+            handleWarningDisplay(data);
+            break;
+          case "CONFIG_UPDATE":
+            handleConfigUpdate(data);
+            break;
+          case "SUPABASE_CONFIG":
+            handleSupabaseConfig(data);
+            break;
+          case "PING":
+            // Health check - respond with pong
+            sendMessage({ type: "PONG", timestamp: Date.now() });
+            break;
+          default:
+            console.warn("[Receiver] Unknown message type:", type);
+        }
+      }
+
+      function sendMessage(message) {
+        context.sendCustomMessage(HEALTHCALL_NAMESPACE, undefined, message);
+      }
+
+      // Handle Supabase configuration from sender
+      function handleSupabaseConfig(data) {
+        state.supabaseUrl = data.url;
+        state.supabaseKey = data.key;
+        console.log("[Receiver] Supabase configured");
+        // Start real-time subscriptions
+        initializeSupabaseRealtime();
+      }
+
+      // Handle patient call
+      function handlePatientCall(data) {
+        console.log("[Receiver] Patient call:", data);
+        state.calledPatient = data.patient;
+        state.lastActivityTime = Date.now();
+        state.newsCycleCompleted = false;
+        showCallScreen(data.patient);
+        playBellAndSpeak(data.patient, data.audioUrl);
+      }
+
+      // Handle warning display
+      function handleWarningDisplay(data) {
+        console.log("[Receiver] Warning display:", data);
+        state.activeWarning = data.warning;
+        showWarningScreen(data.warning);
+        speakText(data.warning.text);
+      }
+
+      // Handle configuration update
+      function handleConfigUpdate(data) {
+        console.log("[Receiver] Config update:", data);
+        // Update facility name, etc.
+        if (data.facilityName) {
+          document.querySelectorAll(".facility-name").forEach((el) => {
+            el.textContent = data.facilityName;
+          });
+        }
+      }
+
+      // Screen Management
+      function showScreen(screenName) {
+        const screens = [
+          "callScreen",
+          "listScreen",
+          "warningScreen",
+          "newsScreen",
+        ];
+        screens.forEach((screen) => {
+          document.getElementById(screen).classList.remove("active");
+        });
+        document.getElementById(screenName).classList.add("active");
+        state.currentScreen = screenName;
+
+        // Hide ticker during calls
+        const ticker = document.getElementById("newsTicker");
+        if (screenName === "callScreen") {
+          ticker.classList.add("hidden");
+        } else {
+          ticker.classList.remove("hidden");
+        }
+      }
+
+      function showCallScreen(patient) {
+        document.getElementById("callPatientName").textContent = patient.name;
+        document.getElementById("callDestination").textContent =
+          patient.destination;
+        showScreen("callScreen");
+        state.isCalling = true;
+
+        // Return to list after 5 seconds
+        setTimeout(() => {
+          state.isCalling = false;
+          showListScreen();
+        }, 5000);
+      }
+
+      function showListScreen() {
+        updateListScreen();
+        showScreen("listScreen");
+      }
+
+      function showWarningScreen(warning) {
+        document.getElementById("warningText").textContent = warning.text;
+
+        // Handle background media
+        const background = document.getElementById("warningBackground");
+        background.innerHTML = "";
+
+        if (warning.background_url) {
+          if (warning.media_type === "video") {
+            const video = document.createElement("video");
+            video.src = warning.background_url;
+            video.autoplay = true;
+            video.loop = true;
+            video.muted = true;
+            video.playsInline = true;
+            background.appendChild(video);
+          } else if (warning.media_type === "youtube") {
+            const iframe = document.createElement("iframe");
+            const videoId =
+              warning.background_url.split("v=")[1]?.split("&")[0] ||
+              warning.background_url.split("/").pop();
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}`;
+            iframe.allow = "autoplay";
+            background.appendChild(iframe);
+          } else {
+            const img = document.createElement("img");
+            img.src = warning.background_url;
+            background.appendChild(img);
+          }
+        }
+
+        // Handle QR Code
+        const qrContainer = document.getElementById("warningQRCode");
+        if (warning.qrcode_url) {
+          document.getElementById("warningQRImage").src =
+            `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(warning.qrcode_url)}`;
+          qrContainer.classList.remove("hidden");
+        } else {
+          qrContainer.classList.add("hidden");
+        }
+
+        showScreen("warningScreen");
+      }
+
+      function showNewsScreen(newsItem, index, total) {
+        document.getElementById("newsHeadline").textContent = newsItem.title;
+
+        // Update indicators
+        const indicatorsContainer = document.getElementById("newsIndicators");
+        indicatorsContainer.innerHTML = "";
+        for (let i = 0; i < total; i++) {
+          const indicator = document.createElement("div");
+          indicator.className = `news-indicator ${i === index ? "active" : "inactive"}`;
+          indicatorsContainer.appendChild(indicator);
+        }
+
+        showScreen("newsScreen");
+        speakText(newsItem.title);
+      }
+
+      function updateListScreen() {
+        // Update current call
+        if (state.calledPatient) {
+          document.getElementById("currentCallStatus").textContent = "Chamado";
+          document.getElementById("currentPatientName").textContent =
+            state.calledPatient.name;
+          document.getElementById("currentDestination").textContent =
+            state.calledPatient.destination;
+        } else {
+          document.getElementById("currentCallStatus").textContent =
+            "Aguardando chamada";
+          document.getElementById("currentPatientName").textContent = "-";
+          document.getElementById("currentDestination").textContent = "-";
+        }
+
+        // Update call history
+        const historyList = document.getElementById("historyList");
+        if (state.callHistory.length > 0) {
+          historyList.innerHTML = state.callHistory
+            .slice(0, 5)
+            .map(
+              (call, idx) => `
+                    <div class="history-item ${idx === 0 ? "latest" : ""}">
+                        <div class="history-item-left">
+                            <span class="material-symbols-outlined">${idx === 0 ? "campaign" : "history"}</span>
+                            <div>
+                                <div class="history-patient-name">${call.name}</div>
+                                <div class="history-destination">${call.destination}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="history-time">${new Date(call.calledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                        </div>
+                    </div>
+                `,
+            )
+            .join("");
+        } else {
+          historyList.innerHTML =
+            '<p style="color: #9ca3af; text-align: center; margin-top: 2rem;">Nenhuma chamada registrada.</p>';
+        }
+
+        // Update next patients
+        const nextList = document.getElementById("nextPatientsList");
+        if (state.nextPatients.length > 0) {
+          nextList.innerHTML = state.nextPatients
+            .slice(0, 3)
+            .map(
+              (patient) => `
+                    <div class="next-patient-card">
+                        <div>
+                            <div class="next-patient-name">${patient.name}</div>
+                            <div class="next-patient-destination">${patient.destination}</div>
+                        </div>
+                        <span class="material-symbols-outlined" style="color: #38e07b;">chevron_right</span>
+                    </div>
+                `,
+            )
+            .join("");
+        } else {
+          nextList.innerHTML =
+            '<p style="color: #d1d5db;">Não há pacientes na fila de espera.</p>';
+        }
+      }
+
+      // News Ticker
+      function updateNewsTicker() {
+        const tickerScroll = document.getElementById("tickerScroll");
+        if (state.newsItems.length > 0) {
+          const items = [...state.newsItems, ...state.newsItems]; // Duplicate for seamless loop
+          tickerScroll.innerHTML = items
+            .map(
+              (item) => `
+                    <span class="ticker-item">
+                        ${item.title}
+                        <span class="ticker-separator"></span>
+                    </span>
+                `,
+            )
+            .join("");
+        }
+      }
+
+      // Audio System
+      function initializeAudio() {
+        state.audioContext = new (
+          window.AudioContext || window.webkitAudioContext
+        )();
+        if ("speechSynthesis" in window) {
+          const voices = speechSynthesis.getVoices();
+          state.ttsVoice =
+            voices.find((v) => v.lang.startsWith("pt")) || voices[0];
+        }
+      }
+
+      function playBellAndSpeak(patient, audioUrl) {
+        const bell = new Audio("bell.mp3");
+        bell.volume = 1.0;
+        
+        const playVoice = () => {
+          if (audioUrl) {
+            console.log("[Audio] Playing custom TTS audio:", audioUrl);
+            const voiceAudio = new Audio(audioUrl);
+            voiceAudio.play().catch(err => {
+              console.error("[Audio] Custom TTS playback error:", err);
+              // Fallback to browser TTS
+              const text = `Chamando ${patient.name}, para ${patient.destination}`;
+              speakText(text);
+            });
+          } else {
+            const text = `Chamando ${patient.name}, para ${patient.destination}`;
+            speakText(text);
+          }
+        };
+
+        bell
+          .play()
+          .then(() => {
+            bell.onended = playVoice;
+          })
+          .catch((err) => {
+            console.error("[Audio] Bell playback error:", err);
+            playVoice();
+          });
+      }
+
+      function speakText(text) {
+        if ("speechSynthesis" in window) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = "pt-BR";
+          utterance.rate = 0.9;
+          if (state.ttsVoice) {
+            utterance.voice = state.ttsVoice;
+          }
+          speechSynthesis.speak(utterance);
+        }
+      }
+
+      // Time Update
+      function updateTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const dateStr = now.toLocaleDateString("pt-BR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        });
+
+        document.getElementById("headerTime").textContent = timeStr;
+        document.getElementById("headerDate").textContent = dateStr;
+        document.getElementById("warningHeaderTime").textContent = timeStr;
+        document.getElementById("warningHeaderDate").textContent = dateStr;
+        document.getElementById("newsHeaderTime").textContent = timeStr;
+        document.getElementById("newsHeaderDate").textContent = dateStr;
+      }
+
+      // Idle Detection & News Cycle
+      function checkIdleState() {
+        if (state.isCalling || state.activeWarning) return;
+
+        const timeSinceActivity = Date.now() - state.lastActivityTime;
+        const isIdle = timeSinceActivity > state.IDLE_THRESHOLD;
+
+        if (isIdle && !state.newsCycleCompleted && state.newsItems.length > 0) {
+          // Show news headline
+          if (!state.newsItems[state.currentNewsIndex]) {
+            state.currentNewsIndex = 0;
+          }
+          showNewsScreen(
+            state.newsItems[state.currentNewsIndex],
+            state.currentNewsIndex,
+            state.newsItems.length,
+          );
+
+          // Auto-advance news every 15 seconds
+          setTimeout(() => {
+            state.currentNewsIndex++;
+            if (state.currentNewsIndex >= state.newsItems.length) {
+              state.newsCycleCompleted = true;
+              state.currentNewsIndex = 0;
+              showListScreen();
+            }
+          }, 15000);
+        }
+      }
+
+      // Supabase Realtime (Optional - if configured)
+      function initializeSupabaseRealtime() {
+        if (!state.supabaseUrl || !state.supabaseKey) {
+          console.warn(
+            "[Receiver] Supabase not configured - relying on sender messages",
+          );
+          return;
+        }
+
+        // TODO: Implement Supabase realtime subscriptions
+        // This would allow the receiver to function independently
+        console.log(
+          "[Receiver] Direct Supabase connection would be implemented here",
+        );
+      }
+
+      // Initialization
+      function init() {
+        console.log("[Receiver] Initializing HealthCall Receiver");
+
+        // Initialize audio on first user gesture (Cast SDK handles this)
+        initializeAudio();
+
+        // Update time every second
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        // Check idle state every second
+        setInterval(checkIdleState, 1000);
+
+        // Demo news items (will be replaced by real data)
+        state.newsItems = [
+          { title: "Ministério da Saúde anuncia nova campanha de vacinação" },
+          { title: "Estudo revela benefícios da alimentação saudável" },
+          { title: "Novas medidas de prevenção contra doenças respiratórias" },
+        ];
+        updateNewsTicker();
+
+        // Start Cast Receiver
+        const options = new cast.framework.CastReceiverOptions();
+        options.disableIdleTimeout = true;
+        context.start(options);
+
+        console.log("[Receiver] Ready to receive connections");
+      }
+
+      // Start when DOM is ready
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+      } else {
+        init();
+      }
+    </script>
+  </body>
+</html>
