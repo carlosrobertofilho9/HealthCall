@@ -89,9 +89,10 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
                 <div className="absolute top-4 right-4 z-50">
                     <button 
                         onClick={onClose}
-                        className="bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors"
+                        className="flex items-center justify-center bg-black/50 hover:bg-black/70 text-white rounded-full p-3 transition-colors shadow-lg"
+                        aria-label="Fechar pré-visualização"
                     >
-                        <span className="material-symbols-outlined">close</span>
+                        <span className="material-symbols-outlined text-2xl">close</span>
                     </button>
                 </div>
             )}

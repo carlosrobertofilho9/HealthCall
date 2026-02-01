@@ -28,4 +28,6 @@ export interface Warning {
 	start_time?: string;
 	end_time?: string;
 	duration?: number; // Duration in seconds for video/youtube
+	priority?: boolean; // Mark warning as priority
+	order?: number; // Custom display order
 }
