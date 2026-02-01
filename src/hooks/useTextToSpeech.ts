@@ -244,10 +244,11 @@ export function useTextToSpeech() {
 
     return new Promise(async (resolve, reject) => {
       const startTime = Date.now();
+      let speechUrl: string;
 
       try {
         // Obtém a URL do áudio (usa cache se disponível, com retry)
-        const speechUrl = await preloadTTS(text);
+        speechUrl = await preloadTTS(text);
 
         // ⚠️ VALIDAÇÃO CRÍTICA DE SEGURANÇA
         if (!isValidAudioUrl(speechUrl)) {
@@ -256,8 +257,14 @@ export function useTextToSpeech() {
           audioTelemetry.trackPlayback(false, Date.now() - startTime, error.message);
           throw error;
         }
+      } catch (e) {
+        console.error('[TTS] Erro na preparação do áudio:', e);
+        reject(e);
+        return;
+      }
 
-        // Cria e configura o elemento de áudio
+      // Função interna para tentar reprodução com retries
+      const attemptPlayback = async (retryCount = 0) => {
         const speechAudio = new Audio(speechUrl);
         currentAudioRef.current = speechAudio;
 
@@ -296,11 +303,21 @@ export function useTextToSpeech() {
 
         speechAudio.onerror = (e) => {
           const mediaError = speechAudio.error;
-          console.error('[TTS] Erro na reprodução:', e);
+          console.error(`[TTS] Erro na reprodução (Tentativa ${retryCount + 1}):`, e);
           console.error('[TTS] MediaError:', mediaError);
           console.error('[TTS] NetworkState:', speechAudio.networkState);
           console.error('[TTS] ReadyState:', speechAudio.readyState);
-          console.error('[TTS] CurrentSrc:', speechAudio.currentSrc);
+
+          // Retry on Network (2) or Source Not Supported (4) errors
+          const isRetryable = mediaError && (mediaError.code === 2 || mediaError.code === 4);
+          
+          if (isRetryable && retryCount < 2) {
+             console.log(`[TTS] Erro recuperável detectado. Tentando novamente em 1s...`);
+             cleanup();
+             // Aguarda 1s antes de tentar novamente
+             setTimeout(() => attemptPlayback(retryCount + 1), 1000);
+             return;
+          }
 
           const latency = Date.now() - startTime;
           audioTelemetry.trackPlayback(false, latency, 'Erro ao reproduzir áudio');
@@ -315,31 +332,33 @@ export function useTextToSpeech() {
           });
 
           cleanup();
-          reject(new Error('Erro ao reproduzir áudio'));
+          reject(new Error('Erro ao reproduzir áudio após tentativas'));
         };
 
-        console.log('[TTS] Iniciando reprodução');
-        await speechAudio.play();
-      } catch (e) {
-        // Se foi cancelado, não é erro
-        if (currentAudioRef.current === null && e instanceof Error && e.name === 'AbortError') {
-             console.log('[TTS] Reprodução abortada');
-             resolve();
-             return;
-        }
+        console.log(`[TTS] Iniciando reprodução (Tentativa ${retryCount + 1})`);
+        try {
+          await speechAudio.play();
+        } catch (e) {
+          // Se foi cancelado, não é erro
+          if (currentAudioRef.current === null && e instanceof Error && e.name === 'AbortError') {
+               console.log('[TTS] Reprodução abortada');
+               cleanup();
+               resolve();
+               return;
+          }
 
-        console.error('[TTS] Erro no speak():', e);
-        const latency = Date.now() - startTime;
-        audioTelemetry.trackPlayback(false, latency, e instanceof Error ? e.message : 'Unknown error');
-        audioTelemetry.trackError('speak_error', e instanceof Error ? e.message : String(e));
+          console.error('[TTS] Erro no speak():', e);
+          const latency = Date.now() - startTime;
+          audioTelemetry.trackPlayback(false, latency, e instanceof Error ? e.message : 'Unknown error');
+          audioTelemetry.trackError('speak_error', e instanceof Error ? e.message : String(e));
 
-        if (currentAudioRef.current) {
-            currentAudioRef.current.pause();
-            currentAudioRef.current.src = '';
-            currentAudioRef.current = null;
+          cleanup();
+          reject(e);
         }
-        reject(e);
-      }
+      };
+
+      // Inicia primeira tentativa
+      attemptPlayback();
     });
   };
 

@@ -110,17 +110,19 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
                 )}
 
                 {/* Caption Bar - Now at bottom */}
-                <div className="w-full bg-gradient-to-t from-black via-black/60 to-transparent pt-32 pb-10 px-8 mt-auto">
-                     <div className="max-w-7xl mx-auto text-left">
-                        <h2 className={`${isPreview ? 'text-xl' : 'text-3xl'} font-bold text-[#38e07b] mb-2 uppercase tracking-wider drop-shadow-md flex items-center gap-3`}>
-                            <span className={`w-2 ${isPreview ? 'h-6' : 'h-8'} bg-[#38e07b] rounded-full inline-block`}></span>
-                            Aviso Importante
-                        </h2>
-                        <p className={`${isPreview ? 'text-2xl' : 'text-4xl md:text-5xl'} font-medium leading-tight text-white drop-shadow-lg shadow-black`}>
-                            {warning.text}
-                        </p>
-                     </div>
-                </div>
+                {warning.text && (
+                    <div className="w-full bg-gradient-to-t from-black via-black/60 to-transparent pt-32 pb-10 px-8 mt-auto">
+                        <div className="max-w-7xl mx-auto text-left">
+                            <h2 className={`${isPreview ? 'text-xl' : 'text-3xl'} font-bold text-[#38e07b] mb-2 uppercase tracking-wider drop-shadow-md flex items-center gap-3`}>
+                                <span className={`w-2 ${isPreview ? 'h-6' : 'h-8'} bg-[#38e07b] rounded-full inline-block`}></span>
+                                Aviso Importante
+                            </h2>
+                            <p className={`${isPreview ? 'text-2xl' : 'text-4xl md:text-5xl'} font-medium leading-tight text-white drop-shadow-lg shadow-black`}>
+                                {warning.text}
+                            </p>
+                        </div>
+                    </div>
+                )}
             </main>
             
         </div>

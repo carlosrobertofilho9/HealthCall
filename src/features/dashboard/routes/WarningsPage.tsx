@@ -20,6 +20,7 @@ const WarningsPage: React.FC = () => {
   const [qrcodeUrl, setQrcodeUrl] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
+  const [duration, setDuration] = useState<number>(0);
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -91,7 +92,9 @@ const WarningsPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newText.trim()) return;
+    // Text is only required for images, videos/youtube can be without text
+    if (mediaType === 'image' && !newText.trim()) return;
+
 
     try {
       setIsAdding(true);
@@ -117,7 +120,8 @@ const WarningsPage: React.FC = () => {
         media_type: mediaType,
         qrcode_url: qrcodeUrl || null,
         start_time: startTime || null,
-        end_time: endTime || null
+        end_time: endTime || null,
+        duration: duration || null
       };
       
       if (editingId) {
@@ -172,6 +176,7 @@ const WarningsPage: React.FC = () => {
     setQrcodeUrl(warning.qrcode_url || '');
     setStartTime(warning.start_time || '');
     setEndTime(warning.end_time || '');
+    setDuration(warning.duration || 0);
 
     setPreviewUrl(null);
     setFile(null);
@@ -187,6 +192,7 @@ const WarningsPage: React.FC = () => {
     setQrcodeUrl('');
     setStartTime('');
     setEndTime('');
+    setDuration(0);
     setMediaType('image');
     setFile(null);
     setPreviewUrl(null);
@@ -244,13 +250,14 @@ const WarningsPage: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
                   Texto do Aviso (Falado e Exibido)
+                  {mediaType !== 'image' && <span className="text-gray-500 text-xs ml-2">(Opcional para vídeos)</span>}
                 </label>
                 <textarea
                   value={newText}
                   onChange={(e) => setNewText(e.target.value)}
                   className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                   rows={3}
-                  required
+                  required={mediaType === 'image'}
                   placeholder="Ex: Por favor, aguardem sentados."
                 />
               </div>
@@ -377,6 +384,28 @@ const WarningsPage: React.FC = () => {
                 />
               </div>
 
+              {/* Duration for Video/YouTube */}
+              {(mediaType === 'video' || mediaType === 'youtube') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Duração do Vídeo (segundos)
+                  </label>
+                  <input
+                    type="number"
+                    value={duration}
+                    onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    placeholder="Ex: 30"
+                    min="0"
+                  />
+                  {duration > 0 && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')} minutos
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Scheduling */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -406,7 +435,7 @@ const WarningsPage: React.FC = () => {
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
-                  disabled={isAdding || !newText.trim()}
+                  disabled={isAdding || (mediaType === 'image' && !newText.trim())}
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isAdding ? 'Salvando...' : (editingId ? 'Salvar Alterações' : 'Adicionar Aviso')}

@@ -27,4 +27,5 @@ export interface Warning {
 	qrcode_url?: string;
 	start_time?: string;
 	end_time?: string;
+	duration?: number; // Duration in seconds for video/youtube
 }
