@@ -58,37 +58,34 @@ const SortableWarningItem: React.FC<SortableWarningItemProps> = ({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const isInactive = !warning.active;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-4 flex items-start justify-between transition-colors border-l-4 ${
-        warning.priority
-          ? 'bg-yellow-900/20 border-yellow-500'
-          : isEditing
-          ? 'bg-green-900/20 border-green-500'
-          : 'border-transparent hover:bg-gray-750'
+      className={`bg-[#264532] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
+        isInactive ? 'opacity-60' : ''
+      } ${
+        warning.priority ? 'ring-2 ring-yellow-500/50' : ''
+      } ${
+        isEditing ? 'ring-2 ring-blue-500/50' : ''
       }`}
     >
-      <div className="flex items-start gap-3 flex-1 min-w-0 mr-4">
+      <div className="flex items-start gap-3 flex-1">
         {/* Drag Handle */}
         <button
           {...attributes}
           {...listeners}
-          className="p-2 text-gray-400 hover:text-white cursor-grab active:cursor-grabbing transition-colors mt-1"
+          className="flex items-center justify-center rounded-full h-10 w-10 bg-gray-700/30 text-gray-400 hover:bg-gray-700/50 hover:text-white cursor-grab active:cursor-grabbing transition-colors mt-1"
           title="Arrastar para reordenar"
+          aria-label="Arrastar para reordenar"
         >
-          <span className="material-symbols-outlined">drag_indicator</span>
+          <span className="material-symbols-outlined text-base">drag_indicator</span>
         </button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span
-              className={`inline-block w-2 h-2 rounded-full ${
-                warning.active ? 'bg-green-500' : 'bg-red-500'
-              }`}
-              title={warning.active ? 'Ativo' : 'Inativo'}
-            />
             {warning.priority && (
               <span
                 className="material-symbols-outlined text-yellow-400 text-lg"
@@ -97,19 +94,22 @@ const SortableWarningItem: React.FC<SortableWarningItemProps> = ({
                 star
               </span>
             )}
-            <p className="text-white font-semibold truncate">{warning.text}</p>
+            <p className="text-white font-bold text-lg">{warning.text || '(Sem texto)'}</p>
+            {!warning.active && (
+              <span className="bg-red-500/20 text-red-300 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                Inativo
+              </span>
+            )}
           </div>
           {warning.background_url && (
-            <div className="flex items-center gap-2 mt-1">
-              <span className="material-symbols-outlined text-gray-400 text-sm">
+            <p className="text-[#96c5a9] text-sm flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">
                 {warning.media_type === 'video' || warning.media_type === 'youtube'
                   ? 'videocam'
                   : 'image'}
               </span>
-              <p className="text-sm text-gray-400 truncate max-w-md">
-                {warning.background_url}
-              </p>
-            </div>
+              {warning.media_type === 'youtube' ? 'YouTube' : warning.media_type === 'video' ? 'Vídeo' : 'Imagem'}
+            </p>
           )}
           <p className="text-xs text-gray-500 mt-1">
             Criado em: {new Date(warning.created_at).toLocaleDateString()}
@@ -117,61 +117,66 @@ const SortableWarningItem: React.FC<SortableWarningItemProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
         <button
           onClick={() => onTogglePriority(warning)}
-          className={`p-2 rounded-md transition-colors ${
+          className={`flex items-center justify-center rounded-full h-10 w-10 ${
             warning.priority
-              ? 'text-yellow-400 hover:bg-gray-700'
-              : 'text-gray-400 hover:bg-gray-700 hover:text-yellow-400'
-          }`}
+              ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+              : 'bg-yellow-500/10 text-yellow-400/50 hover:bg-yellow-500/20'
+          } transition-colors`}
           title={warning.priority ? 'Remover prioridade' : 'Marcar como prioritário'}
+          aria-label={warning.priority ? 'Remover prioridade' : 'Marcar como prioritário'}
         >
-          <span className="material-symbols-outlined">
+          <span className="material-symbols-outlined text-base">
             {warning.priority ? 'star' : 'star_border'}
           </span>
         </button>
 
         <button
           onClick={() => onToggleActive(warning)}
-          className={`p-2 rounded-md transition-colors ${
+          className={`flex items-center justify-center rounded-full h-10 w-10 ${
             warning.active
-              ? 'text-green-400 hover:bg-gray-700'
-              : 'text-gray-400 hover:bg-gray-700'
-          }`}
+              ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+              : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+          } transition-colors`}
           title={warning.active ? 'Desativar' : 'Ativar'}
+          aria-label={warning.active ? 'Desativar' : 'Ativar'}
         >
-          <span className="material-symbols-outlined">
+          <span className="material-symbols-outlined text-base">
             {warning.active ? 'toggle_on' : 'toggle_off'}
           </span>
         </button>
 
         <button
           onClick={() => onPreview(warning)}
-          className="p-2 text-purple-400 hover:bg-gray-700 rounded-md transition-colors"
+          className="flex items-center justify-center rounded-full h-10 w-10 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
           title="Visualizar e Ouvir"
+          aria-label="Visualizar e Ouvir"
         >
-          <span className="material-symbols-outlined">visibility</span>
+          <span className="material-symbols-outlined text-base">visibility</span>
         </button>
 
         <button
           onClick={() => onEdit(warning)}
-          className={`p-2 rounded-md transition-colors ${
+          className={`flex items-center justify-center rounded-full h-10 w-10 ${
             isEditing
-              ? 'text-blue-400 bg-gray-700 ring-1 ring-blue-500'
-              : 'text-blue-400 hover:bg-gray-700'
-          }`}
+              ? 'bg-blue-500/30 text-blue-300 ring-2 ring-blue-500/50'
+              : 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+          } transition-colors`}
           title="Editar"
+          aria-label="Editar"
         >
-          <span className="material-symbols-outlined">edit</span>
+          <span className="material-symbols-outlined text-base">edit</span>
         </button>
 
         <button
           onClick={() => onDelete(warning.id)}
-          className="p-2 text-red-400 hover:bg-gray-700 rounded-md transition-colors"
+          className="flex items-center justify-center rounded-full h-10 w-10 bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
           title="Excluir"
+          aria-label="Excluir"
         >
-          <span className="material-symbols-outlined">delete</span>
+          <span className="material-symbols-outlined text-base">delete</span>
         </button>
       </div>
     </div>
@@ -475,19 +480,19 @@ const WarningsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Gerenciar Avisos</h1>
-      </div>
-
+    <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Form */}
-        <div className="lg:col-span-1">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 sticky top-6">
-            <h2 className="text-xl font-bold text-white mb-4">
+        <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl h-fit">
+          <div className="text-left mb-8">
+            <h2 className="text-white text-2xl font-bold leading-tight">
               {editingId ? 'Editar Aviso' : 'Novo Aviso'}
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <p className="text-[#96c5a9] mt-1">
+              {editingId ? 'Atualize as informações do aviso.' : 'Crie um novo aviso para exibição.'}
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
                   Texto do Aviso (Falado e Exibido)
@@ -747,25 +752,28 @@ const WarningsPage: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
 
         {/* List */}
-        <div className="lg:col-span-2">
-          <div className="bg-gray-800 rounded-lg shadow-lg border border-gray-700 overflow-hidden">
-            <div className="p-4 border-b border-gray-700">
-              <h2 className="text-xl font-bold text-white">Avisos Cadastrados</h2>
-              <p className="text-sm text-gray-400 mt-1">
-                Arraste os avisos para reordená-los
+        <div className="lg:col-span-2 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl">
+          <div className="flex flex-col justify-between mb-8">
+            <div className="text-left">
+              <h2 className="text-white text-2xl font-bold leading-tight">Avisos Cadastrados</h2>
+              <p className="text-[#96c5a9] mt-1">
+                Arraste os avisos para reordená-los. Marque como prioritário para destaque.
               </p>
             </div>
+          </div>
 
-            {loading ? (
-              <div className="p-8 text-center text-gray-400">Carregando...</div>
-            ) : warnings.length === 0 ? (
-              <div className="p-8 text-center text-gray-400">
-                Nenhum aviso cadastrado.
-              </div>
-            ) : (
+          {loading ? (
+            <div className="text-center py-10 text-[#96c5a9]">
+              <p>Carregando...</p>
+            </div>
+          ) : warnings.length === 0 ? (
+            <div className="text-center py-10 text-[#96c5a9]">
+              <p>Nenhum aviso cadastrado.</p>
+            </div>
+          ) : (
+            <div className={`space-y-4 pr-2 ${warnings.length > 4 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto' : ''}`}>
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -775,7 +783,7 @@ const WarningsPage: React.FC = () => {
                   items={warnings.map((w) => w.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="divide-y divide-gray-700">
+                  <div className="space-y-4">
                     {warnings.map((warning) => (
                       <SortableWarningItem
                         key={warning.id}
@@ -791,8 +799,8 @@ const WarningsPage: React.FC = () => {
                   </div>
                 </SortableContext>
               </DndContext>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -814,7 +822,7 @@ const WarningsPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

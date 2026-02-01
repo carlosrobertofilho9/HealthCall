@@ -15,24 +15,29 @@ interface NewsHeadlineProps {
 }
 
 export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplete }) => {
-  const [currentNews, setCurrentNews] = useState<NewsItem | null>(null);
   const [newsIndex, setNewsIndex] = useState(0);
   const [allNews, setAllNews] = useState<NewsItem[]>([]);
   const [cycleCompleted, setCycleCompleted] = useState(false);
   const { speak } = useTextToSpeech();
   const lastSpokenIndexRef = useRef<number>(-1);
 
+  // Derived state
+  const currentNews = allNews[newsIndex];
+
   useEffect(() => {
     fetchNews();
   }, []);
 
-  // Rotate news every 20 seconds (increased time for reading summary)
+  // Rotate news logic
   useEffect(() => {
-    if (allNews.length === 0 || cycleCompleted) return;
+    if (allNews.length === 0 || cycleCompleted || !currentNews) return;
     
-    // Calculate reading time based on content length, min 15s, max 30s
-    const textLength = (currentNews?.title?.length || 0) + (currentNews?.description?.length || 0);
-    const displayTime = Math.min(Math.max(15000, textLength * 50), 30000);
+    // Calculate reading time based on content length
+    // Min: 10s (faster for testing), Max: 25s
+    const textLength = (currentNews.title?.length || 0) + (currentNews.description?.length || 0);
+    const displayTime = Math.min(Math.max(10000, textLength * 50), 25000);
+
+    console.log(`[NewsHeadline] Visualizando notícia ${newsIndex + 1}/${allNews.length} por ${displayTime}ms`);
 
     const timer = setTimeout(() => {
       setNewsIndex((prev) => {
@@ -43,37 +48,32 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
           console.log('[NewsHeadline] Ciclo de notícias completo');
           setCycleCompleted(true);
           
-          // Call completion callback after a delay
+          // Call completion callback after a short delay
           setTimeout(() => {
             onCycleComplete?.();
-          }, 5000); 
+          }, 4000); 
           
-          return prev; // Stay on last news
+          return prev; // Stay on last news until callback fires
         }
         
         return nextIndex;
       });
     }, displayTime);
 
-    // Clean up timer when effect re-runs
     return () => clearTimeout(timer);
-  }, [allNews.length, cycleCompleted, onCycleComplete, newsIndex, currentNews]);
+  }, [newsIndex, allNews.length, cycleCompleted, onCycleComplete]); // Removed currentNews from deep dependency check to avoid loops
 
-  // Update current news and speak it when index changes
+  // Speak effect
   useEffect(() => {
-    if (allNews.length > 0 && newsIndex !== lastSpokenIndexRef.current) {
-      const news = allNews[newsIndex];
-      setCurrentNews(news);
+    if (currentNews && newsIndex !== lastSpokenIndexRef.current) {
       lastSpokenIndexRef.current = newsIndex;
       
-      console.log(`[NewsHeadline] Exibindo notícia ${newsIndex + 1}/${allNews.length}`);
-      
       // Speak the headline
-      speak(news.title).catch(err => {
+      speak(currentNews.title).catch(err => {
         console.error('[NewsHeadline] Erro ao falar manchete:', err);
       });
     }
-  }, [newsIndex, allNews]);
+  }, [newsIndex, currentNews]);
 
   const fetchNews = async () => {
     try {
@@ -91,8 +91,8 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
 
       if (error) throw error;
       if (data?.items && data.items.length > 0) {
+        console.log(`[NewsHeadline] ${data.items.length} notícias carregadas.`);
         setAllNews(data.items);
-        setCurrentNews(data.items[0]);
       }
     } catch (error) {
       console.error('Error fetching news:', error);
