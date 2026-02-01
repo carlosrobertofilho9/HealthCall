@@ -8,6 +8,8 @@ import type { Patient } from '@/types';
 import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
+import { useAuth } from '@/hooks/useAuth';
+
 /**
  * A página principal do painel de controle (dashboard).
  *
@@ -20,6 +22,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
  */
 const HomePage: React.FC = () => {
 	const { profile } = useUserProfile();
+  const { user } = useAuth();
 	const {
     patients,
     searchTerm,
@@ -35,7 +38,7 @@ const HomePage: React.FC = () => {
     clearQueue,
     updatePatient,
     isAddingPatient,
-  } = usePatientQueue();
+  } = usePatientQueue({ defaultDestination: user?.default_destination });
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -47,6 +50,8 @@ const HomePage: React.FC = () => {
 		const destination = profile?.default_destination ?? 'Consultório';
 		await addPatientByNumber(destination);
 	};
+
+
 
 	const handleRemovePatient = (patient: Patient) => {
 		setPatientToDelete(patient);

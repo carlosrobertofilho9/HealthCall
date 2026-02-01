@@ -4,6 +4,9 @@ import * as patientService from '@/features/dashboard/services/patientService';
 import * as localDb from '@/services/localDatabase';
 import { toast } from 'sonner';
 import { useElectron } from '@/hooks/useElectron';
+import { useUserProfile } from '@/hooks/useUserProfile';
+
+
 
 /**
  * Um hook abrangente para gerenciar o estado e as interações da fila de pacientes.
@@ -32,13 +35,15 @@ import { useElectron } from '@/hooks/useElectron';
  *   isAddingPatient: boolean
  * }} Um objeto contendo o estado da fila e as funções para manipulá-la.
  */
-export function usePatientQueue() {
+export function usePatientQueue(props?: { defaultDestination?: string | null }) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedDestination, setSelectedDestination] = useState('');
   const [isAddingPatient, setIsAddingPatient] = useState(false);
   const { generateTTS } = useElectron();
+  const { profile } = useUserProfile();
+  /* const { user } = useAuth(); REMOVED to avoid hook issues */
 
   useEffect(() => {
     const timerId = setTimeout(() => {
@@ -49,6 +54,14 @@ export function usePatientQueue() {
       clearTimeout(timerId);
     };
   }, [searchTerm]);
+
+  useEffect(() => {
+    if (props?.defaultDestination) {
+      setSelectedDestination(props.defaultDestination);
+    } else if (profile?.default_destination !== undefined) {
+      setSelectedDestination(profile.default_destination ?? '');
+    }
+  }, [profile?.default_destination, props?.defaultDestination]);
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -79,7 +92,7 @@ export function usePatientQueue() {
   const addPatientByName = useCallback(async (name: string, destination: string) => {
     if (!name || !destination) {
       toast.error('Nome e destino são obrigatórios!');
-      return;
+      return null;
     }
     setIsAddingPatient(true);
     try {
@@ -87,9 +100,12 @@ export function usePatientQueue() {
       if (newPatient) {
         setPatients((current) => [newPatient, ...current]);
         toast.success('Paciente adicionado com sucesso!');
+        return newPatient;
       }
+      return null;
     } catch (error: any) {
       toast.error(error.message);
+      return null;
     } finally {
       setIsAddingPatient(false);
     }

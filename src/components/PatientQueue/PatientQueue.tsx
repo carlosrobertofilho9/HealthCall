@@ -49,6 +49,13 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
   setSelectedDestination,
   onUpdateDestination,
 }) => {
+  const rooms = React.useMemo(() => {
+    if (selectedDestination && !DESTINATION_ROOMS.includes(selectedDestination)) {
+      return [selectedDestination, ...DESTINATION_ROOMS];
+    }
+    return DESTINATION_ROOMS;
+  }, [selectedDestination]);
+
   return (
     <div className="lg:col-span-2 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
@@ -76,7 +83,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as Salas</SelectItem>
-                {DESTINATION_ROOMS.map(room => (
+                {rooms.map(room => (
                   <SelectItem key={room} value={room}>{room}</SelectItem>
                 ))}
               </SelectContent>
