@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { initializeTTS, generatePatientAudio, deletePatientAudio, generateWarningAudio, deleteWarningAudio, getWarningAudioDir, getPatientAudioDir } from './services/ttsService.js';
 import { startAudioServer, getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './services/audioServer.js';
 import { fetchRssFeed } from './services/rssService.js';
-import pkg from 'electron-updater';
+import { autoUpdater, configureAutoUpdater, registerAutoUpdaterEvents } from './services/autoUpdateService.js';
 import { 
     initDatabase, 
     closeDatabase,
@@ -19,7 +19,6 @@ import {
 } from './database/index.js';
 
 const require = createRequire(import.meta.url);
-const { autoUpdater } = pkg;
 const AutoLaunch = require('auto-launch');
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,53 +30,14 @@ startAudioServer();
 
 const isDev = !app.isPackaged;
 
-// Configuração do Auto Updater
-autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = true;
-
-// Events do Auto Updater
-autoUpdater.on('checking-for-update', () => {
-  console.log('[Updater] Checking for updates...');
-  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'checking' });
-});
-
-autoUpdater.on('update-available', (info) => {
-  console.log('[Updater] Update available:', info);
-  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'available', info });
-});
-
-autoUpdater.on('update-not-available', (info) => {
-  console.log('[Updater] Update not available');
-  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'not-available', info });
-});
-
-autoUpdater.on('error', (err) => {
-  console.error('[Updater] Error:', err);
-  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'error', error: err.message });
-});
-
-autoUpdater.on('download-progress', (progressObj) => {
-  console.log(`[Updater] Download progress: ${progressObj.percent}%`);
-  if (mainWindow) mainWindow.webContents.send('update:download-progress', progressObj);
-});
-
-autoUpdater.on('update-downloaded', (info) => {
-  console.log('[Updater] Update downloaded');
-  if (mainWindow) mainWindow.webContents.send('update:status', { status: 'downloaded', info });
-  
-  // Notificação nativa
-  if (Notification.isSupported()) {
-    new Notification({
-      title: 'Atualização Pronta',
-      body: 'Uma nova versão foi baixada e será instalada ao fechar o app.'
-    }).show();
-  }
-});
-
 let mainWindow = null;
 let displayWindows = []; // Array para múltiplas janelas de display
 let tray = null;
 let isQuitting = false;
+
+// Configuração do Auto Updater
+configureAutoUpdater();
+registerAutoUpdaterEvents({ getMainWindow: () => mainWindow, Notification });
 
 // Registrar o protocolo 'local' como privilegiado ANTES do app.whenReady
 protocol.registerSchemesAsPrivileged([
