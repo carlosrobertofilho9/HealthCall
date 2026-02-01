@@ -1,269 +1,196 @@
 import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
-import { TextToSpeechClient } from '@google-cloud/text-to-speech';
-import { GoogleGenAI } from '@google/genai';
-import mime from 'mime';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { fileURLToPath } from 'url';
+
+const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Caminho para o arquivo de credenciais
-const CREDENTIALS_PATH = path.join(__dirname, '../../electron/credentials/google-tts-key.json');
-// Caminho para salvar áudios temporários
-const AUDIO_TEMP_DIR = path.join(app.getPath('userData'), 'temp_audio');
+// Caminho para salvar áudios de pacientes (pré-gerados)
+const PATIENT_AUDIO_DIR = path.join(app.getPath('userData'), 'patient_audio');
+// Caminho para áudios de avisos (persistentes)
+const WARNING_AUDIO_DIR = path.join(app.getPath('userData'), 'warning_audio');
 
-// Garantir que diretório temp existe
-if (!fs.existsSync(AUDIO_TEMP_DIR)) {
-  fs.mkdirSync(AUDIO_TEMP_DIR, { recursive: true });
-}
+// Garantir que diretórios existem
+[PATIENT_AUDIO_DIR, WARNING_AUDIO_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
-let ttsClient = null;
-
-// Inicializa o cliente TTS se as credenciais existirem
+// Inicializa o TTS (agora usa sistema nativo)
 export function initializeTTS() {
-  // Legacy initialization
-  if (fs.existsSync(CREDENTIALS_PATH)) {
-    try {
-      ttsClient = new TextToSpeechClient({
-        keyFilename: CREDENTIALS_PATH,
-      });
-      console.log('[TTS] Google Cloud TTS (Legacy) initialized successfully');
-    } catch (error) {
-      console.error('[TTS] Failed to initialize Google Cloud TTS (Legacy):', error);
-    }
-  } else {
-    console.warn('[TTS] Legacy credentials not found at:', CREDENTIALS_PATH);
-  }
+  const platform = process.platform;
+  const platformName = platform === 'darwin' ? 'macOS (say)' : 
+                       platform === 'win32' ? 'Windows (SAPI)' : 
+                       'Linux (espeak)';
+  console.log(`[TTS] Using native ${platformName} TTS`);
+  console.log('[TTS] Patient audio dir:', PATIENT_AUDIO_DIR);
+  console.log('[TTS] Warning audio dir:', WARNING_AUDIO_DIR);
+}
 
-  // GenAI check
-  if (!process.env.GEMINI_API_KEY) {
-    console.warn('[TTS] GEMINI_API_KEY not found in environment variables. GenAI TTS will fail if used.');
-  } else {
-     console.log('[TTS] Google GenAI TTS ready (using GEMINI_API_KEY)');
+/**
+ * Gera áudio para chamada de paciente (pré-gerado quando paciente entra na fila)
+ * @param {string} patientId - ID do paciente
+ * @param {string} name - Nome do paciente
+ * @param {string} destination - Destino da chamada
+ * @returns {Promise<string>} - Nome do arquivo gerado
+ */
+export async function generatePatientAudio(patientId, name, destination) {
+  const text = `Chamando ${name}, para ${destination}`;
+  const filename = `patient_${patientId}.aiff`;
+  const filepath = path.join(PATIENT_AUDIO_DIR, filename);
+  
+  try {
+    // Se já existe, não regenera
+    if (fs.existsSync(filepath)) {
+      console.log(`[TTS] Patient audio already exists: ${filename}`);
+      return filename;
+    }
+    
+    await generateAudioFile(text, filepath);
+    console.log(`[TTS] Generated patient audio: ${filename} ("${text}")`);
+    
+    return filename;
+  } catch (error) {
+    console.error('[TTS] Error generating patient audio:', error);
+    return null;
   }
 }
 
 /**
- * Gera áudio a partir de texto usando Google GenAI (Gemini)
- * @param {string} text - Texto para falar
- * @returns {Promise<string>} - Caminho relativo do arquivo gerado (ex: 'call_123.wav')
+ * Remove o arquivo de áudio de um paciente
+ * @param {string} patientId - ID do paciente
  */
-export async function generateSpeech(text) {
-  if (!process.env.GEMINI_API_KEY) {
-    console.warn('[TTS] GEMINI_API_KEY missing, falling back to legacy TTS...');
-    return generateSpeechLegacy(text);
-  }
-
+export function deletePatientAudio(patientId) {
+  const filename = `patient_${patientId}.aiff`;
+  const filepath = path.join(PATIENT_AUDIO_DIR, filename);
+  
   try {
-    const ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    });
-
-    const config = {
-      temperature: 1,
-      responseModalities: ['audio'],
-      speechConfig: {
-        voiceConfig: {
-          prebuiltVoiceConfig: {
-            voiceName: 'Charon',
-          }
-        }
-      },
-    };
-
-    const model = 'gemini-2.5-flash-preview-tts';
-    const contents = [
-      {
-        role: 'user',
-        parts: [{ text }],
-      },
-    ];
-
-    const response = await ai.models.generateContentStream({
-      model,
-      config,
-      contents,
-    });
-
-    let combinedBuffer = Buffer.alloc(0);
-    let fileExtension = 'wav'; // Default to wav if strictly audio
-
-    for await (const chunk of response) {
-      if (!chunk.candidates || !chunk.candidates[0].content || !chunk.candidates[0].content.parts) {
-        continue;
-      }
-
-      const part = chunk.candidates[0].content.parts[0];
-      if (part.inlineData) {
-        const checkExt = mime.getExtension(part.inlineData.mimeType || '');
-        if (checkExt) fileExtension = checkExt;
-
-        let buffer = Buffer.from(part.inlineData.data || '', 'base64');
-        
-        // If it seems to be raw PCM or similar that needs header (based on user snippet logic)
-        // actually user snippet says: if !fileExtension (meaning unknown mime), treat as wav and convert.
-        // GenAI usually returns 'audio/wav' or 'audio/mp3' in mimeType.
-        // If it sends raw PCM without mime, we might need the convertToWav logic.
-        // Let's rely on mime type first.
-        
-        if (!checkExt && !part.inlineData.mimeType) {
-           // Fallback logic from user snippet for raw data
-           fileExtension = 'wav';
-           buffer = convertToWav(part.inlineData.data || '', part.inlineData.mimeType || '');
-        } else if (!checkExt && part.inlineData.mimeType) {
-            // Mime exists but extension unknown?
-            // Try to force wav if audio/wav
-             if (part.inlineData.mimeType.includes('wav')) fileExtension = 'wav';
-             else if (part.inlineData.mimeType.includes('mp3')) fileExtension = 'mp3';
-        }
-
-        combinedBuffer = Buffer.concat([combinedBuffer, buffer]);
-      } 
+    if (fs.existsSync(filepath)) {
+      fs.unlinkSync(filepath);
+      console.log(`[TTS] Deleted patient audio: ${filename}`);
     }
-
-    if (combinedBuffer.length === 0) {
-      throw new Error('No audio data received from GenAI');
-    }
-
-    const filename = `call_${Date.now()}.${fileExtension}`;
-    const filepath = path.join(AUDIO_TEMP_DIR, filename);
-
-    await fs.promises.writeFile(filepath, combinedBuffer);
-    console.log(`[TTS] Generated GenAI audio file: ${filename}`);
-
-    cleanupOldFiles();
-    return filename;
-
   } catch (error) {
-    console.error('[TTS] GenAI Error, trying legacy:', error);
-    return generateSpeechLegacy(text);
+    console.error('[TTS] Error deleting patient audio:', error);
   }
 }
 
 /**
- * Gera áudio a partir de texto usando Google Cloud TTS (Legacy)
- * @param {string} text - Texto para falar
- * @returns {Promise<string>} - Caminho relativo do arquivo gerado
+ * Gera áudio para um aviso (armazenado permanentemente até exclusão do aviso)
+ * @param {string} text - Texto do aviso
+ * @param {string} warningId - ID do aviso (usado como nome do arquivo)
+ * @returns {Promise<string>} - Nome do arquivo gerado
  */
-export async function generateSpeechLegacy(text) {
-  if (!ttsClient) {
-    // Tenta inicializar novamente
-    initializeTTS();
-    if (!ttsClient) {
-       // Se ainda falhar, lança erro
-       throw new Error('Google Cloud TTS legacy client not available.');
-    }
+export async function generateWarningAudio(text, warningId) {
+  if (!text || !text.trim()) {
+    console.log('[TTS] No text provided for warning audio');
+    return null;
   }
-
-  const request = {
-    input: { text: text },
-    voice: { languageCode: 'pt-BR', name: 'pt-BR-Wavenet-A' },
-    audioConfig: { audioEncoding: 'MP3' },
-  };
-
+  
+  const filename = `warning_${warningId}.aiff`;
+  const filepath = path.join(WARNING_AUDIO_DIR, filename);
+  
   try {
-    const [response] = await ttsClient.synthesizeSpeech(request);
+    // Se já existe, não regenera
+    if (fs.existsSync(filepath)) {
+      console.log(`[TTS] Warning audio already exists: ${filename}`);
+      return filename;
+    }
     
-    const filename = `call_${Date.now()}.mp3`;
-    const filepath = path.join(AUDIO_TEMP_DIR, filename);
-
-    await fs.promises.writeFile(filepath, response.audioContent, 'binary');
-    console.log(`[TTS] Generated Legacy audio file: ${filename}`);
+    await generateAudioFile(text, filepath);
+    console.log(`[TTS] Generated warning audio: ${filename}`);
     
-    cleanupOldFiles();
-
     return filename;
   } catch (error) {
-    console.error('[TTS] Error generating legacy speech:', error);
-    throw error;
+    console.error('[TTS] Error generating warning audio:', error);
+    return null;
   }
 }
 
-async function cleanupOldFiles() {
+/**
+ * Remove o arquivo de áudio de um aviso
+ * @param {string} warningId - ID do aviso
+ */
+export function deleteWarningAudio(warningId) {
+  const filename = `warning_${warningId}.aiff`;
+  const filepath = path.join(WARNING_AUDIO_DIR, filename);
+  
   try {
-    const files = await fs.promises.readdir(AUDIO_TEMP_DIR);
-    const now = Date.now();
-    const MAX_AGE = 10 * 60 * 1000; // 10 minutos
-
-    for (const file of files) {
-      if (!file.match(/\.(mp3|wav)$/)) continue;
-      
-      const filepath = path.join(AUDIO_TEMP_DIR, file);
-      const stats = await fs.promises.stat(filepath);
-      
-      if (now - stats.mtimeMs > MAX_AGE) {
-        await fs.promises.unlink(filepath);
-        console.log(`[TTS] Cleaned up old file: ${file}`);
-      }
+    if (fs.existsSync(filepath)) {
+      fs.unlinkSync(filepath);
+      console.log(`[TTS] Deleted warning audio: ${filename}`);
     }
-  } catch (err) {
-    console.error('[TTS] Cleanup error:', err);
+  } catch (error) {
+    console.error('[TTS] Error deleting warning audio:', error);
   }
 }
 
-// Helpers from User Snippet for WAV conversion if needed
-
-function convertToWav(rawData, mimeType) {
-  const options = parseMimeType(mimeType)
-  const wavHeader = createWavHeader(rawData.length, options);
-  const buffer = Buffer.from(rawData, 'base64');
-
-  return Buffer.concat([wavHeader, buffer]);
+/**
+ * Gera arquivo de áudio usando TTS nativo do sistema
+ * @param {string} text - Texto para converter
+ * @param {string} outputPath - Caminho completo do arquivo de saída
+ */
+async function generateAudioFile(text, outputPath) {
+  const platform = process.platform;
+  
+  // Escapa aspas no texto de forma mais robusta
+  const escapedText = text
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$');
+  
+  if (platform === 'darwin') {
+    // macOS: usa comando 'say' com voz em português
+    const voice = 'Luciana'; // Voz feminina brasileira
+    const command = `say -v "${voice}" -o "${outputPath}" "${escapedText}"`;
+    
+    await execAsync(command);
+    
+  } else if (platform === 'win32') {
+    // Windows: usa PowerShell com System.Speech (SAPI)
+    // Escapa para PowerShell
+    const psEscapedText = text.replace(/"/g, '""').replace(/'/g, "''");
+    const psOutputPath = outputPath.replace(/\\/g, '\\\\');
+    
+    const psScript = `
+      Add-Type -AssemblyName System.Speech;
+      $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer;
+      $voices = $synth.GetInstalledVoices();
+      $ptVoice = $voices | Where-Object { $_.VoiceInfo.Culture.Name -like 'pt-*' } | Select-Object -First 1;
+      if ($ptVoice) { $synth.SelectVoice($ptVoice.VoiceInfo.Name) };
+      $synth.SetOutputToWaveFile('${psOutputPath}');
+      $synth.Speak('${psEscapedText}');
+      $synth.Dispose();
+    `.replace(/\n/g, ' ');
+    
+    await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${psScript}"`);
+    
+  } else {
+    // Linux: usa espeak (mais comum) ou pico2wave
+    // espeak gera wav direto
+    const linuxEscaped = text.replace(/"/g, '\\"');
+    const command = `espeak -v pt-br -w "${outputPath}" "${linuxEscaped}" 2>/dev/null || pico2wave -l pt-BR -w "${outputPath}" "${linuxEscaped}"`;
+    
+    await execAsync(command);
+  }
 }
 
-function parseMimeType(mimeType) {
-  const [fileType, ...params] = mimeType.split(';').map(s => s.trim());
-  const [_, format] = fileType.split('/');
-
-  const options = {
-    numChannels: 1,
-    sampleRate: 24000, // Default if not found
-    bitsPerSample: 16  // Default if not found
-  };
-
-  if (format && format.startsWith('L')) {
-    const bits = parseInt(format.slice(1), 10);
-    if (!isNaN(bits)) {
-      options.bitsPerSample = bits;
-    }
-  }
-
-  for (const param of params) {
-    const [key, value] = param.split('=').map(s => s.trim());
-    if (key === 'rate') {
-      options.sampleRate = parseInt(value, 10);
-    }
-  }
-
-  return options;
+/**
+ * Retorna o caminho do diretório de áudios de pacientes
+ */
+export function getPatientAudioDir() {
+  return PATIENT_AUDIO_DIR;
 }
 
-function createWavHeader(dataLength, options) {
-  const {
-    numChannels,
-    sampleRate,
-    bitsPerSample,
-  } = options;
-
-  const byteRate = sampleRate * numChannels * bitsPerSample / 8;
-  const blockAlign = numChannels * bitsPerSample / 8;
-  const buffer = Buffer.alloc(44);
-
-  buffer.write('RIFF', 0);                      // ChunkID
-  buffer.writeUInt32LE(36 + dataLength, 4);     // ChunkSize
-  buffer.write('WAVE', 8);                      // Format
-  buffer.write('fmt ', 12);                     // Subchunk1ID
-  buffer.writeUInt32LE(16, 16);                 // Subchunk1Size (PCM)
-  buffer.writeUInt16LE(1, 20);                  // AudioFormat (1 = PCM)
-  buffer.writeUInt16LE(numChannels, 22);        // NumChannels
-  buffer.writeUInt32LE(sampleRate, 24);         // SampleRate
-  buffer.writeUInt32LE(byteRate, 28);           // ByteRate
-  buffer.writeUInt16LE(blockAlign, 32);         // BlockAlign
-  buffer.writeUInt16LE(bitsPerSample, 34);      // BitsPerSample
-  buffer.write('data', 36);                     // Subchunk2ID
-  buffer.writeUInt32LE(dataLength, 40);         // Subchunk2Size
-
-  return buffer;
+/**
+ * Retorna o caminho do diretório de áudios de avisos
+ */
+export function getWarningAudioDir() {
+  return WARNING_AUDIO_DIR;
 }

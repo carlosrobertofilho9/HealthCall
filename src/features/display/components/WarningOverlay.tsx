@@ -51,10 +51,18 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
         {/* Background Media */}
         <div className="absolute inset-0 z-0 bg-black">
             {isImage && warning.background_url && (
-                <div 
-                  className="absolute inset-0 bg-cover bg-center opacity-40 animate-fade-in"
-                  style={{ backgroundImage: `url("${warning.background_url}")` }}
-                />
+                <>
+                  {/* Usando tag img para melhor compatibilidade com protocolo local:// */}
+                  <img 
+                    src={warning.background_url}
+                    alt="Background"
+                    className="absolute inset-0 w-full h-full object-cover animate-fade-in"
+                    onLoad={() => console.log('[WarningOverlay] Imagem carregada:', warning.background_url)}
+                    onError={(e) => console.error('[WarningOverlay] Erro ao carregar imagem:', warning.background_url, e)}
+                  />
+                  {/* Overlay escuro sobre a imagem para legibilidade do texto */}
+                  <div className="absolute inset-0 bg-black/50" />
+                </>
             )}
 
             {isVideo && warning.background_url && (
@@ -63,9 +71,27 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
                     src={warning.background_url}
                     className="absolute inset-0 w-full h-full object-cover"
                     autoPlay
+                    muted={false}
                     loop={isPreview}
                     playsInline
                     onEnded={handleVideoEnded}
+                    onLoadedData={(e) => {
+                        const video = e.currentTarget;
+                        // Tenta reproduzir com som
+                        video.play().catch((err) => {
+                            console.warn('[WarningOverlay] Autoplay com som falhou, tentando muted:', err);
+                            video.muted = true;
+                            video.play().then(() => {
+                                // Tenta desmutar após iniciar
+                                setTimeout(() => {
+                                    video.muted = false;
+                                }, 100);
+                            }).catch(e => console.error('[WarningOverlay] Falha ao reproduzir vídeo:', e));
+                        });
+                    }}
+                    onError={(e) => {
+                        console.error('[WarningOverlay] Erro ao carregar vídeo:', e, 'URL:', warning.background_url);
+                    }}
                 />
             )}
 

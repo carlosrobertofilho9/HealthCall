@@ -1,7 +1,5 @@
 import React from 'react';
 import { useDisplay } from '@/features/display/hooks/useDisplay';
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { WarningOverlay } from '@/features/display/components/WarningOverlay';
 import { NewsTicker } from '@/features/display/components/NewsTicker';
@@ -32,8 +30,6 @@ const DisplayPage: React.FC = () => {
     handleNewsCycleComplete,
     handleVideoEnd,
   } = useDisplay();
-  const { session, loading } = useAuth();
-  const navigate = useNavigate();
 
   const [time, setTime] = React.useState(new Date());
 
@@ -41,20 +37,6 @@ const DisplayPage: React.FC = () => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  if (loading) {
-    return (
-      <div className="bg-gray-900 text-white flex flex-col min-h-screen items-center justify-center">
-        <h1 className="text-4xl mb-8">Carregando...</h1>
-        <p className="mt-4 text-gray-400">Verificando autenticação.</p>
-      </div>
-    );
-  }
-
-  if (!session) {
-    navigate('/auth/login?redirect=/display');
-    return null;
-  }
 
   if (!audioActivated) {
     return (

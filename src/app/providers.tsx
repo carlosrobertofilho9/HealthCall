@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserProfileProvider } from '@/contexts/UserProfileContext';
-import { DisplayDataProvider } from '@/contexts/DisplayDataContext';
+
 import { SettingsProvider } from '@/contexts/SettingsContext';
 
 /**
@@ -15,11 +15,9 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 export const Providers: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <SettingsProvider>
-      <DisplayDataProvider>
-        <UserProfileProvider>
-          {children}
-        </UserProfileProvider>
-      </DisplayDataProvider>
+      <UserProfileProvider>
+        {children}
+      </UserProfileProvider>
     </SettingsProvider>
   );
 };

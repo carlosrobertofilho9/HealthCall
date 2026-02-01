@@ -7,6 +7,7 @@ export type Patient = {
 	status: PatientStatus;
 	callCount: number;
 	lastCalled?: boolean;
+	audio_url?: string | null; // Pre-generated TTS audio URL
 };
 
 export type CallRecord = {
@@ -38,4 +39,5 @@ export interface Warning {
 	duration?: number; // Duration in seconds for video/youtube
 	priority?: boolean; // Mark warning as priority
 	order?: number; // Custom display order
+	audio_url?: string | null; // Pre-generated TTS audio URL
 }

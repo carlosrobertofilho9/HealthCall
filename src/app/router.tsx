@@ -1,5 +1,6 @@
 import React from 'react';
-import { createHashRouter } from 'react-router-dom';
+import { createHashRouter, Outlet } from 'react-router-dom';
+import { DisplayDataProvider } from '@/contexts/DisplayDataContext';
 import App from '@/App';
 import { HomePage, WarningsPage } from '@/features/dashboard';
 import { DisplayPage } from '@/features/display';
@@ -16,29 +17,38 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
  * @see https://reactrouter.com/en/main/routers/create-hash-router
  */
 export const router = createHashRouter([
-	// Main application layout with protected routes
 	{
-		path: '/',
 		element: (
-			<ProtectedRoute>
-				<App />
-			</ProtectedRoute>
+			<DisplayDataProvider>
+				<Outlet />
+			</DisplayDataProvider>
 		),
 		children: [
-			{ index: true, element: <HomePage /> },
-			{ path: 'dashboard/warnings', element: <WarningsPage /> },
-			{ path: 'settings', element: <SettingsPage /> },
+			// Main application layout with protected routes
+			{
+				path: '/',
+				element: (
+					<ProtectedRoute>
+						<App />
+					</ProtectedRoute>
+				),
+				children: [
+					{ index: true, element: <HomePage /> },
+					{ path: 'dashboard/warnings', element: <WarningsPage /> },
+					{ path: 'settings', element: <SettingsPage /> },
+				],
+			},
+			// Standalone route for the public display screen
+			{
+				path: '/display',
+				element: <DisplayPage />,
+			},
+			// Authentication routes
+			{
+				path: '/auth/login',
+				element: <LoginPage />,
+			},
 		],
-	},
-	// Standalone route for the public display screen
-	{
-		path: '/display',
-		element: <DisplayPage />,
-	},
-	// Authentication routes
-	{
-		path: '/auth/login',
-		element: <LoginPage />,
 	},
 ]);
 

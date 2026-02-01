@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Patient, CallRecord, Warning } from '@/types';
 import * as displayService from '@/features/display/services/displayService';
 import * as localDb from '@/services/localDatabase';
@@ -11,8 +12,12 @@ import { useElectron } from '@/hooks/useElectron';
 
 /**
  * Um hook para gerenciar toda a lógica e estado da página de exibição pública.
+ * IMPORTANTE: A lógica de áudio só é executada quando o usuário está na rota /display.
  */
 export function useDisplay() {
+  const location = useLocation();
+  const isOnDisplayPage = location.pathname === '/display';
+  
   const { speak, preloadTTS, cancel: cancelTTS } = useTextToSpeech();
   const { contextRef: audioContextRef, isHealthy, resume: resumeAudioContext, startHealthCheck } = useAudioContext();
   const { isElectron, sendNotification, updateBadge } = useElectron();
@@ -42,6 +47,44 @@ export function useDisplay() {
   const [shouldShowHeadline, setShouldShowHeadline] = useState(false);
 
   const IDLE_THRESHOLD = 10000; // 10 seconds - tempo para mostrar lista antes dos anúncios
+
+  // Cancela qualquer áudio ao sair da página de display
+  useEffect(() => {
+    if (!isOnDisplayPage) {
+      cancelTTS();
+      setActiveWarning(null);
+      setIsCalling(false);
+      isPlayingRef.current = false;
+      warningCycleRunningRef.current = false;
+    }
+  }, [isOnDisplayPage, cancelTTS]);
+
+  // No Electron, ativa o áudio automaticamente (autoplay permitido)
+  // APENAS NA PÁGINA DE DISPLAY
+  useEffect(() => {
+    if (!isOnDisplayPage) return;
+    
+    if (isElectron && !audioActivated) {
+      console.log('[Display] Electron detectado - ativando áudio automaticamente');
+      // Ativa automaticamente sem precisar de interação do usuário
+      const autoActivate = async () => {
+        try {
+          await resumeAudioContext();
+          setAudioActivated(true);
+          setLastActivityTime(Date.now());
+          warningCycleCompletedRef.current = false;
+          warningCycleRunningRef.current = false;
+          lastIdleSessionRef.current = 0;
+          startHealthCheck(30000);
+          audioMonitoring.start();
+          console.log('[Display] Áudio ativado automaticamente no Electron');
+        } catch (error) {
+          console.error('[Display] Erro ao ativar áudio automaticamente:', error);
+        }
+      };
+      autoActivate();
+    }
+  }, [isOnDisplayPage, isElectron, audioActivated, resumeAudioContext, startHealthCheck]);
 
   // Callback chamado quando um vídeo termina de reproduzir
   const handleVideoEnd = useCallback(() => {
@@ -144,7 +187,10 @@ export function useDisplay() {
 
 
   // Effect to manage shouldShowHeadline state based on conditions
+  // APENAS NA PÁGINA DE DISPLAY
   useEffect(() => {
+    if (!isOnDisplayPage) return;
+    
     const checkHeadlineConditions = () => {
       const now = Date.now();
       const timeSinceActivity = now - lastActivityTime;
@@ -184,7 +230,7 @@ export function useDisplay() {
     const interval = setInterval(checkHeadlineConditions, 1000);
     
     return () => clearInterval(interval);
-  }, [isCalling, activeWarning, audioActivated, lastActivityTime, warnings, shouldShowHeadline]);
+  }, [isOnDisplayPage, isCalling, activeWarning, audioActivated, lastActivityTime, warnings, shouldShowHeadline]);
 
   // Refs para evitar re-execução do useEffect durante o ciclo
   const speakRef = useRef(speak);
@@ -199,7 +245,10 @@ export function useDisplay() {
   }, [lastActivityTime]);
 
   // Warning Cycle Logic - Com intervalo de verificação para iniciar ciclo
+  // APENAS NA PÁGINA DE DISPLAY
   useEffect(() => {
+    if (!isOnDisplayPage) return;
+    
     if (!audioActivated || warnings.length === 0) {
       warningCycleCompletedRef.current = false;
       warningCycleRunningRef.current = false;
@@ -207,6 +256,13 @@ export function useDisplay() {
     }
 
     const playAllWarnings = async (activeWarningsList: Warning[]) => {
+      // Verificação adicional: sair se não estiver na página de display
+      if (!isOnDisplayPage) {
+        console.log('[Display] Não está na página de display - abortando ciclo de avisos');
+        warningCycleRunningRef.current = false;
+        return;
+      }
+      
       // Double-check mutex antes de começar (evita race condition)
       if (warningCycleRunningRef.current) {
         console.log('[Display] Mutex ativo - ciclo já em execução');
@@ -243,6 +299,7 @@ export function useDisplay() {
         try {
           const isLocalVideo = warning.media_type === 'video';
           const isYouTube = warning.media_type === 'youtube';
+          const isImage = !warning.media_type || warning.media_type === 'image';
           
           if (isLocalVideo) {
             // Para vídeos locais, aguarda o evento onended do vídeo
@@ -275,13 +332,59 @@ export function useDisplay() {
             const videoDuration = warning.duration || 30;
             console.log(`[Display] Reproduzindo YouTube por ${videoDuration} segundos`);
             await new Promise(r => setTimeout(r, videoDuration * 1000));
-          } else {
-            // Para imagens/texto, fale o texto e aguarde
-            if (warning.text) {
-              console.log(`[Display] Falando texto do aviso: "${warning.text}"`);
-              await speakRef.current(warning.text);
-              console.log(`[Display] Texto do aviso ${i + 1} concluído`);
+          } else if (isImage) {
+            // Para imagens/texto, usa o áudio pré-gerado se disponível
+            const displayDuration = warning.duration || 15; // Duração padrão de 15s para imagens
+            
+            if (warning.audio_url) {
+              // Usa o áudio TTS pré-gerado
+              console.log(`[Display] Reproduzindo áudio pré-gerado: ${warning.audio_url}`);
+              try {
+                const audio = new Audio(warning.audio_url);
+                audio.volume = 1.0;
+                
+                await Promise.race([
+                  new Promise<void>((resolve, reject) => {
+                    audio.onended = () => {
+                      console.log('[Display] Áudio pré-gerado concluído');
+                      resolve();
+                    };
+                    audio.onerror = (e) => {
+                      console.error('[Display] Erro ao reproduzir áudio pré-gerado:', e);
+                      reject(e);
+                    };
+                    audio.play().catch(reject);
+                  }),
+                  new Promise<void>((resolve) => setTimeout(resolve, displayDuration * 1000))
+                ]);
+              } catch (audioError) {
+                console.error('[Display] Erro ao reproduzir áudio pré-gerado:', audioError);
+                // Aguarda o tempo mínimo mesmo se o áudio falhar
+                await new Promise(r => setTimeout(r, displayDuration * 1000));
+              }
+            } else if (warning.text) {
+              // Fallback: tenta gerar TTS na hora (caso o áudio ainda não tenha sido gerado)
+              console.log(`[Display] Sem áudio pré-gerado, tentando TTS ao vivo: "${warning.text}"`);
+              try {
+                await Promise.race([
+                  speakRef.current(warning.text),
+                  new Promise<void>((resolve) => setTimeout(resolve, displayDuration * 1000))
+                ]);
+                console.log(`[Display] Texto do aviso ${i + 1} concluído`);
+              } catch (speakError) {
+                console.error('[Display] Erro ao falar texto do aviso:', speakError);
+                await new Promise(r => setTimeout(r, displayDuration * 1000));
+              }
+            } else {
+              // Se não há texto nem áudio, apenas exibe a imagem pelo tempo determinado
+              console.log(`[Display] Exibindo imagem por ${displayDuration} segundos`);
+              await new Promise(r => setTimeout(r, displayDuration * 1000));
             }
+          } else {
+            // Fallback para qualquer outro tipo
+            const displayDuration = warning.duration || 10;
+            console.log(`[Display] Tipo desconhecido - exibindo por ${displayDuration} segundos`);
+            await new Promise(r => setTimeout(r, displayDuration * 1000));
           }
           
           // Pequena pausa entre avisos (sem limpar a tela)
@@ -305,13 +408,23 @@ export function useDisplay() {
 
     // Função que verifica se deve iniciar o ciclo
     const checkAndStartCycle = () => {
+      // Se não está na página de display, não fazer nada
+      if (!isOnDisplayPage) {
+        return;
+      }
+      
       // Se está chamando paciente, não fazer nada
       if (isCalling || isPlayingRef.current) {
         return;
       }
       
-      // Se já está rodando ou já completou, não fazer nada
-      if (warningCycleRunningRef.current || warningCycleCompletedRef.current) {
+      // Se já está rodando, não fazer nada
+      if (warningCycleRunningRef.current) {
+        return;
+      }
+      
+      // Se já completou nesta sessão idle, não reiniciar
+      if (warningCycleCompletedRef.current) {
         return;
       }
       
@@ -324,7 +437,8 @@ export function useDisplay() {
         return;
       }
       
-      // Verificar se é uma nova sessão idle
+      // Verificar se é uma nova sessão idle (atividade mudou desde último ciclo)
+      // Só bloqueia se já iniciamos um ciclo para esta sessão
       if (lastIdleSessionRef.current === lastActivityTimeRef.current) {
         return;
       }
@@ -335,6 +449,7 @@ export function useDisplay() {
       if (activeWarningsList.length === 0) {
         console.log('[Display] Nenhum aviso agendado - permitindo notícias');
         warningCycleCompletedRef.current = true;
+        lastIdleSessionRef.current = lastActivityTimeRef.current;
         return;
       }
       
@@ -343,6 +458,7 @@ export function useDisplay() {
       
       // Iniciar ciclo
       console.log('[Display] Nova sessão idle detectada - iniciando ciclo de avisos');
+      console.log(`[Display] Avisos ativos: ${activeWarningsList.map(w => w.text?.substring(0, 20)).join(', ')}`);
       playAllWarnings(activeWarningsList);
     };
     
@@ -353,7 +469,7 @@ export function useDisplay() {
     return () => {
       clearInterval(intervalId);
     };
-  }, [audioActivated, warnings, isWarningScheduledNow, isCalling]);
+  }, [isOnDisplayPage, audioActivated, warnings, isWarningScheduledNow, isCalling]);
 
 
   useEffect(() => {
@@ -383,9 +499,16 @@ export function useDisplay() {
   }, [nextPatients, isElectron, updateBadge]);
 
   useEffect(() => {
-    if (!audioActivated) return;
+    // IMPORTANTE: Só executa a lógica de áudio quando está na página de display
+    if (!audioActivated || !isOnDisplayPage) return;
 
     const playBellAndSpeak = async (patient: Patient) => {
+      // Verificação adicional: não tocar se não estiver na página de display
+      if (!isOnDisplayPage) {
+        console.log('[Display] Não está na página de display - ignorando chamada de áudio');
+        return;
+      }
+      
       // Intercept any playing warning
       cancelTTS();
       setActiveWarning(null); 
@@ -410,8 +533,10 @@ export function useDisplay() {
 
       try {
         const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
-        const preloadPromise = preloadTTS(textToSpeak).catch(() => null);
-
+        
+        // Verifica se tem áudio pré-gerado
+        const patientWithAudio = patient as Patient & { audio_url?: string };
+        
         const bell = new Audio('/bell.mp3');
         bell.volume = 1.0;
 
@@ -428,8 +553,25 @@ export function useDisplay() {
           bell.onerror = () => { cleanup(); resolve(); }; // Continue even if bell fails
         });
 
-        await preloadPromise;
-        await speak(textToSpeak);
+        // Usa áudio pré-gerado se disponível, senão usa TTS
+        if (patientWithAudio.audio_url) {
+          console.log(`[Display] Reproduzindo áudio pré-gerado do paciente: ${patientWithAudio.audio_url}`);
+          await new Promise<void>((resolve, reject) => {
+            const audio = new Audio(patientWithAudio.audio_url);
+            audio.volume = 1.0;
+            audio.onended = () => resolve();
+            audio.onerror = (e) => {
+              console.error('[Display] Erro no áudio pré-gerado:', e);
+              reject(e);
+            };
+            audio.play().catch(reject);
+          });
+        } else {
+          // Fallback para TTS em tempo real
+          console.log('[Display] Áudio pré-gerado não disponível, usando TTS');
+          await preloadTTS(textToSpeak).catch(() => null);
+          await speak(textToSpeak);
+        }
 
         lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
         
@@ -487,6 +629,12 @@ export function useDisplay() {
 
     // Listen for data updates via IPC (replaces Supabase Realtime)
     const handleDataUpdate = async (data: { table: string }) => {
+      // Verificação: não processar eventos de áudio se não estiver na página de display
+      if (!isOnDisplayPage) {
+        console.log('[Display] Ignorando atualização - não está na página de display');
+        return;
+      }
+      
       console.log('[Display] Data update received:', data.table);
       
       if (data.table === 'patients' || data.table === 'calls') {
@@ -524,7 +672,7 @@ export function useDisplay() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       localDb.offDataUpdate(handleDataUpdate);
     };
-  }, [audioActivated]);
+  }, [audioActivated, isOnDisplayPage]);
 
   return {
     calledPatient,
@@ -538,5 +686,6 @@ export function useDisplay() {
     shouldShowHeadline, // Export headline state
     handleNewsCycleComplete, // Export news cycle completion handler
     handleVideoEnd, // Export video end handler para WarningOverlay
+    isOnDisplayPage, // Export flag para indicar se está na página de display
   };
 }

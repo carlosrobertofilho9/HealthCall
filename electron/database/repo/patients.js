@@ -83,14 +83,14 @@ export function updatePatient(id, updates) {
     const current = getPatientById(id);
     if (!current) return null;
 
-    const { name, destination, status, callCount } = { ...current, ...updates };
+    const { name, destination, status, callCount, audio_url } = { ...current, ...updates };
     
     const stmt = db.prepare(`
         UPDATE patients 
-        SET name = ?, destination = ?, status = ?, callCount = ?
+        SET name = ?, destination = ?, status = ?, callCount = ?, audio_url = ?
         WHERE id = ?
     `);
-    stmt.run(name, destination, status, callCount, id);
+    stmt.run(name, destination, status, callCount, audio_url, id);
     return getPatientById(id);
 }
 

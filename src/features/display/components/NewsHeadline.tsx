@@ -107,11 +107,11 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
     try {
       const rssUrl = await localDb.getSetting('rss_url') || 'https://g1.globo.com/dynamo/saude/rss2.xml';
 
-      const data = await localDb.fetchRssFeed(rssUrl);
+      const items = await localDb.fetchRssFeed(rssUrl);
 
-      if (data?.items && data.items.length > 0) {
-        console.log(`[NewsHeadline] ${data.items.length} notícias carregadas.`);
-        setAllNews(data.items);
+      if (items && items.length > 0) {
+        console.log(`[NewsHeadline] ${items.length} notícias carregadas.`);
+        setAllNews(items);
       }
     } catch (error) {
       console.error('Error fetching news:', error);

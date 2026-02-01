@@ -99,7 +99,7 @@ const Header: React.FC = () => {
 						onClick={() => openDisplayWindow()}
 						className="text-white text-base font-medium leading-normal hover:text-primary transition-colors cursor-pointer"
 					>
-						Display 🖥️
+						Display
 					</button>
 				) : (
 					<NavLink

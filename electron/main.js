@@ -1,9 +1,10 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification, protocol, net } from 'electron';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'fs';
+import { fileURLToPath, pathToFileURL } from 'url';
 import AutoLaunch from 'auto-launch';
-import { initializeTTS, generateSpeech } from './services/ttsService.js';
-import { startAudioServer, getAudioUrl } from './services/audioServer.js';
+import { initializeTTS, generatePatientAudio, deletePatientAudio, generateWarningAudio, deleteWarningAudio, getWarningAudioDir, getPatientAudioDir } from './services/ttsService.js';
+import { startAudioServer, getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './services/audioServer.js';
 import { fetchRssFeed } from './services/rssService.js';
 import { 
     initDatabase, 
@@ -11,7 +12,9 @@ import {
     patientsRepo, 
     warningsRepo, 
     settingsRepo,
-    authRepo
+    authRepo,
+    getUploadsPath,
+    cleanupOrphanedTTSAudio
 } from './database/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,6 +30,20 @@ let mainWindow = null;
 let displayWindows = []; // Array para múltiplas janelas de display
 let tray = null;
 let isQuitting = false;
+
+// Registrar o protocolo 'local' como privilegiado ANTES do app.whenReady
+protocol.registerSchemesAsPrivileged([
+  { 
+    scheme: 'local', 
+    privileges: { 
+      secure: true, 
+      supportFetchAPI: true, 
+      stream: true,
+      bypassCSP: true,
+      standard: true
+    } 
+  }
+]);
 
 // Configurar auto-launch (opcional, pode ser habilitado via settings)
 const healthCallAutoLauncher = new AutoLaunch({
@@ -233,11 +250,13 @@ ipcMain.handle('open-display-window', async () => {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      autoplayPolicy: 'no-user-gesture-required', // Permite autoplay sem interação
     },
   });
 
   if (isDev) {
-    displayWindow.loadURL('http://localhost:5173/display');
+    // HashRouter usa # na URL
+    displayWindow.loadURL('http://localhost:5173/#/display');
   } else {
     displayWindow.loadFile(path.join(__dirname, '../dist/index.html'), {
       hash: 'display',
@@ -258,14 +277,10 @@ ipcMain.handle('open-display-window', async () => {
   return { success: true };
 });
 
+// Handler legacy para TTS (não mais usado - áudio é pré-gerado)
 ipcMain.handle('generate-tts', async (event, text) => {
-  try {
-    const filename = await generateSpeech(text);
-    return getAudioUrl(filename);
-  } catch (error) {
-    console.error('Error handling generate-tts:', error);
-    return null;
-  }
+  console.log('[TTS] generate-tts chamado (deprecado) - áudio deve ser pré-gerado');
+  return null;
 });
 
 // ============================================
@@ -282,7 +297,7 @@ function broadcastUpdate(table) {
 // --- PATIENTS ---
 ipcMain.handle('db:patient:list', async () => {
   try {
-    return { success: true, data: patientsRepo.listPatients() };
+    return { success: true, data: patientsRepo.listPatients().map(convertPatientUrls) };
   } catch (error) {
     console.error('[IPC] Error listing patients:', error);
     return { success: false, error: error.message };
@@ -291,7 +306,7 @@ ipcMain.handle('db:patient:list', async () => {
 
 ipcMain.handle('db:patient:get', async (event, id) => {
   try {
-    return { success: true, data: patientsRepo.getPatientById(id) };
+    return { success: true, data: convertPatientUrls(patientsRepo.getPatientById(id)) };
   } catch (error) {
     console.error('[IPC] Error getting patient:', error);
     return { success: false, error: error.message };
@@ -301,8 +316,20 @@ ipcMain.handle('db:patient:get', async (event, id) => {
 ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
   try {
     const patient = patientsRepo.addPatient({ name, destination });
+    
+    // Gerar áudio pré-gerado para chamada
+    try {
+      const audioFilename = await generatePatientAudio(patient.id, name, destination);
+      if (audioFilename) {
+        patient.audio_url = getPatientAudioUrl(audioFilename);
+        patientsRepo.updatePatient(patient.id, { audio_url: audioFilename });
+      }
+    } catch (audioErr) {
+      console.error('[IPC] Error generating patient audio:', audioErr);
+    }
+    
     broadcastUpdate('patients');
-    return { success: true, data: patient };
+    return { success: true, data: convertPatientUrls(patient) };
   } catch (error) {
     console.error('[IPC] Error adding patient:', error);
     return { success: false, error: error.message };
@@ -312,8 +339,20 @@ ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
 ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
   try {
     const patient = patientsRepo.addPatientByNumber(destination);
+    
+    // Gerar áudio pré-gerado para chamada por número
+    try {
+      const audioFilename = await generatePatientAudio(patient.id, patient.name, destination);
+      if (audioFilename) {
+        patient.audio_url = getPatientAudioUrl(audioFilename);
+        patientsRepo.updatePatient(patient.id, { audio_url: audioFilename });
+      }
+    } catch (audioErr) {
+      console.error('[IPC] Error generating patient audio:', audioErr);
+    }
+    
     broadcastUpdate('patients');
-    return { success: true, data: patient };
+    return { success: true, data: convertPatientUrls(patient) };
   } catch (error) {
     console.error('[IPC] Error adding patient by number:', error);
     return { success: false, error: error.message };
@@ -322,9 +361,32 @@ ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
 
 ipcMain.handle('db:patient:update', async (event, { id, updates }) => {
   try {
+    // Buscar paciente atual para comparar
+    const currentPatient = patientsRepo.getPatientById(id);
     const patient = patientsRepo.updatePatient(id, updates);
+    
+    // Se nome ou destino mudou, regenerar áudio
+    if (updates.name !== undefined || updates.destination !== undefined) {
+      const newName = updates.name || currentPatient.name;
+      const newDestination = updates.destination || currentPatient.destination;
+      
+      try {
+        // Deletar áudio antigo
+        deletePatientAudio(id);
+        
+        // Gerar novo áudio
+        const audioFilename = await generatePatientAudio(id, newName, newDestination);
+        if (audioFilename) {
+          patient.audio_url = getPatientAudioUrl(audioFilename);
+          patientsRepo.updatePatient(id, { audio_url: audioFilename });
+        }
+      } catch (audioErr) {
+        console.error('[IPC] Error regenerating patient audio:', audioErr);
+      }
+    }
+    
     broadcastUpdate('patients');
-    return { success: true, data: patient };
+    return { success: true, data: convertPatientUrls(patient) };
   } catch (error) {
     console.error('[IPC] Error updating patient:', error);
     return { success: false, error: error.message };
@@ -336,7 +398,7 @@ ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
     const patient = patientsRepo.callPatient(id, destination);
     broadcastUpdate('patients');
     broadcastUpdate('calls');
-    return { success: true, data: patient };
+    return { success: true, data: convertPatientUrls(patient) };
   } catch (error) {
     console.error('[IPC] Error calling patient:', error);
     return { success: false, error: error.message };
@@ -345,6 +407,9 @@ ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
 
 ipcMain.handle('db:patient:remove', async (event, id) => {
   try {
+    // Deletar áudio do paciente
+    deletePatientAudio(id);
+    
     const success = patientsRepo.removePatient(id);
     broadcastUpdate('patients');
     return { success };
@@ -356,6 +421,12 @@ ipcMain.handle('db:patient:remove', async (event, id) => {
 
 ipcMain.handle('db:patient:clearAll', async () => {
   try {
+    // Buscar todos os pacientes para deletar áudios
+    const patients = patientsRepo.listPatients ? patientsRepo.listPatients() : [];
+    for (const patient of patients) {
+      deletePatientAudio(patient.id);
+    }
+    
     patientsRepo.clearAllPatients();
     broadcastUpdate('patients');
     broadcastUpdate('calls');
@@ -368,7 +439,7 @@ ipcMain.handle('db:patient:clearAll', async () => {
 
 ipcMain.handle('db:patient:getWaiting', async () => {
   try {
-    return { success: true, data: patientsRepo.getWaitingPatients() };
+    return { success: true, data: patientsRepo.getWaitingPatients().map(convertPatientUrls) };
   } catch (error) {
     console.error('[IPC] Error getting waiting patients:', error);
     return { success: false, error: error.message };
@@ -377,7 +448,7 @@ ipcMain.handle('db:patient:getWaiting', async () => {
 
 ipcMain.handle('db:patient:getLastCalled', async () => {
   try {
-    return { success: true, data: patientsRepo.getLastCalledPatient() };
+    return { success: true, data: convertPatientUrls(patientsRepo.getLastCalledPatient()) };
   } catch (error) {
     console.error('[IPC] Error getting last called patient:', error);
     return { success: false, error: error.message };
@@ -395,7 +466,11 @@ ipcMain.handle('db:patient:getCallHistory', async (event, limit = 10) => {
 
 ipcMain.handle('db:patient:getLastCall', async () => {
   try {
-    return { success: true, data: patientsRepo.getLastCall() };
+    const lastCall = patientsRepo.getLastCall();
+    if (lastCall && lastCall.patient) {
+      lastCall.patient = convertPatientUrls(lastCall.patient);
+    }
+    return { success: true, data: lastCall };
   } catch (error) {
     console.error('[IPC] Error getting last call:', error);
     return { success: false, error: error.message };
@@ -420,10 +495,31 @@ ipcMain.handle('db:patient:getNextFichaNumber', async () => {
   }
 });
 
+// Helper para converter URLs local:// para HTTP e adicionar audio_url
+function convertWarningUrls(warning) {
+  if (!warning) return warning;
+  return {
+    ...warning,
+    // background_url: getMediaUrl(warning.background_url), // Retorna URL local para usar o protocolo otimizado
+    background_url: warning.background_url,
+    audio_url: warning.audio_url ? getWarningAudioUrl(warning.audio_url) : null,
+  };
+}
+
+// Helper para converter audio_url de paciente para HTTP
+function convertPatientUrls(patient) {
+  if (!patient) return patient;
+  return {
+    ...patient,
+    audio_url: patient.audio_url ? getPatientAudioUrl(patient.audio_url) : null,
+  };
+}
+
 // --- WARNINGS ---
 ipcMain.handle('db:warning:list', async () => {
   try {
-    return { success: true, data: warningsRepo.listWarnings() };
+    const warnings = warningsRepo.listWarnings().map(convertWarningUrls);
+    return { success: true, data: warnings };
   } catch (error) {
     console.error('[IPC] Error listing warnings:', error);
     return { success: false, error: error.message };
@@ -432,7 +528,8 @@ ipcMain.handle('db:warning:list', async () => {
 
 ipcMain.handle('db:warning:listActive', async () => {
   try {
-    return { success: true, data: warningsRepo.listActiveWarnings() };
+    const warnings = warningsRepo.listActiveWarnings().map(convertWarningUrls);
+    return { success: true, data: warnings };
   } catch (error) {
     console.error('[IPC] Error listing active warnings:', error);
     return { success: false, error: error.message };
@@ -441,7 +538,8 @@ ipcMain.handle('db:warning:listActive', async () => {
 
 ipcMain.handle('db:warning:get', async (event, id) => {
   try {
-    return { success: true, data: warningsRepo.getWarningById(id) };
+    const warning = convertWarningUrls(warningsRepo.getWarningById(id));
+    return { success: true, data: warning };
   } catch (error) {
     console.error('[IPC] Error getting warning:', error);
     return { success: false, error: error.message };
@@ -450,9 +548,25 @@ ipcMain.handle('db:warning:get', async (event, id) => {
 
 ipcMain.handle('db:warning:add', async (event, warning) => {
   try {
-    const newWarning = warningsRepo.addWarning(warning);
+    // Primeiro cria o warning
+    let newWarning = warningsRepo.addWarning(warning);
+    
+    // Gera áudio TTS automaticamente se tiver texto (em background)
+    if (warning.text && warning.text.trim()) {
+      generateWarningAudio(warning.text, newWarning.id)
+        .then(audioFilename => {
+          if (audioFilename) {
+            // Atualiza o warning com o áudio gerado
+            warningsRepo.updateWarning(newWarning.id, { audio_url: audioFilename });
+            console.log(`[IPC] TTS audio generated for warning ${newWarning.id}`);
+            broadcastUpdate('warnings'); // Notifica que o áudio está pronto
+          }
+        })
+        .catch(err => console.error('[IPC] Error generating TTS for warning:', err));
+    }
+    
     broadcastUpdate('warnings');
-    return { success: true, data: newWarning };
+    return { success: true, data: convertWarningUrls(newWarning) };
   } catch (error) {
     console.error('[IPC] Error adding warning:', error);
     return { success: false, error: error.message };
@@ -461,9 +575,38 @@ ipcMain.handle('db:warning:add', async (event, warning) => {
 
 ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
   try {
-    const warning = warningsRepo.updateWarning(id, updates);
+    // Busca o warning atual para comparar o texto
+    const currentWarning = warningsRepo.getWarningById(id);
+    
+    // Atualiza o warning
+    let warning = warningsRepo.updateWarning(id, updates);
+    
+    // Se o texto mudou, regenera o áudio
+    if (updates.text !== undefined && updates.text !== currentWarning?.text) {
+      // Remove áudio antigo se existir
+      if (currentWarning?.audio_url) {
+        deleteWarningAudio(id);
+      }
+      
+      // Gera novo áudio se tiver texto (em background)
+      if (updates.text && updates.text.trim()) {
+        generateWarningAudio(updates.text, id)
+          .then(audioFilename => {
+            if (audioFilename) {
+              warningsRepo.updateWarning(id, { audio_url: audioFilename });
+              console.log(`[IPC] TTS audio regenerated for warning ${id}`);
+              broadcastUpdate('warnings');
+            }
+          })
+          .catch(err => console.error('[IPC] Error regenerating TTS for warning:', err));
+      } else {
+        // Se não tem mais texto, remove o áudio
+        warningsRepo.updateWarning(id, { audio_url: null });
+      }
+    }
+    
     broadcastUpdate('warnings');
-    return { success: true, data: warning };
+    return { success: true, data: convertWarningUrls(warning) };
   } catch (error) {
     console.error('[IPC] Error updating warning:', error);
     return { success: false, error: error.message };
@@ -472,6 +615,9 @@ ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
 
 ipcMain.handle('db:warning:remove', async (event, id) => {
   try {
+    // Remove o áudio TTS associado
+    deleteWarningAudio(id);
+    
     const success = warningsRepo.removeWarning(id);
     broadcastUpdate('warnings');
     return { success };
@@ -483,7 +629,7 @@ ipcMain.handle('db:warning:remove', async (event, id) => {
 
 ipcMain.handle('db:warning:toggle', async (event, id) => {
   try {
-    const warning = warningsRepo.toggleWarningActive(id);
+    const warning = convertWarningUrls(warningsRepo.toggleWarningActive(id));
     broadcastUpdate('warnings');
     return { success: true, data: warning };
   } catch (error) {
@@ -494,7 +640,7 @@ ipcMain.handle('db:warning:toggle', async (event, id) => {
 
 ipcMain.handle('db:warning:reorder', async (event, orderedIds) => {
   try {
-    const warnings = warningsRepo.reorderWarnings(orderedIds);
+    const warnings = warningsRepo.reorderWarnings(orderedIds).map(convertWarningUrls);
     broadcastUpdate('warnings');
     return { success: true, data: warnings };
   } catch (error) {
@@ -641,6 +787,121 @@ ipcMain.handle('auth:updateDestination', async (event, { userId, destination }) 
 
 // App lifecycle
 app.whenReady().then(() => {
+  // Registra o handler para o protocolo 'local://'
+  // Este handler serve arquivos de mídia salvos localmente
+  protocol.handle('local', async (request) => {
+    try {
+      // URL vem como local://filename.ext ou local://filename.ext/
+      const url = new URL(request.url);
+      
+      // Decodificar o hostname e pathname para lidar com espaços e caracteres especiais
+      let filename = decodeURIComponent(url.hostname);
+      
+      // Se pathname tem algo além de /, adiciona (caso de subpastas)
+      if (url.pathname && url.pathname !== '/') {
+        filename += decodeURIComponent(url.pathname);
+      }
+      
+      // Remove barras extras no início e no final
+      filename = filename.replace(/^\/+/, '').replace(/\/+$/, '');
+      
+      const uploadsPath = getUploadsPath();
+      const filePath = path.join(uploadsPath, filename);
+      
+      console.log('[Protocol] ===== REQUEST =====');
+      console.log('[Protocol] Request URL:', request.url);
+      console.log('[Protocol] Final filename:', filename);
+      console.log('[Protocol] Full file path:', filePath);
+      
+      // Verifica se o arquivo existe
+      if (!fs.existsSync(filePath)) {
+        console.error('[Protocol] ❌ File not found:', filePath);
+        return new Response('File not found', { status: 404 });
+      }
+
+      const stat = fs.statSync(filePath);
+      const fileSize = stat.size;
+      const range = request.headers.get('Range');
+      
+      // Determinar Content-Type
+      const ext = path.extname(filename).toLowerCase();
+      let contentType = 'application/octet-stream';
+      if (ext === '.mp4') contentType = 'video/mp4';
+      else if (ext === '.webm') contentType = 'video/webm';
+      else if (ext === '.ogg') contentType = 'video/ogg';
+      else if (ext === '.mov') contentType = 'video/quicktime';
+      else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+      else if (ext === '.png') contentType = 'image/png';
+      else if (ext === '.gif') contentType = 'image/gif';
+      else if (ext === '.webp') contentType = 'image/webp';
+      else if (ext === '.svg') contentType = 'image/svg+xml';
+
+      // Tratamento de Range Request (Streaming de Vídeo)
+      if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        
+        if (start >= fileSize) {
+          return new Response('Requested range not satisfiable', { 
+            status: 416,
+            headers: {
+              'Content-Range': `bytes */${fileSize}`
+            }
+          });
+        }
+
+        const chunkSize = (end - start) + 1;
+        const fileStream = fs.createReadStream(filePath, { start, end });
+        
+        // Converter stream do node para Web ReadableStream
+        const readable = new ReadableStream({
+          start(controller) {
+            fileStream.on('data', (chunk) => controller.enqueue(chunk));
+            fileStream.on('end', () => controller.close());
+            fileStream.on('error', (err) => controller.error(err));
+          }
+        });
+
+        return new Response(readable, {
+          status: 206,
+          headers: {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunkSize.toString(),
+            'Content-Type': contentType,
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
+      
+      // Request sem Range (Download completo)
+      const fileStream = fs.createReadStream(filePath);
+      const readable = new ReadableStream({
+        start(controller) {
+          fileStream.on('data', (chunk) => controller.enqueue(chunk));
+          fileStream.on('end', () => controller.close());
+          fileStream.on('error', (err) => controller.error(err));
+        }
+      });
+
+      return new Response(readable, {
+        status: 200,
+        headers: {
+          'Content-Length': fileSize.toString(),
+          'Content-Type': contentType,
+          'Accept-Ranges': 'bytes',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+      
+    } catch (error) {
+      console.error('[Protocol] ❌ Error serving local file:', error);
+      return new Response('Error loading file: ' + error.message, { status: 500 });
+    }
+  });
+  console.log('[App] Local protocol handler registered');
+  
   // Inicializa o banco de dados local
   initDatabase();
   console.log('[App] Local database initialized');
@@ -648,6 +909,16 @@ app.whenReady().then(() => {
   // Garante que existe um usuário padrão
   authRepo.ensureDefaultUser();
   console.log('[App] Default user ensured');
+  
+  // Limpa áudios TTS órfãos na inicialização
+  cleanupOrphanedTTSAudio();
+  console.log('[App] Orphaned TTS audio cleanup completed');
+  
+  // Agenda limpeza periódica de áudios órfãos (a cada 6 horas)
+  setInterval(() => {
+    console.log('[App] Running periodic TTS audio cleanup...');
+    cleanupOrphanedTTSAudio();
+  }, 6 * 60 * 60 * 1000);
   
   createWindow();
   createTray();

@@ -128,6 +128,16 @@ function isValidAudioUrl(url: string): boolean {
       return false;
     }
 
+    // Permite localhost e IPs locais do servidor de áudio do Electron
+    const isLocalhost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+    const isLocalNetwork = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(parsed.hostname);
+    const isAudioServerPort = parsed.port === '3456'; // Porta do servidor de áudio Electron
+    
+    if ((isLocalhost || isLocalNetwork) && isAudioServerPort) {
+      console.log('[TTS] URL do servidor de áudio local permitida:', url);
+      return true;
+    }
+
     // Em produção, valida domínio Supabase
     if (import.meta.env.PROD && import.meta.env.VITE_SUPABASE_URL) {
       try {
@@ -200,11 +210,14 @@ export function useTextToSpeech() {
           console.log('[TTS] Áudio local gerado e cacheado:', localUrl);
           return localUrl;
         }
-        console.warn('[TTS] Falha no Electron TTS');
-        throw new Error('Falha ao gerar áudio TTS: nenhuma URL retornada');
+        console.warn('[TTS] Falha no Electron TTS - URL não retornada');
+        // Retorna marcador especial para usar Web Speech API como fallback
+        return 'webspeech://' + encodeURIComponent(text);
       } catch (err) {
         console.error('[TTS] Erro no Electron TTS:', err);
-        throw err;
+        // Fallback para Web Speech API
+        console.log('[TTS] Usando Web Speech API como fallback');
+        return 'webspeech://' + encodeURIComponent(text);
       }
     }
 
@@ -221,11 +234,19 @@ export function useTextToSpeech() {
       currentAudioRef.current.src = '';
       currentAudioRef.current = null;
     }
+    // Também cancela Web Speech API se estiver em uso
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
   };
 
   const speak = (text: string): Promise<void> => {
     // Cancela anterior se houver
     cancel();
+    // Cancela Web Speech API se estiver em uso
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
 
     return new Promise(async (resolve, reject) => {
       const startTime = Date.now();
@@ -234,6 +255,36 @@ export function useTextToSpeech() {
       try {
         // Obtém a URL do áudio (usa cache se disponível, com retry)
         speechUrl = await preloadTTS(text);
+
+        // Se for marcador de Web Speech API, usa síntese nativa
+        if (speechUrl.startsWith('webspeech://')) {
+          const textToSpeak = decodeURIComponent(speechUrl.replace('webspeech://', ''));
+          console.log('[TTS] Usando Web Speech API para:', textToSpeak.substring(0, 30) + '...');
+          
+          if (typeof window !== 'undefined' && window.speechSynthesis) {
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'pt-BR';
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            
+            utterance.onend = () => {
+              console.log('[TTS] Web Speech concluído');
+              audioTelemetry.trackPlayback(true, Date.now() - startTime);
+              resolve();
+            };
+            
+            utterance.onerror = (e) => {
+              console.error('[TTS] Erro no Web Speech:', e);
+              audioTelemetry.trackPlayback(false, Date.now() - startTime, 'Web Speech error');
+              reject(new Error('Erro na síntese de voz'));
+            };
+            
+            window.speechSynthesis.speak(utterance);
+            return;
+          } else {
+            throw new Error('Web Speech API não disponível');
+          }
+        }
 
         // ⚠️ VALIDAÇÃO CRÍTICA DE SEGURANÇA
         if (!isValidAudioUrl(speechUrl)) {

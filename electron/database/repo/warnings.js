@@ -101,7 +101,7 @@ export function updateWarning(id, updates) {
         UPDATE warnings 
         SET text = ?, background_url = ?, active = ?, media_type = ?, 
             qrcode_url = ?, start_time = ?, end_time = ?, duration = ?, 
-            priority = ?, "order" = ?
+            priority = ?, "order" = ?, audio_url = ?
         WHERE id = ?
     `);
     stmt.run(
@@ -115,6 +115,7 @@ export function updateWarning(id, updates) {
         merged.duration,
         merged.priority ? 1 : 0,
         merged.order,
+        merged.audio_url || null,
         id
     );
     

@@ -4,6 +4,26 @@ import { useDisplay } from '../useDisplay';
 import * as displayService from '@/features/display/services/displayService';
 import * as localDb from '@/services/localDatabase';
 
+// Mock do react-router-dom
+vi.mock('react-router-dom', () => ({
+  useLocation: vi.fn(() => ({
+    pathname: '/display',
+    search: '',
+    hash: '',
+    state: null,
+    key: 'default',
+  })),
+}));
+
+// Mock do useElectron
+vi.mock('@/hooks/useElectron', () => ({
+  useElectron: vi.fn(() => ({
+    isElectron: false,
+    sendNotification: vi.fn().mockResolvedValue(undefined),
+    updateBadge: vi.fn(),
+  })),
+}));
+
 // Mock dos módulos
 vi.mock('@/services/localDatabase', () => ({
   onDataUpdate: vi.fn(),

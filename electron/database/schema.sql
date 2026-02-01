@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS patients (
     destination TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'Aguardando',
     callCount INTEGER DEFAULT 0,
+    audio_url TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     CHECK (status IN ('Em Atendimento', 'Aguardando', 'Atendimento Finalizado', 'Chamado'))
 );
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS warnings (
     duration INTEGER,
     priority INTEGER DEFAULT 0,
     "order" INTEGER,
+    audio_url TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     CHECK (media_type IN ('image', 'video', 'youtube'))
 );
