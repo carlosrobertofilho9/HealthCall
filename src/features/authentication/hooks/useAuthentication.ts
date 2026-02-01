@@ -1,36 +1,34 @@
 import { useState, useCallback } from 'react';
-import { AuthError, User, SignInWithPasswordCredentials } from '@supabase/supabase-js';
 import * as authService from '@/features/authentication/services/authService';
+import type { LocalUser, LocalSession } from '@/features/authentication/services/authService';
+
+// Interface para erros de autenticação
+interface AuthError {
+  message: string;
+}
 
 /**
- * Um hook customizado para gerenciar a lógica de autenticação.
+ * Um hook customizado para gerenciar a lógica de autenticação local.
  *
  * Este hook encapsula as chamadas de serviço de autenticação (login, logout, getSession)
- * e gerencia os estados de carregamento, erro e do usuário. Ele fornece uma interface
- * simplificada para que os componentes de UI interajam com a camada de autenticação.
+ * e gerencia os estados de carregamento, erro e do usuário.
  *
- * @returns {{
- *   user: User | null,
- *   error: AuthError | null,
- *   loading: boolean,
- *   login: (credentials: SignInWithPasswordCredentials) => Promise<boolean>,
- *   logout: () => Promise<void>,
- *   getSession: () => Promise<import('@supabase/supabase-js').Session | null>
- * }} Um objeto contendo o estado de autenticação e as funções.
+ * @returns Um objeto contendo o estado de autenticação e as funções.
  */
 export function useAuthentication() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<LocalUser | null>(null);
   const [error, setError] = useState<AuthError | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const login = useCallback(async (credentials: SignInWithPasswordCredentials): Promise<boolean> => {
+  const login = useCallback(async (credentials: { email: string; password: string }): Promise<boolean> => {
     setLoading(true);
     setError(null);
     try {
-      await authService.signInWithPassword(credentials);
+      const session = await authService.signInWithPassword(credentials);
+      setUser(session.user);
       return true;
-    } catch (error: any) {
-      setError(error);
+    } catch (err: any) {
+      setError({ message: err.message || 'Erro ao fazer login' });
       return false;
     } finally {
       setLoading(false);
@@ -43,18 +41,51 @@ export function useAuthentication() {
     try {
       await authService.signOut();
       setUser(null);
-    } catch (error: any) {
-      setError(error);
+    } catch (err: any) {
+      setError({ message: err.message || 'Erro ao fazer logout' });
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const getSession = useCallback(async () => {
+  const getSession = useCallback(async (): Promise<LocalSession | null> => {
     const session = await authService.getSession();
     setUser(session?.user ?? null);
     return session;
   }, []);
 
-  return { user, error, loading, login, logout, getSession };
+  const isFirstLogin = useCallback(async (userId: string): Promise<boolean> => {
+    return authService.isFirstLogin(userId);
+  }, []);
+
+  const updateCredentials = useCallback(async (
+    userId: string, 
+    email: string, 
+    password: string, 
+    name: string
+  ): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const updatedUser = await authService.updateCredentials(userId, email, password, name);
+      setUser(updatedUser);
+      return true;
+    } catch (err: any) {
+      setError({ message: err.message || 'Erro ao atualizar credenciais' });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { 
+    user, 
+    error, 
+    loading, 
+    login, 
+    logout, 
+    getSession, 
+    isFirstLogin, 
+    updateCredentials 
+  };
 }

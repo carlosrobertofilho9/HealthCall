@@ -1,5 +1,3 @@
-import { supabase } from './supabaseClient';
-
 /**
  * Métricas do sistema de áudio
  */
@@ -217,34 +215,23 @@ class AudioTelemetry {
   }
 
   /**
-   * Envia métricas para o backend
+   * Envia métricas para o log local
+   * No modo local, apenas logamos as métricas no console
    */
   private async flush() {
     if (this.events.length === 0) return;
 
     try {
-      const metrics = this.getMetrics();
       const eventsToSend = [...this.events];
 
       // Limpa eventos após copiar
       this.events = [];
 
-      // Envia para Supabase (apenas em produção)
-      if (import.meta.env.PROD) {
-        await supabase.from('audio_metrics').insert({
-          metrics,
-          events: eventsToSend,
-          session_id: this.getSessionId(),
-          timestamp: new Date().toISOString(),
-        });
-
-        console.log(`[Telemetry] ${eventsToSend.length} eventos enviados`);
-      } else {
-        console.log('[Telemetry] Modo dev - métricas não enviadas');
-        this.printMetrics();
-      }
+      // No modo local, apenas logamos as métricas
+      console.log(`[Telemetry] ${eventsToSend.length} eventos registrados (modo local)`);
+      this.printMetrics();
     } catch (error) {
-      console.error('[Telemetry] Erro ao enviar métricas:', error);
+      console.error('[Telemetry] Erro ao processar métricas:', error);
       // Não propaga erro para não afetar funcionalidade principal
     }
   }

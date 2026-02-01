@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import * as localDb from '@/services/localDatabase';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 
 interface NewsItem {
@@ -105,19 +105,10 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
 
   const fetchNews = async () => {
     try {
-      const { data: setting } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'rss_url')
-        .single();
-        
-      const rssUrl = setting?.value || 'https://g1.globo.com/dynamo/saude/rss2.xml';
+      const rssUrl = await localDb.getSetting('rss_url') || 'https://g1.globo.com/dynamo/saude/rss2.xml';
 
-      const { data, error } = await supabase.functions.invoke('fetch-rss', {
-        body: { url: rssUrl }
-      });
+      const data = await localDb.fetchRssFeed(rssUrl);
 
-      if (error) throw error;
       if (data?.items && data.items.length > 0) {
         console.log(`[NewsHeadline] ${data.items.length} notícias carregadas.`);
         setAllNews(data.items);

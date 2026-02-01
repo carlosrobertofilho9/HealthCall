@@ -1,5 +1,6 @@
 import { useSettings as useLocalSettings } from '@/features/settings/hooks/useSettings';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Select,
   SelectContent,
@@ -23,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
  * @returns {React.ReactElement} O componente da página de configurações.
  */
 const SettingsPage: React.FC = () => {
+  const { user } = useAuth();
   const {
     destinations,
     selected,
@@ -38,12 +40,20 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl max-w-xl mx-auto">
-      <h2 className="text-white text-2xl font-bold leading-tight mb-6">Configurações</h2>
+      <h2 className="text-white text-2xl font-bold leading-tight mb-2">Configurações</h2>
+      {user && (
+        <p className="text-gray-400 text-sm mb-6">
+          Logado como: <span className="text-[#38e07b]">{user.name || user.email}</span>
+        </p>
+      )}
       <div className="space-y-6">
         <div>
           <Label htmlFor="default-destination" className="text-white font-medium mb-2 block">
-            Destino Padrão
+            Setor de Trabalho
           </Label>
+          <p className="text-gray-400 text-sm mb-2">
+            Selecione o setor onde você trabalha. Este será o destino padrão ao adicionar pacientes.
+          </p>
           <div className="relative">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">meeting_room</span>
             <Select onValueChange={setSelected} value={selected} disabled={loading}>

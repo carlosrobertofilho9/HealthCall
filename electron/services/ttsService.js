@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { app } from 'electron';
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 import { GoogleGenAI } from '@google/genai';
 import mime from 'mime';
@@ -11,7 +12,7 @@ const __dirname = path.dirname(__filename);
 // Caminho para o arquivo de credenciais
 const CREDENTIALS_PATH = path.join(__dirname, '../../electron/credentials/google-tts-key.json');
 // Caminho para salvar áudios temporários
-const AUDIO_TEMP_DIR = path.join(process.cwd(), 'temp/audio');
+const AUDIO_TEMP_DIR = path.join(app.getPath('userData'), 'temp_audio');
 
 // Garantir que diretório temp existe
 if (!fs.existsSync(AUDIO_TEMP_DIR)) {

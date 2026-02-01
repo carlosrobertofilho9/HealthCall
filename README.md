@@ -12,7 +12,7 @@ O HealthCall é um sistema moderno para gerenciamento e chamada de pacientes em 
 -   **Acompanhamento de Status:** Acompanhe o status do paciente de "Aguardando" para "Em Atendimento" e "Atendimento Finalizado".
 -   **Chamada em Tempo Real:** Chame pacientes para destinos específicos com atualizações instantâneas.
 -   **Display Público:** Uma visualização dedicada (`/display`) mostra o último paciente chamado em tempo real.
--   **Síntese de Voz:** Anuncia o nome e o destino do paciente na página de exibição com áudio otimizado para Chromecast.
+-   **Síntese de Voz:** Anuncia o nome e o destino do paciente na página de exibição.
 -   **Autenticação:** Login seguro para membros da equipe.
 -   **Filtragem e Pesquisa:** Encontre facilmente pacientes na fila.
 -   **Configurações Persistentes:** As preferências do usuário, como o destino padrão, são salvas.
@@ -89,28 +89,6 @@ npm run dev
 ```
 
 A aplicação estará disponível em `http://localhost:5173`.
-
-## 📺 Usando com Chromecast
-
-O HealthCall suporta espelhamento de tela via Chromecast com áudio otimizado.
-
-### Como configurar
-
-1. Abra a página de display no Chrome: `http://localhost:5173/display`
-2. Clique em "Ativar Som e Iniciar"
-3. No menu do Chrome (⋮), selecione **"Transmitir..."**
-4. Escolha seu dispositivo Chromecast
-5. Selecione **"Transmitir guia"** (não "Transmitir área de trabalho")
-
-### Otimizações para Chromecast
-
-O sistema usa automaticamente arquivos de áudio reais (via Google Translate TTS) ao invés da síntese de voz nativa do navegador, garantindo que:
-- ✅ O áudio da campainha seja transmitido para o Chromecast
-- ✅ Os anúncios de voz sejam reproduzidos na TV
-- ✅ Todos os sons tenham configurações CORS corretas
-- ✅ O cache de áudio melhore a performance
-
-**Dica:** Use "Transmitir guia" ao invés de "Transmitir área de trabalho" para melhor qualidade de áudio e vídeo.
 
 ## 📂 Estrutura do Projeto
 

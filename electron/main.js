@@ -4,6 +4,15 @@ import { fileURLToPath } from 'url';
 import AutoLaunch from 'auto-launch';
 import { initializeTTS, generateSpeech } from './services/ttsService.js';
 import { startAudioServer, getAudioUrl } from './services/audioServer.js';
+import { fetchRssFeed } from './services/rssService.js';
+import { 
+    initDatabase, 
+    closeDatabase,
+    patientsRepo, 
+    warningsRepo, 
+    settingsRepo,
+    authRepo
+} from './database/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -259,8 +268,387 @@ ipcMain.handle('generate-tts', async (event, text) => {
   }
 });
 
+// ============================================
+// IPC Handlers para Banco de Dados Local
+// ============================================
+
+// Helper para notificar todas as janelas sobre mudanças
+function broadcastUpdate(table) {
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send('data:updated', { table });
+  });
+}
+
+// --- PATIENTS ---
+ipcMain.handle('db:patient:list', async () => {
+  try {
+    return { success: true, data: patientsRepo.listPatients() };
+  } catch (error) {
+    console.error('[IPC] Error listing patients:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:get', async (event, id) => {
+  try {
+    return { success: true, data: patientsRepo.getPatientById(id) };
+  } catch (error) {
+    console.error('[IPC] Error getting patient:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
+  try {
+    const patient = patientsRepo.addPatient({ name, destination });
+    broadcastUpdate('patients');
+    return { success: true, data: patient };
+  } catch (error) {
+    console.error('[IPC] Error adding patient:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
+  try {
+    const patient = patientsRepo.addPatientByNumber(destination);
+    broadcastUpdate('patients');
+    return { success: true, data: patient };
+  } catch (error) {
+    console.error('[IPC] Error adding patient by number:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:update', async (event, { id, updates }) => {
+  try {
+    const patient = patientsRepo.updatePatient(id, updates);
+    broadcastUpdate('patients');
+    return { success: true, data: patient };
+  } catch (error) {
+    console.error('[IPC] Error updating patient:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
+  try {
+    const patient = patientsRepo.callPatient(id, destination);
+    broadcastUpdate('patients');
+    broadcastUpdate('calls');
+    return { success: true, data: patient };
+  } catch (error) {
+    console.error('[IPC] Error calling patient:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:remove', async (event, id) => {
+  try {
+    const success = patientsRepo.removePatient(id);
+    broadcastUpdate('patients');
+    return { success };
+  } catch (error) {
+    console.error('[IPC] Error removing patient:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:clearAll', async () => {
+  try {
+    patientsRepo.clearAllPatients();
+    broadcastUpdate('patients');
+    broadcastUpdate('calls');
+    return { success: true };
+  } catch (error) {
+    console.error('[IPC] Error clearing patients:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:getWaiting', async () => {
+  try {
+    return { success: true, data: patientsRepo.getWaitingPatients() };
+  } catch (error) {
+    console.error('[IPC] Error getting waiting patients:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:getLastCalled', async () => {
+  try {
+    return { success: true, data: patientsRepo.getLastCalledPatient() };
+  } catch (error) {
+    console.error('[IPC] Error getting last called patient:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:getCallHistory', async (event, limit = 10) => {
+  try {
+    return { success: true, data: patientsRepo.getCallHistory(limit) };
+  } catch (error) {
+    console.error('[IPC] Error getting call history:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:getLastCall', async () => {
+  try {
+    return { success: true, data: patientsRepo.getLastCall() };
+  } catch (error) {
+    console.error('[IPC] Error getting last call:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:getDestinations', async () => {
+  try {
+    return { success: true, data: patientsRepo.getUniqueDestinations() };
+  } catch (error) {
+    console.error('[IPC] Error getting destinations:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:patient:getNextFichaNumber', async () => {
+  try {
+    return { success: true, data: patientsRepo.getNextFichaNumber() };
+  } catch (error) {
+    console.error('[IPC] Error getting next ficha number:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// --- WARNINGS ---
+ipcMain.handle('db:warning:list', async () => {
+  try {
+    return { success: true, data: warningsRepo.listWarnings() };
+  } catch (error) {
+    console.error('[IPC] Error listing warnings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:listActive', async () => {
+  try {
+    return { success: true, data: warningsRepo.listActiveWarnings() };
+  } catch (error) {
+    console.error('[IPC] Error listing active warnings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:get', async (event, id) => {
+  try {
+    return { success: true, data: warningsRepo.getWarningById(id) };
+  } catch (error) {
+    console.error('[IPC] Error getting warning:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:add', async (event, warning) => {
+  try {
+    const newWarning = warningsRepo.addWarning(warning);
+    broadcastUpdate('warnings');
+    return { success: true, data: newWarning };
+  } catch (error) {
+    console.error('[IPC] Error adding warning:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
+  try {
+    const warning = warningsRepo.updateWarning(id, updates);
+    broadcastUpdate('warnings');
+    return { success: true, data: warning };
+  } catch (error) {
+    console.error('[IPC] Error updating warning:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:remove', async (event, id) => {
+  try {
+    const success = warningsRepo.removeWarning(id);
+    broadcastUpdate('warnings');
+    return { success };
+  } catch (error) {
+    console.error('[IPC] Error removing warning:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:toggle', async (event, id) => {
+  try {
+    const warning = warningsRepo.toggleWarningActive(id);
+    broadcastUpdate('warnings');
+    return { success: true, data: warning };
+  } catch (error) {
+    console.error('[IPC] Error toggling warning:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:reorder', async (event, orderedIds) => {
+  try {
+    const warnings = warningsRepo.reorderWarnings(orderedIds);
+    broadcastUpdate('warnings');
+    return { success: true, data: warnings };
+  } catch (error) {
+    console.error('[IPC] Error reordering warnings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:saveMedia', async (event, { buffer, filename }) => {
+  try {
+    const url = warningsRepo.saveMediaFile(Buffer.from(buffer), filename);
+    return { success: true, data: url };
+  } catch (error) {
+    console.error('[IPC] Error saving media:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:warning:getMediaPath', async (event, localUrl) => {
+  try {
+    const path = warningsRepo.getMediaFilePath(localUrl);
+    return { success: true, data: path };
+  } catch (error) {
+    console.error('[IPC] Error getting media path:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// --- SETTINGS ---
+ipcMain.handle('db:settings:get', async (event, key) => {
+  try {
+    return { success: true, data: settingsRepo.getSetting(key) };
+  } catch (error) {
+    console.error('[IPC] Error getting setting:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:settings:getAll', async () => {
+  try {
+    return { success: true, data: settingsRepo.getAllSettings() };
+  } catch (error) {
+    console.error('[IPC] Error getting all settings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:settings:set', async (event, { key, value, description }) => {
+  try {
+    settingsRepo.setSetting(key, value, description);
+    broadcastUpdate('settings');
+    return { success: true };
+  } catch (error) {
+    console.error('[IPC] Error setting setting:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db:settings:setMultiple', async (event, settings) => {
+  try {
+    const result = settingsRepo.setMultipleSettings(settings);
+    broadcastUpdate('settings');
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('[IPC] Error setting multiple settings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// --- RSS ---
+ipcMain.handle('rss:fetch', async (event, url) => {
+  try {
+    // Se não passou URL, busca do settings
+    const feedUrl = url || settingsRepo.getRssUrl();
+    const items = await fetchRssFeed(feedUrl);
+    return { success: true, data: items };
+  } catch (error) {
+    console.error('[IPC] Error fetching RSS:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// ============================================
+// IPC Handlers para Autenticação Local
+// ============================================
+
+ipcMain.handle('auth:login', async (event, { email, password }) => {
+  try {
+    const user = authRepo.authenticate(email, password);
+    if (!user) {
+      return { success: false, error: 'Email ou senha incorretos' };
+    }
+    return { success: true, data: user };
+  } catch (error) {
+    console.error('[IPC] Error authenticating:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auth:updateCredentials', async (event, { userId, email, password, name }) => {
+  try {
+    const user = authRepo.updateCredentials(userId, email, password, name);
+    return { success: true, data: user };
+  } catch (error) {
+    console.error('[IPC] Error updating credentials:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auth:getUser', async (event, userId) => {
+  try {
+    const user = authRepo.getUserById(userId);
+    if (user) {
+      const { password_hash, ...safeUser } = user;
+      return { success: true, data: safeUser };
+    }
+    return { success: false, error: 'Usuário não encontrado' };
+  } catch (error) {
+    console.error('[IPC] Error getting user:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auth:isFirstLogin', async (event, userId) => {
+  try {
+    const isFirst = authRepo.isFirstLogin(userId);
+    return { success: true, data: isFirst };
+  } catch (error) {
+    console.error('[IPC] Error checking first login:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('auth:updateDestination', async (event, { userId, destination }) => {
+  try {
+    const user = authRepo.updateUserDestination(userId, destination);
+    const { password_hash, ...safeUser } = user;
+    return { success: true, data: safeUser };
+  } catch (error) {
+    console.error('[IPC] Error updating user destination:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // App lifecycle
 app.whenReady().then(() => {
+  // Inicializa o banco de dados local
+  initDatabase();
+  console.log('[App] Local database initialized');
+  
+  // Garante que existe um usuário padrão
+  authRepo.ensureDefaultUser();
+  console.log('[App] Default user ensured');
+  
   createWindow();
   createTray();
 
@@ -280,6 +668,8 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   isQuitting = true;
+  // Fecha o banco de dados ao sair
+  closeDatabase();
 });
 
 // Prevenir múltiplas instâncias

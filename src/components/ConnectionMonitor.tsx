@@ -1,79 +1,39 @@
 import { useEffect, useState } from 'react';
-import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, HardDrive } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabase';
 
 type ConnectionStatus = 'connected' | 'connecting' | 'disconnected';
 
 /**
- * Componente que monitora e exibe o status da conexão Realtime do Supabase
+ * Componente que monitora e exibe o status da conexão local
+ * No modo local (Electron + SQLite), sempre mostra como conectado ao banco local.
  */
 export function ConnectionMonitor() {
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
-  const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
   useEffect(() => {
-    // Monitorar mudanças de estado do canal Realtime
-    const handleConnected = () => {
+    // No modo local, estamos sempre "conectados" ao banco SQLite
+    // Simula uma pequena transição para mostrar que está funcionando
+    const timer = setTimeout(() => {
       setStatus('connected');
-      setReconnectAttempts(0);
-    };
+    }, 500);
 
-    const handleDisconnected = () => {
-      setStatus('disconnected');
-    };
-
-    const handleReconnecting = () => {
-      setStatus('connecting');
-      setReconnectAttempts((prev) => prev + 1);
-    };
-
-    // Subscribe para monitorar conexão
-    // Nota: Supabase Realtime não expõe eventos de conexão diretamente,
-    // então vamos fazer polling simples
-    const checkConnection = () => {
-      const channel = supabase.channel('connection-monitor');
-      
-      channel
-        .on('system', {}, () => {
-          setStatus('connected');
-          setReconnectAttempts(0);
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            setStatus('connected');
-            setReconnectAttempts(0);
-          } else if (status === 'CHANNEL_ERROR') {
-            setStatus('disconnected');
-          } else if (status === 'TIMED_OUT') {
-            setStatus('connecting');
-          }
-        });
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    };
-
-    const cleanup = checkConnection();
-    return cleanup;
+    return () => clearTimeout(timer);
   }, []);
 
   const getStatusConfig = () => {
     switch (status) {
       case 'connected':
         return {
-          icon: Wifi,
-          text: 'Conectado',
+          icon: HardDrive, // Ícone de disco para indicar armazenamento local
+          text: 'Banco Local',
           color: 'text-green-500',
           bgColor: 'bg-green-500/10',
         };
       case 'connecting':
         return {
           icon: RefreshCw,
-          text: reconnectAttempts > 0
-            ? `Reconectando... (${reconnectAttempts})`
-            : 'Conectando...',
+          text: 'Inicializando...',
           color: 'text-yellow-500',
           bgColor: 'bg-yellow-500/10',
           animate: true,
@@ -81,7 +41,7 @@ export function ConnectionMonitor() {
       case 'disconnected':
         return {
           icon: WifiOff,
-          text: 'Desconectado',
+          text: 'Erro no Banco',
           color: 'text-red-500',
           bgColor: 'bg-red-500/10',
         };

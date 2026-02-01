@@ -1,16 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useTextToSpeech } from '../useTextToSpeech';
-import { supabase } from '@/lib/supabaseClient';
 
-// Mock do Supabase
-vi.mock('@/lib/supabaseClient', () => ({
-  supabase: {
-    functions: {
-      invoke: vi.fn(),
-    },
-  },
-}));
+// O hook agora usa apenas Electron TTS, não precisa mais mockar Supabase
 
 // Mock do audioTelemetry
 vi.mock('@/lib/audioTelemetry', () => ({

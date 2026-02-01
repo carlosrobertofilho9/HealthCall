@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { useAuth } from '@/hooks/useAuth';
+import * as localDb from '@/services/localDatabase';
 
 // Interface para o tipo de dados do contexto
 interface SettingsContextType {
@@ -18,17 +17,17 @@ interface SettingsProviderProps {
 }
 
 /**
+/**
  * Provedor do contexto de configurações.
  *
  * Este componente gerencia o estado global das configurações, buscando os dados
- * do Supabase e fornecendo funções para atualizá-los. Ele também lida com
+ * do banco de dados local e fornecendo funções para atualizá-los. Ele também lida com
  * o estado de carregamento inicial.
  *
  * @param {SettingsProviderProps} props As propriedades do provedor, incluindo os componentes filhos.
  * @returns {React.ReactElement} O provedor de contexto envolvendo os filhos.
  */
 export const SettingsProvider = ({ children }: SettingsProviderProps) => {
-  const { user } = useAuth();
   const [useBrowserVoice, setUseBrowserVoiceState] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
 
@@ -36,14 +35,10 @@ export const SettingsProvider = ({ children }: SettingsProviderProps) => {
     const fetchSettings = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('global_settings')
-          .select('value')
-          .eq('setting_name', 'USE_BROWSER_VOICE')
-          .single();
-
-        if (error) throw error;
-        if (data) setUseBrowserVoiceState(data.value);
+        const value = await localDb.getSetting('USE_BROWSER_VOICE');
+        if (value !== null) {
+          setUseBrowserVoiceState(value === 'true');
+        }
       } catch (error) {
         console.error('Erro ao buscar configurações:', error);
       } finally {
@@ -53,49 +48,23 @@ export const SettingsProvider = ({ children }: SettingsProviderProps) => {
 
     fetchSettings();
 
-    const channel = supabase
-      .channel('global-settings-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'global_settings',
-          filter: 'setting_name=eq.USE_BROWSER_VOICE',
-        },
-        (payload) => {
-          if (payload.new && 'value' in payload.new) {
-            setUseBrowserVoiceState(payload.new.value as boolean);
-          }
-        }
-      )
-      .subscribe();
+    // Listener para atualizações em tempo real
+    const handleDataUpdate = (data: { table: string }) => {
+      if (data.table === 'settings') {
+        fetchSettings();
+      }
+    };
+
+    localDb.onDataUpdate(handleDataUpdate);
 
     return () => {
-      supabase.removeChannel(channel);
+      localDb.offDataUpdate(handleDataUpdate);
     };
   }, []);
 
   const setUseBrowserVoice = async (value: boolean) => {
-    if (!user) {
-      console.error('Usuário não autenticado. A alteração não foi salva.');
-      return;
-    }
-
     try {
-      const { error } = await supabase
-        .from('global_settings')
-        .update({
-          value,
-          updated_at: new Date().toISOString(),
-          updated_by: user.id,
-        })
-        .eq('setting_name', 'USE_BROWSER_VOICE');
-
-      if (error) {
-        throw error;
-      }
-
+      await localDb.setSetting('USE_BROWSER_VOICE', value);
       setUseBrowserVoiceState(value);
     } catch (error) {
       console.error('Erro ao atualizar configuração:', error);

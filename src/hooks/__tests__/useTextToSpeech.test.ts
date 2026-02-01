@@ -1,16 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useTextToSpeech } from '../useTextToSpeech';
-import { supabase } from '@/lib/supabaseClient';
 
-// Mock do Supabase
-vi.mock('@/lib/supabaseClient', () => ({
-  supabase: {
-    functions: {
-      invoke: vi.fn(),
-    },
-  },
-}));
+// O hook agora usa apenas Electron TTS, não precisa mais mockar Supabase
 
 // Mock do toast
 vi.mock('sonner', () => ({
@@ -20,9 +12,21 @@ vi.mock('sonner', () => ({
   },
 }));
 
+// Mock do window.electron para simular ambiente Electron
+const mockElectronTts = {
+  generateAndServe: vi.fn(),
+  getAudioPort: vi.fn(() => Promise.resolve(3456)),
+};
+
 describe('useTextToSpeech', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Mock do ambiente Electron
+    (window as any).electron = {
+      tts: mockElectronTts,
+    };
+    
     // Reset Audio mock
     global.Audio = class MockAudio {
       src = '';
@@ -60,20 +64,21 @@ describe('useTextToSpeech', () => {
     } as any;
   });
 
+  afterEach(() => {
+    delete (window as any).electron;
+  });
+
   describe('preloadTTS', () => {
     it('deve fazer cache de URLs geradas', async () => {
-      const mockUrl = 'https://example.com/audio.mp3';
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
-        data: { speechUrl: mockUrl },
-        error: null,
-      });
+      const mockUrl = 'http://localhost:3456/audio/test.mp3';
+      mockElectronTts.generateAndServe.mockResolvedValue({ url: mockUrl });
 
       const { result } = renderHook(() => useTextToSpeech());
 
       // Primeira chamada
       const url1 = await result.current.preloadTTS('teste');
       expect(url1).toBe(mockUrl);
-      expect(supabase.functions.invoke).toHaveBeenCalledTimes(1);
+      expect(mockElectronTts.generateAndServe).toHaveBeenCalledTimes(1);
 
       // Segunda chamada deve usar cache
       const url2 = await result.current.preloadTTS('teste');
@@ -163,43 +168,6 @@ describe('useTextToSpeech', () => {
       const { result } = renderHook(() => useTextToSpeech());
 
       await expect(result.current.speak('teste')).resolves.not.toThrow();
-    });
-
-    it('deve configurar Audio corretamente para Chromecast', async () => {
-      const mockUrl = 'https://example.com/audio.mp3';
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
-        data: { speechUrl: mockUrl },
-        error: null,
-      });
-
-      let audioInstance: any;
-      global.Audio = class MockAudio {
-        constructor(src?: string) {
-          audioInstance = this;
-          (this as any).src = src || '';
-          (this as any).volume = 1.0;
-          (this as any).crossOrigin = null;
-          (this as any).preload = 'auto';
-          (this as any).onended = null;
-          (this as any).onerror = null;
-        }
-        async play() {
-          setTimeout(() => {
-            if ((this as any).onended) (this as any).onended();
-          }, 10);
-          return Promise.resolve();
-        }
-        pause() {}
-      } as any;
-
-      const { result } = renderHook(() => useTextToSpeech());
-      await result.current.speak('teste');
-
-      await waitFor(() => {
-        expect(audioInstance.crossOrigin).toBe('anonymous');
-        expect(audioInstance.preload).toBe('auto');
-        expect(audioInstance.volume).toBe(1.0);
-      });
     });
 
     it('deve fazer cleanup completo de listeners após reprodução', async () => {

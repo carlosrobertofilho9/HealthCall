@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient';
 import { useElectron } from '@/hooks/useElectron';
-import { CastButton } from '@/components/CastButton';
+import { useAuth } from '@/hooks/useAuth';
+import * as localDb from '@/services/localDatabase';
+import { signOut } from '@/features/authentication/services/authService';
 
 /**
  * The main header component for the application.
@@ -10,23 +11,19 @@ import { CastButton } from '@/components/CastButton';
  */
 const Header: React.FC = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
-	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-	const [initials, setInitials] = useState<string>('');
+	const [initials, setInitials] = useState<string>('HC');
+	const [clinicName, setClinicName] = useState<string>('HealthCall');
 	const navigate = useNavigate();
 	const menuRef = useRef<HTMLDivElement>(null);
 	const { isElectron, openDisplayWindow } = useElectron();
+	const { user } = useAuth();
 
 	/**
-	 * Handles the user logout process.
-	 * Signs the user out of Supabase and navigates to the login page.
+	 * Handles user logout
 	 */
 	const handleLogout = async () => {
-		const { error } = await supabase.auth.signOut();
-		if (error) {
-			console.error('Error logging out:', error);
-		} else {
-			navigate('/login');
-		}
+		await signOut();
+		navigate('/auth/login');
 	};
 
 	/**
@@ -52,39 +49,27 @@ const Header: React.FC = () => {
 	}, []);
 
 	/**
-	 * Effect to fetch the current user's data on component mount
-	 * to display their avatar or initials.
+	 * Effect to fetch local clinic settings on component mount
 	 */
 	useEffect(() => {
-		/**
-		 * Computes user initials from a name or email string.
-		 * @param {string | null | undefined} text - The user's name or email.
-		 * @returns {string} The computed initials (e.g., "JD" for "John Doe").
-		 */
-		function computeInitials(text: string | null | undefined) {
-			const value = (text ?? '').trim();
-			if (!value) return '?';
-			if (value.includes(' ')) {
-				const parts = value.split(' ').filter(Boolean);
-				const first = parts[0][0] ?? '';
-				const last = parts[parts.length - 1][0] ?? '';
-				return (first + last).toUpperCase();
+		const loadSettings = async () => {
+			try {
+				const name = await localDb.getSetting('clinic_name');
+				if (name) {
+					setClinicName(name);
+					// Compute initials from clinic name
+					const parts = name.split(' ').filter(Boolean);
+					if (parts.length >= 2) {
+						setInitials((parts[0][0] + parts[parts.length - 1][0]).toUpperCase());
+					} else if (parts.length === 1) {
+						setInitials(parts[0].slice(0, 2).toUpperCase());
+					}
+				}
+			} catch (error) {
+				console.error('Error loading settings:', error);
 			}
-			// email or single name
-			return value.slice(0, 2).toUpperCase();
-		}
-
-		(async () => {
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
-			if (!user) return;
-			const meta = (user.user_metadata ?? {}) as Record<string, any>;
-			const name: string | undefined = meta.name || meta.full_name;
-			const avatar: string | undefined = meta.avatar_url;
-			setAvatarUrl(avatar ?? null);
-			setInitials(computeInitials(name || user.email));
-		})();
+		};
+		loadSettings();
 	}, []);
 
 	return (
@@ -150,33 +135,35 @@ const Header: React.FC = () => {
 				</NavLink>
 			</nav>
 			<div className="flex items-center gap-4">
-				{/* Chromecast Button */}
-				<CastButton />
-				
 				<div className="relative" ref={menuRef}>
 					<button onClick={toggleMenu} className="focus:outline-none">
-						{avatarUrl ? (
-							<div
-								className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12 border-2 border-primary"
-								style={{ backgroundImage: `url("${avatarUrl}")` }}
-								aria-label="Foto do usuário"
-								role="img"
-							></div>
-						) : (
-							<div
-								className="aspect-square rounded-full size-12 border-2 border-primary bg-[#325a42] text-white flex items-center justify-center font-bold"
-								aria-label="Iniciais do usuário"
-								role="img"
-							>
-								{initials}
-							</div>
-						)}
+						<div
+							className="aspect-square rounded-full size-12 border-2 border-primary bg-[#325a42] text-white flex items-center justify-center font-bold"
+							aria-label="Iniciais da clínica"
+							role="img"
+						>
+							{initials}
+						</div>
 					</button>
 					{isMenuOpen && (
 						<div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
+							<div className="px-4 py-2 text-sm text-gray-400 border-b border-gray-700">
+								{user?.name || clinicName}
+							</div>
+							<div className="px-4 py-1 text-xs text-gray-500">
+								{user?.email}
+							</div>
+							<Link
+								to="/settings"
+								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
+								onClick={() => setIsMenuOpen(false)}
+							>
+								<span className="material-symbols-outlined mr-2">settings</span>
+								Configurações
+							</Link>
 							<button
 								onClick={handleLogout}
-								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
+								className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
 							>
 								<span className="material-symbols-outlined mr-2">logout</span>
 								Sair

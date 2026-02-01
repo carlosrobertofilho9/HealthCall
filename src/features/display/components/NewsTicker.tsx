@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import * as localDb from '@/services/localDatabase';
 
 interface NewsItem {
   title: string;
@@ -18,23 +18,11 @@ export const NewsTicker: React.FC = React.memo(() => {
 
   const fetchNews = async () => {
     try {
-      // Get RSS URL from settings
-      const { data: setting } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'rss_url')
-        .single();
-        
-      const rssUrl = setting?.value || 'https://g1.globo.com/dynamo/saude/rss2.xml';
+      // Call local RSS service via IPC
+      const items = await localDb.fetchRssFeed();
 
-      // Call Edge Function
-      const { data, error } = await supabase.functions.invoke('fetch-rss', {
-        body: { url: rssUrl }
-      });
-
-      if (error) throw error;
-      if (data?.items) {
-        setNews(data.items);
+      if (items) {
+        setNews(items);
       }
     } catch (error) {
       console.error('Error fetching news:', error);

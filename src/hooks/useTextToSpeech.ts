@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { audioTelemetry } from '@/lib/audioTelemetry';
 import { useRef } from 'react';
@@ -161,9 +160,6 @@ function isValidAudioUrl(url: string): boolean {
  * Este hook converte texto em fala usando SEMPRE arquivos de áudio reais
  * gerados via edge function do Supabase (Google Translate TTS).
  *
- * NOTA: Não usa speechSynthesis nativo do navegador porque esse áudio
- * não é capturado pelo espelhamento do Chromecast.
- *
  * @returns {{
  *   speak: (text: string) => Promise<void>
  * }} Um objeto contendo a função `speak` para iniciar a síntese de voz.
@@ -172,15 +168,11 @@ export function useTextToSpeech() {
   /**
    * Converte uma string de texto em áudio falado.
    *
-   * Gera áudio através da edge function `generate-tts` do Supabase que usa
+   * gera áudio através da edge function `generate-tts` do Supabase que usa
    * a API do Google Translate. Os arquivos de áudio são armazenados em cache
    * no Supabase Storage e também em memória para melhor performance.
    *
-   * Os elementos de áudio são configurados com crossOrigin e preload para
-   * garantir compatibilidade com Chromecast durante espelhamento de tela.
-   *
    * @param {string} text O texto a ser convertido em fala.
-   * @returns {Promise<void>} Uma promessa que é resolvida quando a fala termina.
    */
   /*
    * Pré-carrega o áudio TTS sem reproduzi-lo.
@@ -208,41 +200,16 @@ export function useTextToSpeech() {
           console.log('[TTS] Áudio local gerado e cacheado:', localUrl);
           return localUrl;
         }
-        console.warn('[TTS] Falha no Electron TTS, tentando fallback para Supabase...');
+        console.warn('[TTS] Falha no Electron TTS');
+        throw new Error('Falha ao gerar áudio TTS: nenhuma URL retornada');
       } catch (err) {
         console.error('[TTS] Erro no Electron TTS:', err);
-        // Fallback para Supabase continua abaixo
+        throw err;
       }
     }
 
-    // Usa retry logic para chamadas à edge function (Fallback ou Web)
-    return retryWithBackoff(async () => {
-      console.log('[TTS] Gerando novo áudio via Supabase:', text.substring(0, 30) + '...');
-
-      const { data, error } = await supabase.functions.invoke('generate-tts', {
-        body: { text },
-      });
-
-      if (error) {
-        throw new Error(`Erro ao invocar função TTS: ${error.message}`);
-      }
-
-      if (!data?.speechUrl) {
-        throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
-      }
-
-      // Armazena a nova URL no cache
-      cacheHelpers.set(text, data.speechUrl);
-      console.log('[TTS] Áudio gerado e armazenado no cache');
-
-      return data.speechUrl;
-    }, 3, 1000).catch((e) => {
-      console.error('[TTS] Erro após retry:', e);
-      toast.error('Erro ao gerar áudio da chamada', {
-        description: 'Tentando novamente...',
-      });
-      throw e;
-    });
+    // Fallback: Erro se não estiver no Electron
+    throw new Error('TTS só está disponível no aplicativo Electron');
   };
 
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -286,9 +253,6 @@ export function useTextToSpeech() {
         const speechAudio = new Audio(speechUrl);
         currentAudioRef.current = speechAudio;
 
-        // Configurações para Chromecast
-        speechAudio.crossOrigin = 'anonymous';
-        speechAudio.preload = 'auto';
         speechAudio.volume = 1.0;
 
         // Gerencia eventos de áudio com cleanup completo

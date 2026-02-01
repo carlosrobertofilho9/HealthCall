@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createHashRouter } from 'react-router-dom';
 import App from '@/App';
 import { HomePage, WarningsPage } from '@/features/dashboard';
 import { DisplayPage } from '@/features/display';
@@ -12,9 +12,10 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
  * It defines all the routes for the application, including protected routes
  * that require authentication.
  *
- * @see https://reactrouter.com/en/main/routers/create-browser-router
+ * Uses HashRouter instead of BrowserRouter to support Electron's file:// protocol.
+ * @see https://reactrouter.com/en/main/routers/create-hash-router
  */
-export const router = createBrowserRouter([
+export const router = createHashRouter([
 	// Main application layout with protected routes
 	{
 		path: '/',

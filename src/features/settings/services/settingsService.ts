@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import * as localDb from '@/services/localDatabase';
 import { UserProfile } from '@/types';
 
 /**
@@ -7,44 +7,44 @@ import { UserProfile } from '@/types';
  * @throws {Error} Se a busca falhar.
  */
 export async function getUniqueDestinations(): Promise<string[]> {
-    const { data, error } = await supabase
-        .from('patients')
-        .select('destination');
-    if (error) throw error;
-    const destinations = data.map((d: { destination: string }) => d.destination);
-    return [...new Set(destinations)];
+    return localDb.getUniqueDestinations();
 }
 
 /**
- * Atualiza o perfil de um usuário.
- * @param {string} userId - O ID do usuário a ser atualizado.
+ * Atualiza o perfil do usuário.
+ * No modo local, salvamos as configurações no banco SQLite.
  * @param {Partial<UserProfile>} profile - Um objeto contendo os campos do perfil a serem atualizados.
  * @returns {Promise<UserProfile | null>} Uma promessa que resolve para o perfil do usuário atualizado.
- * @throws {Error} Se a atualização falhar.
  */
-export async function updateUserProfile(userId: string, profile: Partial<UserProfile>): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-        .from('profiles')
-        .update(profile)
-        .eq('id', userId)
-        .select()
-        .single();
-    if (error) throw error;
-    return data;
+export async function updateUserProfile(profile: Partial<UserProfile>): Promise<UserProfile | null> {
+    // Salva as configurações do perfil no settings local
+    if (profile.clinic_name !== undefined) {
+        await localDb.setSetting('clinic_name', profile.clinic_name);
+    }
+    if (profile.default_message !== undefined) {
+        await localDb.setSetting('default_message', profile.default_message);
+    }
+    if (profile.default_destination !== undefined) {
+        await localDb.setSetting('default_destination', profile.default_destination);
+    }
+    // Retorna o perfil atualizado
+    return getUserProfile();
 }
 
 /**
- * Busca o perfil de um usuário pelo seu ID.
- * @param {string} userId - O ID do usuário a ser buscado.
+ * Busca o perfil do usuário.
+ * No modo local, retorna um perfil baseado nas configurações locais.
  * @returns {Promise<UserProfile | null>} Uma promessa que resolve para o perfil do usuário.
- * @throws {Error} Se a busca falhar.
  */
-export async function getUserProfile(userId: string): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-    if (error) throw error;
-    return data;
+export async function getUserProfile(): Promise<UserProfile | null> {
+    const clinicName = await localDb.getSetting('clinic_name');
+    const defaultMessage = await localDb.getSetting('default_message');
+    const defaultDestination = await localDb.getSetting('default_destination');
+    
+    return {
+        id: 'local-user',
+        clinic_name: clinicName || 'HealthCall',
+        default_message: defaultMessage || null,
+        default_destination: defaultDestination || null,
+    } as UserProfile;
 }

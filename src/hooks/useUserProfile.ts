@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { UserProfile } from '@/actions/user';
+import { UserProfile } from '@/types';
 
 /**
  * Define a forma dos dados fornecidos pelo `UserProfileContext`.

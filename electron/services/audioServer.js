@@ -2,22 +2,23 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import ip from 'ip';
+import { app } from 'electron';
 
-const app = express();
+const serverApp = express();
 const PORT = 3456; // Porta fixa para áudio interno
-const AUDIO_DIR = path.join(process.cwd(), 'temp/audio');
+const AUDIO_DIR = path.join(app.getPath('userData'), 'temp_audio');
 
-app.use(cors());
+serverApp.use(cors());
 
 // Servir arquivos estáticos da pasta de áudio
-app.use('/audio', express.static(AUDIO_DIR));
+serverApp.use('/audio', express.static(AUDIO_DIR));
 
 let server = null;
 
 export function startAudioServer() {
   if (server) return;
 
-  server = app.listen(PORT, () => {
+  server = serverApp.listen(PORT, () => {
     console.log(`[AudioServer] Running at http://localhost:${PORT}`);
     console.log(`[AudioServer] Serving files from: ${AUDIO_DIR}`);
   });

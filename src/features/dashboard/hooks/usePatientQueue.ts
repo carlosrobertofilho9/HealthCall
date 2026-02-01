@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Patient, PatientStatus } from '@/types';
 import * as patientService from '@/features/dashboard/services/patientService';
-import { supabase } from '@/lib/supabaseClient';
+import * as localDb from '@/services/localDatabase';
 import { toast } from 'sonner';
-import { castService } from '@/services/castService';
 import { useElectron } from '@/hooks/useElectron';
 
 /**
@@ -11,7 +10,7 @@ import { useElectron } from '@/hooks/useElectron';
  *
  * Este hook encapsula toda a lógica relacionada à fila de pacientes, incluindo:
  * - Buscar a lista inicial de pacientes.
- * - Inscrever-se para atualizações em tempo real do Supabase.
+ * - Inscrever-se para atualizações em tempo real via IPC do Electron.
  * - Gerenciar os estados de pesquisa e filtro.
  * - Fornecer funções para adicionar, atualizar, remover, chamar e limpar pacientes.
  * - Lidar com o estado de carregamento e exibir notificações de brinde para as ações.
@@ -63,15 +62,17 @@ export function usePatientQueue() {
 
     fetchPatients();
 
-    const channel = supabase
-      .channel('realtime-patients')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, (payload) => {
+    // Listen for data updates via IPC (replaces Supabase Realtime)
+    const handleDataUpdate = (data: { table: string }) => {
+      if (data.table === 'patients') {
         fetchPatients();
-      })
-      .subscribe();
+      }
+    };
+
+    localDb.onDataUpdate(handleDataUpdate);
 
     return () => {
-      supabase.removeChannel(channel);
+      localDb.offDataUpdate(handleDataUpdate);
     };
   }, []);
 
@@ -201,27 +202,6 @@ export function usePatientQueue() {
       if (calledPatient) {
         const time = calledPatient.callCount > 1 ? ` pela ${calledPatient.callCount}ª vez` : '';
         toast.success(`${calledPatient.name} foi chamado(a)${time}!`);
-        
-        // Send to Chromecast if connected
-        if (castService.isConnected()) {
-          console.log('[Cast] Sending patient call to receiver');
-          
-          let audioUrl = null;
-          
-          // Try to generate TTS audio if running in Electron
-          try {
-            const text = `Chamando ${calledPatient.name}, para ${destination}`;
-            console.log('[TTS] Generating audio for:', text);
-            audioUrl = await generateTTS(text);
-            if (audioUrl) {
-              console.log('[TTS] Audio generated:', audioUrl);
-            }
-          } catch (err) {
-            console.error('[TTS] Error generating audio:', err);
-          }
-
-          castService.sendPatientCall(calledPatient, destination, audioUrl);
-        }
       }
     } catch (error: any) {
       setPatients((current) =>

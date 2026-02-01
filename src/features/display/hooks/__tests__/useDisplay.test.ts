@@ -2,14 +2,12 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useDisplay } from '../useDisplay';
 import * as displayService from '@/features/display/services/displayService';
-import { supabase } from '@/lib/supabaseClient';
+import * as localDb from '@/services/localDatabase';
 
 // Mock dos módulos
-vi.mock('@/lib/supabaseClient', () => ({
-  supabase: {
-    channel: vi.fn(),
-    removeChannel: vi.fn(),
-  },
+vi.mock('@/services/localDatabase', () => ({
+  onDataUpdate: vi.fn(),
+  offDataUpdate: vi.fn(),
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -67,22 +65,14 @@ vi.mock('@/lib/audioTelemetry', () => ({
 }));
 
 describe('useDisplay - Audio System', () => {
-  let mockChannel: any;
   let audioContextInstance: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock do Supabase channel
-    mockChannel = {
-      on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn((callback) => {
-        callback('SUBSCRIBED');
-        return mockChannel;
-      }),
-    };
-
-    vi.mocked(supabase.channel).mockReturnValue(mockChannel);
+    // Mock do localDatabase para realtime updates
+    vi.mocked(localDb.onDataUpdate).mockImplementation(() => {});
+    vi.mocked(localDb.offDataUpdate).mockImplementation(() => {});
 
     // Mock dos serviços
     vi.mocked(displayService.getLastCall).mockResolvedValue(null);

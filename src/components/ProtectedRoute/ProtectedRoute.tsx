@@ -2,6 +2,10 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
+interface ProtectedRouteProps {
+	children: React.ReactNode;
+}
+
 /**
  * Um componente de ordem superior que protege rotas, exigindo autenticação.
  *

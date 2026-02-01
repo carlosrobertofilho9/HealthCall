@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import * as localDb from '@/services/localDatabase';
 import { Warning } from '@/types';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -236,14 +236,7 @@ const WarningsPage: React.FC = () => {
   const fetchWarnings = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('warnings')
-        .select('*')
-        .order('priority', { ascending: false })
-        .order('order', { ascending: true, nullsFirst: false })
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await localDb.getWarnings();
       setWarnings(data || []);
     } catch (error) {
       console.error('Error fetching warnings:', error);
@@ -255,24 +248,12 @@ const WarningsPage: React.FC = () => {
 
   const handleFileUpload = async (file: File): Promise<string | null> => {
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('warning-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('warning-images')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
+      // Upload file to local storage via IPC
+      const localUrl = await localDb.saveWarningMedia(file);
+      return localUrl;
     } catch (error) {
       console.error('Error uploading file:', error);
-      toast.error('Erro ao fazer upload da imagem');
+      toast.error('Erro ao fazer upload do arquivo');
       return null;
     }
   };
@@ -313,12 +294,7 @@ const WarningsPage: React.FC = () => {
 
       if (editingId) {
         // Update existing
-        const { error } = await supabase
-          .from('warnings')
-          .update(warningData)
-          .eq('id', editingId);
-
-        if (error) throw error;
+        await localDb.updateWarning(editingId, warningData);
 
         setWarnings(
           warnings.map((w) => (w.id === editingId ? { ...w, ...warningData } : w))
@@ -327,14 +303,11 @@ const WarningsPage: React.FC = () => {
       } else {
         // Create new - set order to be last
         const maxOrder = warnings.reduce((max, w) => Math.max(max, w.order || 0), 0);
-        const { data, error } = await supabase
-          .from('warnings')
-          .insert([{ ...warningData, active: true, order: maxOrder + 1 }])
-          .select()
-          .single();
+        const data = await localDb.addWarning({ ...warningData, active: true, order: maxOrder + 1 });
 
-        if (error) throw error;
-        setWarnings([data, ...warnings]);
+        if (data) {
+          setWarnings([data, ...warnings]);
+        }
         toast.success('Aviso adicionado com sucesso');
       }
 
@@ -391,8 +364,7 @@ const WarningsPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from('warnings').delete().eq('id', id);
-      if (error) throw error;
+      await localDb.removeWarning(id);
 
       setWarnings(warnings.filter((w) => w.id !== id));
       if (editingId === id) resetForm();
@@ -405,12 +377,7 @@ const WarningsPage: React.FC = () => {
 
   const toggleActive = async (warning: Warning) => {
     try {
-      const { error } = await supabase
-        .from('warnings')
-        .update({ active: !warning.active })
-        .eq('id', warning.id);
-
-      if (error) throw error;
+      await localDb.toggleWarningActive(warning.id);
 
       setWarnings(
         warnings.map((w) => (w.id === warning.id ? { ...w, active: !w.active } : w))
@@ -424,12 +391,7 @@ const WarningsPage: React.FC = () => {
   const togglePriority = async (warning: Warning) => {
     try {
       const newPriority = !warning.priority;
-      const { error } = await supabase
-        .from('warnings')
-        .update({ priority: newPriority })
-        .eq('id', warning.id);
-
-      if (error) throw error;
+      await localDb.updateWarning(warning.id, { priority: newPriority });
 
       setWarnings(
         warnings.map((w) =>
@@ -458,17 +420,8 @@ const WarningsPage: React.FC = () => {
 
     // Update order in database
     try {
-      const updates = newWarnings.map((warning, index) => ({
-        id: warning.id,
-        order: index + 1,
-      }));
-
-      for (const update of updates) {
-        await supabase
-          .from('warnings')
-          .update({ order: update.order })
-          .eq('id', update.id);
-      }
+      const orderedIds = newWarnings.map((w) => w.id);
+      await localDb.reorderWarnings(orderedIds);
 
       toast.success('Ordem atualizada');
     } catch (error) {

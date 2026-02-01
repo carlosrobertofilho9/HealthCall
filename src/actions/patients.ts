@@ -1,143 +1,51 @@
-import { supabase } from '../lib/supabaseClient';
+/**
+ * @deprecated Este arquivo foi substituído por src/services/localDatabase.ts
+ * Mantido para compatibilidade retroativa. Use localDatabase.ts para todas as operações de pacientes.
+ */
+
 import type { Patient, CallRecord } from '@/types';
+import * as localDb from '@/services/localDatabase';
 
 /**
- * Busca todos os pacientes da base de dados, ordenados por data de criação decrescente.
- * @returns {Promise<Patient[]>} Uma promessa que resolve para um array de objetos de paciente.
+ * @deprecated Use localDb.getPatients() diretamente
  */
 export async function getPatients(): Promise<Patient[]> {
-  const { data, error } = await supabase.from('patients').select('*').order('created_at', { ascending: false });
-  if (error) {
-    console.error('Error fetching patients:', error);
-    return [];
-  }
-  return data as Patient[];
+  return localDb.getPatients();
 }
 
 /**
- * Adiciona um novo paciente à base de dados.
- * @param {string} name - O nome do paciente.
- * @param {string} destination - O destino do paciente.
- * @returns {Promise<Patient | null>} Uma promessa que resolve para o novo objeto de paciente, ou nulo se ocorrer um erro.
+ * @deprecated Use localDb.addPatient() diretamente
  */
 export async function addPatient(name: string, destination: string): Promise<Patient | null> {
-  const trimmed = name.trim();
-  if (!trimmed || !destination) return null;
-
-  const { data, error } = await supabase
-    .from('patients')
-    .insert([{ name: trimmed, destination, status: 'Aguardando' }])
-    .select();
-
-  if (error || !data) {
-    console.error('Error adding patient:', error);
-    return null;
-  }
-
-  return data[0] as Patient;
+  return localDb.addPatient(name, destination);
 }
 
 /**
- * Atualiza os dados de um paciente existente na base de dados.
- *
- * Esta função recebe um objeto de paciente e atualiza o registro correspondente
- * na tabela `patients`. Apenas um subconjunto de campos (`name`, `destination`, `status`, `callCount`)
- * é atualizado para prevenir a modificação acidental de campos imutáveis como `id`.
- *
- * @param {Patient} patient - O objeto de paciente contendo os dados atualizados. O campo `id` é usado para identificar o paciente a ser atualizado.
- * @returns {Promise<Patient | null>} Uma promessa que resolve para o objeto de paciente atualizado, ou `null` se ocorrer um erro.
+ * @deprecated Use localDb.updatePatient() diretamente
  */
 export async function updatePatient(patient: Patient): Promise<Patient | null> {
-  // Envia explicitamente apenas os campos que podem ser atualizados
-  const payload = {
-    name: patient.name,
-    destination: patient.destination,
-    status: patient.status,
-    callCount: patient.callCount,
-  };
-  const { data, error } = await supabase
-    .from('patients')
-    .update(payload)
-    .eq('id', patient.id)
-    .select('*');
-
-  if (error || !data) {
-    console.error('Error updating patient:', error);
-    return null;
-  }
-  return data[0] as Patient;
+  return localDb.updatePatient(patient);
 }
 
 /**
- * Remove um paciente da base de dados.
- * @param {string} id - O ID do paciente a ser removido.
- * @returns {Promise<boolean>} Uma promessa que resolve para `true` se a remoção for bem-sucedida, `false` caso contrário.
+ * @deprecated Use localDb.removePatient() diretamente
  */
 export async function removePatient(id: string): Promise<boolean> {
-  const { error } = await supabase.from('patients').delete().eq('id', id);
-  if (error) {
-    console.error('Error removing patient:', error);
-    return false;
-  }
-  return true;
+  return localDb.removePatient(id);
 }
 
 /**
- * Limpa a fila chamando a função RPC `truncate_patients` no Supabase.
- * @returns {Promise<boolean>} Uma promessa que resolve para `true` se a operação for bem-sucedida, `false` caso contrário.
+ * @deprecated Use localDb.clearQueue() diretamente
  */
 export async function clearQueue(): Promise<boolean> {
-  const { error } = await supabase.rpc('truncate_patients');
-  if (error) {
-    console.error('Error clearing queue:', error);
-    return false;
-  }
-  return true;
+  return localDb.clearQueue();
 }
 
 /**
- * Registra uma chamada para um paciente, atualizando seu status e contador de chamadas.
- * Esta função primeiro busca o paciente para obter o contador de chamadas atual,
- * depois atualiza o paciente e, finalmente, insere um novo registro na tabela `calls`.
- * @param {string} patientId - O ID do paciente que está sendo chamado.
- * @param {string} location - O local de onde a chamada está sendo feita.
- * @returns {Promise<any | null>} Uma promessa que resolve para o novo registro de chamada, ou nulo se ocorrer um erro.
+ * @deprecated Use localDb.callPatient() diretamente
  */
-export async function callPatient(patientId: string, location: string): Promise<any | null> {
-  const { data: patientData, error: patientError } = await supabase
-    .from('patients')
-    .select('callCount')
-    .eq('id', patientId)
-    .single();
-
-  if (patientError || !patientData) {
-    console.error('Error fetching patient:', patientError);
-    return null;
-  }
-
-  const newCallCount = patientData.callCount + 1;
-
-  const { error: updateError } = await supabase
-    .from('patients')
-    .update({ status: 'Chamado', callCount: newCallCount })
-    .eq('id', patientId);
-
-  if (updateError) {
-    console.error('Error updating patient:', updateError);
-    return null;
-  }
-
-  const { data, error: callError } = await supabase
-    .from('calls')
-    .insert([{ patient_id: patientId, location: location }])
-    .select();
-
-  if (callError) {
-    console.error('Error creating call:', callError);
-    return null;
-  }
-
-  return data[0];
+export async function callPatient(patientId: string, location: string): Promise<Patient | null> {
+  return localDb.callPatient(patientId, location);
 }
 
 /**

@@ -17,6 +17,14 @@ export type CallRecord = {
 	calledAt: number;
 };
 
+export type UserProfile = {
+	id: string;
+	updated_at?: string | null;
+	default_destination?: string | null;
+	clinic_name?: string | null;
+	default_message?: string | null;
+};
+
 export interface Warning {
 	id: string;
 	text: string;

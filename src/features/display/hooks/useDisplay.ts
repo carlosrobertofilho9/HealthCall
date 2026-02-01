@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Patient, CallRecord, Warning } from '@/types';
 import * as displayService from '@/features/display/services/displayService';
-import { supabase } from '@/lib/supabaseClient';
-import { useAuth } from '@/hooks/useAuth';
+import * as localDb from '@/services/localDatabase';
 import { toast } from 'sonner';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { audioTelemetry } from '@/lib/audioTelemetry';
@@ -14,7 +13,6 @@ import { useElectron } from '@/hooks/useElectron';
  * Um hook para gerenciar toda a lógica e estado da página de exibição pública.
  */
 export function useDisplay() {
-  const { session } = useAuth();
   const { speak, preloadTTS, cancel: cancelTTS } = useTextToSpeech();
   const { contextRef: audioContextRef, isHealthy, resume: resumeAudioContext, startHealthCheck } = useAudioContext();
   const { isElectron, sendNotification, updateBadge } = useElectron();
@@ -94,8 +92,6 @@ export function useDisplay() {
     try {
       await resumeAudioContext();
       const bell = new Audio('/bell.mp3');
-      bell.crossOrigin = 'anonymous';
-      bell.preload = 'auto';
       bell.volume = 0.01;
 
       await new Promise<void>((resolve, reject) => {
@@ -387,7 +383,7 @@ export function useDisplay() {
   }, [nextPatients, isElectron, updateBadge]);
 
   useEffect(() => {
-    if (!session || !audioActivated) return;
+    if (!audioActivated) return;
 
     const playBellAndSpeak = async (patient: Patient) => {
       // Intercept any playing warning
@@ -417,8 +413,6 @@ export function useDisplay() {
         const preloadPromise = preloadTTS(textToSpeak).catch(() => null);
 
         const bell = new Audio('/bell.mp3');
-        bell.crossOrigin = 'anonymous';
-        bell.preload = 'auto';
         bell.volume = 1.0;
 
         await bell.play();
@@ -471,15 +465,13 @@ export function useDisplay() {
         setCallHistory(await displayService.getCallHistory());
         setNextPatients(await displayService.getNextPatients());
         
-        // Fetch warnings
-        const { data: warningsData } = await supabase
-            .from('warnings')
-            .select('*')
-            .eq('active', true)
-            .order('created_at', { ascending: false });
+        // Fetch warnings from local database
+        const warningsData = await localDb.getActiveWarnings();
         if (warningsData) setWarnings(warningsData);
 
-      } catch (error) {}
+      } catch (error) {
+        console.error('[Display] Error fetching data:', error);
+      }
     };
 
     fetchDisplayData();
@@ -490,39 +482,49 @@ export function useDisplay() {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    const channel = supabase
-      .channel('realtime-display-global')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, fetchDisplayData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'warnings' }, fetchDisplayData) // Listen to warnings
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'calls' },
-        async (payload) => {
-          const newCall = payload.new as { patient_id: string; location: string };
-          const patientData = await displayService.getPatientById(newCall.patient_id);
-          if (patientData) {
-            const patient = {
-              ...patientData,
-              destination: newCall.location,
+    // Ref to track the last call we processed to detect new calls
+    const lastProcessedCallRef = { id: '', callCount: 0 };
+
+    // Listen for data updates via IPC (replaces Supabase Realtime)
+    const handleDataUpdate = async (data: { table: string }) => {
+      console.log('[Display] Data update received:', data.table);
+      
+      if (data.table === 'patients' || data.table === 'calls') {
+        // Check for new calls
+        const lastCall = await displayService.getLastCall();
+        if (lastCall) {
+          const patient = lastCall.patient;
+          const isNewCall = 
+            patient.id !== lastProcessedCallRef.id ||
+            patient.callCount !== lastProcessedCallRef.callCount;
+          
+          if (isNewCall) {
+            lastProcessedCallRef.id = patient.id;
+            lastProcessedCallRef.callCount = patient.callCount;
+            playBellAndSpeak({
+              ...patient,
+              destination: lastCall.location,
               status: 'Chamado' as const,
-            };
-            playBellAndSpeak(patient);
+            });
           }
-          fetchDisplayData();
         }
-      )
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls' }, fetchDisplayData)
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'calls' }, fetchDisplayData)
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') fetchDisplayData();
-      });
+        fetchDisplayData();
+      }
+      
+      if (data.table === 'warnings') {
+        fetchDisplayData();
+      }
+    };
+
+    // Register IPC listener
+    localDb.onDataUpdate(handleDataUpdate);
 
     return () => {
       clearInterval(refetchInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      supabase.removeChannel(channel);
+      localDb.offDataUpdate(handleDataUpdate);
     };
-  }, [session, audioActivated]);
+  }, [audioActivated]);
 
   return {
     calledPatient,
