@@ -677,11 +677,12 @@ const WarningsPage: React.FC = () => {
                 />
               </div>
 
-              {/* Duration for Video/YouTube */}
-              {(mediaType === 'video' || mediaType === 'youtube') && (
+              {/* Duration for YouTube only - Video local plays completely automatically */}
+              {mediaType === 'youtube' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Duração do Vídeo (segundos)
+                    Duração do Vídeo do YouTube (segundos)
+                    <span className="text-red-400 ml-1">*</span>
                   </label>
                   <input
                     type="number"
@@ -689,7 +690,8 @@ const WarningsPage: React.FC = () => {
                     onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
                     className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="Ex: 30"
-                    min="0"
+                    min="1"
+                    required
                   />
                   {duration > 0 && (
                     <p className="text-xs text-gray-400 mt-1">
@@ -699,6 +701,19 @@ const WarningsPage: React.FC = () => {
                       minutos
                     </p>
                   )}
+                  <p className="text-xs text-yellow-400 mt-1">
+                    ⚠️ Informe a duração do vídeo do YouTube para que ele seja exibido pelo tempo correto.
+                  </p>
+                </div>
+              )}
+
+              {/* Info message for local video */}
+              {mediaType === 'video' && (
+                <div className="p-3 bg-green-900/30 border border-green-700/50 rounded-md">
+                  <p className="text-xs text-green-400 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">info</span>
+                    O vídeo será reproduzido automaticamente do início ao fim.
+                  </p>
                 </div>
               )}
 

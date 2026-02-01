@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { Warning } from '@/types';
 
 interface WarningOverlayProps {
@@ -6,9 +6,14 @@ interface WarningOverlayProps {
   time?: Date;
   onClose?: () => void;
   isPreview?: boolean;
+  onVideoEnd?: () => void;
 }
 
-export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = new Date(), onClose, isPreview = false }) => {
+export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = new Date(), onClose, isPreview = false, onVideoEnd }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const hasEndedRef = useRef(false);
+    const warningIdRef = useRef<string | null>(null);
+    
     const isYouTube = warning.media_type === 'youtube';
     const isVideo = warning.media_type === 'video';
     const isImage = !warning.media_type || warning.media_type === 'image';
@@ -16,11 +21,29 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
     const getYoutubeEmbedUrl = (url: string) => {
         try {
             const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-            return `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&loop=1&playlist=${videoId}&showinfo=0&modestbranding=1`;
+            return `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&loop=0&showinfo=0&modestbranding=1`;
         } catch {
             return '';
         }
     };
+
+    const handleVideoEnded = useCallback(() => {
+        console.log(`[WarningOverlay] onEnded disparado para warning ${warning.id}, hasEnded: ${hasEndedRef.current}`);
+        if (!hasEndedRef.current && onVideoEnd && !isPreview) {
+            hasEndedRef.current = true;
+            console.log('[WarningOverlay] Vídeo terminou - notificando callback');
+            onVideoEnd();
+        }
+    }, [onVideoEnd, warning.id, isPreview]);
+
+    // Reset the ended flag when warning changes
+    useEffect(() => {
+        if (warningIdRef.current !== warning.id) {
+            console.log(`[WarningOverlay] Warning mudou de ${warningIdRef.current} para ${warning.id} - resetando hasEnded`);
+            hasEndedRef.current = false;
+            warningIdRef.current = warning.id;
+        }
+    }, [warning.id]);
 
     return (
       <div className={`bg-gray-900 text-white relative flex flex-col overflow-hidden ${isPreview ? 'h-full w-full rounded-lg' : 'min-h-screen'}`} style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
@@ -36,11 +59,13 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
 
             {isVideo && warning.background_url && (
                 <video 
+                    ref={videoRef}
                     src={warning.background_url}
                     className="absolute inset-0 w-full h-full object-cover"
                     autoPlay
-                    loop
+                    loop={isPreview}
                     playsInline
+                    onEnded={handleVideoEnded}
                 />
             )}
 
@@ -66,10 +91,10 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
 
         <div className="relative z-10 flex flex-col flex-grow">
             {!isPreview && (
-                <header className="px-6 py-4 flex items-center justify-between border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm">
+                <header className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm gap-2 sm:gap-0">
                     <div className="flex items-center gap-3">
-                    <div className="flex flex-col">
-                        <span className="text-3xl font-bold font-mono tracking-wider">
+                    <div className="flex flex-col items-center sm:items-start">
+                        <span className="text-xl sm:text-2xl md:text-3xl font-bold font-mono tracking-wider">
                         {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <span className="text-xs text-gray-400 uppercase tracking-widest">
@@ -77,9 +102,9 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
                         </span>
                     </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                    <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-8 w-auto" />
-                    <h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                    <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
+                    <h1 className="text-base sm:text-lg md:text-xl font-bold truncate max-w-[200px] sm:max-w-none">PSF Maria Lucia da Silva</h1>
                     </div>
                 </header>
             )}
@@ -96,28 +121,28 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
                 </div>
             )}
 
-            <main className="flex-grow flex flex-col justify-center items-center text-center pb-0 relative z-10">
+            <main className="flex-grow flex flex-col justify-center items-center text-center pb-0 relative z-10 px-4 sm:px-8">
                 {/* QR Code - Centered, above caption */}
                 {warning.qrcode_url && (
-                    <div className={`mb-8 flex flex-col items-center bg-white/95 p-6 rounded-2xl shadow-2xl animate-slide-up backdrop-blur-sm ${isPreview ? 'scale-75' : ''}`}>
+                    <div className={`mb-4 sm:mb-8 flex flex-col items-center bg-white/95 p-3 sm:p-4 md:p-6 rounded-xl sm:rounded-2xl shadow-2xl animate-slide-up backdrop-blur-sm ${isPreview ? 'scale-75' : ''}`}>
                         <img 
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(warning.qrcode_url)}`} 
                             alt="QR Code" 
-                            className="w-48 h-48 md:w-64 md:h-64" 
+                            className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-64 lg:h-64" 
                         />
-                        <p className="text-gray-900 font-bold mt-3 text-sm uppercase tracking-wide">Leia com seu celular</p>
+                        <p className="text-gray-900 font-bold mt-2 sm:mt-3 text-xs sm:text-sm uppercase tracking-wide">Leia com seu celular</p>
                     </div>
                 )}
 
                 {/* Caption Bar - Now at bottom */}
                 {warning.text && (
-                    <div className="w-full bg-gradient-to-t from-black via-black/60 to-transparent pt-32 pb-10 px-8 mt-auto">
+                    <div className="w-full bg-gradient-to-t from-black via-black/60 to-transparent pt-16 sm:pt-24 md:pt-32 pb-6 sm:pb-8 md:pb-10 px-4 sm:px-6 md:px-8 mt-auto">
                         <div className="max-w-7xl mx-auto text-left">
-                            <h2 className={`${isPreview ? 'text-xl' : 'text-3xl'} font-bold text-[#38e07b] mb-2 uppercase tracking-wider drop-shadow-md flex items-center gap-3`}>
-                                <span className={`w-2 ${isPreview ? 'h-6' : 'h-8'} bg-[#38e07b] rounded-full inline-block`}></span>
+                            <h2 className={`${isPreview ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl md:text-3xl'} font-bold text-[#38e07b] mb-1 sm:mb-2 uppercase tracking-wider drop-shadow-md flex items-center gap-2 sm:gap-3`}>
+                                <span className={`w-1.5 sm:w-2 ${isPreview ? 'h-4 sm:h-6' : 'h-5 sm:h-6 md:h-8'} bg-[#38e07b] rounded-full inline-block`}></span>
                                 Aviso Importante
                             </h2>
-                            <p className={`${isPreview ? 'text-2xl' : 'text-4xl md:text-5xl'} font-medium leading-tight text-white drop-shadow-lg shadow-black`}>
+                            <p className={`${isPreview ? 'text-lg sm:text-xl md:text-2xl' : 'text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl'} font-medium leading-tight text-white drop-shadow-lg shadow-black break-words hyphens-auto`}>
                                 {warning.text}
                             </p>
                         </div>

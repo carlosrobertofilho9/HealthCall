@@ -39,6 +39,26 @@ jspm_packages/
 # TypeScript v1 declaration files
 typings/
 
+# Vite
+dist/
+.vite/
+
+# Electron build output
+dist-electron/
+
+# Tailwind CSS cache
+.tailwind/
+
+# Supabase local config and temp
+supabase/.env
+supabase/.temp/
+
+# pnpm
+pnpm-lock.yaml
+
+# VSCode settings
+.vscode/
+
 # Optional npm cache directory
 .npm
 
@@ -86,7 +106,7 @@ typings/
 .DS_Store
 
 # HealthCall Specific
-dist/
 temp/
 electron/credentials/*.json
 !electron/credentials/.gitkeep
+

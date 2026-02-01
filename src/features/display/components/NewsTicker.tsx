@@ -46,24 +46,24 @@ export const NewsTicker: React.FC = React.memo(() => {
   if (loading || news.length === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-blue-900/90 text-white z-20 border-t border-blue-500 overflow-hidden py-2 shadow-lg backdrop-blur-md">
+    <div className="fixed bottom-0 left-0 w-full bg-blue-900/90 text-white z-20 border-t border-blue-500 overflow-hidden py-1.5 sm:py-2 shadow-lg backdrop-blur-md">
       <div className="flex items-center">
-         <div className="bg-blue-800 px-4 py-1 z-30 font-bold uppercase text-xs tracking-wider shadow-md shrink-0 mx-2 rounded">
+         <div className="bg-blue-800 px-2 sm:px-4 py-0.5 sm:py-1 z-30 font-bold uppercase text-[10px] sm:text-xs tracking-wider shadow-md shrink-0 mx-1 sm:mx-2 rounded">
             Notícias
          </div>
          <div className="overflow-hidden relative w-full">
-             <div className="animate-marquee whitespace-nowrap flex gap-16 items-center">
+             <div className="animate-marquee whitespace-nowrap flex gap-8 sm:gap-12 md:gap-16 items-center">
                 {news.map((item, index) => (
-                    <span key={index} className="text-lg font-medium inline-flex items-center">
+                    <span key={index} className="text-sm sm:text-base md:text-lg font-medium inline-flex items-center">
                         {item.title}
-                        <span className="ml-16 inline-block w-2 h-2 rounded-full bg-blue-400/50" />
+                        <span className="ml-8 sm:ml-12 md:ml-16 inline-block w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-blue-400/50" />
                     </span>
                 ))}
                 {/* Duplicate for infinite loop illusion */}
                 {news.map((item, index) => (
-                    <span key={`dup-${index}`} className="text-lg font-medium inline-flex items-center">
+                    <span key={`dup-${index}`} className="text-sm sm:text-base md:text-lg font-medium inline-flex items-center">
                         {item.title}
-                        <span className="ml-16 inline-block w-2 h-2 rounded-full bg-blue-400/50" />
+                        <span className="ml-8 sm:ml-12 md:ml-16 inline-block w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-blue-400/50" />
                     </span>
                 ))}
              </div>

@@ -132,18 +132,18 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
   return (
     <div className="bg-gray-900 text-white h-full flex flex-col" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
       {/* Header */}
-      <header className="px-6 py-4 flex items-center justify-between border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm shrink-0 z-20">
-        <div className="flex flex-col">
-          <span className="text-3xl font-bold font-mono tracking-wider">
+      <header className="px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between border-b border-gray-700/50 bg-gray-900/50 backdrop-blur-sm shrink-0 z-20 gap-2 sm:gap-0">
+        <div className="flex flex-col items-center sm:items-start">
+          <span className="text-xl sm:text-2xl md:text-3xl font-bold font-mono tracking-wider">
             {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
           <span className="text-xs text-gray-400 uppercase tracking-widest">
             {time.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-8 w-auto" />
-          <h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
+          <h1 className="text-base sm:text-lg md:text-xl font-bold truncate max-w-[200px] sm:max-w-none">PSF Maria Lucia da Silva</h1>
         </div>
       </header>
 
@@ -164,12 +164,12 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
           )}
         </div>
 
-        <div className="relative z-10 w-full h-full flex p-8 gap-8 items-center">
+        <div className="relative z-10 w-full h-full flex flex-col lg:flex-row p-4 sm:p-6 md:p-8 gap-4 sm:gap-6 md:gap-8 items-center">
              {/* Layout with Image */}
              {currentNews.image ? (
                  <>
                     {/* Image Column */}
-                    <div className="w-5/12 h-[80%] relative rounded-2xl overflow-hidden shadow-2xl border border-gray-700/50 animate-fade-in-left">
+                    <div className="w-full lg:w-5/12 h-[30vh] sm:h-[35vh] md:h-[40vh] lg:h-[80%] relative rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-gray-700/50 animate-fade-in-left shrink-0">
                         <img 
                             src={currentNews.image} 
                             alt={currentNews.title}
@@ -178,31 +178,31 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
                     </div>
 
                     {/* Text Column */}
-                    <div className="w-7/12 flex flex-col justify-center gap-6 animate-fade-in-right pr-4">
-                        <div className="inline-flex items-center gap-2 text-blue-400 font-bold uppercase tracking-widest text-sm mb-2">
+                    <div className="w-full lg:w-7/12 flex flex-col justify-center gap-3 sm:gap-4 md:gap-6 animate-fade-in-right lg:pr-4">
+                        <div className="inline-flex items-center gap-2 text-blue-400 font-bold uppercase tracking-widest text-xs sm:text-sm mb-1 sm:mb-2">
                              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                              G1 Saúde - Notícias
                         </div>
 
-                        <h2 className="text-4xl md:text-5xl lg:text-5xl font-bold text-white drop-shadow-lg leading-tight">
+                        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white drop-shadow-lg leading-tight break-words hyphens-auto">
                             {currentNews.title}
                         </h2>
 
                         {currentNews.description && (
-                            <p className="text-xl text-gray-300 leading-relaxed border-l-4 border-blue-500 pl-6 line-clamp-[8]">
+                            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 leading-relaxed border-l-4 border-blue-500 pl-3 sm:pl-4 md:pl-6 line-clamp-4 sm:line-clamp-6 lg:line-clamp-[8]">
                                 {currentNews.description}
                             </p>
                         )}
                         
                          {/* ProgressBar / Indicator */}
-                         <div className="mt-8 flex gap-2">
+                         <div className="mt-4 sm:mt-6 md:mt-8 flex gap-1.5 sm:gap-2 flex-wrap">
                             {allNews.map((_, idx) => (
                             <div
                                 key={idx}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${
+                                className={`h-1 sm:h-1.5 rounded-full transition-all duration-300 ${
                                 idx === newsIndex
-                                    ? 'w-12 bg-blue-500'
-                                    : 'w-3 bg-gray-600'
+                                    ? 'w-8 sm:w-12 bg-blue-500'
+                                    : 'w-2 sm:w-3 bg-gray-600'
                                 }`}
                             />
                             ))}
@@ -211,31 +211,31 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
                  </>
              ) : (
                  /* Center Layout (No Image) */
-                 <div className="w-full max-w-5xl mx-auto flex flex-col justify-center items-center text-center animate-fade-in">
-                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-blue-500/10 border-4 border-blue-500/30 animate-pulse mb-8">
-                        <span className="material-symbols-outlined text-blue-400" style={{ fontSize: '48px' }}>
+                 <div className="w-full max-w-5xl mx-auto flex flex-col justify-center items-center text-center animate-fade-in px-4">
+                    <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-blue-500/10 border-4 border-blue-500/30 animate-pulse mb-4 sm:mb-6 md:mb-8">
+                        <span className="material-symbols-outlined text-blue-400 text-3xl sm:text-4xl md:text-5xl">
                         newsmode
                         </span>
                     </div>
 
-                    <h2 className="text-4xl md:text-6xl font-bold leading-tight text-white drop-shadow-2xl mb-8">
+                    <h2 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight text-white drop-shadow-2xl mb-4 sm:mb-6 md:mb-8 break-words hyphens-auto">
                         {currentNews.title}
                     </h2>
 
                     {currentNews.description && (
-                        <p className="text-2xl text-gray-300 max-w-4xl leading-relaxed">
+                        <p className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-gray-300 max-w-4xl leading-relaxed">
                              {currentNews.description}
                         </p>
                     )}
                      {/* ProgressBar / Indicator */}
-                     <div className="mt-12 flex gap-2">
+                     <div className="mt-6 sm:mt-8 md:mt-12 flex gap-1.5 sm:gap-2 flex-wrap justify-center">
                         {allNews.map((_, idx) => (
                         <div
                             key={idx}
-                            className={`h-2 rounded-full transition-all duration-300 ${
+                            className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
                             idx === newsIndex
-                                ? 'w-12 bg-blue-500'
-                                : 'w-3 bg-gray-600'
+                                ? 'w-8 sm:w-12 bg-blue-500'
+                                : 'w-2 sm:w-3 bg-gray-600'
                             }`}
                         />
                         ))}

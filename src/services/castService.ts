@@ -45,6 +45,12 @@ class CastService {
       return;
     }
 
+    // Disable in Electron
+    if (window.electron) {
+      console.log('[Cast] Chromecast support is disabled in Electron');
+      return;
+    }
+
     if (this.initializationPromise) {
       return this.initializationPromise;
     }
@@ -168,6 +174,11 @@ class CastService {
    */
   async requestSession(): Promise<void> {
     if (!this.isInitialized) {
+      // If in Electron, this is expected behavior
+      if (window.electron) {
+        console.log('[Cast] Session request ignored (Electron)');
+        return;
+      }
       throw new Error('Cast service not initialized');
     }
 
@@ -213,6 +224,10 @@ class CastService {
    * Get the current Cast state
    */
   getCastState(): CastState {
+    if (window.electron) {
+      return 'NO_DEVICES_AVAILABLE';
+    }
+
     if (!this.isInitialized || !this.castContext) {
       return 'NOT_CONNECTED';
     }

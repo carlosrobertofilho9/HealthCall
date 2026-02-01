@@ -34,6 +34,7 @@ export function useDisplay() {
   const warningCycleCompletedRef = useRef<boolean>(false);
   const lastIdleSessionRef = useRef<number>(0);
   const warningCycleRunningRef = useRef<boolean>(false);
+  const videoEndResolverRef = useRef<(() => void) | null>(null);
   
   const [audioActivated, setAudioActivated] = useState(false);
   const [isActivatingAudio, setIsActivatingAudio] = useState(false);
@@ -44,7 +45,20 @@ export function useDisplay() {
 
   const IDLE_THRESHOLD = 10000; // 10 seconds - tempo para mostrar lista antes dos anúncios
 
-  const isWarningScheduledNow = (warning: Warning) => {
+  // Callback chamado quando um vídeo termina de reproduzir
+  const handleVideoEnd = useCallback(() => {
+    console.log('[Display] handleVideoEnd chamado, resolver existe:', !!videoEndResolverRef.current);
+    if (videoEndResolverRef.current) {
+      console.log('[Display] Resolvendo promise do vídeo');
+      const resolver = videoEndResolverRef.current;
+      videoEndResolverRef.current = null;
+      resolver();
+    } else {
+      console.log('[Display] Nenhum resolver configurado - ignorando');
+    }
+  }, []);
+
+  const isWarningScheduledNow = useCallback((warning: Warning) => {
     if (!warning.active) return false;
     // If no schedule set, it's valid
     if (!warning.start_time || !warning.end_time) return true;
@@ -69,7 +83,7 @@ export function useDisplay() {
         console.error("Error parsing warning schedule", e);
         return true; // Fallback to valid if parse fails
     }
-  };
+  }, []);
 
   const activateAudio = async () => {
     if (isActivatingAudio) return;
@@ -140,7 +154,12 @@ export function useDisplay() {
       const timeSinceActivity = now - lastActivityTime;
       const isIdle = timeSinceActivity > IDLE_THRESHOLD;
       const activeWarningsList = warnings.filter(isWarningScheduledNow);
-      const warningsCompleteOrEmpty = activeWarningsList.length === 0 || warningCycleCompletedRef.current;
+      
+      // Avisos completos quando: não há avisos agendados OU ciclo já foi concluído
+      // E também não há ciclo em execução
+      const warningsCompleteOrEmpty = 
+        (activeWarningsList.length === 0 || warningCycleCompletedRef.current) &&
+        !warningCycleRunningRef.current;
       
       const canShowHeadline = 
         !isCalling && 
@@ -151,11 +170,11 @@ export function useDisplay() {
         !newsCycleCompletedRef.current;
       
       if (canShowHeadline && !shouldShowHeadline) {
-        console.log('[Display] Condições atendidas - mostrando notícias');
+        console.log('[Display] Condições atendidas - mostrando notícias (avisos concluídos)');
         setShouldShowHeadline(true);
       } else if (!canShowHeadline && shouldShowHeadline && !newsCycleCompletedRef.current) {
         // Only hide if not in middle of news cycle (unless news cycle completed)
-        if (isCalling || activeWarning) {
+        if (isCalling || activeWarning || warningCycleRunningRef.current) {
           console.log('[Display] Interrupção por chamada/aviso - escondendo notícias');
           setShouldShowHeadline(false);
         }
@@ -171,132 +190,174 @@ export function useDisplay() {
     return () => clearInterval(interval);
   }, [isCalling, activeWarning, audioActivated, lastActivityTime, warnings, shouldShowHeadline]);
 
-  // Warning Cycle Logic - Com mutex robusto para evitar sobreposição
+  // Refs para evitar re-execução do useEffect durante o ciclo
+  const speakRef = useRef(speak);
+  const lastActivityTimeRef = useRef(lastActivityTime);
+  
   useEffect(() => {
-    // Flag local para controle de cancelamento deste efeito específico
-    let cancelled = false;
-    
-    if (!audioActivated || isCalling || warnings.length === 0) {
-      if (activeWarning) setActiveWarning(null);
+    speakRef.current = speak;
+  }, [speak]);
+  
+  useEffect(() => {
+    lastActivityTimeRef.current = lastActivityTime;
+  }, [lastActivityTime]);
+
+  // Warning Cycle Logic - Com intervalo de verificação para iniciar ciclo
+  useEffect(() => {
+    if (!audioActivated || warnings.length === 0) {
       warningCycleCompletedRef.current = false;
       warningCycleRunningRef.current = false;
       return;
     }
 
-    // Check immediately if there are scheduled warnings
-    const activeWarningsList = warnings.filter(isWarningScheduledNow);
-    
-    // If no warnings are scheduled, mark cycle as complete immediately
-    if (activeWarningsList.length === 0) {
-      console.log('[Display] Nenhum aviso agendado - manchete permitida imediatamente');
+    const playAllWarnings = async (activeWarningsList: Warning[]) => {
+      // Double-check mutex antes de começar (evita race condition)
+      if (warningCycleRunningRef.current) {
+        console.log('[Display] Mutex ativo - ciclo já em execução');
+        return;
+      }
+      
+      // Ativar mutex IMEDIATAMENTE antes de qualquer operação assíncrona
+      warningCycleRunningRef.current = true;
+      
+      console.log('[Display] Iniciando ciclo de avisos');
+      console.log(`[Display] Total de avisos para reproduzir: ${activeWarningsList.length}`);
+      activeWarningsList.forEach((w, idx) => {
+        console.log(`[Display] Aviso ${idx + 1}: tipo=${w.media_type}, texto="${w.text?.substring(0, 30)}..."`);
+      });
+      
+      warningCycleCompletedRef.current = false;
+
+      // Play all warnings in sequence - um por vez
+      for (let i = 0; i < activeWarningsList.length; i++) {
+        const warning = activeWarningsList[i];
+        
+        // Check if we should stop (e.g., new patient call)
+        if (isPlayingRef.current) {
+          console.log('[Display] Ciclo de avisos interrompido por chamada de paciente');
+          warningCycleRunningRef.current = false;
+          return; // Sai completamente sem marcar como completo
+        }
+
+        console.log(`[Display] Iniciando aviso ${i + 1}/${activeWarningsList.length}: tipo=${warning.media_type}, texto="${warning.text}"`);
+        
+        // Definir o próximo aviso diretamente (sem limpar antes para evitar flash)
+        setActiveWarning(warning);
+
+        try {
+          const isLocalVideo = warning.media_type === 'video';
+          const isYouTube = warning.media_type === 'youtube';
+          
+          if (isLocalVideo) {
+            // Para vídeos locais, aguarda o evento onended do vídeo
+            console.log(`[Display] Reproduzindo vídeo local até o final`);
+            
+            // Limpa qualquer resolver anterior
+            videoEndResolverRef.current = null;
+            
+            // Cria uma promise que será resolvida quando o vídeo terminar
+            await new Promise<void>((resolve) => {
+              // Pequeno delay para garantir que o componente foi montado
+              setTimeout(() => {
+                videoEndResolverRef.current = resolve;
+                console.log('[Display] Resolver de vídeo configurado - aguardando fim');
+              }, 500);
+              
+              // Timeout de segurança de 5 minutos para evitar travamento
+              setTimeout(() => {
+                console.log('[Display] Timeout de segurança - avançando para próximo aviso');
+                if (videoEndResolverRef.current === resolve) {
+                  resolve();
+                  videoEndResolverRef.current = null;
+                }
+              }, 5 * 60 * 1000);
+            });
+            
+            console.log(`[Display] Vídeo local finalizado`);
+          } else if (isYouTube) {
+            // Para YouTube, usa a duração especificada (obrigatório para YouTube)
+            const videoDuration = warning.duration || 30;
+            console.log(`[Display] Reproduzindo YouTube por ${videoDuration} segundos`);
+            await new Promise(r => setTimeout(r, videoDuration * 1000));
+          } else {
+            // Para imagens/texto, fale o texto e aguarde
+            if (warning.text) {
+              console.log(`[Display] Falando texto do aviso: "${warning.text}"`);
+              await speakRef.current(warning.text);
+              console.log(`[Display] Texto do aviso ${i + 1} concluído`);
+            }
+          }
+          
+          // Pequena pausa entre avisos (sem limpar a tela)
+          // O próximo aviso será definido diretamente no início do loop
+          if (i < activeWarningsList.length - 1) {
+            console.log(`[Display] Pausa de 1s antes do próximo aviso`);
+            await new Promise(r => setTimeout(r, 1000));
+          }
+        } catch (error) {
+          console.error('[Display] Erro ao reproduzir aviso:', error);
+        }
+      }
+
+      // All warnings played - mark cycle as complete
+      console.log('[Display] Ciclo de avisos COMPLETO - todas as notícias agora podem aparecer');
+      setActiveWarning(null);
       warningCycleCompletedRef.current = true;
       warningCycleRunningRef.current = false;
-      return;
-    }
+      lastWarningEndTimeRef.current = Date.now();
+    };
 
-    // Don't restart cycle if already completed or currently running (mutex check)
-    if (warningCycleCompletedRef.current || warningCycleRunningRef.current) {
-      console.log('[Display] Ciclo já em execução ou completo - ignorando');
-      return;
-    }
-
-    const playAllWarnings = async () => {
+    // Função que verifica se deve iniciar o ciclo
+    const checkAndStartCycle = () => {
+      // Se está chamando paciente, não fazer nada
+      if (isCalling || isPlayingRef.current) {
+        return;
+      }
+      
+      // Se já está rodando ou já completou, não fazer nada
+      if (warningCycleRunningRef.current || warningCycleCompletedRef.current) {
+        return;
+      }
+      
+      // Verificar se está idle
       const now = Date.now();
-      const timeSinceActivity = now - lastActivityTime;
+      const timeSinceActivity = now - lastActivityTimeRef.current;
       const isIdle = timeSinceActivity > IDLE_THRESHOLD;
-
-      // Only start new cycle if entering a new idle session
-      if (isIdle && lastIdleSessionRef.current !== lastActivityTime) {
-        // Double-check mutex antes de começar (evita race condition)
-        if (warningCycleRunningRef.current) {
-          console.log('[Display] Mutex ativo - ciclo já em execução');
-          return;
-        }
-        
-        // Ativar mutex IMEDIATAMENTE antes de qualquer operação assíncrona
-        warningCycleRunningRef.current = true;
-        
-        console.log('[Display] Nova sessão idle - iniciando ciclo de avisos');
-        lastIdleSessionRef.current = lastActivityTime;
-        warningCycleCompletedRef.current = false;
-
-        // Play all warnings in sequence - um por vez
-        for (let i = 0; i < activeWarningsList.length; i++) {
-          // Verificar cancelamento
-          if (cancelled) {
-            console.log('[Display] Efeito cancelado - parando ciclo');
-            break;
-          }
-          
-          const warning = activeWarningsList[i];
-          
-          // Check if we should stop (e.g., new patient call)
-          if (isPlayingRef.current) {
-            console.log('[Display] Ciclo de avisos interrompido por chamada');
-            warningCycleRunningRef.current = false;
-            break;
-          }
-
-          console.log(`[Display] Aviso ${i + 1}/${activeWarningsList.length}: ${warning.text}`);
-          
-          // Garantir que o aviso anterior foi limpo antes de definir o novo
-          setActiveWarning(null);
-          await new Promise(r => setTimeout(r, 100)); // Pequena pausa para garantir limpeza
-          setActiveWarning(warning);
-
-          try {
-            const isVideoWarning = warning.media_type === 'video' || warning.media_type === 'youtube';
-            
-            if (isVideoWarning) {
-              // Para vídeos, use a duração especificada ou padrão de 30 segundos
-              const videoDuration = warning.duration || 30;
-              console.log(`[Display] Reproduzindo ${warning.media_type} por ${videoDuration} segundos`);
-              
-              // Aguarde a duração completa do vídeo (em milissegundos)
-              await new Promise(r => setTimeout(r, videoDuration * 1000));
-            } else {
-              // Para imagens, fale o texto e aguarde
-              if (warning.text) {
-                console.log(`[Display] Falando texto do aviso: "${warning.text}"`);
-                await speak(warning.text);
-                console.log(`[Display] Texto do aviso ${i + 1} concluído`);
-              }
-            }
-            
-            // Limpar aviso atual antes da pausa
-            setActiveWarning(null);
-            
-            // Pausa entre avisos (2 segundos para garantir separação)
-            console.log(`[Display] Pausa de 2s antes do próximo aviso`);
-            await new Promise(r => setTimeout(r, 2000));
-          } catch (error) {
-            console.error('[Display] Erro ao reproduzir aviso:', error);
-            setActiveWarning(null);
-          }
-        }
-
-        // All warnings played - mark cycle as complete
-        console.log('[Display] Ciclo de avisos completo - manchete pode aparecer');
-        setActiveWarning(null);
+      
+      if (!isIdle) {
+        return;
+      }
+      
+      // Verificar se é uma nova sessão idle
+      if (lastIdleSessionRef.current === lastActivityTimeRef.current) {
+        return;
+      }
+      
+      // Get active warnings
+      const activeWarningsList = warnings.filter(isWarningScheduledNow);
+      
+      if (activeWarningsList.length === 0) {
+        console.log('[Display] Nenhum aviso agendado - permitindo notícias');
         warningCycleCompletedRef.current = true;
-        warningCycleRunningRef.current = false;
-        lastWarningEndTimeRef.current = Date.now();
+        return;
       }
+      
+      // Marcar esta sessão idle
+      lastIdleSessionRef.current = lastActivityTimeRef.current;
+      
+      // Iniciar ciclo
+      console.log('[Display] Nova sessão idle detectada - iniciando ciclo de avisos');
+      playAllWarnings(activeWarningsList);
     };
-
-    // Usar setTimeout para evitar execução síncrona múltipla
-    const timeoutId = setTimeout(() => {
-      if (!cancelled) {
-        playAllWarnings();
-      }
-    }, 100);
     
-    // Cleanup function para cancelar se o efeito for re-executado
+    // Verificar imediatamente e depois a cada segundo
+    checkAndStartCycle();
+    const intervalId = setInterval(checkAndStartCycle, 1000);
+    
     return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
+      clearInterval(intervalId);
     };
-  }, [audioActivated, isCalling, warnings, lastActivityTime, speak, isWarningScheduledNow]);
+  }, [audioActivated, warnings, isWarningScheduledNow, isCalling]);
 
 
   useEffect(() => {
@@ -474,5 +535,6 @@ export function useDisplay() {
     activeWarning, // Export activeWarning
     shouldShowHeadline, // Export headline state
     handleNewsCycleComplete, // Export news cycle completion handler
+    handleVideoEnd, // Export video end handler para WarningOverlay
   };
 }
