@@ -182,7 +182,7 @@ export function useTextToSpeech() {
    * @param {string} text O texto a ser convertido em fala.
    * @returns {Promise<void>} Uma promessa que é resolvida quando a fala termina.
    */
-  /**
+  /*
    * Pré-carrega o áudio TTS sem reproduzi-lo.
    * Usa cache com expiração e retry logic para maior confiabilidade.
    */
@@ -197,9 +197,27 @@ export function useTextToSpeech() {
 
     audioTelemetry.trackCache(false); // Cache miss
 
-    // Usa retry logic para chamadas à edge function
+    // Se estiver no Electron, usa o serviço local (Google GenAI)
+    if (typeof window !== 'undefined' && window.electron?.tts) {
+      try {
+        console.log('[TTS] Gerando áudio via Electron (GenAI)...');
+        const localUrl = await window.electron.tts.generate(text);
+        
+        if (localUrl) {
+          cacheHelpers.set(text, localUrl);
+          console.log('[TTS] Áudio local gerado e cacheado:', localUrl);
+          return localUrl;
+        }
+        console.warn('[TTS] Falha no Electron TTS, tentando fallback para Supabase...');
+      } catch (err) {
+        console.error('[TTS] Erro no Electron TTS:', err);
+        // Fallback para Supabase continua abaixo
+      }
+    }
+
+    // Usa retry logic para chamadas à edge function (Fallback ou Web)
     return retryWithBackoff(async () => {
-      console.log('[TTS] Gerando novo áudio:', text.substring(0, 30) + '...');
+      console.log('[TTS] Gerando novo áudio via Supabase:', text.substring(0, 30) + '...');
 
       const { data, error } = await supabase.functions.invoke('generate-tts', {
         body: { text },
