@@ -1,5 +1,7 @@
 {
   "name": "healthcall",
+  "description": "HealthCall - aplicativo de chamadas e gestão de atendimento em saúde",
+  "author": "Carlos Roberto Filho",
   "private": true,
   "repository": {
     "type": "git",
