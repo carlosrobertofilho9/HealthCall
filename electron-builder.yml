@@ -18,13 +18,13 @@ files:
 asar: true
 asarUnpack:
   - "**/*.node"
-  - node_modules/better-sqlite3/**/*
+  - "node_modules/better-sqlite3/**/*"
 
 win:
   target:
     - target: nsis
       arch: [x64]
-  # icon: public/healthcall-icon.png
+  icon: public/healthcall-icon.png
   artifactName: HealthCall-Setup-${version}.exe
 
 mac:
@@ -39,6 +39,5 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: HealthCall
   displayLanguageSelector: false
-  # installerIcon: public/healthcall-icon.png
-  # uninstallerIcon: public/healthcall-icon.png
-
+  installerIcon: public/healthcall-icon.png
+  uninstallerIcon: public/healthcall-icon.png

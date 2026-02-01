@@ -1,12 +1,8 @@
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification, protocol, net } from 'electron';
-import pkg from 'electron-updater';
-const { autoUpdater } = pkg;
+import { createRequire } from 'module';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const AutoLaunch = require('auto-launch');
 import { initializeTTS, generatePatientAudio, deletePatientAudio, generateWarningAudio, deleteWarningAudio, getWarningAudioDir, getPatientAudioDir } from './services/ttsService.js';
 import { startAudioServer, getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './services/audioServer.js';
 import { fetchRssFeed } from './services/rssService.js';
@@ -20,6 +16,10 @@ import {
     getUploadsPath,
     cleanupOrphanedTTSAudio
 } from './database/index.js';
+
+const require = createRequire(import.meta.url);
+const { autoUpdater } = require('electron-updater');
+const AutoLaunch = require('auto-launch');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

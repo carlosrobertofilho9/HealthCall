@@ -16,7 +16,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:build": "vite build && electron-builder"
+    "electron:build": "vite build && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
