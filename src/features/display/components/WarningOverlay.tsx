@@ -16,7 +16,7 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
     const getYoutubeEmbedUrl = (url: string) => {
         try {
             const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-            return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&showinfo=0&modestbranding=1`;
+            return `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&loop=1&playlist=${videoId}&showinfo=0&modestbranding=1`;
         } catch {
             return '';
         }
@@ -37,16 +37,15 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
             {isVideo && warning.background_url && (
                 <video 
                     src={warning.background_url}
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    className="absolute inset-0 w-full h-full object-cover"
                     autoPlay
                     loop
-                    muted
                     playsInline
                 />
             )}
 
             {isYouTube && warning.background_url && (
-                <div className="absolute inset-0 pointer-events-none opacity-60">
+                <div className="absolute inset-0 pointer-events-none">
                     <iframe
                         src={getYoutubeEmbedUrl(warning.background_url)}
                         className="w-full h-full"

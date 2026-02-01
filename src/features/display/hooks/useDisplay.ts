@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Patient, CallRecord, Warning } from '@/types';
 import * as displayService from '@/features/display/services/displayService';
 import { supabase } from '@/lib/supabaseClient';
@@ -121,12 +121,12 @@ export function useDisplay() {
     }
   };
 
-  const handleNewsCycleComplete = () => {
+  const handleNewsCycleComplete = useCallback(() => {
     console.log('[Display] Ciclo de notícias finalizado - voltando para fila');
     newsCycleCompletedRef.current = true;
     // Reset activity time to force return to queue
     setLastActivityTime(0);
-  };
+  }, []);
 
 
   // Warning Cycle Logic - Simplified
@@ -183,8 +183,23 @@ export function useDisplay() {
           setActiveWarning(warning);
 
           try {
-            await speak(warning.text);
-            // Small pause between warnings (1 second)
+            const isVideoWarning = warning.media_type === 'video' || warning.media_type === 'youtube';
+            
+            if (isVideoWarning) {
+              // Para vídeos, use a duração especificada ou padrão de 30 segundos
+              const videoDuration = warning.duration || 30;
+              console.log(`[Display] Reproduzindo ${warning.media_type} por ${videoDuration} segundos`);
+              
+              // Aguarde a duração completa do vídeo (em milissegundos)
+              await new Promise(r => setTimeout(r, videoDuration * 1000));
+            } else {
+              // Para imagens, fale o texto
+              if (warning.text) {
+                await speak(warning.text);
+              }
+            }
+            
+            // Pequena pausa entre avisos (1 segundo)
             await new Promise(r => setTimeout(r, 1000));
           } catch (error) {
             console.error('[Display] Erro ao reproduzir aviso:', error);
