@@ -5,6 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import * as localDb from '@/services/localDatabase';
 import { signOut } from '@/features/authentication/services/authService';
 
+import headerLogo from '@/assets/healthcall-logo-header.png';
+
 /**
  * The main header component for the application.
  * It displays the application logo, navigation links, and a user menu with a logout option.
@@ -76,7 +78,7 @@ const Header: React.FC = () => {
 		<header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#264532] px-10 py-4">
 			<div className="flex items-center gap-4 text-white">
 				<Link to="/" className="h-8 w-auto">
-					<img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-full w-auto object-contain" />
+					<img src={headerLogo} alt="HealthCall Logo" className="h-full w-auto object-contain" />
 				</Link>
 				<Link to="/">
 					<h1 className="text-white text-xl font-bold leading-tight tracking-[-0.015em]">HealthCall</h1>

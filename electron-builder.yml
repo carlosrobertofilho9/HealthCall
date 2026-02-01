@@ -24,7 +24,7 @@ win:
   target:
     - target: nsis
       arch: [x64]
-  icon: build/icon.ico
+  icon: icon.ico
   artifactName: HealthCall-Setup-${version}.exe
 
 mac:
@@ -39,5 +39,5 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: HealthCall
   displayLanguageSelector: false
-  installerIcon: build/icon.ico
-  uninstallerIcon: build/icon.ico
+  installerIcon: icon.ico
+  uninstallerIcon: icon.ico

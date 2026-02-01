@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Warning } from '@/types';
+import headerLogo from '@/assets/healthcall-logo-header.png';
 
 interface WarningOverlayProps {
   warning: Warning;
@@ -129,7 +130,7 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
                     </div>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3">
-                    <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
+                    <img src={headerLogo} alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
                     <h1 className="text-base sm:text-lg md:text-xl font-bold truncate max-w-[200px] sm:max-w-none">PSF Maria Lucia da Silva</h1>
                     </div>
                 </header>

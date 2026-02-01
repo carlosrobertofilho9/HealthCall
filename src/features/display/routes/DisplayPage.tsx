@@ -4,6 +4,7 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import { WarningOverlay } from '@/features/display/components/WarningOverlay';
 import { NewsTicker } from '@/features/display/components/NewsTicker';
 import { NewsHeadline } from '@/features/display/components/NewsHeadline';
+import headerLogo from '@/assets/healthcall-logo-header.png';
 
 /**
  * A página de exibição pública para chamadas de pacientes.
@@ -84,7 +85,7 @@ const DisplayPage: React.FC = () => {
             <div className="flex flex-col h-full">
               <header className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between border-b border-gray-700">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
+                  <img src={headerLogo} alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
                   <h1 className="text-base sm:text-lg md:text-xl font-bold truncate max-w-[200px] sm:max-w-none">PSF Maria Lucia da Silva</h1>
                 </div>
               </header>
@@ -111,7 +112,7 @@ const DisplayPage: React.FC = () => {
           <div className="bg-gray-900 text-white h-full flex flex-col" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
             <header className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between border-b border-gray-700">
               <div className="flex items-center gap-2 sm:gap-3">
-                <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
+                <img src={headerLogo} alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
                 <h1 className="text-base sm:text-lg md:text-xl font-bold truncate max-w-[200px] sm:max-w-none">PSF Maria Lucia da Silva</h1>
               </div>
             </header>

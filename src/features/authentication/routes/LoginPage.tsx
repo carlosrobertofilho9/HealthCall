@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthentication } from '@/features/authentication/hooks/useAuthentication';
 import { useNavigate } from 'react-router-dom';
+import headerLogo from '@/assets/healthcall-logo-header.png';
 
 /**
  * A página de login da aplicação.
@@ -98,7 +99,7 @@ const LoginPage = () => {
         <div className="flex flex-col min-h-screen">
           <header className="px-6 py-4 flex items-center justify-between border-b border-gray-700">
             <div className="flex items-center gap-3">
-              <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-8 w-auto" />
+              <img src={headerLogo} alt="HealthCall Logo" className="h-8 w-auto" />
               <h1 className="text-xl font-bold">Configuração Inicial</h1>
             </div>
           </header>
@@ -187,7 +188,7 @@ const LoginPage = () => {
       <div className="flex flex-col min-h-screen">
         <header className="px-6 py-4 flex items-center justify-between border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-8 w-auto" />
+            <img src={headerLogo} alt="HealthCall Logo" className="h-8 w-auto" />
             <h1 className="text-xl font-bold">HealthCall</h1>
           </div>
         </header>

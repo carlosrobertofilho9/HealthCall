@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import * as localDb from '@/services/localDatabase';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import headerLogo from '@/assets/healthcall-logo-header.png';
 
 interface NewsItem {
   title: string;
@@ -133,7 +134,7 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
           </span>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
+          <img src={headerLogo} alt="HealthCall Logo" className="h-6 sm:h-8 w-auto" />
           <h1 className="text-base sm:text-lg md:text-xl font-bold truncate max-w-[200px] sm:max-w-none">PSF Maria Lucia da Silva</h1>
         </div>
       </header>
