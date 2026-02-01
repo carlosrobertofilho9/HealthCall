@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 
@@ -18,50 +18,78 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
   const [newsIndex, setNewsIndex] = useState(0);
   const [allNews, setAllNews] = useState<NewsItem[]>([]);
   const [cycleCompleted, setCycleCompleted] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const { speak } = useTextToSpeech();
   const lastSpokenIndexRef = useRef<number>(-1);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasCalledCompleteRef = useRef<boolean>(false);
 
   // Derived state
   const currentNews = allNews[newsIndex];
 
+  // Memoized onCycleComplete to avoid dependency issues
+  const handleCycleComplete = useCallback(() => {
+    if (!hasCalledCompleteRef.current) {
+      hasCalledCompleteRef.current = true;
+      console.log('[NewsHeadline] Chamando onCycleComplete');
+      onCycleComplete?.();
+    }
+  }, [onCycleComplete]);
+
   useEffect(() => {
     fetchNews();
+    
+    // Cleanup on unmount
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
   }, []);
 
   // Rotate news logic
   useEffect(() => {
-    if (allNews.length === 0 || cycleCompleted || !currentNews) return;
+    if (allNews.length === 0 || cycleCompleted || !currentNews || isTransitioning) return;
+    
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     
     // Calculate reading time based on content length
-    // Min: 10s (faster for testing), Max: 25s
+    // Min: 10s, Max: 25s
     const textLength = (currentNews.title?.length || 0) + (currentNews.description?.length || 0);
     const displayTime = Math.min(Math.max(10000, textLength * 50), 25000);
 
     console.log(`[NewsHeadline] Visualizando notícia ${newsIndex + 1}/${allNews.length} por ${displayTime}ms`);
 
-    const timer = setTimeout(() => {
-      setNewsIndex((prev) => {
-        const nextIndex = prev + 1;
+    timerRef.current = setTimeout(() => {
+      const nextIndex = newsIndex + 1;
+      
+      // If we've shown all news, mark cycle as complete
+      if (nextIndex >= allNews.length) {
+        console.log('[NewsHeadline] Todas as notícias exibidas - ciclo completo');
+        setCycleCompleted(true);
+        setIsTransitioning(true);
         
-        // If we've shown all news, mark cycle as complete
-        if (nextIndex >= allNews.length) {
-          console.log('[NewsHeadline] Ciclo de notícias completo');
-          setCycleCompleted(true);
-          
-          // Call completion callback after a short delay
-          setTimeout(() => {
-            onCycleComplete?.();
-          }, 4000); 
-          
-          return prev; // Stay on last news until callback fires
-        }
+        // Call completion callback after a short delay to show last news
+        setTimeout(() => {
+          handleCycleComplete();
+        }, 3000);
         
-        return nextIndex;
-      });
+        return;
+      }
+      
+      // Move to next news
+      setNewsIndex(nextIndex);
     }, displayTime);
 
-    return () => clearTimeout(timer);
-  }, [newsIndex, allNews.length, cycleCompleted, onCycleComplete]); // Removed currentNews from deep dependency check to avoid loops
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [newsIndex, allNews.length, cycleCompleted, currentNews, isTransitioning, handleCycleComplete]);
 
   // Speak effect
   useEffect(() => {

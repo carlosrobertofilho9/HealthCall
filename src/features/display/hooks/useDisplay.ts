@@ -40,6 +40,7 @@ export function useDisplay() {
   const lastCalledRef = useRef<{ id: string; callCount: number } | null>(null);
   const isPlayingRef = useRef(false); // Indicates if a PATIENT CALL is playing
   const newsCycleCompletedRef = useRef<boolean>(false);
+  const [shouldShowHeadline, setShouldShowHeadline] = useState(false);
 
   const IDLE_THRESHOLD = 3000; // 3 seconds
 
@@ -124,10 +125,47 @@ export function useDisplay() {
   const handleNewsCycleComplete = useCallback(() => {
     console.log('[Display] Ciclo de notícias finalizado - voltando para fila');
     newsCycleCompletedRef.current = true;
-    // Reset activity time to force return to queue
-    setLastActivityTime(0);
+    setShouldShowHeadline(false);
   }, []);
 
+
+  // Effect to manage shouldShowHeadline state based on conditions
+  useEffect(() => {
+    const checkHeadlineConditions = () => {
+      const now = Date.now();
+      const timeSinceActivity = now - lastActivityTime;
+      const isIdle = timeSinceActivity > IDLE_THRESHOLD;
+      const activeWarningsList = warnings.filter(isWarningScheduledNow);
+      const warningsCompleteOrEmpty = activeWarningsList.length === 0 || warningCycleCompletedRef.current;
+      
+      const canShowHeadline = 
+        !isCalling && 
+        !activeWarning && 
+        audioActivated &&
+        isIdle &&
+        warningsCompleteOrEmpty &&
+        !newsCycleCompletedRef.current;
+      
+      if (canShowHeadline && !shouldShowHeadline) {
+        console.log('[Display] Condições atendidas - mostrando notícias');
+        setShouldShowHeadline(true);
+      } else if (!canShowHeadline && shouldShowHeadline && !newsCycleCompletedRef.current) {
+        // Only hide if not in middle of news cycle (unless news cycle completed)
+        if (isCalling || activeWarning) {
+          console.log('[Display] Interrupção por chamada/aviso - escondendo notícias');
+          setShouldShowHeadline(false);
+        }
+      }
+    };
+
+    // Check immediately
+    checkHeadlineConditions();
+
+    // Set up interval to check periodically
+    const interval = setInterval(checkHeadlineConditions, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isCalling, activeWarning, audioActivated, lastActivityTime, warnings, shouldShowHeadline]);
 
   // Warning Cycle Logic - Simplified
   useEffect(() => {
@@ -383,16 +421,6 @@ export function useDisplay() {
       supabase.removeChannel(channel);
     };
   }, [session, audioActivated]);
-
-  // Calculate if we should show news headline
-  // Headline shows when: idle for 3s+, no active warning, not calling, warning cycle completed, and news cycle not completed yet
-  const shouldShowHeadline = 
-    !isCalling && 
-    !activeWarning && 
-    audioActivated &&
-    (Date.now() - lastActivityTime > IDLE_THRESHOLD) &&
-    (warnings.filter(isWarningScheduledNow).length === 0 || warningCycleCompletedRef.current) &&
-    !newsCycleCompletedRef.current;
 
   return {
     calledPatient,
