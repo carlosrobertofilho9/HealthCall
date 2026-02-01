@@ -15,6 +15,11 @@ files:
   - electron/**/*
   - package.json
 
+asar: true
+asarUnpack:
+  - "**/*.node"
+  - node_modules/better-sqlite3/**/*
+
 win:
   target:
     - target: nsis

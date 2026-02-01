@@ -1,9 +1,12 @@
 import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification, protocol, net } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import pkg from 'electron-updater';
+const { autoUpdater } = pkg;
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath, pathToFileURL } from 'url';
-import AutoLaunch from 'auto-launch';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const AutoLaunch = require('auto-launch');
 import { initializeTTS, generatePatientAudio, deletePatientAudio, generateWarningAudio, deleteWarningAudio, getWarningAudioDir, getPatientAudioDir } from './services/ttsService.js';
 import { startAudioServer, getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './services/audioServer.js';
 import { fetchRssFeed } from './services/rssService.js';
