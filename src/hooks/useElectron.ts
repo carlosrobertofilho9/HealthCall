@@ -46,6 +46,14 @@ declare global {
           clients?: number;
         } | null>;
       };
+      tunnel: {
+        start: (subdomain?: string) => Promise<{ success: boolean; url?: string; subdomain?: string; error?: string }>;
+        stop: () => Promise<{ success: boolean; error?: string }>;
+        getInfo: () => Promise<{ success: boolean; active: boolean; url?: string; subdomain?: string; port?: number; error?: string }>;
+        getConfig: () => Promise<{ success: boolean; config?: { subdomain?: string; autoStart?: boolean }; error?: string }>;
+        saveConfig: (config: { subdomain?: string; autoStart?: boolean }) => Promise<{ success: boolean; error?: string }>;
+        generateSubdomain: (clinicName: string) => Promise<{ success: boolean; subdomain?: string; error?: string }>;
+      };
       on: (channel: string, callback: (...args: any[]) => void) => void;
       off: (channel: string, callback: (...args: any[]) => void) => void;
     };

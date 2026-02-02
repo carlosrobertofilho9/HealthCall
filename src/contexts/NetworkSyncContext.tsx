@@ -55,10 +55,12 @@ export function NetworkSyncProvider({ children }: NetworkSyncProviderProps) {
       // Obtém endereços do servidor local via IPC
       const getServerInfo = async () => {
         try {
-          // @ts-expect-error - electron API
-          const result = await window.electron?.invoke('sync:server-info');
-          if (result?.success && result.data?.addresses) {
-            setServerAddresses(result.data.addresses.map((a: { url: string }) => a.url));
+          const result = await window.electron?.sync?.getServerInfo();
+          if (result?.addresses) {
+            const urls = result.addresses.map((a: { interface: string; address: string }) => 
+              `http://${a.address}:${result.port}`
+            );
+            setServerAddresses(urls);
           }
         } catch (error) {
           console.error('[NetworkSync] Erro ao obter info do servidor:', error);

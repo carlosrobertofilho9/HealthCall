@@ -60,12 +60,15 @@ export function ConnectionStatus({ showDetails = false, className = '' }: Connec
     }
   };
 
+  // No modo servidor (Electron), considera como "conectado" pois os dados são locais
+  const isEffectivelyConnected = mode === 'server' || isConnected;
+
   // Ícone e cor baseados no estado
   const getStatusIcon = () => {
     if (isConnecting) {
       return <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />;
     }
-    if (isConnected) {
+    if (isEffectivelyConnected) {
       return <Wifi className="w-4 h-4 text-green-500" />;
     }
     return <WifiOff className="w-4 h-4 text-red-500" />;
@@ -99,17 +102,17 @@ export function ConnectionStatus({ showDetails = false, className = '' }: Connec
       <button
         onClick={() => setShowConfig(!showConfig)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
-        title={isConnected ? `Conectado: ${serverUrl}` : 'Não conectado'}
+        title={isEffectivelyConnected ? (mode === 'server' ? 'Servidor ativo' : `Conectado: ${serverUrl}`) : 'Não conectado'}
       >
         {getStatusIcon()}
         
         {showDetails && (
           <>
             <span className="text-sm text-gray-300">
-              {isConnecting ? 'Conectando...' : isConnected ? 'Conectado' : 'Desconectado'}
+              {isConnecting ? 'Conectando...' : isEffectivelyConnected ? (mode === 'server' ? 'Servidor' : 'Conectado') : 'Desconectado'}
             </span>
             
-            {isConnected && (
+            {isEffectivelyConnected && mode !== 'server' && (
               <div className="flex items-center gap-1 text-xs text-gray-400">
                 <Users className="w-3 h-3" />
                 <span>{connectedClients}</span>
@@ -149,18 +152,18 @@ export function ConnectionStatus({ showDetails = false, className = '' }: Connec
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-400">Status</span>
                 <div className="flex items-center gap-2">
-                  {isConnected ? (
+                  {isEffectivelyConnected ? (
                     <Check className="w-4 h-4 text-green-500" />
                   ) : (
                     <X className="w-4 h-4 text-red-500" />
                   )}
                   <span className="text-sm text-white">
-                    {isConnected ? 'Conectado' : 'Desconectado'}
+                    {isEffectivelyConnected ? (mode === 'server' ? 'Ativo' : 'Conectado') : 'Desconectado'}
                   </span>
                 </div>
               </div>
               
-              {isConnected && (
+              {isEffectivelyConnected && mode !== 'server' && (
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-400">Clientes</span>

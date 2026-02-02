@@ -6,10 +6,11 @@
  * - Conectar a outro servidor (modo cliente)
  * - Descobrir servidores na rede
  * - Forçar modo servidor
+ * - Criar túnel público para acesso remoto
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Wifi, WifiOff, Server, Monitor, RefreshCw, Settings, Copy, Check, Search, Loader2 } from 'lucide-react';
+import { Wifi, WifiOff, Server, Monitor, RefreshCw, Settings, Copy, Check, Search, Loader2, Globe, Link2, Power, PowerOff } from 'lucide-react';
 
 interface ServerInfo {
   url?: string;
@@ -34,6 +35,17 @@ interface DiscoveredServer {
   clients?: number;
 }
 
+interface TunnelInfo {
+  active: boolean;
+  url?: string;
+  subdomain?: string;
+}
+
+interface TunnelConfig {
+  subdomain?: string;
+  autoStart?: boolean;
+}
+
 export function SyncSettings() {
   const [syncMode, setSyncMode] = useState<SyncMode>({ mode: null, serverInfo: null });
   const [isDiscovering, setIsDiscovering] = useState(false);
@@ -42,6 +54,13 @@ export function SyncSettings() {
   const [connecting, setConnecting] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Estados do túnel
+  const [tunnelInfo, setTunnelInfo] = useState<TunnelInfo>({ active: false });
+  const [tunnelConfig, setTunnelConfig] = useState<TunnelConfig>({});
+  const [tunnelSubdomain, setTunnelSubdomain] = useState('');
+  const [tunnelLoading, setTunnelLoading] = useState(false);
+  const [tunnelError, setTunnelError] = useState<string | null>(null);
 
   // Verificar se estamos no Electron
   const isElectron = typeof window !== 'undefined' && window.electron;
@@ -81,6 +100,115 @@ export function SyncSettings() {
       };
     }
   }, [loadSyncMode, isElectron]);
+
+  // Carregar informações do túnel
+  const loadTunnelInfo = useCallback(async () => {
+    if (!isElectron || !window.electron.tunnel) return;
+    
+    try {
+      const info = await window.electron.tunnel.getInfo();
+      if (info.success) {
+        setTunnelInfo({ active: info.active, url: info.url, subdomain: info.subdomain });
+      }
+      
+      const config = await window.electron.tunnel.getConfig();
+      if (config.success && config.config) {
+        setTunnelConfig(config.config);
+        if (config.config.subdomain) {
+          setTunnelSubdomain(config.config.subdomain);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao carregar info do túnel:', err);
+    }
+  }, [isElectron]);
+
+  useEffect(() => {
+    if (syncMode.mode === 'server') {
+      loadTunnelInfo();
+    }
+    
+    // Ouvir mudanças de status do túnel
+    if (isElectron) {
+      const handleTunnelStatus = (data: TunnelInfo) => {
+        setTunnelInfo(data);
+      };
+      
+      window.electron.on('tunnel:status', handleTunnelStatus);
+      return () => {
+        window.electron.off('tunnel:status', handleTunnelStatus);
+      };
+    }
+  }, [syncMode.mode, loadTunnelInfo, isElectron]);
+
+  // Iniciar túnel
+  const handleStartTunnel = async () => {
+    if (!isElectron || !window.electron.tunnel) return;
+    
+    setTunnelLoading(true);
+    setTunnelError(null);
+    
+    try {
+      const result = await window.electron.tunnel.start(tunnelSubdomain || undefined);
+      
+      if (result.success) {
+        setTunnelInfo({ active: true, url: result.url, subdomain: result.subdomain });
+        
+        // Salvar subdomain usado
+        if (result.subdomain && result.subdomain !== tunnelSubdomain) {
+          setTunnelSubdomain(result.subdomain);
+          await window.electron.tunnel.saveConfig({ ...tunnelConfig, subdomain: result.subdomain });
+        }
+      } else {
+        setTunnelError(result.error || 'Erro ao iniciar túnel');
+      }
+    } catch (err) {
+      setTunnelError('Erro ao iniciar túnel público');
+      console.error(err);
+    } finally {
+      setTunnelLoading(false);
+    }
+  };
+
+  // Parar túnel
+  const handleStopTunnel = async () => {
+    if (!isElectron || !window.electron.tunnel) return;
+    
+    setTunnelLoading(true);
+    setTunnelError(null);
+    
+    try {
+      const result = await window.electron.tunnel.stop();
+      
+      if (result.success) {
+        setTunnelInfo({ active: false });
+      } else {
+        setTunnelError(result.error || 'Erro ao parar túnel');
+      }
+    } catch (err) {
+      setTunnelError('Erro ao parar túnel');
+      console.error(err);
+    } finally {
+      setTunnelLoading(false);
+    }
+  };
+
+  // Gerar subdomain baseado no nome da clínica
+  const handleGenerateSubdomain = async () => {
+    if (!isElectron || !window.electron.tunnel) return;
+    
+    try {
+      // Tentar pegar o nome da clínica das configurações
+      const clinicName = 'healthcall-clinica'; // Por enquanto usar um padrão
+      const result = await window.electron.tunnel.generateSubdomain(clinicName);
+      
+      if (result.success && result.subdomain) {
+        setTunnelSubdomain(result.subdomain);
+      }
+    } catch (err) {
+      console.error('Erro ao gerar subdomain:', err);
+    }
+  };
 
   // Descobrir servidores na rede
   const handleDiscover = async () => {
@@ -263,6 +391,98 @@ export function SyncSettings() {
         </div>
       )}
 
+      {/* Túnel Público (Acesso Remoto) - apenas em modo servidor */}
+      {syncMode.mode === 'server' && (
+        <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+          <h4 className="font-medium text-purple-400 mb-3 flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Acesso Remoto (Túnel Público)
+          </h4>
+          <p className="text-sm text-gray-400 mb-3">
+            Crie um link público para acessar de qualquer rede (outra WiFi, 4G, etc):
+          </p>
+          
+          {tunnelInfo.active ? (
+            <div className="space-y-3">
+              {/* URL ativo */}
+              <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                  <code className="text-purple-400">{tunnelInfo.url}</code>
+                </div>
+                <button
+                  onClick={() => handleCopyAddress(tunnelInfo.url || '')}
+                  className="p-1.5 text-gray-400 hover:text-white transition-colors"
+                  title="Copiar URL"
+                >
+                  {copiedAddress === tunnelInfo.url ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              
+              <button
+                onClick={handleStopTunnel}
+                disabled={tunnelLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                {tunnelLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <PowerOff className="h-4 w-4" />
+                    Desativar Túnel
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Configuração do subdomínio */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tunnelSubdomain}
+                  onChange={(e) => setTunnelSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  placeholder="nome-da-clinica"
+                  className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500"
+                />
+                <span className="flex items-center px-3 text-gray-400 text-sm">.loca.lt</span>
+              </div>
+              
+              <p className="text-xs text-gray-500">
+                💡 Escolha um nome único para sua clínica. Ex: clinica-saude → clinica-saude.loca.lt
+              </p>
+              
+              <button
+                onClick={handleStartTunnel}
+                disabled={tunnelLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+              >
+                {tunnelLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Power className="h-4 w-4" />
+                    Ativar Túnel Público
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+          
+          {tunnelError && (
+            <p className="mt-2 text-sm text-red-400">{tunnelError}</p>
+          )}
+          
+          <div className="mt-3 p-2 bg-yellow-500/10 rounded text-xs text-yellow-400">
+            ⚠️ O túnel usa o serviço gratuito localtunnel. Mantenha o computador ligado enquanto quiser acesso remoto.
+          </div>
+        </div>
+      )}
+
       {/* Descobrir Servidores */}
       {syncMode.mode !== 'server' && (
         <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
@@ -367,7 +587,8 @@ export function SyncSettings() {
           <li>O primeiro computador a abrir o app se torna o <strong>servidor</strong></li>
           <li>Outros computadores na mesma rede se conectam automaticamente como <strong>clientes</strong></li>
           <li>Todos os dados são sincronizados em tempo real</li>
-          <li>Para redes diferentes, use VPN ou configure port forwarding</li>
+          <li>Para acessar de <strong>outra rede</strong> (outra WiFi, 4G), ative o <strong>Túnel Público</strong></li>
+          <li>O endereço do túnel (ex: clinica.loca.lt) funciona de qualquer lugar com internet</li>
         </ul>
       </div>
     </div>

@@ -125,20 +125,45 @@ contextBridge.exposeInMainWorld('electron', {
     getServerInfo: () => ipcRenderer.invoke('get-server-info'),
   },
 
+  // ============================================
+  // Tunnel API (Acesso Remoto via Internet)
+  // ============================================
+  tunnel: {
+    // Iniciar túnel público (apenas em modo servidor)
+    start: (subdomain) => ipcRenderer.invoke('tunnel:start', subdomain),
+    
+    // Parar túnel
+    stop: () => ipcRenderer.invoke('tunnel:stop'),
+    
+    // Obter status do túnel
+    getInfo: () => ipcRenderer.invoke('tunnel:info'),
+    
+    // Obter configuração salva
+    getConfig: () => ipcRenderer.invoke('tunnel:get-config'),
+    
+    // Salvar configuração (subdomínio, auto-start, etc)
+    saveConfig: (config) => ipcRenderer.invoke('tunnel:save-config', config),
+    
+    // Gerar subdomínio baseado no nome da clínica
+    generateSubdomain: (clinicName) => ipcRenderer.invoke('tunnel:generate-subdomain', clinicName),
+  },
+
   // Listeners para eventos do main process
   on: (channel, callback) => {
     const validChannels = [
       'notification-clicked', 
       'navigate-to', 
       'data:updated',
-      // Novos canais de sincronização
+      // Canais de sincronização
       'sync-mode-changed',
       'sync-connected',
       'sync-disconnected',
       'sync-error',
       'sync-data-update',
       'sync-full-data',
-      'sync-clients-changed'
+      'sync-clients-changed',
+      // Canais de túnel
+      'tunnel:status'
     ];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args));
@@ -157,7 +182,8 @@ contextBridge.exposeInMainWorld('electron', {
       'sync-error',
       'sync-data-update',
       'sync-full-data',
-      'sync-clients-changed'
+      'sync-clients-changed',
+      'tunnel:status'
     ];
     if (validChannels.includes(channel)) {
       ipcRenderer.removeListener(channel, callback);

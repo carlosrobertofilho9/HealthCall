@@ -7,11 +7,12 @@
  * 3. Decidir se esta instância deve ser servidor ou cliente
  */
 
-const http = require('http');
-const os = require('os');
-const { app } = require('electron');
-const path = require('path');
-const fs = require('fs');
+import http from 'http';
+import os from 'os';
+import net from 'net';
+import { app } from 'electron';
+import path from 'path';
+import fs from 'fs';
 
 const SYNC_PORT = 3457;
 const DISCOVERY_TIMEOUT = 2000; // 2 segundos por IP
@@ -191,7 +192,7 @@ async function discoverServers(onProgress) {
  */
 function isPortAvailable(port = SYNC_PORT) {
   return new Promise((resolve) => {
-    const server = require('net').createServer();
+    const server = net.createServer();
     
     server.once('error', (err) => {
       if (err.code === 'EADDRINUSE') {
@@ -293,7 +294,7 @@ async function determineMode(forceServer = false) {
   }
 }
 
-module.exports = {
+export {
   checkServer,
   discoverServers,
   determineMode,

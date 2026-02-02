@@ -1,6 +1,9 @@
 import React from 'react';
 import { createHashRouter, Outlet } from 'react-router-dom';
 import { DisplayDataProvider } from '@/contexts/DisplayDataContext';
+import { NetworkSyncProvider } from '@/contexts/NetworkSyncContext';
+import { SettingsProvider } from '@/contexts/SettingsContext';
+import { UserProfileProvider } from '@/contexts/UserProfileContext';
 import App from '@/App';
 import { HomePage, WarningsPage } from '@/features/dashboard';
 import { DisplayPage } from '@/features/display';
@@ -19,9 +22,15 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 export const router = createHashRouter([
 	{
 		element: (
-			<DisplayDataProvider>
-				<Outlet />
-			</DisplayDataProvider>
+			<NetworkSyncProvider>
+				<SettingsProvider>
+					<UserProfileProvider>
+						<DisplayDataProvider>
+							<Outlet />
+						</DisplayDataProvider>
+					</UserProfileProvider>
+				</SettingsProvider>
+			</NetworkSyncProvider>
 		),
 		children: [
 			// Main application layout with protected routes

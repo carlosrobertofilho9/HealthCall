@@ -5,9 +5,9 @@
  * este módulo gerencia a conexão WebSocket e sincronização de dados.
  */
 
-const WebSocket = require('ws');
-const http = require('http');
-const { saveConfig } = require('./serverDiscovery');
+import WebSocket from 'ws';
+import http from 'http';
+import { saveConfig } from './serverDiscovery.js';
 
 class ElectronSyncClient {
   constructor() {
@@ -265,4 +265,4 @@ class ElectronSyncClient {
 // Singleton
 const electronSyncClient = new ElectronSyncClient();
 
-module.exports = { electronSyncClient, ElectronSyncClient };
+export { electronSyncClient, ElectronSyncClient };

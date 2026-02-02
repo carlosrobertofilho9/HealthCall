@@ -18,11 +18,12 @@ import {
     getUploadsPath,
     cleanupOrphanedTTSAudio
 } from './database/index.js';
+import { determineMode, discoverServers, saveConfig, loadConfig, checkServer } from './services/serverDiscovery.js';
+import { electronSyncClient } from './services/electronSyncClient.js';
+import { startTunnel, stopTunnel, getTunnelInfo, saveTunnelConfig, loadTunnelConfig, generateSubdomain } from './services/tunnelService.js';
 
 const require = createRequire(import.meta.url);
 const AutoLaunch = require('auto-launch');
-const { determineMode, discoverServers, saveConfig, loadConfig, checkServer } = require('./services/serverDiscovery.js');
-const { electronSyncClient } = require('./services/electronSyncClient.js');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -414,6 +415,101 @@ ipcMain.handle('get-server-info', async () => {
     return getServerInfo();
   }
   return null;
+});
+
+// ============================================
+// IPC Handlers para Túnel (Acesso Remoto)
+// ============================================
+
+// Iniciar túnel público para acesso remoto
+ipcMain.handle('tunnel:start', async (event, subdomain) => {
+  try {
+    if (syncMode !== 'server') {
+      return { success: false, error: 'Apenas o servidor pode iniciar um túnel' };
+    }
+    
+    const serverInfo = getServerInfo();
+    const port = serverInfo.port || 3457;
+    
+    const result = await startTunnel(port, subdomain);
+    
+    if (result.success) {
+      // Notificar todas as janelas sobre o túnel
+      BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('tunnel:status', { 
+          active: true, 
+          url: result.url,
+          subdomain: result.subdomain 
+        });
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('[IPC] Error starting tunnel:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Parar túnel
+ipcMain.handle('tunnel:stop', async () => {
+  try {
+    const result = await stopTunnel();
+    
+    // Notificar todas as janelas
+    BrowserWindow.getAllWindows().forEach(win => {
+      win.webContents.send('tunnel:status', { active: false });
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('[IPC] Error stopping tunnel:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Obter status do túnel
+ipcMain.handle('tunnel:info', async () => {
+  try {
+    const info = getTunnelInfo();
+    return { success: true, ...info };
+  } catch (error) {
+    console.error('[IPC] Error getting tunnel info:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Obter configuração salva do túnel
+ipcMain.handle('tunnel:get-config', async () => {
+  try {
+    const config = loadTunnelConfig();
+    return { success: true, config };
+  } catch (error) {
+    console.error('[IPC] Error loading tunnel config:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Salvar configuração do túnel
+ipcMain.handle('tunnel:save-config', async (event, config) => {
+  try {
+    saveTunnelConfig(config);
+    return { success: true };
+  } catch (error) {
+    console.error('[IPC] Error saving tunnel config:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Gerar subdomínio baseado no nome da clínica
+ipcMain.handle('tunnel:generate-subdomain', async (event, clinicName) => {
+  try {
+    const subdomain = generateSubdomain(clinicName);
+    return { success: true, subdomain };
+  } catch (error) {
+    console.error('[IPC] Error generating subdomain:', error);
+    return { success: false, error: error.message };
+  }
 });
 
 // ============================================
