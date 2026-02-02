@@ -7,10 +7,12 @@
 
 import WebSocket from 'ws';
 import http from 'http';
+import { EventEmitter } from 'events';
 import { saveConfig } from './serverDiscovery.js';
 
-class ElectronSyncClient {
+class ElectronSyncClient extends EventEmitter {
   constructor() {
+    super();
     this.ws = null;
     this.serverUrl = null;
     this.wsUrl = null;
@@ -93,19 +95,24 @@ class ElectronSyncClient {
         console.log('[ElectronSyncClient] Boas-vindas do servidor');
         break;
         
+        break;
+        
       case 'data_update':
         console.log(`[ElectronSyncClient] Atualização: ${message.table} - ${message.action}`);
+        this.emit('data-update', message);
         this._notifyRenderer('sync-data-update', message);
         break;
         
       case 'full_sync':
         console.log('[ElectronSyncClient] Sincronização completa recebida');
+        this.emit('full-sync', message.data);
         this._notifyRenderer('sync-full-data', message.data);
         break;
         
       case 'client_joined':
       case 'client_left':
         console.log(`[ElectronSyncClient] ${message.type}: ${message.clients} clientes`);
+        this.emit('clients-changed', { count: message.clients });
         this._notifyRenderer('sync-clients-changed', { count: message.clients });
         break;
         
@@ -213,6 +220,11 @@ class ElectronSyncClient {
     return this._request('POST', '/api/patients', { name, destination });
   }
 
+  async addPatientByNumber(destination) {
+    return this._request('POST', '/api/patients/ficha', { destination });
+  }
+
+
   async updatePatient(id, data) {
     return this._request('PUT', `/api/patients/${id}`, data);
   }
@@ -234,6 +246,11 @@ class ElectronSyncClient {
   async getWarnings() {
     return this._request('GET', '/api/warnings');
   }
+
+  async getActiveWarnings() {
+    return this._request('GET', '/api/warnings/active');
+  }
+
 
   async addWarning(warning) {
     return this._request('POST', '/api/warnings', warning);

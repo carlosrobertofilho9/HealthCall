@@ -73,6 +73,13 @@ function broadcast(message, excludeClient = null) {
 /**
  * Notifica todos os clientes sobre uma atualização de dados
  */
+import { EventEmitter } from 'events';
+
+export const syncEvents = new EventEmitter();
+
+/**
+ * Notifica todos os clientes sobre uma atualização de dados
+ */
 export function notifyDataUpdate(table, action = 'update', data = null) {
     broadcast({
         type: 'data_update',
@@ -81,6 +88,9 @@ export function notifyDataUpdate(table, action = 'update', data = null) {
         data,
         timestamp: Date.now()
     });
+    
+    // Emitir evento para o processo local (main.js)
+    syncEvents.emit('server-update', { table, action, data });
 }
 
 /**

@@ -79,6 +79,18 @@ async function initializeSyncMode() {
   return { mode: syncMode, serverInfo: syncServerInfo };
 }
 
+// Escutar eventos do Cliente de Sincronização e atualizar a UI local
+electronSyncClient.on('data-update', (message) => {
+  // Recebeu atualização do servidor. Atualizar janelas locais.
+  // Não retransmitir para o servidor via notifyDataUpdate (loop), 
+  // mas como estamos em modo cliente, notifyDataUpdate não deve fazer nada de qualquer forma.
+  console.log('[Main] Received update from Sync Client, updating local windows...');
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send('data:updated', { table: message.table });
+  });
+});
+
+
 const isDev = !app.isPackaged;
 
 let mainWindow = null;
@@ -595,17 +607,45 @@ ipcMain.handle('tunnel:generate-subdomain', async (event, clinicName) => {
 // IPC Handlers para Banco de Dados Local
 // ============================================
 
+// Helper para notificar apenas janelas locais
+function broadcastLocal(table) {
+  BrowserWindow.getAllWindows().forEach(win => {
+    win.webContents.send('data:updated', { table });
+  });
+}
+
 // Helper para notificar todas as janelas sobre mudanças
 // Agora também notifica clientes via rede (WebSocket)
 function broadcastUpdate(table, action = 'update', data = null) {
   // Notifica janelas locais
-  BrowserWindow.getAllWindows().forEach(win => {
-    win.webContents.send('data:updated', { table });
-  });
+  broadcastLocal(table);
   
   // Notifica clientes remotos via WebSocket
   notifyDataUpdate(table, action, data);
 }
+
+// Escutar eventos do Sync Server (REST API) e atualizar UI local
+// Isso garante que quando um cliente chama a API, o servidor atualize sua tela
+import { syncEvents } from './services/syncServer.js';
+
+syncEvents.on('server-update', (message) => {
+  // Apenas atualiza janelas locais, pois o broadcast já foi feito pelo notifyDataUpdate
+  // que disparou este evento.
+  // IMPORTANTE: Não chamar broadcastUpdate para evitar loop.
+  // Verificar se a origem não foi o próprio broadcastUpdate (que chama notifyDataUpdate)
+  // Mas como broadcastUpdate chama notifyDataUpdate que emite o evento...
+  // Precisamos evitar que o evento 'server-update' disparado pelo próprio servidor (via broadcastUpdate)
+  // cause problemas? Na verdade não, broadcastLocal é idempotente e barato.
+  // O único problema seria loop infinito, mas broadcastLocal não dispara notifyDataUpdate.
+  // Então:
+  // 1. Ação Local -> broadcastUpdate -> broadcastLocal + notifyDataUpdate -> syncEvents.emit
+  //    -> evento recebido -> broadcastLocal (redundante, mas ok).
+  // 2. Ação Remota (API) -> notifyDataUpdate -> syncEvents.emit
+  //    -> evento recebido -> broadcastLocal (necessário!).
+  
+  // Para evitar redundância no caso 1, podemos verificar algo, mas broadcastLocal é ok.
+  broadcastLocal(message.table);
+});
 
 // --- SERVER INFO (para clientes descobrirem o servidor) ---
 ipcMain.handle('sync:server-info', async () => {
@@ -620,6 +660,9 @@ ipcMain.handle('sync:server-info', async () => {
 // --- PATIENTS ---
 ipcMain.handle('db:patient:list', async () => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.getPatients();
+    }
     return { success: true, data: patientsRepo.listPatients().map(convertPatientUrls) };
   } catch (error) {
     console.error('[IPC] Error listing patients:', error);
@@ -638,6 +681,10 @@ ipcMain.handle('db:patient:get', async (event, id) => {
 
 ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.addPatient(name, destination);
+    }
+
     const patient = patientsRepo.addPatient({ name, destination });
     
     // Gerar áudio pré-gerado para chamada
@@ -661,7 +708,17 @@ ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
 
 ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
   try {
+    if (syncMode === 'client') {
+       // Note: electronSyncClient needs to implement addByNumber if not already
+       // Checking electronSyncClient.js... no addByNumber specific method, but we can add endpoint or use generic?
+       // Let's implement addPatientByNumber in electronSyncClient.js first or use raw request if method missing?
+       // electronSyncClient.js doesn't have addPatientByNumber exposed. I need to add it.
+       // Assuming I will add it:
+       return await electronSyncClient.addPatientByNumber(destination);
+    }
+
     const patient = patientsRepo.addPatientByNumber(destination);
+    // ... rest of code
     
     // Gerar áudio pré-gerado para chamada por número
     try {
@@ -684,6 +741,10 @@ ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
 
 ipcMain.handle('db:patient:update', async (event, { id, updates }) => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.updatePatient(id, updates);
+    }
+
     // Buscar paciente atual para comparar
     const currentPatient = patientsRepo.getPatientById(id);
     const patient = patientsRepo.updatePatient(id, updates);
@@ -718,6 +779,10 @@ ipcMain.handle('db:patient:update', async (event, { id, updates }) => {
 
 ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.callPatient(id, destination);
+    }
+
     const patient = patientsRepo.callPatient(id, destination);
     broadcastUpdate('patients');
     broadcastUpdate('calls');
@@ -730,6 +795,10 @@ ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
 
 ipcMain.handle('db:patient:remove', async (event, id) => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.deletePatient(id);
+    }
+
     // Deletar áudio do paciente
     deletePatientAudio(id);
     
@@ -744,6 +813,10 @@ ipcMain.handle('db:patient:remove', async (event, id) => {
 
 ipcMain.handle('db:patient:clearAll', async () => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.clearQueue();
+    }
+
     // Buscar todos os pacientes para deletar áudios
     const patients = patientsRepo.listPatients ? patientsRepo.listPatients() : [];
     for (const patient of patients) {
@@ -841,6 +914,9 @@ function convertPatientUrls(patient) {
 // --- WARNINGS ---
 ipcMain.handle('db:warning:list', async () => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.getWarnings();
+    }
     const warnings = warningsRepo.listWarnings().map(convertWarningUrls);
     return { success: true, data: warnings };
   } catch (error) {
@@ -851,6 +927,14 @@ ipcMain.handle('db:warning:list', async () => {
 
 ipcMain.handle('db:warning:listActive', async () => {
   try {
+    if (syncMode === 'client') {
+      // API endpoint for active might be missing in electronSyncClient, using simple list filter or adding endpoint
+      // electronSyncClient.js has getWarnings. Does it have getActiveWarnings?
+      // Checking file content... it has getWarnings that calls /api/warnings.
+      // Server has /api/warnings/active.
+      // electronSyncClient needs getActiveWarnings.
+      return await electronSyncClient.getActiveWarnings();
+    }
     const warnings = warningsRepo.listActiveWarnings().map(convertWarningUrls);
     return { success: true, data: warnings };
   } catch (error) {
@@ -871,6 +955,10 @@ ipcMain.handle('db:warning:get', async (event, id) => {
 
 ipcMain.handle('db:warning:add', async (event, warning) => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.addWarning(warning);
+    }
+
     // Primeiro cria o warning
     let newWarning = warningsRepo.addWarning(warning);
     
@@ -898,6 +986,10 @@ ipcMain.handle('db:warning:add', async (event, warning) => {
 
 ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.updateWarning(id, updates);
+    }
+    // ... rest of logic
     // Busca o warning atual para comparar o texto
     const currentWarning = warningsRepo.getWarningById(id);
     
@@ -938,6 +1030,10 @@ ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
 
 ipcMain.handle('db:warning:remove', async (event, id) => {
   try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.deleteWarning(id);
+    }
+
     // Remove o áudio TTS associado
     deleteWarningAudio(id);
     
@@ -995,6 +1091,23 @@ ipcMain.handle('db:warning:getMediaPath', async (event, localUrl) => {
 // --- SETTINGS ---
 ipcMain.handle('db:settings:get', async (event, key) => {
   try {
+    if (syncMode === 'client') {
+      // Wait, settings should probably be local? 
+      // User requested "avisos sincronizados" (warnings synced).
+      // "nada está sendo sincronizado".
+      // Usually settings like "Clinic Name" are synced, but "Local Display ID" are local.
+      // SettingsRepo has mixed settings.
+      // For now, let's keep settings LOCAL as they might contain display configuration.
+      // Or we can selectively sync.
+      // BUT current implementation of Sync Server has /api/settings.
+      // Let's assume GLOBAL settings are synced.
+      // However, `usePatientQueue` uses `default_destination` from profile.
+      // I will leave settings LOCAL for now to avoid breaking local config (like Force Client Mode).
+      // IF user complains about settings not syncing, I will address.
+      // But looking at code `syncServer` serves settings.
+      // Let's NOT proxy settings for now unless explicitly needed.
+      // Most critical are Patients and Warnings.
+    }
     return { success: true, data: settingsRepo.getSetting(key) };
   } catch (error) {
     console.error('[IPC] Error getting setting:', error);
