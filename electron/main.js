@@ -377,6 +377,15 @@ ipcMain.handle('connect-to-server', async (event, serverUrl) => {
       syncServerInfo = result;
       electronSyncClient.setMainWindow(mainWindow);
       electronSyncClient.connect(result);
+
+      // Salvar preferência do usuário: MODO CLIENTE
+      // Salvar URL do servidor também para reconexão rápida
+      const config = loadConfig() || {};
+      config.syncMode = 'client';
+      config.serverUrl = serverUrl;
+      // Remover flag legado
+      delete config.forceClientMode;
+      saveConfig(config);
       
       return { success: true, server: result };
     } else {
@@ -400,8 +409,13 @@ ipcMain.handle('force-server-mode', async () => {
     syncMode = 'server';
     syncServerInfo = getServerInfo();
     
-    // Limpar configuração salva para não reconectar automaticamente
-    saveConfig({ serverUrl: null });
+    // Salvar preferência do usuário: MODO SERVIDOR
+    const config = loadConfig() || {};
+    config.syncMode = 'server';
+    // Limpar configuração de servidor remoto
+    config.serverUrl = null;
+    delete config.forceClientMode;
+    saveConfig(config);
     
     return { success: true, serverInfo: syncServerInfo };
   } catch (error) {
