@@ -32,6 +32,13 @@ class ElectronSyncClient extends EventEmitter {
   /**
    * Conecta ao servidor de sincronização
    */
+  isConnected() {
+    return this.connected;
+  }
+
+  /**
+   * Conecta ao servidor de sincronização
+   */
   connect(serverInfo) {
     let url = serverInfo.url;
     let wsUrl = serverInfo.wsUrl;
@@ -277,6 +284,20 @@ class ElectronSyncClient extends EventEmitter {
 
   async deleteWarning(id) {
     return this._request('DELETE', `/api/warnings/${id}`);
+  }
+
+  async toggleWarning(id) {
+    return this._request('POST', `/api/warnings/${id}/toggle`);
+  }
+
+  async reorderWarnings(ids) {
+    return this._request('POST', '/api/warnings/reorder', { ids });
+  }
+
+  async uploadMedia(buffer, filename) {
+    // Convert buffer to base64
+    const base64 = buffer.toString('base64');
+    return this._request('POST', '/api/upload', { buffer: base64, filename });
   }
 
   // Configurações

@@ -167,7 +167,7 @@ export function startSyncServer() {
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization']
     }));
-    app.use(express.json());
+    app.use(express.json({ limit: '50mb' })); // Increased limit for media uploads
 
     // --- Middleware: Rate Limiting ---
     const rateLimits = new Map(); // IP -> { count, resetTime }
@@ -476,6 +476,51 @@ export function startSyncServer() {
             notifyDataUpdate('warnings', 'delete', { id: req.params.id });
             res.json({ success: true });
         } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    app.post('/api/warnings/:id/toggle', (req, res) => {
+        try {
+            const warning = warningsRepo.toggleWarningActive(req.params.id);
+            if (!warning) {
+                return res.status(404).json({ success: false, error: 'Aviso não encontrado' });
+            }
+            notifyDataUpdate('warnings', 'update', warning);
+            res.json({ success: true, data: warning });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    app.post('/api/warnings/reorder', (req, res) => {
+        try {
+            const { ids } = req.body;
+            if (!Array.isArray(ids)) {
+                return res.status(400).json({ success: false, error: 'Ids must be an array' });
+            }
+            const warnings = warningsRepo.reorderWarnings(ids);
+            notifyDataUpdate('warnings', 'reorder', warnings);
+            res.json({ success: true, data: warnings });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    app.post('/api/upload', (req, res) => {
+        try {
+            const { buffer, filename } = req.body;
+            if (!buffer || !filename) {
+                return res.status(400).json({ success: false, error: 'Buffer and filename are required' });
+            }
+            // Decode base64 buffer
+            const fileBuffer = Buffer.from(buffer, 'base64');
+            const url = warningsRepo.saveMediaFile(fileBuffer, filename);
+            const fullUrl = getMediaUrl(url); // Return the serving URL
+            
+            res.json({ success: true, data: fullUrl, localPath: url }); // localPath might be useful for internal logic
+        } catch (error) {
+            console.error('[SyncServer] Upload error:', error);
             res.status(500).json({ success: false, error: error.message });
         }
     });

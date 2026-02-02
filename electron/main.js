@@ -788,16 +788,16 @@ ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
   }
 });
 
-ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
-  try {
-    if (syncMode === 'client') {
-       // Note: electronSyncClient needs to implement addByNumber if not already
-       // Checking electronSyncClient.js... no addByNumber specific method, but we can add endpoint or use generic?
-       // Let's implement addPatientByNumber in electronSyncClient.js first or use raw request if method missing?
-       // electronSyncClient.js doesn't have addPatientByNumber exposed. I need to add it.
-       // Assuming I will add it:
-       return await electronSyncClient.addPatientByNumber(destination);
-    }
+   ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
+     try {
+       if (syncMode === 'client' && electronSyncClient.isConnected()) {
+          // Note: electronSyncClient needs to implement addByNumber if not already
+          // Checking electronSyncClient.js... no addByNumber specific method, but we can add endpoint or use generic?
+          // Let's implement addPatientByNumber in electronSyncClient.js first or use raw request if method missing?
+          // electronSyncClient.js doesn't have addPatientByNumber exposed. I need to add it.
+          // Assuming I will add it:
+          return await electronSyncClient.addPatientByNumber(destination);
+       }
 
     const patient = patientsRepo.addPatientByNumber(destination);
     // ... rest of code
@@ -1067,7 +1067,7 @@ function convertPatientUrls(patient) {
 // --- WARNINGS ---
 ipcMain.handle('db:warning:list', async () => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.getWarnings();
     }
     const warnings = warningsRepo.listWarnings().map(convertWarningUrls);
@@ -1080,12 +1080,7 @@ ipcMain.handle('db:warning:list', async () => {
 
 ipcMain.handle('db:warning:listActive', async () => {
   try {
-    if (syncMode === 'client') {
-      // API endpoint for active might be missing in electronSyncClient, using simple list filter or adding endpoint
-      // electronSyncClient.js has getWarnings. Does it have getActiveWarnings?
-      // Checking file content... it has getWarnings that calls /api/warnings.
-      // Server has /api/warnings/active.
-      // electronSyncClient needs getActiveWarnings.
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.getActiveWarnings();
     }
     const warnings = warningsRepo.listActiveWarnings().map(convertWarningUrls);
@@ -1108,7 +1103,7 @@ ipcMain.handle('db:warning:get', async (event, id) => {
 
 ipcMain.handle('db:warning:add', async (event, warning) => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.addWarning(warning);
     }
 
@@ -1139,7 +1134,7 @@ ipcMain.handle('db:warning:add', async (event, warning) => {
 
 ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.updateWarning(id, updates);
     }
     // ... rest of logic
@@ -1183,7 +1178,7 @@ ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
 
 ipcMain.handle('db:warning:remove', async (event, id) => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.deleteWarning(id);
     }
 
@@ -1201,6 +1196,10 @@ ipcMain.handle('db:warning:remove', async (event, id) => {
 
 ipcMain.handle('db:warning:toggle', async (event, id) => {
   try {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
+       return await electronSyncClient.toggleWarning(id);
+    }
+
     const warning = convertWarningUrls(warningsRepo.toggleWarningActive(id));
     broadcastUpdate('warnings');
     return { success: true, data: warning };
@@ -1212,6 +1211,10 @@ ipcMain.handle('db:warning:toggle', async (event, id) => {
 
 ipcMain.handle('db:warning:reorder', async (event, orderedIds) => {
   try {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
+       return await electronSyncClient.reorderWarnings(orderedIds);
+    }
+
     const warnings = warningsRepo.reorderWarnings(orderedIds).map(convertWarningUrls);
     broadcastUpdate('warnings');
     return { success: true, data: warnings };
@@ -1223,6 +1226,11 @@ ipcMain.handle('db:warning:reorder', async (event, orderedIds) => {
 
 ipcMain.handle('db:warning:saveMedia', async (event, { buffer, filename }) => {
   try {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
+       // Upload to server
+       return await electronSyncClient.uploadMedia(buffer, filename);
+    }
+
     const url = warningsRepo.saveMediaFile(Buffer.from(buffer), filename);
     return { success: true, data: url };
   } catch (error) {
