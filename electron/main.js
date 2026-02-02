@@ -446,6 +446,16 @@ ipcMain.handle('sync:get-mode', async () => {
   }
 });
 
+// Descobrir servidores na rede (chamado pelo frontend)
+ipcMain.handle('sync:discover', async () => {
+  try {
+    const servers = await discoverServers();
+    return { success: true, servers: servers.map(s => s.url) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 // LEGADO: Mantido para compatibilidade temporária
 ipcMain.handle('sync:set-force-client-mode', async (event, enabled) => {
   try {

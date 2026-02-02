@@ -496,30 +496,48 @@ export { NetworkSyncClient };
  * Testa uma lista de IPs comuns
  */
 export async function discoverServer(timeout = 3000): Promise<string | null> {
+  // 1. Tenta usar descoberta nativa via Electron (Muito mais rápido e preciso)
+  if (typeof window !== 'undefined' && window.electron?.sync?.discoverServers) {
+    console.log('[Discovery] Usando descoberta nativa Electron...');
+    try {
+      const result = await window.electron.sync.discoverServers();
+      if (result.success && result.servers && result.servers.length > 0) {
+        console.log('[Discovery] Servidores encontrados via Electron:', result.servers);
+        return result.servers[0];
+      }
+    } catch (e) {
+      console.warn('[Discovery] Falha na descoberta Electron, tentando fallback web...', e);
+    }
+  }
+
+  // 2. Fallback: Varredura manual via browser (Limitada)
+  console.log('[Discovery] Iniciando varredura via Browser...');
+  
   // Lista de IPs a tentar
   const ipsToTry = [
     'localhost:3457',
     '127.0.0.1:3457',
   ];
   
-  // Adiciona IPs comuns de rede local
+  // Adiciona IPs comuns de rede local (Aumentado limite para 254)
   for (let i = 1; i <= 254; i++) {
     ipsToTry.push(`192.168.1.${i}:3457`);
     ipsToTry.push(`192.168.0.${i}:3457`);
     ipsToTry.push(`10.0.0.${i}:3457`);
   }
 
-  // Tenta em paralelo com limite de concorrência
-  const batchSize = 20;
+  // Tenta em paralelo (Aumentado batch e total)
+  const batchSize = 30;
+  const maxScan = 150; // Aumentado de 50 para 150 tentativas no browser
   
-  for (let i = 0; i < Math.min(50, ipsToTry.length); i += batchSize) {
+  for (let i = 0; i < Math.min(maxScan, ipsToTry.length); i += batchSize) {
     const batch = ipsToTry.slice(i, i + batchSize);
     
     const results = await Promise.allSettled(
       batch.map(async (ip) => {
         const url = `http://${ip}`;
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeout);
+        const timer = setTimeout(() => controller.abort(), timeout); // Timeout por request
         
         try {
           const response = await fetch(`${url}/api/status`, {
@@ -534,7 +552,7 @@ export async function discoverServer(timeout = 3000): Promise<string | null> {
             }
           }
         } catch {
-          // Ignora erros silenciosamente
+          // Ignora erros
         }
         clearTimeout(timer);
         throw new Error('Não encontrado');
@@ -544,7 +562,7 @@ export async function discoverServer(timeout = 3000): Promise<string | null> {
     // Retorna o primeiro servidor encontrado
     for (const result of results) {
       if (result.status === 'fulfilled') {
-        console.log('[Discovery] Servidor encontrado:', result.value);
+        console.log('[Discovery] Servidor encontrado via Web:', result.value);
         return result.value;
       }
     }
