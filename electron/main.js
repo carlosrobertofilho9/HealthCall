@@ -417,6 +417,61 @@ ipcMain.handle('get-server-info', async () => {
   return null;
 });
 
+// Configurar modo de Sincronização (Auto/Server/Client)
+ipcMain.handle('sync:set-mode', async (event, mode) => {
+  try {
+    const config = loadConfig() || {};
+    config.syncMode = mode;
+    // Limpa flag antiga se existir
+    delete config.forceClientMode;
+    saveConfig(config);
+    
+    // É necessário reiniciar o app ou processo de sync para aplicar
+    app.relaunch();
+    app.exit(0);
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Obter modo de Sincronização
+ipcMain.handle('sync:get-mode', async () => {
+  try {
+    const config = loadConfig();
+    return { mode: config?.syncMode || (config?.forceClientMode ? 'client' : 'auto') };
+  } catch (error) {
+    return { mode: 'auto' };
+  }
+});
+
+// LEGADO: Mantido para compatibilidade temporária
+ipcMain.handle('sync:set-force-client-mode', async (event, enabled) => {
+  try {
+    const config = loadConfig() || {};
+    config.syncMode = enabled ? 'client' : 'auto';
+    delete config.forceClientMode;
+    saveConfig(config);
+    
+    app.relaunch();
+    app.exit(0);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('sync:get-force-client-mode', async () => {
+  try {
+    const config = loadConfig();
+    const isClient = config?.syncMode === 'client' || !!config?.forceClientMode;
+    return { enabled: isClient };
+  } catch (error) {
+    return { enabled: false };
+  }
+});
+
 // ============================================
 // IPC Handlers para Túnel (Acesso Remoto)
 // ============================================

@@ -41,10 +41,16 @@ declare global {
         connectToServer: (serverUrl: string) => Promise<{ success: boolean; server?: any; error?: string }>;
         forceServerMode: () => Promise<{ success: boolean; serverInfo?: any; error?: string }>;
         getServerInfo: () => Promise<{
+          running: boolean;
           port: number;
-          addresses: Array<{ interface: string; address: string }>;
-          clients?: number;
+          addresses: Array<{ interface: string; address: string; url: string }>;
+          clients: number;
+          clientsList?: Array<{ ip: string; id: string; joinedAt: number; deviceName?: string }>;
         } | null>;
+        getForceClientMode: () => Promise<{ enabled: boolean }>; // Legacy
+        setForceClientMode: (enabled: boolean) => Promise<{ success: boolean; error?: string }>; // Legacy
+        getSyncMode: () => Promise<{ mode: 'auto' | 'server' | 'client' }>;
+        setSyncMode: (mode: 'auto' | 'server' | 'client') => Promise<{ success: boolean; error?: string }>;
       };
       tunnel: {
         start: (subdomain?: string) => Promise<{ success: boolean; url?: string; subdomain?: string; error?: string }>;

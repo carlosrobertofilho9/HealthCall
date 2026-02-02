@@ -1,5 +1,5 @@
 /**
- * NetworkSyncContext
+ * NETWORK SYNC CONTEXT
  * 
  * Contexto React que provê a funcionalidade de sincronização de rede
  * para toda a aplicação. Gerencia a conexão com o servidor e mantém
@@ -10,9 +10,35 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNetworkSync, type NetworkSyncState } from '@/hooks/useNetworkSync';
 import { useElectron } from '@/hooks/useElectron';
 
+export interface LocalServerInfo {
+  running: boolean;
+  port: number;
+  clients: number;
+  addresses: Array<{
+    interface: string;
+    address: string;
+    url: string;
+  }>;
+  clientsList?: Array<{
+    ip: string;
+    id: string;
+    joinedAt: number;
+    deviceName?: string;
+  }>;
+}
+
 interface NetworkSyncContextType extends NetworkSyncState {
   // Flag para indicar modo de operação
   mode: 'server' | 'client' | 'standalone';
+  // Informações detalhadas do servidor (quando em modo server)
+  localServerInfo: LocalServerInfo | null;
+  // Controle do modo "Somente Cliente" (Legado, manter por compatibilidade/simplicidade se quiser)
+  forceClientMode: boolean;
+  setForceClientMode: (enabled: boolean) => Promise<void>;
+  
+  // Novo Seletor de Modo
+  syncMode: 'auto' | 'server' | 'client';
+  setSyncMode: (mode: 'auto' | 'server' | 'client') => Promise<void>;
 }
 
 const NetworkSyncContext = createContext<NetworkSyncContextType | undefined>(undefined);
@@ -44,54 +70,120 @@ export function NetworkSyncProvider({ children }: NetworkSyncProviderProps) {
   const { isElectron } = useElectron();
   const networkSync = useNetworkSync();
   const [mode, setMode] = useState<'server' | 'client' | 'standalone'>('standalone');
-  const [serverAddresses, setServerAddresses] = useState<string[]>([]);
+  const [localServerInfo, setLocalServerInfo] = useState<LocalServerInfo | null>(null);
+  const [forceClientMode, setForceClientModeState] = useState(false);
+  const [syncMode, setSyncModeState] = useState<'auto' | 'server' | 'client'>('auto');
 
-  // Determina o modo de operação
+  // Carrega configuração inicial
   useEffect(() => {
     if (isElectron) {
-      // No Electron, estamos rodando como servidor
-      setMode('server');
-      
-      // Obtém endereços do servidor local via IPC
-      const getServerInfo = async () => {
-        try {
-          const result = await window.electron?.sync?.getServerInfo();
-          if (result?.addresses) {
-            const urls = result.addresses.map((a: { interface: string; address: string }) => 
-              `http://${a.address}:${result.port}`
-            );
-            setServerAddresses(urls);
-          }
-        } catch (error) {
-          console.error('[NetworkSync] Erro ao obter info do servidor:', error);
+      // Carrega Legacy
+      window.electron?.sync?.getForceClientMode?.().then(result => {
+        setForceClientModeState(!!result?.enabled);
+      }).catch(console.error);
+
+      // Carrega Novo Modo
+      window.electron?.sync?.getSyncMode?.().then(result => {
+        if (result?.mode) setSyncModeState(result.mode);
+      }).catch(console.error);
+    }
+  }, [isElectron]);
+
+  const setForceClientMode = async (enabled: boolean) => {
+    if (isElectron) {
+      await window.electron?.sync?.setForceClientMode?.(enabled);
+      setForceClientModeState(enabled);
+      // Atualiza também o syncMode para refletir
+      setSyncModeState(enabled ? 'client' : 'auto');
+    }
+  };
+
+  const setSyncMode = async (mode: 'auto' | 'server' | 'client') => {
+    if (isElectron) {
+      await window.electron?.sync?.setSyncMode?.(mode);
+      setSyncModeState(mode);
+      // Atualiza legacy flag
+      setForceClientModeState(mode === 'client');
+    }
+  };
+
+  // Determina o modo de operação e inicia polling de status se for servidor
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    const updateServerInfo = async () => {
+      if (!isElectron) return;
+
+      try {
+        const result = await window.electron?.sync?.getServerInfo();
+        if (result) {
+          setLocalServerInfo(result);
         }
-      };
+      } catch (error) {
+        console.error('[NetworkSync] Erro ao obter info do servidor:', error);
+      }
+    };
+
+    if (isElectron) {
+      // Se não for 'client' forçado (seja por legacy flag ou novo mode)
+      const isClientForced = forceClientMode || syncMode === 'client';
       
-      getServerInfo();
+      if (!isClientForced) {
+          // O modo 'server' é definido se o syncMode no main process for 'server'
+          // Mas como não temos acesso direto ao syncMode aqui (apenas via getServerInfo que retorna null se não for server),
+          // confiamos na resposta do getServerInfo
+          updateServerInfo();
+          intervalId = setInterval(updateServerInfo, 5000);
+          
+          // Se receber info, assume server. Se não, verifica se é cliente
+          window.electron?.sync?.getServerInfo().then(info => {
+             if (info?.running) setMode('server');
+             else if (networkSync.isConnected) setMode('client');
+          });
+      } else {
+        setMode('client');
+      }
     } else if (networkSync.isConnected) {
-      // No navegador conectado, somos cliente
       setMode('client');
     } else {
-      // Sem conexão
       setMode('standalone');
     }
-  }, [isElectron, networkSync.isConnected]);
 
-  // Auto-conecta ao servidor local quando no Electron
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isElectron, networkSync.isConnected, forceClientMode, syncMode]);
+  
+  // Atualiza mode baseado no serverInfo se disponível
   useEffect(() => {
-    if (isElectron && !networkSync.isConnected && serverAddresses.length > 0) {
-      // Conecta ao servidor local
-      const localUrl = serverAddresses.find(url => url.includes('localhost') || url.includes('127.0.0.1'));
+      if (localServerInfo?.running) {
+          setMode('server');
+      }
+  }, [localServerInfo]);
+
+  // Auto-conecta ao servidor local quando no Electron (loopback) para receber updates via WS
+  // Isso permite que a própria janela do servidor receba eventos como broadcasts
+  useEffect(() => {
+    if (isElectron && !networkSync.isConnected && localServerInfo?.addresses) {
+      const localUrl = localServerInfo.addresses.find(a => 
+        a.address === '127.0.0.1' || a.address === 'localhost'
+      )?.url;
+
       if (localUrl) {
         console.log('[NetworkSync] Auto-conectando ao servidor local:', localUrl);
         networkSync.connect(localUrl);
       }
     }
-  }, [isElectron, networkSync, serverAddresses]);
+  }, [isElectron, networkSync.isConnected, localServerInfo]);
 
   const value: NetworkSyncContextType = {
     ...networkSync,
     mode,
+    localServerInfo,
+    forceClientMode,
+    setForceClientMode,
+    syncMode,
+    setSyncMode
   };
 
   return (

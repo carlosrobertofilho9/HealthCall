@@ -26,7 +26,7 @@ import { getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './audioServ
 const SYNC_PORT = 3457; // Porta para sincronização
 let httpServer = null;
 let wss = null;
-let connectedClients = new Set();
+let connectedClients = new Map(); // Map<WebSocket, ClientData>
 
 /**
  * Obtém todos os IPs da máquina na rede
@@ -63,7 +63,7 @@ export function getNetworkAddresses() {
  */
 function broadcast(message, excludeClient = null) {
     const data = JSON.stringify(message);
-    connectedClients.forEach(client => {
+    connectedClients.forEach((_, client) => {
         if (client !== excludeClient && client.readyState === WebSocket.OPEN) {
             client.send(data);
         }
@@ -116,6 +116,7 @@ export function startSyncServer() {
         });
     });
 
+    // ... (REST API endpoints preserved as they are) ...
     // ============================================
     // REST API - Pacientes
     // ============================================
@@ -404,14 +405,24 @@ export function startSyncServer() {
 
     wss.on('connection', (ws, req) => {
         const clientIp = req.socket.remoteAddress;
-        console.log(`[SyncServer] Cliente conectado: ${clientIp}`);
-        connectedClients.add(ws);
+        
+        // Armazena metadados do cliente
+        const clientData = {
+            ip: clientIp,
+            joinedAt: Date.now(),
+            id: Math.random().toString(36).substring(2, 9)
+        };
+        
+        connectedClients.set(ws, clientData);
+        
+        console.log(`[SyncServer] Cliente conectado: ${clientIp} (${clientData.id})`);
 
         // Envia status inicial
         ws.send(JSON.stringify({
             type: 'connected',
             message: 'Conectado ao HealthCall Sync Server',
             clients: connectedClients.size,
+            clientId: clientData.id,
             timestamp: Date.now()
         }));
 
@@ -419,6 +430,7 @@ export function startSyncServer() {
         broadcast({
             type: 'client_joined',
             clients: connectedClients.size,
+            client: clientData,
             timestamp: Date.now()
         }, ws);
 
@@ -432,6 +444,13 @@ export function startSyncServer() {
                         ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
                         break;
                     
+                    case 'identify':
+                        // Cliente enviou identificação (nome do dispositivo, etc)
+                        if (data.deviceName) {
+                            connectedClients.get(ws).deviceName = data.deviceName;
+                        }
+                        break;
+                        
                     case 'request_sync':
                         // Cliente solicita sincronização completa
                         ws.send(JSON.stringify({
@@ -458,13 +477,14 @@ export function startSyncServer() {
         });
 
         ws.on('close', () => {
-            console.log(`[SyncServer] Cliente desconectado: ${clientIp}`);
+            console.log(`[SyncServer] Cliente desconectado: ${clientIp} (${clientData.id})`);
             connectedClients.delete(ws);
             
             // Notifica outros clientes
             broadcast({
                 type: 'client_left',
                 clients: connectedClients.size,
+                clientId: clientData.id,
                 timestamp: Date.now()
             });
         });
@@ -502,7 +522,7 @@ export function startSyncServer() {
 export function stopSyncServer() {
     if (wss) {
         // Fecha todas as conexões WebSocket
-        connectedClients.forEach(client => {
+        connectedClients.forEach((_, client) => {
             client.close();
         });
         connectedClients.clear();
@@ -526,7 +546,8 @@ export function getServerInfo() {
         running: !!httpServer,
         port: SYNC_PORT,
         clients: connectedClients.size,
-        addresses: getNetworkAddresses()
+        addresses: getNetworkAddresses(),
+        clientsList: Array.from(connectedClients.values())
     };
 }
 

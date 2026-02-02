@@ -238,11 +238,45 @@ async function checkSavedServer() {
 async function determineMode(forceServer = false) {
   console.log('[Discovery] Determinando modo de operação...');
   
-  // Se forçar servidor, tentar iniciar como servidor
-  if (forceServer) {
+  const config = loadConfig();
+  const syncMode = config?.syncMode || 'auto'; // 'auto', 'server', 'client'
+  
+  console.log(`[Discovery] Modo configurado: ${syncMode.toUpperCase()}`);
+
+  // ============================================
+  // MODO: CLIENT (Forçado)
+  // ============================================
+  if (syncMode === 'client' || config?.forceClientMode /* legado */) {
+     console.log('[Discovery] Forçando modo CLIENTE...');
+     
+     // Verifica se tem servidor salvo para conectar rápido
+     if (config?.serverUrl) {
+       try {
+         const url = new URL(config.serverUrl);
+         const savedServer = await checkServer(url.hostname, parseInt(url.port) || SYNC_PORT);
+         if (savedServer.found) {
+            return { mode: 'client', server: savedServer };
+         }
+       } catch (e) {}
+     }
+
+     // Se não tem salvo ou não achou, procura na rede
+     const servers = await discoverServers();
+     if (servers.length > 0) {
+        return { mode: 'client', server: servers[0], allServers: servers };
+     } else {
+        return { mode: 'client', server: null, error: 'Client mode forced but no server found' };
+     }
+  }
+
+  // ============================================
+  // MODO: SERVER (Forçado ou runtime force)
+  // ============================================
+  if (syncMode === 'server' || forceServer) {
+    console.log('[Discovery] Forçando modo SERVIDOR...');
     const portAvailable = await isPortAvailable();
+    
     if (portAvailable) {
-      console.log('[Discovery] Modo: SERVIDOR (forçado)');
       return { mode: 'server' };
     } else {
       console.log('[Discovery] Porta não disponível, verificando se é nosso servidor...');
@@ -250,15 +284,29 @@ async function determineMode(forceServer = false) {
       if (localServer.found) {
         console.log('[Discovery] Servidor local já rodando nesta máquina');
         return { mode: 'server-already-running', server: localServer };
+      } else {
+        return { mode: 'error', error: 'Porta 3457 em uso por outro serviço (não HealthCall)' };
       }
     }
   }
   
+  // ============================================
+  // MODO: AUTO (Padrão)
+  // ============================================
+  
   // 1. Verificar servidor salvo
-  const savedServer = await checkSavedServer();
-  if (savedServer) {
-    console.log('[Discovery] Modo: CLIENTE (servidor salvo)');
-    return { mode: 'client', server: savedServer };
+  if (config && config.serverUrl) {
+    console.log(`[Discovery] Verificando servidor salvo: ${config.serverUrl}`);
+    try {
+      const url = new URL(config.serverUrl);
+      const savedServer = await checkServer(url.hostname, parseInt(url.port) || SYNC_PORT);
+      if (savedServer.found) {
+        console.log('[Discovery] Modo: CLIENTE (servidor salvo)');
+        return { mode: 'client', server: savedServer };
+      }
+    } catch (error) {
+      console.log('[Discovery] Servidor salvo não está mais disponível');
+    }
   }
   
   // 2. Verificar se porta está disponível localmente
@@ -270,7 +318,7 @@ async function determineMode(forceServer = false) {
     const servers = await discoverServers();
     
     if (servers.length > 0) {
-      // Encontrou servidor na rede - perguntar ao usuário ou conectar automaticamente
+      // Encontrou servidor na rede - modo cliente
       console.log('[Discovery] Modo: CLIENTE (servidor encontrado na rede)');
       return { mode: 'client', server: servers[0], allServers: servers };
     } else {
