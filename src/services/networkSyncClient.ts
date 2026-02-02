@@ -68,10 +68,23 @@ class NetworkSyncClient {
       return false;
     }
 
+    let normalizedUrl = config.serverUrl;
+    try {
+      if (normalizedUrl.startsWith('http')) {
+        const urlObj = new URL(normalizedUrl);
+        if (!urlObj.port) {
+          normalizedUrl = `${urlObj.protocol}//${urlObj.hostname}:3457`;
+        }
+      }
+    } catch (e) {
+      console.warn('[SyncClient] Erro ao normalizar URL:', e);
+    }
+
     this.config = {
       autoReconnect: true,
       reconnectInterval: 5000,
-      ...config
+      ...config,
+      serverUrl: normalizedUrl
     };
 
     this.isIntentionallyClosed = false;
@@ -501,9 +514,10 @@ export async function discoverServer(timeout = 3000): Promise<string | null> {
     console.log('[Discovery] Usando descoberta nativa Electron...');
     try {
       const result = await window.electron.sync.discoverServers();
-      if (result.success && result.servers && result.servers.length > 0) {
-        console.log('[Discovery] Servidores encontrados via Electron:', result.servers);
-        return result.servers[0];
+      if (Array.isArray(result) && result.length > 0) {
+        console.log('[Discovery] Servidores encontrados via Electron:', result);
+        // O main process retorna objetos do tipo { found, ip, port, url, wsUrl... }
+        return result[0].url;
       }
     } catch (e) {
       console.warn('[Discovery] Falha na descoberta Electron, tentando fallback web...', e);

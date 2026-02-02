@@ -33,8 +33,19 @@ class ElectronSyncClient extends EventEmitter {
    * Conecta ao servidor de sincronização
    */
   connect(serverInfo) {
-    this.serverUrl = serverInfo.url;
-    this.wsUrl = serverInfo.wsUrl;
+    let url = serverInfo.url;
+    let wsUrl = serverInfo.wsUrl;
+
+    // Normalização: garantir porta se faltar
+    try {
+      if (url && !url.includes(':', url.indexOf('//') + 2)) {
+        url = `${url}:3457`;
+        wsUrl = wsUrl.replace(/:\d+$/, '') + ':3457';
+      }
+    } catch (e) {}
+
+    this.serverUrl = url;
+    this.wsUrl = wsUrl;
     
     console.log(`[ElectronSyncClient] Conectando a ${this.wsUrl}...`);
     

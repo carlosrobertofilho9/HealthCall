@@ -120,14 +120,17 @@ const ServerStatusSection = () => {
   
   if (!isElectron) return null;
 
-  const handleManualConnect = () => {
+    const handleManualConnect = () => {
     if (!manualIp) return;
     // Adiciona protocolo e porta se não tiver
     let url = manualIp;
     if (!url.startsWith('http')) {
       url = `http://${url}`;
     }
-    if (!url.includes(':')) {
+    
+    // Verifica se realmente tem uma porta (além do : do http://)
+    const hasPort = (url.match(/:/g) || []).length > 1;
+    if (!hasPort) {
        url = `${url}:3457`;
     }
     connect(url);
