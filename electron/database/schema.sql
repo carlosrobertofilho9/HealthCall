@@ -60,13 +60,26 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Messages table (Team Chat)
+CREATE TABLE IF NOT EXISTS messages (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)),2) || '-' || hex(randomblob(6)))),
+    content TEXT NOT NULL,
+    sender_id TEXT,
+    sender_name TEXT NOT NULL,
+    type TEXT DEFAULT 'text',
+    timestamp INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_patients_status ON patients(status);
 CREATE INDEX IF NOT EXISTS idx_patients_created_at ON patients(created_at);
 CREATE INDEX IF NOT EXISTS idx_calls_patient_id ON calls(patient_id);
 CREATE INDEX IF NOT EXISTS idx_calls_created_at ON calls(created_at);
 CREATE INDEX IF NOT EXISTS idx_warnings_active ON warnings(active);
+CREATE INDEX IF NOT EXISTS idx_warnings_active ON warnings(active);
 CREATE INDEX IF NOT EXISTS idx_warnings_priority_order ON warnings(priority DESC, "order" ASC);
+CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
 
 -- Insert default settings
 INSERT OR IGNORE INTO settings (key, value, description) VALUES 

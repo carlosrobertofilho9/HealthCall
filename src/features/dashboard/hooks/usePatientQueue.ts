@@ -94,16 +94,34 @@ export function usePatientQueue(props?: { defaultDestination?: string | null }) 
       toast.error('Nome e destino são obrigatórios!');
       return null;
     }
+    
+    // Optimistic Update
+    const tempId = `temp-${Date.now()}`;
+    const optimisticPatient: Patient = {
+        id: tempId,
+        name,
+        destination,
+        status: 'Aguardando',
+        callCount: 0
+    };
+
+    setPatients((current) => [optimisticPatient, ...current]);
     setIsAddingPatient(true);
+
     try {
       const newPatient = await patientService.addPatient(name, destination);
       if (newPatient) {
-        setPatients((current) => [newPatient, ...current]);
+        // Replace optimistic patient with real one
+        setPatients((current) => 
+            current.map(p => p.id === tempId ? newPatient : p)
+        );
         toast.success('Paciente adicionado com sucesso!');
         return newPatient;
       }
       return null;
     } catch (error: any) {
+      // Revert optimistic update
+      setPatients((current) => current.filter(p => p.id !== tempId));
       toast.error(error.message);
       return null;
     } finally {
@@ -113,6 +131,13 @@ export function usePatientQueue(props?: { defaultDestination?: string | null }) 
 
   const addPatientByNumber = useCallback(async (destination: string) => {
     setIsAddingPatient(true);
+    // Note: We can't fully predict the sequential name/number here without server knowledge,
+    // so true optimistic UI for "Generated Number" is harder. 
+    // We will stick to standard loading state for this specific action to avoiding showing wrong number.
+    // Or we could show a placeholder "Gerando senha..."?
+    // User asked for optimistic UI. Let's try to be smart or just wait for this one?
+    // "Ficha" usually implies a server-side sequence.
+    // Let's keep it standard for now to avoid showing "Senha X" then changing to "Senha Y".
     try {
       const newPatient = await patientService.addPatientByNumber(destination);
       if (newPatient) {
@@ -185,13 +210,16 @@ export function usePatientQueue(props?: { defaultDestination?: string | null }) 
 
   const removePatient = useCallback(async (id: string) => {
     const removedPatient = patients.find((p) => p.id === id);
-    
+    if (!removedPatient) return;
+
+    // Optimistic Update
     setPatients((current) => current.filter((p) => p.id !== id));
     
     try {
       await patientService.removePatient(id);
       toast('Paciente removido da fila!');
     } catch (error: any) {
+      // Revert
       if (removedPatient) {
         setPatients((current) => [removedPatient, ...current]);
       }
@@ -209,6 +237,8 @@ export function usePatientQueue(props?: { defaultDestination?: string | null }) 
       callCount: patient.callCount + 1,
       destination,
     };
+
+    // Optimistic Update
     setPatients((current) =>
       current.map((p) => (p.id === id ? updatedPatient : p))
     );
@@ -216,10 +246,15 @@ export function usePatientQueue(props?: { defaultDestination?: string | null }) 
     try {
       const calledPatient = await patientService.callPatient(id, destination);
       if (calledPatient) {
+        // Update with real server data (might contain timestamps etc)
+        setPatients((current) =>
+            current.map((p) => (p.id === id ? calledPatient : p))
+        );
         const time = calledPatient.callCount > 1 ? ` pela ${calledPatient.callCount}ª vez` : '';
         toast.success(`${calledPatient.name} foi chamado(a)${time}!`);
       }
     } catch (error: any) {
+      // Revert
       setPatients((current) =>
         current.map((p) => (p.id === id ? patient : p))
       );

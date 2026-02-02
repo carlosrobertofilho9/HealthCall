@@ -14,19 +14,57 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression'; // Feature: Compression
 import http from 'http';
 import os from 'os';
 import { 
     patientsRepo, 
     warningsRepo, 
     settingsRepo,
+    messagesRepo, // Chat Support
 } from '../database/index.js';
 import { getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './audioServer.js';
 
 const SYNC_PORT = 3457; // Porta para sincronização
+const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hora
+const DATA_RETENTION = 24 * 60 * 60 * 1000; // 24 horas
+
 let httpServer = null;
 let wss = null;
 let connectedClients = new Map(); // Map<WebSocket, ClientData>
+let cleanupInterval = null;
+
+// --- Auto Cleanup Feature ---
+function runAutoCleanup() {
+    console.log('[SyncServer] Executing auto-cleanup task...');
+    try {
+        // Limpar chamadas e pacientes antigos
+        console.log(`[SyncServer] Retenção configurada para: ${DATA_RETENTION / 3600000} horas`);
+        
+        // Executar limpeza no banco
+        const result = patientsRepo.cleanupOldData(DATA_RETENTION);
+        
+        if (result.callsRemoved > 0 || result.patientsRemoved > 0) {
+            console.log(`[SyncServer] Limpeza concluída: ${result.callsRemoved} chamadas, ${result.patientsRemoved} pacientes removidos.`);
+            
+            // Notificar clientes para atualizarem suas listas se houver mudanças visíveis
+            if (result.patientsRemoved > 0) {
+                notifyDataUpdate('patients', 'refresh');
+            }
+        }
+    } catch (error) {
+        console.error('[SyncServer] Auto-cleanup failed:', error);
+    }
+}
+
+
+// --- Heartbeat Logic ---
+const HEARTBEAT_INTERVAL = 30000; // 30 segundos
+let heartbeatInterval = null;
+
+function heartbeat() {
+    this.isAlive = true;
+}
 
 /**
  * Obtém todos os IPs da máquina na rede
@@ -70,11 +108,7 @@ function broadcast(message, excludeClient = null) {
     });
 }
 
-/**
- * Notifica todos os clientes sobre uma atualização de dados
- */
 import { EventEmitter } from 'events';
-
 export const syncEvents = new EventEmitter();
 
 /**
@@ -102,9 +136,32 @@ export function startSyncServer() {
         return;
     }
 
+    // Iniciar Auto Cleanup Timer
+    cleanupInterval = setInterval(runAutoCleanup, CLEANUP_INTERVAL);
+    
+    // Iniciar Heartbeat Timer
+    heartbeatInterval = setInterval(() => {
+        wss.clients.forEach((ws) => {
+            const clientData = connectedClients.get(ws);
+            if (!clientData) return;
+            
+            if (clientData.isAlive === false) {
+                console.log(`[SyncServer] Cliente inativo, desconectando: ${clientData.ip} (${clientData.id})`);
+                return ws.terminate();
+            }
+            
+            clientData.isAlive = false;
+            ws.ping();
+        });
+    }, HEARTBEAT_INTERVAL);
+
+    // Executar uma limpeza inicial
+    setTimeout(runAutoCleanup, 5000);
+
     const app = express();
     
     // Middlewares
+    app.use(compression()); // Enable GZIP compression
     app.use(cors({
         origin: '*', // Permite qualquer origem na rede local
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -390,6 +447,40 @@ export function startSyncServer() {
     });
 
     // ============================================
+    // REST API - Chat
+    // ============================================
+    app.get('/api/chat', (req, res) => {
+        try {
+            const limit = parseInt(req.query.limit) || 50;
+            const messages = messagesRepo.getMessages(limit);
+            res.json({ success: true, data: messages });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    app.post('/api/chat', (req, res) => {
+        try {
+            const { content, sender_id, sender_name, type } = req.body;
+            const message = messagesRepo.addMessage({ content, sender_id, sender_name, type });
+            notifyDataUpdate('messages', 'insert', message);
+            res.json({ success: true, data: message });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    app.delete('/api/chat', (req, res) => {
+        try {
+            messagesRepo.clearAllMessages();
+            notifyDataUpdate('messages', 'clear');
+            res.json({ success: true });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============================================
     // REST API - Destinos
     // ============================================
     app.get('/api/destinations', (req, res) => {
@@ -420,10 +511,16 @@ export function startSyncServer() {
         const clientData = {
             ip: clientIp,
             joinedAt: Date.now(),
-            id: Math.random().toString(36).substring(2, 9)
+            id: Math.random().toString(36).substring(2, 9),
+            isAlive: true
         };
         
         connectedClients.set(ws, clientData);
+        
+        ws.on('pong', () => {
+             const data = connectedClients.get(ws);
+             if (data) data.isAlive = true;
+        });
         
         console.log(`[SyncServer] Cliente conectado: ${clientIp} (${clientData.id})`);
 
@@ -472,10 +569,22 @@ export function startSyncServer() {
                                     media_url: getMediaUrl(w.media_url),
                                     audio_url: w.audio_url ? getWarningAudioUrl(w.audio_url.split('/').pop()) : null
                                 })),
-                                settings: settingsRepo.getAllSettings()
+                                settings: settingsRepo.getAllSettings(),
+                                chat: messagesRepo.getMessages(50) // Sync last 50 messages
                             },
                             timestamp: Date.now()
                         }));
+                        break;
+                    
+                    case 'chat:message':
+                        // Cliente enviou mensagem via Socket (alternativa ao REST)
+                        try {
+                            const { content, sender_id, sender_name, type } = data.payload;
+                            const message = messagesRepo.addMessage({ content, sender_id, sender_name, type });
+                            notifyDataUpdate('messages', 'insert', message);
+                        } catch (err) {
+                            console.error('[SyncServer] Chat error:', err);
+                        }
                         break;
                     
                     default:
@@ -531,6 +640,9 @@ export function startSyncServer() {
  */
 export function stopSyncServer() {
     if (wss) {
+        clearInterval(heartbeatInterval); // Stop Heartbeat
+        clearInterval(cleanupInterval);   // Stop Cleanup
+        
         // Fecha todas as conexões WebSocket
         connectedClients.forEach((_, client) => {
             client.close();

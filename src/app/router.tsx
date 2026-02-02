@@ -9,7 +9,9 @@ import { HomePage, WarningsPage } from '@/features/dashboard';
 import { DisplayPage } from '@/features/display';
 import SettingsPage from '@/features/settings/routes/SettingsPage';
 import LoginPage from '@/features/authentication/routes/LoginPage';
+import ChatPage from '@/pages/ChatPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { ChatProvider } from '@/contexts/ChatContext';
 
 /**
  * The main application router configuration.
@@ -25,9 +27,11 @@ export const router = createHashRouter([
 			<NetworkSyncProvider>
 				<SettingsProvider>
 					<UserProfileProvider>
-						<DisplayDataProvider>
-							<Outlet />
-						</DisplayDataProvider>
+						<ChatProvider>
+							<DisplayDataProvider>
+								<Outlet />
+							</DisplayDataProvider>
+						</ChatProvider>
 					</UserProfileProvider>
 				</SettingsProvider>
 			</NetworkSyncProvider>
@@ -43,7 +47,9 @@ export const router = createHashRouter([
 				),
 				children: [
 					{ index: true, element: <HomePage /> },
+					{ index: true, element: <HomePage /> },
 					{ path: 'dashboard/warnings', element: <WarningsPage /> },
+					{ path: 'chat', element: <ChatPage /> },
 					{ path: 'settings', element: <SettingsPage /> },
 				],
 			},

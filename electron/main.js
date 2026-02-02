@@ -16,7 +16,8 @@ import {
     settingsRepo,
     authRepo,
     getUploadsPath,
-    cleanupOrphanedTTSAudio
+    cleanupOrphanedTTSAudio,
+    messagesRepo // Import messagesRepo
 } from './database/index.js';
 import { determineMode, discoverServers, saveConfig, loadConfig, checkServer } from './services/serverDiscovery.js';
 import { electronSyncClient } from './services/electronSyncClient.js';
@@ -31,6 +32,10 @@ const __dirname = path.dirname(__filename);
 // Inicializar serviços de áudio
 initializeTTS();
 startAudioServer();
+
+// Force restart to apply migrations
+console.log('[Main] Starting HealthCall Main Process...');
+
 
 // Modo de operação: 'server' ou 'client'
 let syncMode = null;
@@ -50,12 +55,18 @@ async function initializeSyncMode() {
   } else if (syncMode === 'client') {
     console.log('[Main] Iniciando como CLIENTE');
     syncServerInfo = result.server;
-    electronSyncClient.connect(result.server);
     
-    // Se houver múltiplos servidores, perguntar ao usuário
-    if (result.allServers && result.allServers.length > 1) {
-      // Por enquanto, conectar ao primeiro encontrado
-      console.log(`[Main] Múltiplos servidores encontrados: ${result.allServers.length}`);
+    if (result.server) {
+        electronSyncClient.connect(result.server);
+        
+        // Se houver múltiplos servidores, perguntar ao usuário
+        if (result.allServers && result.allServers.length > 1) {
+            // Por enquanto, conectar ao primeiro encontrado
+            console.log(`[Main] Múltiplos servidores encontrados: ${result.allServers.length}`);
+        }
+    } else {
+        console.log('[Main] Iniciando em modo CLIENTE OFFLINE (nenhum servidor detectado)');
+        // Podemos tentar reconectar periodicamente ou deixar para o usuário
     }
   } else if (syncMode === 'server-already-running') {
     console.log('[Main] Servidor já rodando nesta máquina');
@@ -789,6 +800,51 @@ ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
     return { success: true, data: convertPatientUrls(patient) };
   } catch (error) {
     console.error('[IPC] Error calling patient:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// --- CHAT ---
+ipcMain.handle('chat:history', async (event, limit = 50) => {
+  try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.getChatHistory(limit);
+    }
+    return { success: true, data: messagesRepo.getMessages(limit) };
+  } catch (error) {
+    console.error('[IPC] Error getting chat history:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('chat:send', async (event, { content, sender_name, type }) => {
+  try {
+    // Obter ID do cliente (ou gerar um temporário/fixo para server)
+    const sender_id = syncServerInfo?.id || 'server';
+    
+    if (syncMode === 'client') {
+      return await electronSyncClient.sendChatMessage(content, sender_id, sender_name, type);
+    }
+
+    const message = messagesRepo.addMessage({ content, sender_id, sender_name, type });
+    broadcastUpdate('messages', 'insert', message);
+    return { success: true, data: message };
+  } catch (error) {
+    console.error('[IPC] Error sending chat message:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('chat:clear', async () => {
+  try {
+    if (syncMode === 'client') {
+      return await electronSyncClient.clearChat();
+    }
+    
+    messagesRepo.clearAllMessages();
+    broadcastUpdate('messages', 'clear');
+    return { success: true };
+  } catch (error) {
     return { success: false, error: error.message };
   }
 });

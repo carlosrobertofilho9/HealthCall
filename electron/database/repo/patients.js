@@ -236,6 +236,44 @@ export function getUniqueDestinations() {
     return stmt.all().map(row => row.destination);
 }
 
+/**
+ * Limpa dados antigos (chamadas e pacientes finalizados)
+ * @param {number} retentionMs Tempo de retenção em milissegundos
+ */
+export function cleanupOldData(retentionMs) {
+    const db = getDatabase();
+    
+    // Calcula data de corte (agora - retencao)
+    // SQLite datetime('now', '-1 day') funciona, mas vamos usar parametro para flexibilidade
+    const cutoffDate = new Date(Date.now() - retentionMs).toISOString();
+    
+    console.log(`[Database] Cleaning data older than ${cutoffDate}`);
+    
+    // 1. Apagar chamadas antigas
+    const deleteCalls = db.prepare(`
+        DELETE FROM calls 
+        WHERE created_at < ?
+    `);
+    const callsResult = deleteCalls.run(cutoffDate);
+    
+    // 2. Apagar pacientes antigos que NÃO estão aguardando
+    // (Mantém pacientes na fila mesmo que estejam lá há muito tempo)
+    const deletePatients = db.prepare(`
+        DELETE FROM patients 
+        WHERE created_at < ? 
+        AND status != 'Aguardando'
+    `);
+    const patientsResult = deletePatients.run(cutoffDate);
+    
+    // 3. VACUUM para liberar espaço (opcional, pode ser pesado)
+    // db.exec('VACUUM'); 
+    
+    return {
+        callsRemoved: callsResult.changes,
+        patientsRemoved: patientsResult.changes
+    };
+}
+
 export default {
     listPatients,
     listPatientsByStatus,
@@ -251,5 +289,6 @@ export default {
     getLastCalledPatient,
     getCallHistory,
     getLastCall,
-    getUniqueDestinations
+    getUniqueDestinations,
+    cleanupOldData // Exportar nova função
 };

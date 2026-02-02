@@ -107,6 +107,10 @@ class ElectronSyncClient extends EventEmitter {
         console.log('[ElectronSyncClient] Sincronização completa recebida');
         this.emit('full-sync', message.data);
         this._notifyRenderer('sync-full-data', message.data);
+        // Também notifica o chat especificamente se houver dados
+        if (message.data.chat) {
+             this._notifyRenderer('chat-history', message.data.chat);
+        }
         break;
         
       case 'client_joined':
@@ -276,6 +280,19 @@ class ElectronSyncClient extends EventEmitter {
   // Limpar fila
   async clearQueue() {
     return this._request('DELETE', '/api/patients/all');
+  }
+
+  // Chat
+  async getChatHistory(limit = 50) {
+    return this._request('GET', `/api/chat?limit=${limit}`);
+  }
+
+  async sendChatMessage(content, sender_id, sender_name, type = 'text') {
+    return this._request('POST', '/api/chat', { content, sender_id, sender_name, type });
+  }
+
+  async clearChat() {
+    return this._request('DELETE', '/api/chat');
   }
 }
 
