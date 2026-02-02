@@ -27,6 +27,25 @@ declare global {
       tts: {
         generate: (text: string) => Promise<string | null>;
       };
+      sync: {
+        getMode: () => Promise<{ mode: 'server' | 'client' | 'standalone' | null; serverInfo: any }>;
+        discoverServers: () => Promise<Array<{
+          found: boolean;
+          ip: string;
+          port: number;
+          url: string;
+          wsUrl: string;
+          version?: string;
+          clients?: number;
+        }>>;
+        connectToServer: (serverUrl: string) => Promise<{ success: boolean; server?: any; error?: string }>;
+        forceServerMode: () => Promise<{ success: boolean; serverInfo?: any; error?: string }>;
+        getServerInfo: () => Promise<{
+          port: number;
+          addresses: Array<{ interface: string; address: string }>;
+          clients?: number;
+        } | null>;
+      };
       on: (channel: string, callback: (...args: any[]) => void) => void;
       off: (channel: string, callback: (...args: any[]) => void) => void;
     };

@@ -105,9 +105,41 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('auth:updateDestination', { userId, destination }),
   },
 
+  // ============================================
+  // Network Sync API
+  // ============================================
+  sync: {
+    // Obter modo atual (server/client/standalone)
+    getMode: () => ipcRenderer.invoke('get-sync-mode'),
+    
+    // Descobrir servidores na rede local
+    discoverServers: () => ipcRenderer.invoke('discover-servers'),
+    
+    // Conectar a um servidor específico
+    connectToServer: (serverUrl) => ipcRenderer.invoke('connect-to-server', serverUrl),
+    
+    // Forçar modo servidor (iniciar como servidor)
+    forceServerMode: () => ipcRenderer.invoke('force-server-mode'),
+    
+    // Obter informações do servidor (quando em modo servidor)
+    getServerInfo: () => ipcRenderer.invoke('get-server-info'),
+  },
+
   // Listeners para eventos do main process
   on: (channel, callback) => {
-    const validChannels = ['notification-clicked', 'navigate-to', 'data:updated'];
+    const validChannels = [
+      'notification-clicked', 
+      'navigate-to', 
+      'data:updated',
+      // Novos canais de sincronização
+      'sync-mode-changed',
+      'sync-connected',
+      'sync-disconnected',
+      'sync-error',
+      'sync-data-update',
+      'sync-full-data',
+      'sync-clients-changed'
+    ];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args));
     }
@@ -115,7 +147,18 @@ contextBridge.exposeInMainWorld('electron', {
 
   // Remover listeners
   off: (channel, callback) => {
-    const validChannels = ['notification-clicked', 'navigate-to', 'data:updated'];
+    const validChannels = [
+      'notification-clicked', 
+      'navigate-to', 
+      'data:updated',
+      'sync-mode-changed',
+      'sync-connected',
+      'sync-disconnected',
+      'sync-error',
+      'sync-data-update',
+      'sync-full-data',
+      'sync-clients-changed'
+    ];
     if (validChannels.includes(channel)) {
       ipcRenderer.removeListener(channel, callback);
     }

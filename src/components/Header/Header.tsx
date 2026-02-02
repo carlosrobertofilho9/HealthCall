@@ -4,6 +4,7 @@ import { useElectron } from '@/hooks/useElectron';
 import { useAuth } from '@/hooks/useAuth';
 import * as localDb from '@/services/localDatabase';
 import { signOut } from '@/features/authentication/services/authService';
+import { ConnectionStatus } from '@/components/ConnectionStatus';
 
 import headerLogo from '@/assets/healthcall-logo-header.png';
 
@@ -137,6 +138,9 @@ const Header: React.FC = () => {
 				</NavLink>
 			</nav>
 			<div className="flex items-center gap-4">
+				{/* Status de conexão de rede */}
+				<ConnectionStatus showDetails />
+				
 				<div className="relative" ref={menuRef}>
 					<button onClick={toggleMenu} className="focus:outline-none">
 						<div

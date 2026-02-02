@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification, protocol, net } from 'electron';
+import { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification, protocol, net, dialog } from 'electron';
 import { createRequire } from 'module';
 import path from 'path';
 import fs from 'fs';
@@ -7,6 +7,7 @@ import { initializeTTS, generatePatientAudio, deletePatientAudio, generateWarnin
 import { startAudioServer, getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './services/audioServer.js';
 import { fetchRssFeed } from './services/rssService.js';
 import { autoUpdater, configureAutoUpdater, registerAutoUpdaterEvents } from './services/autoUpdateService.js';
+import { startSyncServer, stopSyncServer, getServerInfo, notifyDataUpdate } from './services/syncServer.js';
 import { 
     initDatabase, 
     closeDatabase,
@@ -20,6 +21,8 @@ import {
 
 const require = createRequire(import.meta.url);
 const AutoLaunch = require('auto-launch');
+const { determineMode, discoverServers, saveConfig, loadConfig, checkServer } = require('./services/serverDiscovery.js');
+const { electronSyncClient } = require('./services/electronSyncClient.js');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +30,53 @@ const __dirname = path.dirname(__filename);
 // Inicializar serviços de áudio
 initializeTTS();
 startAudioServer();
+
+// Modo de operação: 'server' ou 'client'
+let syncMode = null;
+let syncServerInfo = null;
+
+// Função para inicializar sincronização (será chamada após app.whenReady)
+async function initializeSyncMode() {
+  console.log('[Main] Determinando modo de sincronização...');
+  
+  const result = await determineMode();
+  syncMode = result.mode;
+  
+  if (syncMode === 'server') {
+    console.log('[Main] Iniciando como SERVIDOR');
+    startSyncServer();
+    syncServerInfo = getServerInfo();
+  } else if (syncMode === 'client') {
+    console.log('[Main] Iniciando como CLIENTE');
+    syncServerInfo = result.server;
+    electronSyncClient.connect(result.server);
+    
+    // Se houver múltiplos servidores, perguntar ao usuário
+    if (result.allServers && result.allServers.length > 1) {
+      // Por enquanto, conectar ao primeiro encontrado
+      console.log(`[Main] Múltiplos servidores encontrados: ${result.allServers.length}`);
+    }
+  } else if (syncMode === 'server-already-running') {
+    console.log('[Main] Servidor já rodando nesta máquina');
+    syncMode = 'client';
+    syncServerInfo = result.server;
+    electronSyncClient.connect(result.server);
+  } else if (syncMode === 'error') {
+    console.error('[Main] Erro ao determinar modo:', result.error);
+    // Tentar operar sem sincronização
+    syncMode = 'standalone';
+  }
+  
+  // Notificar o renderer sobre o modo
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('sync-mode-changed', {
+      mode: syncMode,
+      serverInfo: syncServerInfo
+    });
+  }
+  
+  return { mode: syncMode, serverInfo: syncServerInfo };
+}
 
 const isDev = !app.isPackaged;
 
@@ -292,15 +342,105 @@ ipcMain.handle('generate-tts', async (event, text) => {
 });
 
 // ============================================
+// IPC Handlers para Sincronização de Rede
+// ============================================
+
+// Obter modo de sincronização atual
+ipcMain.handle('get-sync-mode', async () => {
+  return {
+    mode: syncMode,
+    serverInfo: syncServerInfo
+  };
+});
+
+// Descobrir servidores na rede
+ipcMain.handle('discover-servers', async () => {
+  const servers = await discoverServers();
+  return servers;
+});
+
+// Conectar a um servidor específico
+ipcMain.handle('connect-to-server', async (event, serverUrl) => {
+  try {
+    const url = new URL(serverUrl);
+    const result = await checkServer(url.hostname, parseInt(url.port) || 3457);
+    
+    if (result.found) {
+      // Parar servidor local se estiver rodando
+      if (syncMode === 'server') {
+        stopSyncServer();
+      }
+      
+      // Conectar como cliente
+      syncMode = 'client';
+      syncServerInfo = result;
+      electronSyncClient.setMainWindow(mainWindow);
+      electronSyncClient.connect(result);
+      
+      return { success: true, server: result };
+    } else {
+      return { success: false, error: 'Servidor não encontrado' };
+    }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Forçar modo servidor
+ipcMain.handle('force-server-mode', async () => {
+  try {
+    // Desconectar do servidor atual se estiver em modo cliente
+    if (syncMode === 'client') {
+      electronSyncClient.disconnect();
+    }
+    
+    // Iniciar como servidor
+    startSyncServer();
+    syncMode = 'server';
+    syncServerInfo = getServerInfo();
+    
+    // Limpar configuração salva para não reconectar automaticamente
+    saveConfig({ serverUrl: null });
+    
+    return { success: true, serverInfo: syncServerInfo };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Obter informações do servidor (quando em modo servidor)
+ipcMain.handle('get-server-info', async () => {
+  if (syncMode === 'server') {
+    return getServerInfo();
+  }
+  return null;
+});
+
+// ============================================
 // IPC Handlers para Banco de Dados Local
 // ============================================
 
 // Helper para notificar todas as janelas sobre mudanças
-function broadcastUpdate(table) {
+// Agora também notifica clientes via rede (WebSocket)
+function broadcastUpdate(table, action = 'update', data = null) {
+  // Notifica janelas locais
   BrowserWindow.getAllWindows().forEach(win => {
     win.webContents.send('data:updated', { table });
   });
+  
+  // Notifica clientes remotos via WebSocket
+  notifyDataUpdate(table, action, data);
 }
+
+// --- SERVER INFO (para clientes descobrirem o servidor) ---
+ipcMain.handle('sync:server-info', async () => {
+  try {
+    return { success: true, data: getServerInfo() };
+  } catch (error) {
+    console.error('[IPC] Error getting server info:', error);
+    return { success: false, error: error.message };
+  }
+});
 
 // --- PATIENTS ---
 ipcMain.handle('db:patient:list', async () => {
@@ -947,6 +1087,18 @@ app.whenReady().then(() => {
   
   createWindow();
   createTray();
+  
+  // Inicializar sincronização de rede (após criar janela)
+  initializeSyncMode().then(({ mode, serverInfo }) => {
+    console.log(`[App] Modo de sincronização: ${mode}`);
+    if (serverInfo) {
+      console.log(`[App] Servidor: ${serverInfo.url || serverInfo}`);
+    }
+    // Configurar cliente com mainWindow para receber eventos
+    if (mode === 'client') {
+      electronSyncClient.setMainWindow(mainWindow);
+    }
+  });
 
   // Verificar atualizações após iniciar (apenas em produção)
   if (!isDev) {
