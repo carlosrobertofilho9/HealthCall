@@ -45,6 +45,15 @@ export function ConnectionStatus({ showDetails = false, className = '' }: Connec
 
   const handleConnect = async () => {
     if (manualUrl.trim()) {
+      // Se estiver no Electron, também conecta o processo principal
+      if (isElectron && window.electron?.sync?.connectToServer) {
+        try {
+          await window.electron.sync.connectToServer(manualUrl.trim());
+        } catch (e) {
+          console.error('Failed to connect via Electron:', e);
+        }
+      }
+
       const success = await connect(manualUrl.trim());
       if (success) {
         setShowConfig(false);
@@ -190,6 +199,23 @@ export function ConnectionStatus({ showDetails = false, className = '' }: Connec
                         <span className="text-white font-medium">{connectedClients} online</span>
                     </div>
                  )}
+                 {isEffectivelyConnected && mode !== 'server' && serverUrl && (
+                    <div className="flex justify-between items-center text-sm pt-2 border-t border-white/5 mt-2">
+                        <span className="text-gray-400 flex items-center gap-2">
+                            <Server className="w-3.5 h-3.5" />
+                            Conectado a
+                        </span>
+                        <span className="text-emerald-400 font-mono text-xs truncate max-w-[150px]" title={serverUrl}>
+                            {serverUrl.replace(/^https?:\/\//, '')}
+                        </span>
+                    </div>
+                 )}
+                 {isEffectivelyConnected && mode !== 'server' && (serverUrl?.includes('localhost') || serverUrl?.includes('127.0.0.1')) && (
+                     <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded text-xs text-yellow-500 flex items-start gap-1 leading-snug">
+                         <span className="material-symbols-outlined text-[14px]">warning</span>
+                         <span>Conectado ao próprio computador (Loopback). Para sincronizar com outro PC, use o IP correto.</span>
+                     </div>
+                 )}
               </div>
             </div>
 
@@ -225,24 +251,22 @@ export function ConnectionStatus({ showDetails = false, className = '' }: Connec
                     Procurar Servidor
                   </button>
 
-                  {!isElectron && (
-                     <div className="flex gap-2">
-                       <input
-                         type="text"
-                         value={manualUrl}
-                         onChange={(e) => setManualUrl(e.target.value)}
-                         placeholder="http://IP:3457"
-                         className="flex-1 px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-                       />
-                       <button
-                         onClick={handleConnect}
-                         disabled={!manualUrl.trim() || isConnecting}
-                         className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white rounded-lg transition-colors"
-                       >
-                         <Check className="w-4 h-4" />
-                       </button>
-                     </div>
-                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={manualUrl}
+                      onChange={(e) => setManualUrl(e.target.value)}
+                      placeholder="http://IP:3457"
+                      className="flex-1 px-3 py-2 bg-black/20 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                    <button
+                      onClick={handleConnect}
+                      disabled={!manualUrl.trim() || isConnecting}
+                      className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 text-white rounded-lg transition-colors"
+                    >
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </div>
                </div>
             )}
             

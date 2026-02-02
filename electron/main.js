@@ -752,19 +752,12 @@ ipcMain.handle('db:patient:get', async (event, id) => {
 
 ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.addPatient(name, destination);
-    }
-    // Fallback: If offline client, save locally?
-    // Generally, in offline client mode, we might want to prevent adding unless we have a strong offline sync strategy.
-    // However, to prevent crashes, we should either:
-    // 1. Throw sensible error "Sem conexão com servidor"
-    // 2. Allow local save (but data wont sync back automatically currently)
-    // Given the previous chat behavior, allowing local save prevents the "Invalid URL" crash and lets the app be usable as standalone.
-    
-    // Warn user if adding locally while in client mode?
     if (syncMode === 'client') {
-        console.warn('[IPC] Adicionando paciente localmente (Offline Mode)');
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.addPatient(name, destination);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para adicionar pacientes.');
+      }
     }
 
     const patient = patientsRepo.addPatient({ name, destination });
@@ -788,16 +781,15 @@ ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
   }
 });
 
-   ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
-     try {
-       if (syncMode === 'client' && electronSyncClient.isConnected()) {
-          // Note: electronSyncClient needs to implement addByNumber if not already
-          // Checking electronSyncClient.js... no addByNumber specific method, but we can add endpoint or use generic?
-          // Let's implement addPatientByNumber in electronSyncClient.js first or use raw request if method missing?
-          // electronSyncClient.js doesn't have addPatientByNumber exposed. I need to add it.
-          // Assuming I will add it:
-          return await electronSyncClient.addPatientByNumber(destination);
-       }
+ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
+  try {
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.addPatientByNumber(destination);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para adicionar pacientes.');
+      }
+    }
 
     const patient = patientsRepo.addPatientByNumber(destination);
     // ... rest of code
@@ -823,10 +815,13 @@ ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
 
 ipcMain.handle('db:patient:update', async (event, { id, updates }) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.updatePatient(id, updates);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.updatePatient(id, updates);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para atualizar pacientes.');
+      }
     }
-    // Offline mode: Update locally
     
     // Buscar paciente atual para comparar
     const currentPatient = patientsRepo.getPatientById(id);
@@ -865,10 +860,13 @@ ipcMain.handle('db:patient:update', async (event, { id, updates }) => {
 
 ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.callPatient(id, destination);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.callPatient(id, destination);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para chamar pacientes.');
+      }
     }
-    // Offline mode: Call locally
 
     const patient = patientsRepo.callPatient(id, destination);
     broadcastUpdate('patients');
@@ -903,22 +901,12 @@ ipcMain.handle('chat:send', async (event, { content, sender_name, type }) => {
   try {
     const sender_id = syncServerInfo?.id || 'server';
     
-    // Se cliente conectado, envia via socket/api
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-       // Opcional: Salvar localmente também? Provavelmente sim para histórico offline.
-       // Mas messagesRepo é a fonte da verdade da UI local.
-       // Se salvar local, e depois syncar, pode duplicar?
-       // O ideal é: Envia pro server -> Server transmite de volta -> Salva local no `data-update`.
-       // Mas e se offline? 
-       // Offline: Salva local. Quando conectar, envia pendentes? (Sync complexo).
-       // Por enquanto: Tenta enviar pro server. Se der erro, salva local?
-       
-       try {
-         return await electronSyncClient.sendChatMessage(content, sender_id, sender_name, type);
-       } catch (err) {
-          console.warn('[IPC] Falha ao enviar chat remoto:', err.message);
-          // Fallthrough to local save
-       }
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.sendChatMessage(content, sender_id, sender_name, type);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para enviar mensagens.');
+      }
     }
 
     const message = messagesRepo.addMessage({ content, sender_id, sender_name, type });
@@ -932,8 +920,12 @@ ipcMain.handle('chat:send', async (event, { content, sender_name, type }) => {
 
 ipcMain.handle('chat:clear', async () => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.clearChat();
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.clearChat();
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para limpar chat.');
+      }
     }
     
     messagesRepo.clearAllMessages();
@@ -946,10 +938,13 @@ ipcMain.handle('chat:clear', async () => {
 
 ipcMain.handle('db:patient:remove', async (event, id) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.deletePatient(id);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.deletePatient(id);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para remover pacientes.');
+      }
     }
-    // Offline mode: Remove locally
 
     // Deletar áudio do paciente
     deletePatientAudio(id);
@@ -965,10 +960,13 @@ ipcMain.handle('db:patient:remove', async (event, id) => {
 
 ipcMain.handle('db:patient:clearAll', async () => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.clearQueue();
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.clearQueue();
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para limpar a fila.');
+      }
     }
-    // Offline mode: Clear locally
 
     // Buscar todos os pacientes para deletar áudios
     const patients = patientsRepo.listPatients ? patientsRepo.listPatients() : [];
@@ -1103,8 +1101,12 @@ ipcMain.handle('db:warning:get', async (event, id) => {
 
 ipcMain.handle('db:warning:add', async (event, warning) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.addWarning(warning);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.addWarning(warning);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para adicionar avisos.');
+      }
     }
 
     // Primeiro cria o warning
@@ -1134,10 +1136,14 @@ ipcMain.handle('db:warning:add', async (event, warning) => {
 
 ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.updateWarning(id, updates);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.updateWarning(id, updates);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para atualizar avisos.');
+      }
     }
-    // ... rest of logic
+
     // Busca o warning atual para comparar o texto
     const currentWarning = warningsRepo.getWarningById(id);
     
@@ -1178,8 +1184,12 @@ ipcMain.handle('db:warning:update', async (event, { id, updates }) => {
 
 ipcMain.handle('db:warning:remove', async (event, id) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.deleteWarning(id);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.deleteWarning(id);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para remover avisos.');
+      }
     }
 
     // Remove o áudio TTS associado
@@ -1196,8 +1206,12 @@ ipcMain.handle('db:warning:remove', async (event, id) => {
 
 ipcMain.handle('db:warning:toggle', async (event, id) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-       return await electronSyncClient.toggleWarning(id);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.toggleWarning(id);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para alternar avisos.');
+      }
     }
 
     const warning = convertWarningUrls(warningsRepo.toggleWarningActive(id));
@@ -1211,8 +1225,12 @@ ipcMain.handle('db:warning:toggle', async (event, id) => {
 
 ipcMain.handle('db:warning:reorder', async (event, orderedIds) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-       return await electronSyncClient.reorderWarnings(orderedIds);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.reorderWarnings(orderedIds);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para reordenar avisos.');
+      }
     }
 
     const warnings = warningsRepo.reorderWarnings(orderedIds).map(convertWarningUrls);
@@ -1226,9 +1244,12 @@ ipcMain.handle('db:warning:reorder', async (event, orderedIds) => {
 
 ipcMain.handle('db:warning:saveMedia', async (event, { buffer, filename }) => {
   try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-       // Upload to server
-       return await electronSyncClient.uploadMedia(buffer, filename);
+    if (syncMode === 'client') {
+      if (electronSyncClient.isConnected()) {
+        return await electronSyncClient.uploadMedia(buffer, filename);
+      } else {
+        throw new Error('Modo Cliente Offline: Conecte-se ao servidor para salvar mídia.');
+      }
     }
 
     const url = warningsRepo.saveMediaFile(Buffer.from(buffer), filename);
@@ -1287,6 +1308,8 @@ ipcMain.handle('db:settings:getAll', async () => {
 
 ipcMain.handle('db:settings:set', async (event, { key, value, description }) => {
   try {
+    // Note: Settings are currently local-first, but if we want to sync global settings, we should handle it here.
+    // For now, settings remain local to avoid breaking per-device config (like Display ID).
     settingsRepo.setSetting(key, value, description);
     broadcastUpdate('settings');
     return { success: true };
@@ -1298,6 +1321,7 @@ ipcMain.handle('db:settings:set', async (event, { key, value, description }) => 
 
 ipcMain.handle('db:settings:setMultiple', async (event, settings) => {
   try {
+    // Settings remain local.
     const result = settingsRepo.setMultipleSettings(settings);
     broadcastUpdate('settings');
     return { success: true, data: result };
