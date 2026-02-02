@@ -303,7 +303,6 @@ async function determineMode(forceServer = false) {
 
   return { mode: 'client', server: null };
 }
-}
 
 export {
   checkServer,
