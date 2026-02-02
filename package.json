@@ -28,7 +28,6 @@
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-switch": "^1.2.6",
-    "@supabase/supabase-js": "^2.57.4",
     "auto-launch": "^5.0.6",
     "better-sqlite3": "^12.6.2",
     "class-variance-authority": "^0.7.1",
@@ -39,6 +38,7 @@
     "fast-xml-parser": "^5.3.4",
     "fs-extra": "^11.3.3",
     "ip": "^2.0.1",
+    "localtunnel": "^2.0.2",
     "lucide-react": "^0.552.0",
     "mime": "^4.1.0",
     "next-themes": "^0.4.6",
@@ -47,7 +47,8 @@
     "react-router-dom": "^7.8.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
