@@ -33,8 +33,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Carregar histórico inicial
   const fetchHistory = useCallback(async () => {
     try {
-      if ((window as any).electron) {
-        const result = await (window as any).electron.invoke('chat:history', 50);
+      if ((window as any).electron && (window as any).electron.chat) {
+        const result = await (window as any).electron.chat.history(50);
         if (result.success && Array.isArray(result.data)) {
           setMessages(result.data);
         }
@@ -58,12 +58,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
              setUnreadCount(prev => prev + 1);
              
              // Enviar notificação de sistema
-             if ((window as any).electron) {
-                (window as any).electron.invoke('send-notification', { 
-                    title: 'HealthCall Chat', 
-                    body: 'Nova mensagem da equipe', 
-                    data: { url: '/chat' } 
-                }).catch(console.error);
+             if ((window as any).electron && (window as any).electron.notification) {
+                (window as any).electron.notification.send(
+                    'HealthCall Chat', 
+                    'Nova mensagem da equipe', 
+                    { url: '/chat' } 
+                ).catch(console.error);
              }
         }
       }
@@ -88,7 +88,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Ideally get from AuthContext
       const sender_name = 'Atendente'; // Placeholder - SHOULD BE FIXED with UserProfileContext
 
-      await (window as any).electron.invoke('chat:send', { 
+      await (window as any).electron.chat.send({ 
         content, 
         sender_name, 
         type 
@@ -100,7 +100,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const clearChat = async () => {
-    await (window as any).electron.invoke('chat:clear');
+    if ((window as any).electron && (window as any).electron.chat) {
+        await (window as any).electron.chat.clear();
+    }
   };
 
   const markAsRead = () => {

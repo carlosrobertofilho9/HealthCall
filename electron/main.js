@@ -50,8 +50,13 @@ async function initializeSyncMode() {
   
   if (syncMode === 'server') {
     console.log('[Main] Iniciando como SERVIDOR');
-    startSyncServer();
-    syncServerInfo = getServerInfo();
+    try {
+      await startSyncServer();
+      syncServerInfo = getServerInfo();
+    } catch (e) {
+      console.error('[Main] Falha ao iniciar servidor automaticamente:', e);
+      syncMode = 'standalone'; // Fallback
+    }
   } else if (syncMode === 'client') {
     console.log('[Main] Iniciando como CLIENTE');
     syncServerInfo = result.server;
@@ -73,6 +78,9 @@ async function initializeSyncMode() {
     syncMode = 'client';
     syncServerInfo = result.server;
     electronSyncClient.connect(result.server);
+  } else if (syncMode === 'neutral') {
+    console.log('[Main] Modo NEUTRO: Nenhuma ação de sincronização inicial.');
+    // Não faz nada, aguarda usuário escolher
   } else if (syncMode === 'error') {
     console.error('[Main] Erro ao determinar modo:', result.error);
     // Tentar operar sem sincronização
@@ -428,7 +436,8 @@ ipcMain.handle('force-server-mode', async () => {
     }
     
     // Iniciar como servidor
-    startSyncServer();
+    // Iniciar como servidor
+    await startSyncServer();
     syncMode = 'server';
     syncServerInfo = getServerInfo();
     
@@ -454,32 +463,79 @@ ipcMain.handle('get-server-info', async () => {
   return null;
 });
 
-// Configurar modo de Sincronização (Auto/Server/Client)
+// Configurar modo de Sincronização (Auto/Server/Client/Neutral) - Dinâmico
 ipcMain.handle('sync:set-mode', async (event, mode) => {
   try {
+    console.log(`[IPC] Alterando modo de sincronização para: ${mode}`);
     const config = loadConfig() || {};
     config.syncMode = mode;
     // Limpa flag antiga se existir
     delete config.forceClientMode;
     saveConfig(config);
     
-    // É necessário reiniciar o app ou processo de sync para aplicar
-    app.relaunch();
-    app.exit(0);
+    // ===================================
+    // Lógica de Troca Dinâmica
+    // ===================================
+
+    // 1. Parar tudo primeiro (limpa estado anterior)
+    if (syncMode === 'server') {
+        stopSyncServer();
+        syncServerInfo = null;
+    }
+    if (syncMode === 'client') {
+        electronSyncClient.disconnect();
+        syncServerInfo = null;
+    }
+    
+    // Atualiza variável global
+    syncMode = mode;
+
+    // 2. Iniciar novo modo
+    if (mode === 'server') {
+        console.log('[IPC] Iniciando modo Servidor...');
+        await startSyncServer();
+        syncServerInfo = getServerInfo();
+    } 
+    else if (mode === 'client') {
+        console.log('[IPC] Iniciando modo Cliente...');
+        // Tenta descobrir ou conectar
+        const result = await determineMode();
+        if (result.server) {
+             syncServerInfo = result.server;
+             electronSyncClient.connect(result.server);
+        } else {
+             // Se não achou, fica como cliente offline
+             syncServerInfo = null;
+        }
+    }
+    else if (mode === 'neutral') {
+        console.log('[IPC] Modo Neutro ativado. Aguardando comando.');
+        syncMode = 'neutral';
+        syncServerInfo = null;
+    }
+
+    // 3. Notificar Renderer sobre a mudança
+    BrowserWindow.getAllWindows().forEach(win => {
+        win.webContents.send('sync-mode-changed', {
+          mode: syncMode,
+          serverInfo: syncServerInfo
+        });
+    });
     
     return { success: true };
   } catch (error) {
+    console.error('[IPC] Erro ao alterar modo:', error);
     return { success: false, error: error.message };
   }
 });
 
-// Obter modo de Sincronização
+// Obter modo de Sincronização (Configuração salva)
 ipcMain.handle('sync:get-mode', async () => {
   try {
     const config = loadConfig();
-    return { mode: config?.syncMode || (config?.forceClientMode ? 'client' : 'auto') };
+    return { mode: config?.syncMode || (config?.forceClientMode ? 'client' : 'neutral') };
   } catch (error) {
-    return { mode: 'auto' };
+    return { mode: 'neutral' };
   }
 });
 
@@ -671,8 +727,12 @@ ipcMain.handle('sync:server-info', async () => {
 // --- PATIENTS ---
 ipcMain.handle('db:patient:list', async () => {
   try {
-    if (syncMode === 'client') {
-      return await electronSyncClient.getPatients();
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
+      try {
+        return await electronSyncClient.getPatients();
+      } catch (err) {
+         console.warn('[IPC] Falha ao buscar pacientes remotos, usando local:', err.message);
+      }
     }
     return { success: true, data: patientsRepo.listPatients().map(convertPatientUrls) };
   } catch (error) {
@@ -692,8 +752,19 @@ ipcMain.handle('db:patient:get', async (event, id) => {
 
 ipcMain.handle('db:patient:add', async (event, { name, destination }) => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.addPatient(name, destination);
+    }
+    // Fallback: If offline client, save locally?
+    // Generally, in offline client mode, we might want to prevent adding unless we have a strong offline sync strategy.
+    // However, to prevent crashes, we should either:
+    // 1. Throw sensible error "Sem conexão com servidor"
+    // 2. Allow local save (but data wont sync back automatically currently)
+    // Given the previous chat behavior, allowing local save prevents the "Invalid URL" crash and lets the app be usable as standalone.
+    
+    // Warn user if adding locally while in client mode?
+    if (syncMode === 'client') {
+        console.warn('[IPC] Adicionando paciente localmente (Offline Mode)');
     }
 
     const patient = patientsRepo.addPatient({ name, destination });
@@ -752,12 +823,16 @@ ipcMain.handle('db:patient:addByNumber', async (event, { destination }) => {
 
 ipcMain.handle('db:patient:update', async (event, { id, updates }) => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.updatePatient(id, updates);
     }
-
+    // Offline mode: Update locally
+    
     // Buscar paciente atual para comparar
     const currentPatient = patientsRepo.getPatientById(id);
+    if (!currentPatient) {
+        return { success: false, error: 'Patient not found' };
+    }
     const patient = patientsRepo.updatePatient(id, updates);
     
     // Se nome ou destino mudou, regenerar áudio
@@ -790,9 +865,10 @@ ipcMain.handle('db:patient:update', async (event, { id, updates }) => {
 
 ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.callPatient(id, destination);
     }
+    // Offline mode: Call locally
 
     const patient = patientsRepo.callPatient(id, destination);
     broadcastUpdate('patients');
@@ -807,9 +883,15 @@ ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
 // --- CHAT ---
 ipcMain.handle('chat:history', async (event, limit = 50) => {
   try {
-    if (syncMode === 'client') {
-      return await electronSyncClient.getChatHistory(limit);
+    // Se estiver conectado a um servidor, tenta buscar dele
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
+      try {
+        return await electronSyncClient.getChatHistory(limit);
+      } catch (err) {
+        console.warn('[IPC] Falha ao buscar chat remoto, usando local:', err.message);
+      }
     }
+    // Fallback ou modo server: usa banco local
     return { success: true, data: messagesRepo.getMessages(limit) };
   } catch (error) {
     console.error('[IPC] Error getting chat history:', error);
@@ -819,11 +901,24 @@ ipcMain.handle('chat:history', async (event, limit = 50) => {
 
 ipcMain.handle('chat:send', async (event, { content, sender_name, type }) => {
   try {
-    // Obter ID do cliente (ou gerar um temporário/fixo para server)
     const sender_id = syncServerInfo?.id || 'server';
     
-    if (syncMode === 'client') {
-      return await electronSyncClient.sendChatMessage(content, sender_id, sender_name, type);
+    // Se cliente conectado, envia via socket/api
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
+       // Opcional: Salvar localmente também? Provavelmente sim para histórico offline.
+       // Mas messagesRepo é a fonte da verdade da UI local.
+       // Se salvar local, e depois syncar, pode duplicar?
+       // O ideal é: Envia pro server -> Server transmite de volta -> Salva local no `data-update`.
+       // Mas e se offline? 
+       // Offline: Salva local. Quando conectar, envia pendentes? (Sync complexo).
+       // Por enquanto: Tenta enviar pro server. Se der erro, salva local?
+       
+       try {
+         return await electronSyncClient.sendChatMessage(content, sender_id, sender_name, type);
+       } catch (err) {
+          console.warn('[IPC] Falha ao enviar chat remoto:', err.message);
+          // Fallthrough to local save
+       }
     }
 
     const message = messagesRepo.addMessage({ content, sender_id, sender_name, type });
@@ -837,7 +932,7 @@ ipcMain.handle('chat:send', async (event, { content, sender_name, type }) => {
 
 ipcMain.handle('chat:clear', async () => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.clearChat();
     }
     
@@ -851,9 +946,10 @@ ipcMain.handle('chat:clear', async () => {
 
 ipcMain.handle('db:patient:remove', async (event, id) => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.deletePatient(id);
     }
+    // Offline mode: Remove locally
 
     // Deletar áudio do paciente
     deletePatientAudio(id);
@@ -869,9 +965,10 @@ ipcMain.handle('db:patient:remove', async (event, id) => {
 
 ipcMain.handle('db:patient:clearAll', async () => {
   try {
-    if (syncMode === 'client') {
+    if (syncMode === 'client' && electronSyncClient.isConnected()) {
       return await electronSyncClient.clearQueue();
     }
+    // Offline mode: Clear locally
 
     // Buscar todos os pacientes para deletar áudios
     const patients = patientsRepo.listPatients ? patientsRepo.listPatients() : [];
@@ -1276,6 +1373,8 @@ ipcMain.handle('auth:updateDestination', async (event, { userId, destination }) 
     return { success: false, error: error.message };
   }
 });
+
+
 
 // --- AUTO UPDATER ---
 ipcMain.handle('update:check', async () => {

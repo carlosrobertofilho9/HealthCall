@@ -37,8 +37,8 @@ interface NetworkSyncContextType extends NetworkSyncState {
   setForceClientMode: (enabled: boolean) => Promise<void>;
   
   // Novo Seletor de Modo
-  syncMode: 'auto' | 'server' | 'client';
-  setSyncMode: (mode: 'auto' | 'server' | 'client') => Promise<void>;
+  syncMode: 'auto' | 'server' | 'client' | 'neutral';
+  setSyncMode: (mode: 'auto' | 'server' | 'client' | 'neutral') => Promise<void>;
 }
 
 const NetworkSyncContext = createContext<NetworkSyncContextType | undefined>(undefined);
@@ -72,7 +72,7 @@ export function NetworkSyncProvider({ children }: NetworkSyncProviderProps) {
   const [mode, setMode] = useState<'server' | 'client' | 'standalone'>('standalone');
   const [localServerInfo, setLocalServerInfo] = useState<LocalServerInfo | null>(null);
   const [forceClientMode, setForceClientModeState] = useState(false);
-  const [syncMode, setSyncModeState] = useState<'auto' | 'server' | 'client'>('auto');
+  const [syncMode, setSyncModeState] = useState<'auto' | 'server' | 'client' | 'neutral'>('neutral');
 
   // Carrega configuração inicial
   useEffect(() => {
@@ -98,12 +98,18 @@ export function NetworkSyncProvider({ children }: NetworkSyncProviderProps) {
     }
   };
 
-  const setSyncMode = async (mode: 'auto' | 'server' | 'client') => {
+  const setSyncMode = async (mode: 'auto' | 'server' | 'client' | 'neutral') => {
     if (isElectron) {
       await window.electron?.sync?.setSyncMode?.(mode);
       setSyncModeState(mode);
       // Atualiza legacy flag
       setForceClientModeState(mode === 'client');
+      
+      // Update local mode state immediately for UI responsiveness
+      if (mode === 'neutral') {
+          setMode('standalone');
+          setLocalServerInfo(null);
+      }
     }
   };
 

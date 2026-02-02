@@ -133,7 +133,7 @@ export function notifyDataUpdate(table, action = 'update', data = null) {
 export function startSyncServer() {
     if (httpServer) {
         console.log('[SyncServer] Servidor já está rodando');
-        return;
+        return Promise.resolve(true);
     }
 
     // Iniciar Auto Cleanup Timer
@@ -168,6 +168,53 @@ export function startSyncServer() {
         allowedHeaders: ['Content-Type', 'Authorization']
     }));
     app.use(express.json());
+
+    // --- Middleware: Rate Limiting ---
+    const rateLimits = new Map(); // IP -> { count, resetTime }
+    const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+    const MAX_REQUESTS = 300; // 300 requests per minute
+
+    app.use((req, res, next) => {
+        const ip = req.ip || req.socket.remoteAddress;
+        const now = Date.now();
+        
+        let record = rateLimits.get(ip);
+        if (!record || now > record.resetTime) {
+            record = { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
+            rateLimits.set(ip, record);
+        }
+        
+        record.count++;
+        
+        if (record.count > MAX_REQUESTS) {
+            console.warn(`[SyncServer] Rate limit exceeded for IP: ${ip}`);
+            return res.status(429).json({ 
+                success: false, 
+                error: 'Too many requests. Please try again later.' 
+            });
+        }
+        next();
+    });
+
+    // --- Helper: Input Validation ---
+    const validate = (schema, data) => {
+        const errors = [];
+        for (const [key, rules] of Object.entries(schema)) {
+            if (rules.required && (data[key] === undefined || data[key] === null || data[key] === '')) {
+                errors.push(`${key} is required`);
+                continue;
+            }
+            if (data[key] !== undefined) {
+                if (rules.type && typeof data[key] !== rules.type) {
+                    errors.push(`${key} must be of type ${rules.type}`);
+                }
+                if (rules.maxLength && data[key].length > rules.maxLength) {
+                    errors.push(`${key} must be at most ${rules.maxLength} characters`);
+                }
+            }
+        }
+        return errors;
+    };
 
     // ============================================
     // Endpoint de descoberta/status
@@ -219,6 +266,15 @@ export function startSyncServer() {
 
     app.post('/api/patients', (req, res) => {
         try {
+            const errors = validate({
+                name: { required: true, type: 'string', maxLength: 100 },
+                destination: { required: true, type: 'string', maxLength: 100 }
+            }, req.body);
+
+            if (errors.length > 0) {
+                return res.status(400).json({ success: false, error: errors.join(', ') });
+            }
+
             const { name, destination } = req.body;
             const patient = patientsRepo.addPatient({ name, destination });
             notifyDataUpdate('patients', 'insert', patient);
@@ -380,6 +436,16 @@ export function startSyncServer() {
 
     app.post('/api/warnings', (req, res) => {
         try {
+            // Validation (loose for warnings as structures vary, but text/priority checks help)
+            const errors = validate({
+                text: { required: true, type: 'string', maxLength: 500 },
+                priority: { type: 'number' }
+            }, req.body);
+
+            if (errors.length > 0) {
+                return res.status(400).json({ success: false, error: errors.join(', ') });
+            }
+
             const warning = warningsRepo.addWarning(req.body);
             notifyDataUpdate('warnings', 'insert', warning);
             res.json({ success: true, data: warning });
@@ -617,21 +683,29 @@ export function startSyncServer() {
     // ============================================
     // Iniciar servidor
     // ============================================
-    httpServer.listen(SYNC_PORT, '0.0.0.0', () => {
-        const addresses = getNetworkAddresses();
-        console.log('[SyncServer] ========================================');
-        console.log('[SyncServer] Servidor de Sincronização iniciado!');
-        console.log('[SyncServer] Porta:', SYNC_PORT);
-        console.log('[SyncServer] Endereços disponíveis:');
-        addresses.forEach(addr => {
-            console.log(`[SyncServer]   - ${addr.interface}: ${addr.url}`);
+    // ============================================
+    // Iniciar servidor
+    // ============================================
+    return new Promise((resolve, reject) => {
+        httpServer.listen(SYNC_PORT, '0.0.0.0', () => {
+            const addresses = getNetworkAddresses();
+            console.log('[SyncServer] ========================================');
+            console.log('[SyncServer] Servidor de Sincronização iniciado!');
+            console.log('[SyncServer] Porta:', SYNC_PORT);
+            console.log('[SyncServer] Endereços disponíveis:');
+            addresses.forEach(addr => {
+                console.log(`[SyncServer]   - ${addr.interface}: ${addr.url}`);
+            });
+            console.log('[SyncServer] WebSocket: ws://IP:' + SYNC_PORT);
+            console.log('[SyncServer] ========================================');
+            resolve(true); // Sucesso
         });
-        console.log('[SyncServer] WebSocket: ws://IP:' + SYNC_PORT);
-        console.log('[SyncServer] ========================================');
-    });
 
-    httpServer.on('error', (error) => {
-        console.error('[SyncServer] Erro no servidor:', error.message);
+        httpServer.on('error', (error) => {
+            console.error('[SyncServer] Erro no servidor:', error.message);
+            stopSyncServer(); // Limpar em caso de erro
+            reject(error);
+        });
     });
 }
 

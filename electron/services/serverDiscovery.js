@@ -129,16 +129,22 @@ function generateScanIPs(baseIP, localIP) {
   const ips = [];
   const localLast = parseInt(localIP.split('.')[3]);
   
-  // Prioridade 1: IPs próximos ao local (±10)
-  for (let i = Math.max(1, localLast - 10); i <= Math.min(254, localLast + 10); i++) {
+  // Prioridade 1: IPs próximos ao local (±20 para cobrir DHCPs dinâmicos)
+  for (let i = Math.max(1, localLast - 20); i <= Math.min(254, localLast + 20); i++) {
     const ip = `${baseIP}.${i}`;
     if (ip !== localIP) {
       ips.push(ip);
     }
   }
   
-  // Prioridade 2: IPs comuns de servidores/roteadores
-  const commonIPs = [1, 2, 100, 101, 102, 200, 254];
+  // Prioridade 2: IPs comuns (Gateways, Servidores fixos comuns)
+  const commonIPs = [
+      1, 2,                    // Gateways comuns
+      10, 20, 30, 40, 50,      // Fixos comuns
+      100, 101, 102, 103, 104, // Faixas DHCP comuns
+      150, 200, 250, 254       // Outros comuns
+  ];
+  
   for (const i of commonIPs) {
     const ip = `${baseIP}.${i}`;
     if (!ips.includes(ip) && ip !== localIP) {
@@ -239,13 +245,21 @@ async function determineMode(forceServer = false) {
   console.log('[Discovery] Determinando modo de operação...');
   
   const config = loadConfig();
-  // Se não definido, assumir CLIENTE por padrão (segurança)
-  const syncMode = config?.syncMode || 'client'; 
+  // Se não definido, assumir NEUTRAL por padrão (ninguém escolhe_nada)
+  const syncMode = config?.syncMode || 'neutral'; 
   
   console.log(`[Discovery] Modo configurado: ${syncMode.toUpperCase()}`);
 
   // ============================================
-  // MODO: CLIENT (Padrão)
+  // MODO: NEUTRAL (Padrão)
+  // ============================================
+  if (syncMode === 'neutral') {
+      console.log('[Discovery] Iniciando em modo NEUTRO (Aguardando escolha do usuário)...');
+      return { mode: 'neutral', server: null };
+  }
+
+  // ============================================
+  // MODO: CLIENT
   // ============================================
   if (syncMode === 'client' || syncMode === 'auto' || config?.forceClientMode) {
      if (syncMode === 'auto') console.log('[Discovery] Modo AUTO deprecado, tratando como CLIENTE...');
@@ -303,7 +317,7 @@ async function determineMode(forceServer = false) {
 
   return { mode: 'client', server: null };
 }
-}
+
 
 export {
   checkServer,

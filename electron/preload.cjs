@@ -106,12 +106,24 @@ contextBridge.exposeInMainWorld('electron', {
   },
 
   // ============================================
+  // Chat API
+  // ============================================
+  chat: {
+    history: (limit) => ipcRenderer.invoke('chat:history', limit),
+    send: (message) => ipcRenderer.invoke('chat:send', message),
+    clear: () => ipcRenderer.invoke('chat:clear'),
+  },
+
+  // ============================================
   // Network Sync API
   // ============================================
   sync: {
-    // Obter modo atual (server/client/standalone)
+    // Obter modo atual (server/client/standalone/neutral)
     getMode: () => ipcRenderer.invoke('get-sync-mode'),
     
+    // NOVO: Definir modo de sincronização (server/client/neutral)
+    setSyncMode: (mode) => ipcRenderer.invoke('sync:set-mode', mode),
+
     // Descobrir servidores na rede local
     discoverServers: () => ipcRenderer.invoke('discover-servers'),
     

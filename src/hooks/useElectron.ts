@@ -49,9 +49,9 @@ declare global {
         } | null>;
         getForceClientMode: () => Promise<{ enabled: boolean }>; // Legacy
         setForceClientMode: (enabled: boolean) => Promise<{ success: boolean; error?: string }>; // Legacy
-        getSyncMode: () => Promise<{ mode: 'auto' | 'server' | 'client' }>;
-        setSyncMode: (mode: 'auto' | 'server' | 'client') => Promise<{ success: boolean; error?: string }>;
-        discoverServers: () => Promise<{ success: boolean; servers?: string[]; error?: string }>;
+        getSyncMode: () => Promise<{ mode: 'auto' | 'server' | 'client' | 'neutral' }>;
+        setSyncMode: (mode: 'auto' | 'server' | 'client' | 'neutral') => Promise<{ success: boolean; error?: string }>;
+
       };
       tunnel: {
         start: (subdomain?: string) => Promise<{ success: boolean; url?: string; subdomain?: string; error?: string }>;

@@ -171,7 +171,7 @@ const ServerStatusSection = () => {
             <button
               onClick={() => setSyncMode('client')}
               className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all ${
-                syncMode === 'client' || syncMode === 'auto'
+                syncMode === 'client'
                   ? 'bg-[#38e07b] text-[#0d1611] shadow-lg' 
                   : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
@@ -181,8 +181,10 @@ const ServerStatusSection = () => {
           </div>
           <p className="text-xs text-gray-500 mt-1">
             {syncMode === 'server' 
-              ? "Força este computador a ser o Servidor Principal. (Requer reinício)" 
-              : "Busca e se conecta a outros servidores na rede. (Requer reinício)"}
+              ? "Força este computador a ser o Servidor Principal. (Alternar não requer reinício)" 
+              : syncMode === 'client'
+                ? "Busca e se conecta a outros servidores na rede. (Alternar não requer reinício)"
+                : "Selecione um modo para iniciar a sincronização."}
           </p>
         </div>
       </div>
