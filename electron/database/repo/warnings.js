@@ -54,10 +54,12 @@ export function addWarning({
     end_time = null,
     duration = null,
     priority = false,
-    order = null
+    order = null,
+    id = null,
+    audio_url = null
 }) {
     const db = getDatabase();
-    const id = generateUUID();
+    const finalId = id || generateUUID();
     
     // Se order não foi fornecido, define como próximo na sequência
     if (order === null) {
@@ -67,11 +69,11 @@ export function addWarning({
     }
     
     const stmt = db.prepare(`
-        INSERT INTO warnings (id, text, background_url, active, media_type, qrcode_url, start_time, end_time, duration, priority, "order", created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        INSERT INTO warnings (id, text, background_url, active, media_type, qrcode_url, start_time, end_time, duration, priority, "order", created_at, audio_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)
     `);
     stmt.run(
-        id, 
+        finalId, 
         text, 
         background_url, 
         active ? 1 : 0, 
@@ -81,10 +83,11 @@ export function addWarning({
         end_time, 
         duration, 
         priority ? 1 : 0, 
-        order
+        order,
+        audio_url
     );
     
-    return getWarningById(id);
+    return getWarningById(finalId);
 }
 
 /**

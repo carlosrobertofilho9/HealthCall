@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import * as localDb from '@/services/localDatabase';
 import { signOut } from '@/features/authentication/services/authService';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
-import { useChat } from '@/contexts/ChatContext';
+
 
 import headerLogo from '@/assets/healthcall-logo-header.png';
 
@@ -21,7 +21,7 @@ const Header: React.FC = () => {
 	const menuRef = useRef<HTMLDivElement>(null);
 	const { isElectron, openDisplayWindow } = useElectron();
 	const { user } = useAuth();
-	const { unreadCount } = useChat();
+
 
 	/**
 	 * Handles user logout
@@ -118,21 +118,7 @@ const Header: React.FC = () => {
 						Display
 					</NavLink>
 				)}
-				<NavLink
-					to="/chat"
-					className={({ isActive }) =>
-						isActive
-							? 'text-primary text-base font-bold leading-normal flex items-center gap-2'
-							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors flex items-center gap-2'
-					}
-				>
-					Chat
-					{unreadCount > 0 && (
-						<span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-							{unreadCount > 99 ? '99+' : unreadCount}
-						</span>
-					)}
-				</NavLink>
+
 				<NavLink
 					to="/dashboard/warnings"
 					className={({ isActive }) =>

@@ -21,9 +21,10 @@ import {
     patientsRepo, 
     warningsRepo, 
     settingsRepo,
-    messagesRepo, // Chat Support
+
 } from '../database/index.js';
 import { getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './audioServer.js';
+import { generateWarningAudio, deleteWarningAudio } from './ttsService.js';
 
 const SYNC_PORT = 3457; // Porta para sincronização
 const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hora
@@ -446,7 +447,22 @@ export function startSyncServer() {
                 return res.status(400).json({ success: false, error: errors.join(', ') });
             }
 
+            // Pass request body directly to support preserving ID during sync
             const warning = warningsRepo.addWarning(req.body);
+
+            // Generate Audio if text exists
+            if (warning.text) {
+                generateWarningAudio(warning.text, warning.id)
+                    .then(audioFilename => {
+                        if (audioFilename) {
+                            warningsRepo.updateWarning(warning.id, { audio_url: audioFilename });
+                            // Notify again with audio so clients get the audio URL
+                            notifyDataUpdate('warnings', 'update', { id: warning.id, audio_url: audioFilename });
+                        }
+                    })
+                    .catch(err => console.error('[SyncServer] TTS generation failed:', err));
+            }
+
             notifyDataUpdate('warnings', 'insert', warning);
             res.json({ success: true, data: warning });
         } catch (error) {
@@ -456,10 +472,25 @@ export function startSyncServer() {
 
     app.put('/api/warnings/:id', (req, res) => {
         try {
+            const currentWarning = warningsRepo.getWarningById(req.params.id);
             const warning = warningsRepo.updateWarning(req.params.id, req.body);
             if (!warning) {
                 return res.status(404).json({ success: false, error: 'Aviso não encontrado' });
             }
+
+            // Regenerate audio if text changed
+            if (req.body.text && currentWarning && req.body.text !== currentWarning.text) {
+                 deleteWarningAudio(req.params.id);
+                 generateWarningAudio(req.body.text, req.params.id)
+                    .then(audioFilename => {
+                        if (audioFilename) {
+                            warningsRepo.updateWarning(warning.id, { audio_url: audioFilename });
+                            notifyDataUpdate('warnings', 'update', { id: warning.id, audio_url: audioFilename });
+                        }
+                    })
+                    .catch(err => console.error('[SyncServer] TTS regeneration failed:', err));
+            }
+
             notifyDataUpdate('warnings', 'update', warning);
             res.json({ success: true, data: warning });
         } catch (error) {
@@ -557,39 +588,7 @@ export function startSyncServer() {
         }
     });
 
-    // ============================================
-    // REST API - Chat
-    // ============================================
-    app.get('/api/chat', (req, res) => {
-        try {
-            const limit = parseInt(req.query.limit) || 50;
-            const messages = messagesRepo.getMessages(limit);
-            res.json({ success: true, data: messages });
-        } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
 
-    app.post('/api/chat', (req, res) => {
-        try {
-            const { content, sender_id, sender_name, type } = req.body;
-            const message = messagesRepo.addMessage({ content, sender_id, sender_name, type });
-            notifyDataUpdate('messages', 'insert', message);
-            res.json({ success: true, data: message });
-        } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
-
-    app.delete('/api/chat', (req, res) => {
-        try {
-            messagesRepo.clearAllMessages();
-            notifyDataUpdate('messages', 'clear');
-            res.json({ success: true });
-        } catch (error) {
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
 
     // ============================================
     // REST API - Destinos
@@ -681,22 +680,13 @@ export function startSyncServer() {
                                     audio_url: w.audio_url ? getWarningAudioUrl(w.audio_url.split('/').pop()) : null
                                 })),
                                 settings: settingsRepo.getAllSettings(),
-                                chat: messagesRepo.getMessages(50) // Sync last 50 messages
+
                             },
                             timestamp: Date.now()
                         }));
                         break;
                     
-                    case 'chat:message':
-                        // Cliente enviou mensagem via Socket (alternativa ao REST)
-                        try {
-                            const { content, sender_id, sender_name, type } = data.payload;
-                            const message = messagesRepo.addMessage({ content, sender_id, sender_name, type });
-                            notifyDataUpdate('messages', 'insert', message);
-                        } catch (err) {
-                            console.error('[SyncServer] Chat error:', err);
-                        }
-                        break;
+
                     
                     default:
                         console.log('[SyncServer] Mensagem desconhecida:', data.type);

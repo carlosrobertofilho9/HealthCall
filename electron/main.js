@@ -17,7 +17,7 @@ import {
     authRepo,
     getUploadsPath,
     cleanupOrphanedTTSAudio,
-    messagesRepo // Import messagesRepo
+
 } from './database/index.js';
 import { determineMode, discoverServers, saveConfig, loadConfig, checkServer } from './services/serverDiscovery.js';
 import { electronSyncClient } from './services/electronSyncClient.js';
@@ -107,6 +107,57 @@ electronSyncClient.on('data-update', (message) => {
   BrowserWindow.getAllWindows().forEach(win => {
     win.webContents.send('data:updated', { table: message.table });
   });
+});
+
+// Listener para sincronizar dados locais para o servidor quando conectar
+electronSyncClient.on('connected', async () => {
+    console.log('[Main] SyncClient connected. Starting background sync...');
+    try {
+        // --- Sync Warnings ---
+        const localWarnings = warningsRepo.listWarnings();
+        const response = await electronSyncClient.getWarnings();
+        
+        if (!response || !response.success) {
+            console.error('[Main] Failed to fetch remote warnings for sync');
+            return;
+        }
+        
+        const remoteWarnings = response.data;
+        const remoteIds = new Set(remoteWarnings.map(w => w.id));
+        
+        const warningsToPush = localWarnings.filter(w => !remoteIds.has(w.id));
+        
+        console.log(`[Main] Found ${warningsToPush.length} local warnings to push to server.`);
+        
+        for (const w of warningsToPush) {
+            try {
+                // Clone warning to modify
+                const warningToUpload = { ...w };
+                
+                // Upload media if needed
+                if (warningToUpload.background_url && warningToUpload.background_url.startsWith('local://')) {
+                    const localPath = warningsRepo.getMediaFilePath(warningToUpload.background_url);
+                    if (fs.existsSync(localPath)) {
+                        const buffer = fs.readFileSync(localPath);
+                        const filename = path.basename(localPath);
+                        const uploadRes = await electronSyncClient.uploadMedia(buffer, filename);
+                        
+                        if (uploadRes.success) {
+                            // Use the path returned by server
+                            warningToUpload.background_url = uploadRes.localPath;
+                        }
+                    }
+                }
+                
+                await electronSyncClient.addWarning(warningToUpload);
+                console.log(`[Main] Pushed warning ${w.id} to server.`);
+            } catch (err) {
+                console.error(`[Main] Failed to push warning ${w.id}:`, err);
+            }
+        }
+    } catch (error) {
+        console.error('[Main] Error during background sync:', error);
+    }
 });
 
 
@@ -880,69 +931,7 @@ ipcMain.handle('db:patient:call', async (event, { id, destination }) => {
   }
 });
 
-// --- CHAT ---
-ipcMain.handle('chat:history', async (event, limit = 50) => {
-  try {
-    // Se estiver conectado a um servidor, tenta buscar dele
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      try {
-        return await electronSyncClient.getChatHistory(limit);
-      } catch (err) {
-        console.warn('[IPC] Falha ao buscar chat remoto, usando local:', err.message);
-      }
-    }
-    // Fallback ou modo server: usa banco local
-    return { success: true, data: messagesRepo.getMessages(limit) };
-  } catch (error) {
-    console.error('[IPC] Error getting chat history:', error);
-    return { success: false, error: error.message };
-  }
-});
 
-ipcMain.handle('chat:send', async (event, { content, sender_name, type }) => {
-  try {
-    const sender_id = syncServerInfo?.id || 'server';
-    
-    // Se cliente conectado, envia via socket/api
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-       // Opcional: Salvar localmente também? Provavelmente sim para histórico offline.
-       // Mas messagesRepo é a fonte da verdade da UI local.
-       // Se salvar local, e depois syncar, pode duplicar?
-       // O ideal é: Envia pro server -> Server transmite de volta -> Salva local no `data-update`.
-       // Mas e se offline? 
-       // Offline: Salva local. Quando conectar, envia pendentes? (Sync complexo).
-       // Por enquanto: Tenta enviar pro server. Se der erro, salva local?
-       
-       try {
-         return await electronSyncClient.sendChatMessage(content, sender_id, sender_name, type);
-       } catch (err) {
-          console.warn('[IPC] Falha ao enviar chat remoto:', err.message);
-          // Fallthrough to local save
-       }
-    }
-
-    const message = messagesRepo.addMessage({ content, sender_id, sender_name, type });
-    broadcastUpdate('messages', 'insert', message);
-    return { success: true, data: message };
-  } catch (error) {
-    console.error('[IPC] Error sending chat message:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('chat:clear', async () => {
-  try {
-    if (syncMode === 'client' && electronSyncClient.isConnected()) {
-      return await electronSyncClient.clearChat();
-    }
-    
-    messagesRepo.clearAllMessages();
-    broadcastUpdate('messages', 'clear');
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
 
 ipcMain.handle('db:patient:remove', async (event, id) => {
   try {

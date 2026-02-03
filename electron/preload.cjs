@@ -105,14 +105,7 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('auth:updateDestination', { userId, destination }),
   },
 
-  // ============================================
-  // Chat API
-  // ============================================
-  chat: {
-    history: (limit) => ipcRenderer.invoke('chat:history', limit),
-    send: (message) => ipcRenderer.invoke('chat:send', message),
-    clear: () => ipcRenderer.invoke('chat:clear'),
-  },
+
 
   // ============================================
   // Network Sync API
