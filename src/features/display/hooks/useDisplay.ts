@@ -27,6 +27,33 @@ export function useDisplay() {
   // Derived active warning
   const activeWarning = activeWarnings.length > 0 ? activeWarnings[warningIndex] : null;
 
+  const isTimeInRange = (startTime?: string, endTime?: string): boolean => {
+    if (!startTime && !endTime) return true;
+    
+    const now = new Date();
+    const currentStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    
+    if (startTime && !endTime) {
+      return currentStr >= startTime;
+    }
+    
+    if (!startTime && endTime) {
+      return currentStr <= endTime;
+    }
+    
+    if (startTime && endTime) {
+      if (startTime <= endTime) {
+        // Normal range: 08:00 - 18:00
+        return currentStr >= startTime && currentStr <= endTime;
+      } else {
+        // Overnight range: 22:00 - 06:00
+        return currentStr >= startTime || currentStr <= endTime;
+      }
+    }
+    
+    return true;
+  };
+
   const fetchData = useCallback(async () => {
     try {
       const [lastCall, history, waiting, warnings] = await Promise.all([
@@ -48,9 +75,11 @@ export function useDisplay() {
       setCallHistory(history);
       setNextPatients(waiting);
       
-      // Update warning state
-      if (warnings && warnings.length > 0) {
-        setActiveWarnings(warnings);
+      // Update warning state with time filtering
+      const currentlyActiveWarnings = warnings?.filter(w => isTimeInRange(w.start_time, w.end_time)) || [];
+
+      if (currentlyActiveWarnings.length > 0) {
+        setActiveWarnings(currentlyActiveWarnings);
         // Do not reset index here to avoid jumping if data refreshes, unless index invalid
         setShouldShowHeadline(false);
       } else {
@@ -95,8 +124,15 @@ export function useDisplay() {
     };
 
     syncClient.on('data_update', handleUpdate);
+    
+    // Periodic refresh for time-based scheduling
+    const interval = setInterval(() => {
+      fetchData();
+    }, 60000); // Every minute
+
     return () => {
       syncClient.off('data_update', handleUpdate);
+      clearInterval(interval);
       if (callingTimeoutRef.current) clearTimeout(callingTimeoutRef.current);
     };
   }, [fetchData, speak]);
