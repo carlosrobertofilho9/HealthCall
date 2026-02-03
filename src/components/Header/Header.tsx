@@ -1,154 +1,181 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import {
-  LayoutDashboard,
-  Monitor,
-  Settings,
-  AlertTriangle,
-  Menu,
-  X,
-  LogOut,
-} from 'lucide-react';
-import { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { Users, Monitor, Megaphone, Settings } from 'lucide-react';
 
-export function Header() {
-  const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { session, signOut } = useAuth();
+import headerLogo from '@/assets/healthcall-logo-header.png';
 
-  const isActive = (path: string) => location.pathname === path;
+export const Header: React.FC = () => {
+	const location = useLocation();
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const menuRef = useRef<HTMLDivElement>(null);
+	const { user, signOut } = useAuth();
+	
+	// Initials state
+	const [initials, setInitials] = useState<string>('');
+	const [clinicName, setClinicName] = useState<string>('Clínica');
 
-  const navigation = [
-    { name: 'Painel', href: '/', icon: LayoutDashboard },
-    { name: 'Exibição', href: '/display', icon: Monitor },
-    { name: 'Avisos', href: '/warnings', icon: AlertTriangle },
-    { name: 'Configurações', href: '/settings', icon: Settings },
-  ];
+	const toggleMenu = () => {
+		setIsMenuOpen(!isMenuOpen);
+	};
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
+	const handleLogout = async () => {
+		try {
+			await signOut();
+			setIsMenuOpen(false);
+		} catch (error) {
+			console.error('Logout failed', error);
+		}
+	};
 
-  return (
-    <header className="bg-background border-b sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="bg-primary/10 p-2 rounded-lg">
-              <img
-                src="/healthcall-logo-icon.png"
-                alt="HealthCall"
-                className="h-6 w-6"
-              />
-            </div>
-            <span className="font-bold text-xl text-primary hidden md:block">
-              HealthCall
-            </span>
-          </Link>
+	// Close menu when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+				setIsMenuOpen(false);
+			}
+		};
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link key={item.name} to={item.href}>
-                  <Button
-                    variant={isActive(item.href) ? 'secondary' : 'ghost'}
-                    className="gap-2"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.name}
-                  </Button>
-                </Link>
-              );
-            })}
-          </nav>
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, [menuRef]);
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2 mr-2">
-              <ConnectionStatus />
-              <ThemeToggle />
-            </div>
+	// Load settings for initials
+	useEffect(() => {
+		const loadSettings = () => {
+			try {
+				const savedSettings = localStorage.getItem('clinic_settings');
+				if (savedSettings) {
+					const { name } = JSON.parse(savedSettings);
+					setClinicName(name || 'Clínica');
+					
+					const parts = name.split(' ').filter(Boolean);
+					if (parts.length >= 2) {
+						setInitials((parts[0][0] + parts[parts.length - 1][0]).toUpperCase());
+					} else if (parts.length === 1) {
+						setInitials(parts[0].slice(0, 2).toUpperCase());
+					} else {
+						setInitials('CL');
+					}
+				} else {
+					setInitials('CL');
+				}
+			} catch (error) {
+				console.error('Error loading settings:', error);
+				setInitials('CL');
+			}
+		};
+		loadSettings();
+	}, []);
 
-            {session && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleSignOut}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Sair</span>
-              </Button>
-            )}
+	// Update initials when user changes (optional, if user name prevails over clinic settings)
+	useEffect(() => {
+		if (user?.name) {
+			// If we want to show user initials instead of clinic
+			// For now keeping legacy behavior which seemed to load from local settings
+		}
+	}, [user]);
 
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
+	return (
+		<header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#264532] px-10 py-4">
+			<div className="flex items-center gap-4 text-white">
+				<Link to="/" className="h-8 w-auto">
+					<img src={headerLogo} alt="HealthCall Logo" className="h-full w-auto object-contain" />
+				</Link>
+				<Link to="/">
+					<h1 className="text-white text-xl font-bold leading-tight tracking-[-0.015em]">HealthCall</h1>
+				</Link>
+			</div>
+			<nav className="hidden md:flex flex-1 justify-center gap-8">
+				<NavLink
+					to="/"
+					end
+					className={({ isActive }) =>
+						isActive
+							? 'text-primary text-base font-bold leading-normal flex items-center gap-2'
+							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors flex items-center gap-2'
+					}
+				>
+					<Users size={20} />
+					Fila
+				</NavLink>
+				
+				<NavLink
+					to="/display"
+					className={({ isActive }) =>
+						isActive
+							? 'text-primary text-base font-bold leading-normal flex items-center gap-2'
+							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors flex items-center gap-2'
+					}
+				>
+					<Monitor size={20} />
+					Painel
+				</NavLink>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden border-t p-4 space-y-4 bg-background">
-          <nav className="flex flex-col gap-2">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Button
-                    variant={isActive(item.href) ? 'secondary' : 'ghost'}
-                    className="w-full justify-start gap-2"
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.name}
-                  </Button>
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="flex flex-col gap-2 pt-4 border-t">
-            <div className="flex items-center justify-between px-2">
-              <span className="text-sm text-muted-foreground">Tema</span>
-              <ThemeToggle />
-            </div>
-            <div className="flex items-center justify-between px-2">
-              <span className="text-sm text-muted-foreground">Status</span>
-              <ConnectionStatus />
-            </div>
-            {session && (
-              <Button 
-                variant="ghost" 
-                onClick={handleSignOut}
-                className="w-full justify-start text-red-600 gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Sair
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-    </header>
-  );
-}
+				<NavLink
+					to="/warnings"
+					className={({ isActive }) =>
+						isActive
+							? 'text-primary text-base font-bold leading-normal flex items-center gap-2'
+							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors flex items-center gap-2'
+					}
+				>
+					<Megaphone size={20} />
+					Avisos
+				</NavLink>
+				<NavLink
+					to="/settings"
+					className={({ isActive }) =>
+						isActive
+							? 'text-primary text-base font-bold leading-normal flex items-center gap-2'
+							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors flex items-center gap-2'
+					}
+				>
+					<Settings size={20} />
+					Ajustes
+				</NavLink>
+			</nav>
+			<div className="flex items-center gap-4">
+				{/* Status de conexão de rede */}
+				<ConnectionStatus />
+				
+				<div className="relative" ref={menuRef}>
+					<button onClick={toggleMenu} className="focus:outline-none">
+						<div
+							className="aspect-square rounded-full size-12 border-2 border-primary bg-[#325a42] text-white flex items-center justify-center font-bold"
+							aria-label="Iniciais da clínica"
+							role="img"
+						>
+							{initials}
+						</div>
+					</button>
+					{isMenuOpen && (
+						<div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
+							<div className="px-4 py-2 text-sm text-gray-400 border-b border-gray-700">
+								{user?.email || clinicName}
+							</div>
+							<Link
+								to="/settings"
+								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
+								onClick={() => setIsMenuOpen(false)}
+							>
+								<span className="material-symbols-outlined mr-2">settings</span>
+								Configurações
+							</Link>
+							<button
+								onClick={handleLogout}
+								className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
+							>
+								<span className="material-symbols-outlined mr-2">logout</span>
+								Sair
+							</button>
+						</div>
+					)}
+				</div>
+			</div>
+		</header>
+	);
+};

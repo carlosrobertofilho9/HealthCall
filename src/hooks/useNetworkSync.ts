@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { syncClient, type DataUpdateEvent, type ServerStatus } from '@/services/networkSyncClient';
 import type { Patient, Warning, CallRecord } from '@/types';
 import { toast } from 'sonner';
+import { SUPABASE_TABLES } from '@/constants';
 
 export interface NetworkSyncState {
   isConnected: boolean;
@@ -60,12 +61,12 @@ export function useNetworkSync(): NetworkSyncState {
   }, []);
 
   const handleDataUpdate = useCallback((event: DataUpdateEvent) => {
-    if (event.table === 'patients') {
+    if (event.table === SUPABASE_TABLES.PATIENTS) {
         syncClient.getPatients().then(setPatients).catch(console.error);
         syncClient.getLastCall().then(setLastCall).catch(console.error);
-    } else if (event.table === 'warnings') {
+    } else if (event.table === SUPABASE_TABLES.WARNINGS) {
         syncClient.getActiveWarnings().then(setWarnings).catch(console.error);
-    } else if (event.table === 'call_history') {
+    } else if (event.table === SUPABASE_TABLES.CALLS) {
         syncClient.getCallHistory().then(setCallHistory).catch(console.error);
     } else {
         loadAllData();

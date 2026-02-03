@@ -29,3 +29,15 @@ export const STORAGE_KEYS = {
  * O número máximo de registros a serem mantidos no histórico de chamadas.
  */
 export const CALL_HISTORY_LIMIT = 20;
+
+/**
+ * Tabelas do Banco de Dados Supabase.
+ * Centraliza os nomes das tabelas para evitar erros de digitação e facilitar refatoração.
+ */
+export const SUPABASE_TABLES = {
+  PATIENTS: 'patients',
+  WARNINGS: 'warnings',
+  SETTINGS: 'settings',
+  CALLS: 'calls',
+  MEDIA: 'media', // storage bucket
+} as const;

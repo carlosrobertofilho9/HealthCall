@@ -5,6 +5,7 @@
 
 import { supabase } from '@/lib/supabaseClient';
 import { Patient, Warning, CallRecord } from '@/types';
+import { SUPABASE_TABLES } from '@/constants';
 
 // ============================================
 // PATIENTS
@@ -12,7 +13,7 @@ import { Patient, Warning, CallRecord } from '@/types';
 
 export async function getPatients(): Promise<Patient[]> {
   const { data, error } = await supabase
-    .from('patients')
+    .from(SUPABASE_TABLES.PATIENTS)
     .select('*')
     .order('created_at', { ascending: true });
 
@@ -22,7 +23,7 @@ export async function getPatients(): Promise<Patient[]> {
 
 export async function getPatientById(id: string): Promise<Patient | null> {
   const { data, error } = await supabase
-    .from('patients')
+    .from(SUPABASE_TABLES.PATIENTS)
     .select('*')
     .eq('id', id)
     .single();
@@ -33,7 +34,7 @@ export async function getPatientById(id: string): Promise<Patient | null> {
 
 export async function addPatient(name: string, destination: string): Promise<Patient | null> {
   const { data, error } = await supabase
-    .from('patients')
+    .from(SUPABASE_TABLES.PATIENTS)
     .insert([{ name, destination, status: 'Aguardando', callCount: 0 }])
     .select()
     .single();
@@ -59,13 +60,13 @@ export async function addPatientByNumber(destination: string): Promise<Patient |
 
 export async function updatePatient(patient: Patient): Promise<Patient | null> {
   const { data, error } = await supabase
-    .from('patients')
+    .from(SUPABASE_TABLES.PATIENTS)
     .update({ 
       name: patient.name, 
       destination: patient.destination, 
       status: patient.status, 
       callCount: patient.callCount,
-      audio_url: patient.audio_url 
+      // audio_url: patient.audio_url // Column doesn't exist in DB
     })
     .eq('id', patient.id)
     .select()
@@ -81,27 +82,25 @@ export async function callPatient(id: string, destination: string): Promise<Pati
   const nextCount = (current?.callCount || 0) + 1;
 
   const { data, error } = await supabase
-    .from('patients')
+    .from(SUPABASE_TABLES.PATIENTS)
     .update({ 
       status: 'Chamado', 
       callCount: nextCount,
       destination: destination, // Update destination if changed during call
-      lastCalled: true // This field might not exist in DB schema, check types. Assuming logic handles it.
+      // lastCalled: true // Column doesn't exist in DB
     })
     .eq('id', id)
     .select()
     .single();
 
-  // Reset other patients' lastCalled status
-  await supabase.from('patients').update({ lastCalled: false }).neq('id', id);
+  // Reset logic for lastCalled is no longer needed as we use 'calls' table for history
+  // await supabase.from('patients').update({ lastCalled: false }).neq('id', id);
 
   // Log call record
   if (data) {
-    await supabase.from('call_history').insert({
+    await supabase.from('calls').insert({
       patient_id: id,
-      name: data.name,
-      destination: destination,
-      called_at: new Date().toISOString()
+      location: destination
     });
   }
 
@@ -121,7 +120,7 @@ export async function clearQueue(): Promise<boolean> {
 
 export async function getWaitingPatients(): Promise<Patient[]> {
   const { data, error } = await supabase
-    .from('patients')
+    .from(SUPABASE_TABLES.PATIENTS)
     .select('*')
     .eq('status', 'Aguardando')
     .order('created_at', { ascending: true });
@@ -131,31 +130,51 @@ export async function getWaitingPatients(): Promise<Patient[]> {
 }
 
 export async function getLastCalledPatient(): Promise<Patient | null> {
-  const { data, error } = await supabase
-    .from('patients')
+  // Get most recent call from 'calls' table
+  const { data: lastCall, error: callError } = await supabase
+    .from(SUPABASE_TABLES.CALLS)
+    .select('patient_id')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (callError || !lastCall) return null;
+
+  // Get the patient details
+  const { data: patient, error: patientError } = await supabase
+    .from(SUPABASE_TABLES.PATIENTS)
     .select('*')
-    .eq('lastCalled', true)
+    .eq('id', lastCall.patient_id)
     .single();
 
-  if (error && error.code !== 'PGRST116') throw error; // Ignore not found
-  return data;
+  if (patientError) return null;
+  return { ...patient, lastCalled: true };
 }
 
 export async function getCallHistory(limit = 10): Promise<CallRecord[]> {
   const { data, error } = await supabase
-    .from('call_history')
-    .select('*')
-    .order('called_at', { ascending: false })
+    .from(SUPABASE_TABLES.CALLS)
+    .select(`
+      id,
+      location,
+      created_at,
+      patients (
+        id,
+        name,
+        callCount
+      )
+    `)
+    .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) throw error;
-  // Map DB fields to CallRecord type if necessary
-  return data?.map(d => ({
+  
+  return data?.map((d: any) => ({
     id: d.id,
-    name: d.name,
-    destination: d.destination,
-    callCount: 1, // History might not track count at that time
-    calledAt: new Date(d.called_at).getTime()
+    name: d.patients?.name || 'Paciente Removido',
+    destination: d.location || '',
+    callCount: d.patients?.callCount || 0,
+    calledAt: new Date(d.created_at).getTime()
   })) || [];
 }
 
@@ -182,7 +201,7 @@ export async function getNextFichaNumber(): Promise<number> {
 
 export async function getWarnings(): Promise<Warning[]> {
   const { data, error } = await supabase
-    .from('warnings')
+    .from(SUPABASE_TABLES.WARNINGS)
     .select('*')
     .order('order', { ascending: true });
 
@@ -192,7 +211,7 @@ export async function getWarnings(): Promise<Warning[]> {
 
 export async function getActiveWarnings(): Promise<Warning[]> {
   const { data, error } = await supabase
-    .from('warnings')
+    .from(SUPABASE_TABLES.WARNINGS)
     .select('*')
     .eq('active', true)
     .order('order', { ascending: true });
@@ -203,7 +222,7 @@ export async function getActiveWarnings(): Promise<Warning[]> {
 
 export async function getWarningById(id: string): Promise<Warning | null> {
   const { data, error } = await supabase
-    .from('warnings')
+    .from(SUPABASE_TABLES.WARNINGS)
     .select('*')
     .eq('id', id)
     .single();
@@ -214,7 +233,7 @@ export async function getWarningById(id: string): Promise<Warning | null> {
 
 export async function addWarning(warning: Omit<Warning, 'id' | 'created_at'>): Promise<Warning | null> {
   const { data, error } = await supabase
-    .from('warnings')
+    .from(SUPABASE_TABLES.WARNINGS)
     .insert([warning])
     .select()
     .single();
@@ -225,7 +244,7 @@ export async function addWarning(warning: Omit<Warning, 'id' | 'created_at'>): P
 
 export async function updateWarning(id: string, updates: Partial<Warning>): Promise<Warning | null> {
   const { data, error } = await supabase
-    .from('warnings')
+    .from(SUPABASE_TABLES.WARNINGS)
     .update(updates)
     .eq('id', id)
     .select()
@@ -257,13 +276,13 @@ export async function reorderWarnings(orderedIds: string[]): Promise<Warning[]> 
 export async function saveWarningMedia(file: File): Promise<string> {
   const fileName = `${Date.now()}-${file.name}`;
   const { data, error } = await supabase.storage
-    .from('media')
+    .from(SUPABASE_TABLES.MEDIA)
     .upload(fileName, file);
 
   if (error) throw error;
   
   const { data: { publicUrl } } = supabase.storage
-    .from('media')
+    .from(SUPABASE_TABLES.MEDIA)
     .getPublicUrl(fileName);
     
   return publicUrl;
@@ -280,7 +299,7 @@ export async function getWarningMediaPath(localUrl: string): Promise<string> {
 
 export async function getSetting(key: string): Promise<string | null> {
   const { data, error } = await supabase
-    .from('settings')
+    .from(SUPABASE_TABLES.SETTINGS)
     .select('value')
     .eq('key', key)
     .single();
@@ -303,7 +322,7 @@ export async function getAllSettings(): Promise<Record<string, string>> {
 export async function setSetting(key: string, value: string | boolean | number, description?: string): Promise<void> {
   const stringValue = String(value);
   const { error } = await supabase
-    .from('settings')
+    .from(SUPABASE_TABLES.SETTINGS)
     .upsert({ key, value: stringValue, description }, { onConflict: 'key' });
 
   if (error) throw error;
@@ -362,7 +381,12 @@ export type DataUpdateCallback = (data: { table: string }) => void;
 
 export function onDataUpdate(callback: DataUpdateCallback): void {
   // Subscribe to multiple channels
-  const channels = ['patients', 'warnings', 'settings'].map(table => {
+  const channels = [
+    SUPABASE_TABLES.PATIENTS,
+    SUPABASE_TABLES.WARNINGS,
+    SUPABASE_TABLES.SETTINGS,
+    SUPABASE_TABLES.CALLS
+  ].map(table => {
     return supabase
       .channel(`public:${table}`)
       .on('postgres_changes', { event: '*', schema: 'public', table }, () => {
