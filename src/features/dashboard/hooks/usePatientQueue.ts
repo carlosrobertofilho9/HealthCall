@@ -56,19 +56,21 @@ export function usePatientQueue(options: UsePatientQueueOptions = {}) {
     }
   };
 
-  const callPatient = async (patient: Patient) => {
+  const callPatient = async (id: string, destination: string) => {
     setLoading(true);
     try {
-      const destination = patient.destination || profile?.default_destination || options.defaultDestination || 'Consultório';
+      const patient = patients.find(p => p.id === id);
+      const finalDestination = destination || profile?.default_destination || options.defaultDestination || 'Consultório';
       
       // Chama o paciente (atualiza status no banco)
-      await callPatientSync(patient.id, destination);
+      await callPatientSync(id, finalDestination);
       
       // Anuncia por voz
-      const message = `Por favor, ${patient.name}, comparecer ao ${destination}.`;
+      const patientName = patient?.name || 'Paciente';
+      const message = `Por favor, ${patientName}, comparecer ao ${finalDestination}.`;
       speak(message);
       
-      toast.success(`Chamando ${patient.name}`);
+      toast.success(`Chamando ${patientName}`);
     } catch (error) {
       console.error(error);
       toast.error('Erro ao chamar paciente');
