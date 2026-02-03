@@ -12,6 +12,7 @@ interface WarningOverlayProps {
 
 export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = new Date(), onClose, isPreview = false, onVideoEnd }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
     const hasEndedRef = useRef(false);
     const warningIdRef = useRef<string | null>(null);
     
@@ -22,7 +23,7 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
     const getYoutubeEmbedUrl = (url: string) => {
         try {
             const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-            return `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&loop=0&showinfo=0&modestbranding=1`;
+            return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&loop=0&showinfo=0&modestbranding=1`;
         } catch {
             return '';
         }
@@ -37,6 +38,15 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
         }
     }, [onVideoEnd, warning.id, isPreview]);
 
+    // Handle audio end for images
+    const handleAudioEnded = useCallback(() => {
+        if (!hasEndedRef.current && onVideoEnd && !isPreview) {
+            hasEndedRef.current = true;
+            console.log('[WarningOverlay] Áudio terminou - notificando callback');
+            onVideoEnd();
+        }
+    }, [onVideoEnd, isPreview]);
+
     // Reset the ended flag when warning changes
     useEffect(() => {
         if (warningIdRef.current !== warning.id) {
@@ -49,6 +59,17 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
     return (
       <div className={`bg-gray-900 text-white relative flex flex-col overflow-hidden ${isPreview ? 'h-full w-full rounded-lg' : 'min-h-screen'}`} style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
         
+        {/* Invisible Audio Player for TTS or other audio */}
+        {warning.audio_url && (
+             <audio 
+                 ref={audioRef}
+                 src={warning.audio_url}
+                 autoPlay
+                 onEnded={handleAudioEnded}
+                 onError={(e) => console.error('[WarningOverlay] Erro ao carregar áudio:', e)}
+             />
+        )}
+
         {/* Background Media */}
         <div className="absolute inset-0 z-0 bg-black">
             {isImage && warning.background_url && (

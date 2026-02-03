@@ -106,7 +106,18 @@ export const NewsHeadline: React.FC<NewsHeadlineProps> = ({ time, onCycleComplet
 
   const fetchNews = async () => {
     try {
-      const rssUrl = await localDb.getSetting('rss_url') || 'https://g1.globo.com/dynamo/saude/rss2.xml';
+      const rssUrl = await localDb.getSetting('rss_url');
+      
+      if (!rssUrl) {
+         console.log('[NewsHeadline] RSS URL not configured');
+         return;
+      }
+
+      // Explicitly block G1 RSS to prevent CORS errors and comply with user request
+      if (rssUrl.includes('globo.com')) {
+          console.log('[NewsHeadline] G1 RSS is disabled by project policy. Please configure a different RSS feed.');
+          return;
+      }
 
       const items = await localDb.fetchRssFeed(rssUrl);
 

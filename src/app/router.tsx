@@ -12,6 +12,7 @@ import SettingsPage from '@/features/settings/routes/SettingsPage';
 import LoginPage from '@/features/authentication/routes/LoginPage';
 
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import ErrorPage from '@/components/ErrorPage';
 
 
 /**
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
 				</SettingsProvider>
 			</NetworkSyncProvider>
 		),
+		errorElement: <ErrorPage />,
 		children: [
 			// Layout principal com rotas protegidas
 			{
@@ -41,7 +43,7 @@ export const router = createBrowserRouter([
 				),
 				children: [
 					{ index: true, element: <HomePage /> },
-					{ path: 'dashboard/warnings', element: <WarningsPage /> },
+					{ path: 'warnings', element: <WarningsPage /> },
 					{ path: 'settings', element: <SettingsPage /> },
 				],
 			},

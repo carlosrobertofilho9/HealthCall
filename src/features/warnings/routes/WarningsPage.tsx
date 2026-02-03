@@ -27,12 +27,14 @@ const WarningsPage: React.FC = () => {
   const {
     warnings,
     loading,
+    isGeneratingAudio,
     addWarning,
     updateWarning,
     removeWarning,
     toggleWarningActive,
     reorderWarnings,
     saveWarningMedia,
+    regenerateAudio,
   } = useWarnings();
 
   const [newText, setNewText] = useState('');
@@ -185,8 +187,8 @@ const WarningsPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const success = await removeWarning(id);
-      if (success && editingId === id) resetForm();
+      await removeWarning(id);
+      if (editingId === id) resetForm();
     } catch (error) {
       console.error('Error deleting warning:', error);
     }
@@ -549,11 +551,13 @@ const WarningsPage: React.FC = () => {
                         key={warning.id}
                         warning={warning}
                         isEditing={editingId === warning.id}
+                        isGeneratingAudio={isGeneratingAudio}
                         onToggleActive={toggleActive}
                         onTogglePriority={togglePriority}
                         onPreview={handlePreview}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
+                        onGenerateAudio={regenerateAudio}
                       />
                     ))}
                   </div>

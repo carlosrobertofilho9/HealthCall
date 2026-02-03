@@ -6,21 +6,25 @@ import { CSS } from '@dnd-kit/utilities';
 interface SortableWarningItemProps {
   warning: Warning;
   isEditing: boolean;
+  isGeneratingAudio?: boolean;
   onToggleActive: (warning: Warning) => void;
   onTogglePriority: (warning: Warning) => void;
   onPreview: (warning: Warning) => void;
   onEdit: (warning: Warning) => void;
   onDelete: (id: string) => void;
+  onGenerateAudio: (warning: Warning) => void;
 }
 
 export const SortableWarningItem: React.FC<SortableWarningItemProps> = ({
   warning,
   isEditing,
+  isGeneratingAudio = false,
   onToggleActive,
   onTogglePriority,
   onPreview,
   onEdit,
   onDelete,
+  onGenerateAudio,
 }) => {
   const {
     attributes,
@@ -80,16 +84,31 @@ export const SortableWarningItem: React.FC<SortableWarningItemProps> = ({
               </span>
             )}
           </div>
-          {warning.background_url && (
-            <p className="text-[#96c5a9] text-sm flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm">
-                {warning.media_type === 'video' || warning.media_type === 'youtube'
-                  ? 'videocam'
-                  : 'image'}
-              </span>
-              {warning.media_type === 'youtube' ? 'YouTube' : warning.media_type === 'video' ? 'Vídeo' : 'Imagem'}
-            </p>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {warning.background_url && (
+              <p className="text-[#96c5a9] text-sm flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">
+                  {warning.media_type === 'video' || warning.media_type === 'youtube'
+                    ? 'videocam'
+                    : 'image'}
+                </span>
+                {warning.media_type === 'youtube' ? 'YouTube' : warning.media_type === 'video' ? 'Vídeo' : 'Imagem'}
+              </p>
+            )}
+            {warning.audio_url ? (
+               <p className="text-green-400 text-sm flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">volume_up</span>
+                  Áudio Gerado
+               </p>
+            ) : (
+                warning.text && (
+                    <p className="text-yellow-400/80 text-sm flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">volume_off</span>
+                        Sem Áudio
+                    </p>
+                )
+            )}
+          </div>
           <p className="text-xs text-gray-500 mt-1">
             Criado em: {new Date(warning.created_at).toLocaleDateString()}
           </p>
@@ -97,6 +116,23 @@ export const SortableWarningItem: React.FC<SortableWarningItemProps> = ({
       </div>
 
       <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+         {/* Generate Audio Button */}
+         {warning.text && (
+            <button
+                onClick={() => onGenerateAudio(warning)}
+                disabled={isGeneratingAudio}
+                className={`flex items-center justify-center rounded-full h-10 w-10 ${
+                    warning.audio_url ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                } transition-colors disabled:opacity-50`}
+                title="Gerar/Regenerar Áudio"
+                aria-label="Gerar Áudio"
+            >
+                <span className={`material-symbols-outlined text-base ${isGeneratingAudio ? 'animate-spin' : ''}`}>
+                    {isGeneratingAudio ? 'refresh' : 'record_voice_over'}
+                </span>
+            </button>
+         )}
+
         <button
           onClick={() => onTogglePriority(warning)}
           className={`flex items-center justify-center rounded-full h-10 w-10 ${
@@ -161,3 +197,4 @@ export const SortableWarningItem: React.FC<SortableWarningItemProps> = ({
     </div>
   );
 };
+

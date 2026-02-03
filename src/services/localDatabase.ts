@@ -302,9 +302,9 @@ export async function getSetting(key: string): Promise<string | null> {
     .from(SUPABASE_TABLES.SETTINGS)
     .select('value')
     .eq('key', key)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') throw error;
+  if (error) throw error;
   return data?.value || null;
 }
 
