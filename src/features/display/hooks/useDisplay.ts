@@ -39,8 +39,12 @@ export function useDisplay() {
   
   const [audioActivated, setAudioActivated] = useState(false);
   const [isActivatingAudio, setIsActivatingAudio] = useState(false);
+  
+  // Refs para controle de chamadas
   const lastCalledRef = useRef<{ id: string; callCount: number } | null>(null);
+  const lastProcessedCallRef = useRef<{ id: string; callCount: number }>({ id: '', callCount: 0 });
   const isPlayingRef = useRef(false); // Indicates if a PATIENT CALL is playing
+  
   const newsCycleCompletedRef = useRef<boolean>(false);
   const [shouldShowHeadline, setShouldShowHeadline] = useState(false);
 
@@ -377,81 +381,84 @@ export function useDisplay() {
     }
   }, [nextPatients, isElectron, updateBadge]);
 
-  useEffect(() => {
-    if (!audioActivated || !isOnDisplayPage) return;
+  // Função isolada para tocar áudio e atualizar estado
+  const playBellAndSpeak = useCallback(async (patient: Patient) => {
+    if (!isOnDisplayPage) return;
+    
+    cancelTTS();
+    setActiveWarning(null); 
+    setLastActivityTime(Date.now());
+    newsCycleCompletedRef.current = false;
 
-    const playBellAndSpeak = async (patient: Patient) => {
-      if (!isOnDisplayPage) return;
+    if (isPlayingRef.current) return;
+
+    const isDuplicate =
+      patient.id === lastCalledRef.current?.id &&
+      patient.callCount === lastCalledRef.current?.callCount;
+
+    if (isDuplicate) return;
+
+    isPlayingRef.current = true;
+    setIsCalling(true);
+    
+    await resumeAudioContext();
+
+    try {
+      const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
+      const patientWithAudio = patient as Patient & { audio_url?: string };
       
-      cancelTTS();
-      setActiveWarning(null); 
-      setLastActivityTime(Date.now());
-      newsCycleCompletedRef.current = false;
+      const bell = new Audio('/bell.mp3');
+      bell.volume = 1.0;
 
-      if (isPlayingRef.current) return;
+      await bell.play();
 
-      const isDuplicate =
-        patient.id === lastCalledRef.current?.id &&
-        patient.callCount === lastCalledRef.current?.callCount;
+      await new Promise<void>((resolve) => {
+        const cleanup = () => {
+          bell.pause();
+          bell.onended = null;
+          bell.onerror = null;
+          bell.src = '';
+        };
+        bell.onended = () => { cleanup(); resolve(); };
+        bell.onerror = () => { cleanup(); resolve(); };
+      });
 
-      if (isDuplicate) return;
-
-      isPlayingRef.current = true;
-      setIsCalling(true);
-      
-      await resumeAudioContext();
-
-      try {
-        const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
-        const patientWithAudio = patient as Patient & { audio_url?: string };
-        
-        const bell = new Audio('/bell.mp3');
-        bell.volume = 1.0;
-
-        await bell.play();
-
-        await new Promise<void>((resolve) => {
-          const cleanup = () => {
-            bell.pause();
-            bell.onended = null;
-            bell.onerror = null;
-            bell.src = '';
-          };
-          bell.onended = () => { cleanup(); resolve(); };
-          bell.onerror = () => { cleanup(); resolve(); };
+      if (patientWithAudio.audio_url) {
+        await new Promise<void>((resolve, reject) => {
+          const audio = new Audio(patientWithAudio.audio_url);
+          audio.volume = 1.0;
+          audio.onended = () => resolve();
+          audio.onerror = (e) => reject(e);
+          audio.play().catch(reject);
         });
-
-        if (patientWithAudio.audio_url) {
-          await new Promise<void>((resolve, reject) => {
-            const audio = new Audio(patientWithAudio.audio_url);
-            audio.volume = 1.0;
-            audio.onended = () => resolve();
-            audio.onerror = (e) => reject(e);
-            audio.play().catch(reject);
-          });
-        } else {
-          await preloadTTS(textToSpeak).catch(() => null);
-          await speak(textToSpeak);
-        }
-
-        lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
-        
-        if (isElectron) {
-          await sendNotification(
-            'Nova Chamada - HealthCall',
-            `Chamando ${patient.name} para ${patient.destination}`,
-            { patientId: patient.id, destination: patient.destination }
-          );
-        }
-      } catch (error) {
-        console.error('[Audio] Erro na chamada:', error);
-        toast.error('Erro ao reproduzir áudio da chamada');
-      } finally {
-        isPlayingRef.current = false;
-        setTimeout(() => setIsCalling(false), 500);
-        setLastActivityTime(Date.now());
+      } else {
+        await preloadTTS(textToSpeak).catch(() => null);
+        await speak(textToSpeak);
       }
-    };
+
+      lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
+      
+      if (isElectron) {
+        await sendNotification(
+          'Nova Chamada - HealthCall',
+          `Chamando ${patient.name} para ${patient.destination}`,
+          { patientId: patient.id, destination: patient.destination }
+        );
+      }
+    } catch (error) {
+      console.error('[Audio] Erro na chamada:', error);
+      toast.error('Erro ao reproduzir áudio da chamada');
+    } finally {
+      isPlayingRef.current = false;
+      setTimeout(() => setIsCalling(false), 500);
+      setLastActivityTime(Date.now());
+    }
+  }, [isOnDisplayPage, resumeAudioContext, cancelTTS, speak, preloadTTS, isElectron, sendNotification]);
+
+  useEffect(() => {
+    // IMPORTANTE: Só executa a lógica de dados/listeners quando está na página de display
+    // e o áudio está ativado (ou seja, o usuário interagiu)
+    if (!audioActivated || !isOnDisplayPage) return;
 
     const fetchDisplayData = async () => {
       setLastActivityTime(Date.now());
@@ -480,6 +487,7 @@ export function useDisplay() {
       }
     };
 
+    // Initial fetch
     fetchDisplayData();
 
     const refetchInterval = setInterval(fetchDisplayData, 60000);
@@ -487,8 +495,6 @@ export function useDisplay() {
       if (document.visibilityState === 'visible') fetchDisplayData();
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    const lastProcessedCallRef = { id: '', callCount: 0 };
 
     // ============================================
     // UNIFIED DATA LISTENER
@@ -504,12 +510,11 @@ export function useDisplay() {
         if (lastCall) {
           const patient = lastCall.patient;
           const isNewCall = 
-            patient.id !== lastProcessedCallRef.id ||
-            patient.callCount !== lastProcessedCallRef.callCount;
+            patient.id !== lastProcessedCallRef.current.id ||
+            patient.callCount !== lastProcessedCallRef.current.callCount;
           
           if (isNewCall) {
-            lastProcessedCallRef.id = patient.id;
-            lastProcessedCallRef.callCount = patient.callCount;
+            lastProcessedCallRef.current = { id: patient.id, callCount: patient.callCount };
             playBellAndSpeak({
               ...patient,
               destination: lastCall.location,
@@ -542,7 +547,7 @@ export function useDisplay() {
           syncClient.off('data_update', handleUnifiedDataUpdate);
       }
     };
-  }, [audioActivated, isOnDisplayPage, isElectron]);
+  }, [audioActivated, isOnDisplayPage, isElectron, playBellAndSpeak]);
 
   return {
     calledPatient,
