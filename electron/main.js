@@ -7,7 +7,7 @@ import { initializeTTS, generatePatientAudio, deletePatientAudio, generateWarnin
 import { startAudioServer, getMediaUrl, getWarningAudioUrl, getPatientAudioUrl } from './services/audioServer.js';
 import { fetchRssFeed } from './services/rssService.js';
 import { autoUpdater, configureAutoUpdater, registerAutoUpdaterEvents } from './services/autoUpdateService.js';
-import { startSyncServer, stopSyncServer, getServerInfo, notifyDataUpdate } from './services/syncServer.js';
+import { startSyncServer, stopSyncServer, getServerInfo, notifyDataUpdate } from './services/syncServer/index.js';
 import { 
     initDatabase, 
     closeDatabase,
@@ -744,7 +744,7 @@ function broadcastUpdate(table, action = 'update', data = null) {
 
 // Escutar eventos do Sync Server (REST API) e atualizar UI local
 // Isso garante que quando um cliente chama a API, o servidor atualize sua tela
-import { syncEvents } from './services/syncServer.js';
+import { syncEvents } from './services/syncServer/index.js';
 
 syncEvents.on('server-update', (message) => {
   // Apenas atualiza janelas locais, pois o broadcast já foi feito pelo notifyDataUpdate
