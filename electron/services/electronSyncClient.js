@@ -199,7 +199,19 @@ class ElectronSyncClient extends EventEmitter {
    */
   async _request(method, endpoint, body = null) {
     return new Promise((resolve, reject) => {
-      const url = new URL(endpoint, this.serverUrl);
+      if (!this.serverUrl) {
+         // Prevent Invalid URL crash (constructor requires valid base)
+         // Assuming endpoint is relative path like /api/...
+         console.warn('[ElectronSyncClient] Request blocked: serverUrl not set.');
+         return reject(new Error('Servidor não conectado'));
+      }
+
+      let url;
+      try {
+        url = new URL(endpoint, this.serverUrl);
+      } catch (e) {
+        return reject(e);
+      }
       
       const options = {
         method,
