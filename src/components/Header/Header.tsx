@@ -1,188 +1,194 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link, NavLink } from 'react-router-dom';
-import { useElectron } from '@/hooks/useElectron';
+import { Link, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import {
+  LayoutDashboard,
+  Monitor,
+  Settings,
+  AlertTriangle,
+  Menu,
+  X,
+  LogOut,
+  User,
+} from 'lucide-react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import * as localDb from '@/services/localDatabase';
-import { signOut } from '@/features/authentication/services/authService';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+export function Header() {
+  const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { session, signOut } = useAuth();
 
-import headerLogo from '@/assets/healthcall-logo-header.png';
+  const isActive = (path: string) => location.pathname === path;
 
-/**
- * The main header component for the application.
- * It displays the application logo, navigation links, and a user menu with a logout option.
- */
-const Header: React.FC = () => {
-	const [isMenuOpen, setIsMenuOpen] = useState(false);
-	const [initials, setInitials] = useState<string>('HC');
-	const [clinicName, setClinicName] = useState<string>('HealthCall');
-	const navigate = useNavigate();
-	const menuRef = useRef<HTMLDivElement>(null);
-	const { isElectron, openDisplayWindow } = useElectron();
-	const { user } = useAuth();
+  const navigation = [
+    { name: 'Painel', href: '/', icon: LayoutDashboard },
+    { name: 'Exibição', href: '/display', icon: Monitor },
+    { name: 'Avisos', href: '/warnings', icon: AlertTriangle },
+    { name: 'Configurações', href: '/settings', icon: Settings },
+  ];
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
-	/**
-	 * Handles user logout
-	 */
-	const handleLogout = async () => {
-		await signOut();
-		navigate('/auth/login');
-	};
+  const getInitials = (email: string) => {
+    return email.substring(0, 2).toUpperCase();
+  };
 
-	/**
-	 * Toggles the visibility of the user dropdown menu.
-	 */
-	const toggleMenu = () => {
-		setIsMenuOpen(!isMenuOpen);
-	};
+  return (
+    <header className="bg-background border-b sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-lg">
+              <img
+                src="/healthcall-logo-icon.png"
+                alt="HealthCall"
+                className="h-6 w-6"
+              />
+            </div>
+            <span className="font-bold text-xl text-primary hidden md:block">
+              HealthCall
+            </span>
+          </Link>
 
-	/**
-	 * Effect to handle clicks outside the user menu to close it.
-	 */
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-				setIsMenuOpen(false);
-			}
-		};
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, []);
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.name} to={item.href}>
+                  <Button
+                    variant={isActive(item.href) ? 'secondary' : 'ghost'}
+                    className="gap-2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.name}
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
 
-	/**
-	 * Effect to fetch local clinic settings on component mount
-	 */
-	useEffect(() => {
-		const loadSettings = async () => {
-			try {
-				const name = await localDb.getSetting('clinic_name');
-				if (name) {
-					setClinicName(name);
-					// Compute initials from clinic name
-					const parts = name.split(' ').filter(Boolean);
-					if (parts.length >= 2) {
-						setInitials((parts[0][0] + parts[parts.length - 1][0]).toUpperCase());
-					} else if (parts.length === 1) {
-						setInitials(parts[0].slice(0, 2).toUpperCase());
-					}
-				}
-			} catch (error) {
-				console.error('Error loading settings:', error);
-			}
-		};
-		loadSettings();
-	}, []);
+          {/* Right Actions */}
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 mr-2">
+              <ConnectionStatus />
+              <ThemeToggle />
+            </div>
 
-	return (
-		<header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#264532] px-10 py-4">
-			<div className="flex items-center gap-4 text-white">
-				<Link to="/" className="h-8 w-auto">
-					<img src={headerLogo} alt="HealthCall Logo" className="h-full w-auto object-contain" />
-				</Link>
-				<Link to="/">
-					<h1 className="text-white text-xl font-bold leading-tight tracking-[-0.015em]">HealthCall</h1>
-				</Link>
-			</div>
-			<nav className="hidden md:flex flex-1 justify-center gap-8">
-				<NavLink
-					to="/"
-					end
-					className={({ isActive }) =>
-						isActive
-							? 'text-primary text-base font-bold leading-normal'
-							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
-					}
-				>
-					Fila de Atendimento
-				</NavLink>
-				{isElectron ? (
-					<button
-						onClick={() => openDisplayWindow()}
-						className="text-white text-base font-medium leading-normal hover:text-primary transition-colors cursor-pointer"
-					>
-						Display
-					</button>
-				) : (
-					<NavLink
-						to="/display"
-						className={({ isActive }) =>
-							isActive
-								? 'text-primary text-base font-bold leading-normal'
-								: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
-						}
-					>
-						Display
-					</NavLink>
-				)}
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${session?.user.email}`}
+                      alt={session?.user.email}
+                    />
+                    <AvatarFallback>
+                      {session?.user.email
+                        ? getInitials(session.user.email)
+                        : 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      Conta
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {session?.user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="cursor-pointer w-full">
+                    <User className="mr-2 h-4 w-4" />
+                    Perfil
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="text-red-600 focus:text-red-600 cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-				<NavLink
-					to="/dashboard/warnings"
-					className={({ isActive }) =>
-						isActive
-							? 'text-primary text-base font-bold leading-normal'
-							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
-					}
-				>
-					Avisos
-				</NavLink>
-				<NavLink
-					to="/settings"
-					className={({ isActive }) =>
-						isActive
-							? 'text-primary text-base font-bold leading-normal'
-							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
-					}
-				>
-					Configurações
-				</NavLink>
-			</nav>
-			<div className="flex items-center gap-4">
-				{/* Status de conexão de rede */}
-				<ConnectionStatus showDetails />
-				
-				<div className="relative" ref={menuRef}>
-					<button onClick={toggleMenu} className="focus:outline-none">
-						<div
-							className="aspect-square rounded-full size-12 border-2 border-primary bg-[#325a42] text-white flex items-center justify-center font-bold"
-							aria-label="Iniciais da clínica"
-							role="img"
-						>
-							{initials}
-						</div>
-					</button>
-					{isMenuOpen && (
-						<div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
-							<div className="px-4 py-2 text-sm text-gray-400 border-b border-gray-700">
-								{user?.name || clinicName}
-							</div>
-							<div className="px-4 py-1 text-xs text-gray-500">
-								{user?.email}
-							</div>
-							<Link
-								to="/settings"
-								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
-								onClick={() => setIsMenuOpen(false)}
-							>
-								<span className="material-symbols-outlined mr-2">settings</span>
-								Configurações
-							</Link>
-							<button
-								onClick={handleLogout}
-								className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
-							>
-								<span className="material-symbols-outlined mr-2">logout</span>
-								Sair
-							</button>
-						</div>
-					)}
-				</div>
-			</div>
-		</header>
-	);
-};
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
 
-export default Header;
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden border-t p-4 space-y-4 bg-background">
+          <nav className="flex flex-col gap-2">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Button
+                    variant={isActive(item.href) ? 'secondary' : 'ghost'}
+                    className="w-full justify-start gap-2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.name}
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="flex flex-col gap-2 pt-4 border-t">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-sm text-muted-foreground">Tema</span>
+              <ThemeToggle />
+            </div>
+            <div className="flex items-center justify-between px-2">
+              <span className="text-sm text-muted-foreground">Status</span>
+              <ConnectionStatus />
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

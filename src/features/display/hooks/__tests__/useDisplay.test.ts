@@ -15,34 +15,13 @@ vi.mock('react-router-dom', () => ({
   })),
 }));
 
-// Mock do useElectron
-vi.mock('@/hooks/useElectron', () => ({
-  useElectron: vi.fn(() => ({
-    isElectron: false,
-    sendNotification: vi.fn().mockResolvedValue(undefined),
-    updateBadge: vi.fn(),
-  })),
-}));
-
-// Mock dos módulos
-vi.mock('@/services/localDatabase', () => ({
-  onDataUpdate: vi.fn(),
-  offDataUpdate: vi.fn(),
-}));
-
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: vi.fn(() => ({
-    session: { user: { id: '123' } },
-    loading: false,
-  })),
-}));
-
+// Mock do useTextToSpeech
 vi.mock('@/hooks/useTextToSpeech', () => ({
   useTextToSpeech: vi.fn(() => ({
-    speak: vi.fn().mockResolvedValue(undefined),
-    preloadTTS: vi.fn().mockResolvedValue('https://example.com/audio.mp3'),
-  })),
+    speak: vi.fn()
+  }))
 }));
+
 
 vi.mock('@/hooks/useAudioContext', () => ({
   useAudioContext: vi.fn(() => ({

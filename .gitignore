@@ -4,6 +4,11 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Runtime data
 pids
@@ -16,11 +21,12 @@ lib-cov
 
 # Coverage directory used by tools like istanbul
 coverage
+*.lcov
 
 # nyc test coverage
 .nyc_output
 
-# Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
 
 # Bower dependency directory (https://bower.io/)
@@ -39,31 +45,20 @@ jspm_packages/
 # TypeScript v1 declaration files
 typings/
 
-# Vite
-dist/
-.vite/
-
-# Electron build output
-dist-electron/
-
-# Tailwind CSS cache
-.tailwind/
-
-# Supabase local config and temp
-supabase/.env
-supabase/.temp/
-
-# pnpm
-pnpm-lock.yaml
-
-# VSCode settings
-.vscode/
+# TypeScript cache
+*.tsbuildinfo
 
 # Optional npm cache directory
 .npm
 
 # Optional eslint cache
 .eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
 
 # Optional REPL history
 .node_repl_history
@@ -77,21 +72,31 @@ pnpm-lock.yaml
 # dotenv environment variables file
 .env
 .env.test
+.env.production
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
+.parcel-cache
 
-# next.js build output
+# Next.js build output
 .next
+out
 
-# nuxt.js build output
+# Nuxt.js build output
 .nuxt
 
+# Gatsby.js build output
+.output
+.data
+
 # vuepress build output
-.vuepress/dist
+.temp
+
+# Docusaurus cache and generated files
+.docusaurus
 
 # Serverless directories
-.serverless/
+.serverless
 
 # FuseBox cache
 .fusebox/
@@ -102,11 +107,15 @@ pnpm-lock.yaml
 # TernJS port file
 .tern-port
 
-# OS X
+# Stores VSCode settings
+.vscode/test
+
+# macOS
 .DS_Store
 
-# HealthCall Specific
-temp/
-electron/credentials/*.json
-!electron/credentials/.gitkeep
+# Vite
+dist/
 
+# Supabase
+supabase/functions/*/deno.lock
+supabase/functions/*/.env
