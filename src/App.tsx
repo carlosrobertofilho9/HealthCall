@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Header from '@/components/Header';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Toaster } from '@/components/ui/sonner';
+import { AudioKeeper } from '@/components/AudioKeeper';
 
 /**
  * O componente raiz de layout para as seções autenticadas da aplicação.
@@ -18,6 +19,7 @@ const App: React.FC = () => {
 
   return (
     <div className="relative flex size-full min-h-screen flex-col">
+      <AudioKeeper />
       <Toaster position="top-center" />
       <Header />
       <main className="flex-1 px-4 py-10 lg:px-8">

@@ -1,39 +1,47 @@
 import { useEffect, useState } from 'react';
-import { Wifi, WifiOff, RefreshCw, HardDrive } from 'lucide-react';
+import { Cloud, RefreshCw, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ConnectionStatus = 'connected' | 'connecting' | 'disconnected';
 
 /**
- * Componente que monitora e exibe o status da conexão local
- * No modo local (Electron + SQLite), sempre mostra como conectado ao banco local.
+ * Componente que monitora e exibe o status da conexão com a nuvem (Supabase).
  */
 export function ConnectionMonitor() {
   const [status, setStatus] = useState<ConnectionStatus>('connecting');
 
   useEffect(() => {
-    // No modo local, estamos sempre "conectados" ao banco SQLite
-    // Simula uma pequena transição para mostrar que está funcionando
-    const timer = setTimeout(() => {
-      setStatus('connected');
-    }, 500);
+    const handleOnline = () => setStatus('connected');
+    const handleOffline = () => setStatus('disconnected');
 
-    return () => clearTimeout(timer);
+    if (navigator.onLine) {
+      setStatus('connected');
+    } else {
+      setStatus('disconnected');
+    }
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   const getStatusConfig = () => {
     switch (status) {
       case 'connected':
         return {
-          icon: HardDrive, // Ícone de disco para indicar armazenamento local
-          text: 'Banco Local',
+          icon: Cloud,
+          text: 'Nuvem Ativa',
           color: 'text-green-500',
           bgColor: 'bg-green-500/10',
         };
       case 'connecting':
         return {
           icon: RefreshCw,
-          text: 'Inicializando...',
+          text: 'Conectando...',
           color: 'text-yellow-500',
           bgColor: 'bg-yellow-500/10',
           animate: true,
@@ -41,7 +49,7 @@ export function ConnectionMonitor() {
       case 'disconnected':
         return {
           icon: WifiOff,
-          text: 'Erro no Banco',
+          text: 'Offline',
           color: 'text-red-500',
           bgColor: 'bg-red-500/10',
         };

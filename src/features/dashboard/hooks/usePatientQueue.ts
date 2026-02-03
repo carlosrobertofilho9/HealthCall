@@ -5,7 +5,11 @@ import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { toast } from 'sonner';
 import { Patient } from '@/types';
 
-export function usePatientQueue() {
+interface UsePatientQueueOptions {
+  defaultDestination?: string;
+}
+
+export function usePatientQueue(options: UsePatientQueueOptions = {}) {
   const { 
     patients, 
     addPatient: addPatientSync,
@@ -16,16 +20,17 @@ export function usePatientQueue() {
     clearQueue: clearQueueSync
   } = useNetworkSync();
   
-  const { userProfile } = useUserProfile();
+  const { profile } = useUserProfile();
   const { speak } = useTextToSpeech();
   
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDestination, setSelectedDestination] = useState<string | null>(null);
 
-  // Filtra pacientes (pode ser movido para o hook de sync se for comum)
   const waitingPatients = patients.filter(p => p.status === 'Aguardando');
   const calledPatients = patients.filter(p => p.status === 'Chamado' || p.status === 'Em Atendimento');
 
-  const addPatient = async (name: string, destination: string) => {
+  const addPatientByName = async (name: string, destination: string) => {
     setLoading(true);
     try {
       await addPatientSync(name, destination);
@@ -54,7 +59,7 @@ export function usePatientQueue() {
   const callPatient = async (patient: Patient) => {
     setLoading(true);
     try {
-      const destination = patient.destination || userProfile?.default_destination || 'Consultório';
+      const destination = patient.destination || profile?.default_destination || options.defaultDestination || 'Consultório';
       
       // Chama o paciente (atualiza status no banco)
       await callPatientSync(patient.id, destination);
@@ -102,14 +107,52 @@ export function usePatientQueue() {
     }
   };
 
+  const updatePatient = async (id: string, data: Partial<Patient>) => {
+    try {
+      await updatePatientSync(id, data);
+      toast.success('Paciente atualizado');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao atualizar paciente');
+    }
+  };
+
+  const updatePatientStatus = async (id: string, status: Patient['status']) => {
+    try {
+      await updatePatientSync(id, { status });
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao atualizar status');
+    }
+  };
+
+  const updatePatientDestination = async (id: string, destination: string) => {
+    try {
+      await updatePatientSync(id, { destination });
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao atualizar destino');
+    }
+  };
+
   return {
+    patients,
     waitingPatients,
     calledPatients,
     loading,
-    addPatient,
+    isAddingPatient: loading,
+    addPatient: addPatientByName,
+    addPatientByName,
     addPatientByNumber,
     callPatient,
     removePatient,
-    clearQueue
+    clearQueue,
+    updatePatient,
+    updatePatientStatus,
+    updatePatientDestination,
+    searchTerm,
+    setSearchTerm,
+    selectedDestination,
+    setSelectedDestination
   };
 }

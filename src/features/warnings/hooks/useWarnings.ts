@@ -22,14 +22,11 @@ export function useWarnings() {
 
   useEffect(() => {
     fetchWarnings();
-
-    // Subscribe to realtime updates
     const handleUpdate = (event: any) => {
       if (event.table === 'warnings') {
         fetchWarnings();
       }
     };
-
     syncClient.on('data_update', handleUpdate);
     return () => {
       syncClient.off('data_update', handleUpdate);

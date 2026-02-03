@@ -13,7 +13,6 @@ export function useDisplay() {
   const lastCallIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Carregamento inicial
     const loadData = async () => {
       try {
         const [lastCall, history, waiting] = await Promise.all([
@@ -36,24 +35,17 @@ export function useDisplay() {
 
     loadData();
 
-    // Listener para atualizações em tempo real
-    const handleUpdate = async (event: any) => {
-      // Recarrega dados relevantes quando houver atualização
+    const handleUpdate = async () => {
       await loadData();
-      
-      // Verifica se houve nova chamada para anunciar
       const lastCall = await syncClient.getLastCall();
       if (lastCall && lastCall.patient.id !== lastCallIdRef.current) {
         lastCallIdRef.current = lastCall.patient.id;
-        
-        // Anuncia voz
         const message = `${lastCall.patient.name}, comparecer ao ${lastCall.location}.`;
         speak(message);
       }
     };
 
     syncClient.on('data_update', handleUpdate);
-
     return () => {
       syncClient.off('data_update', handleUpdate);
     };

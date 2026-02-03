@@ -220,7 +220,7 @@ const WarningsPage: React.FC = () => {
     // For now, let's rely on the hook's fast update or the re-render.
     // Actually, `useWarnings` doesn't expose a `setWarnings`, so we rely on re-fetch.
     
-    const orderedIds = newWarnings.map((w) => w.id);
+    const orderedIds = (newWarnings as Warning[]).map((w) => w.id);
     await reorderWarnings(orderedIds);
   };
 

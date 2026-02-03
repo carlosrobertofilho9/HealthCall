@@ -1,24 +1,24 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Label } from '@/components/ui/Label';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 export function SettingsPage() {
-  const { userProfile, updateProfile, loading } = useUserProfile();
-  const [clinicName, setClinicName] = React.useState(userProfile?.clinic_name || '');
+  const { profile, setDefaultDestination, loading } = useUserProfile();
+  const [destination, setDestination] = React.useState(profile?.default_destination || '');
 
   React.useEffect(() => {
-    if (userProfile?.clinic_name) {
-      setClinicName(userProfile.clinic_name);
+    if (profile?.default_destination) {
+      setDestination(profile.default_destination);
     }
-  }, [userProfile]);
+  }, [profile]);
 
   const handleSave = async () => {
     try {
-      await updateProfile({ clinic_name: clinicName });
+      await setDefaultDestination(destination);
       toast.success('Configurações salvas com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar configurações');
@@ -36,12 +36,12 @@ export function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="clinicName">Nome da Clínica</Label>
+            <Label htmlFor="destination">Destino Padrão (Ex: Consultório 1)</Label>
             <Input
-              id="clinicName"
-              value={clinicName}
-              onChange={(e) => setClinicName(e.target.value)}
-              placeholder="Ex: Clínica Saúde"
+              id="destination"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder="Ex: Consultório 1"
             />
           </div>
           <Button onClick={handleSave} disabled={loading}>
@@ -52,3 +52,5 @@ export function SettingsPage() {
     </div>
   );
 }
+
+export default SettingsPage;

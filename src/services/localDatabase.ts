@@ -1,6 +1,6 @@
 /**
- * Serviço de Banco de Dados (Supabase Adapter)
- * Substitui o antigo adaptador SQLite/Electron
+ * Serviço de Banco de Dados (Supabase)
+ * Gerencia a persistência de dados na nuvem.
  */
 
 import { supabase } from '@/lib/supabaseClient';

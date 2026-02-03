@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
 import { clearQueue } from '@/features/dashboard/services/patientService';
 import * as authService from '@/features/authentication/services/authService';
-import type { LocalSession, LocalUser } from '@/features/authentication/services/authService';
+import type { AuthSession } from '@/features/authentication/services/authService';
 
 /**
- * A custom hook to manage user authentication state.
- * Uses local SQLite authentication via Electron IPC.
+ * Hook customizado para gerenciar o estado de autenticação do usuário.
+ * Utiliza o Supabase para autenticação.
  *
- * @returns An object containing:
- * - `session`: The current session object, or null if not authenticated.
- * - `loading`: A boolean that is true while initializing, and false otherwise.
- * - `user`: The current user object, or null if not authenticated.
+ * @returns Um objeto contendo:
+ * - `session`: O objeto da sessão atual, ou null se não autenticado.
+ * - `loading`: Um booleano que é true enquanto inicializa.
+ * - `user`: O objeto do usuário atual, ou null se não autenticado.
+ * - `signOut`: Função para deslogar.
  */
 export function useAuth() {
-	const [session, setSession] = useState<LocalSession | null>(null);
+	const [session, setSession] = useState<AuthSession | null>(null);
 	const [loading, setLoading] = useState(true);
+
+	const signOut = async () => {
+		await authService.signOut();
+		setSession(null);
+	};
 
 	useEffect(() => {
 		const runDailyCleanup = async () => {
@@ -35,7 +41,6 @@ export function useAuth() {
 
 		const initialize = async () => {
 			try {
-				// Verifica se existe uma sessão salva
 				const existingSession = await authService.getSession();
 				setSession(existingSession);
 				
@@ -56,6 +61,7 @@ export function useAuth() {
 	return { 
 		session, 
 		loading, 
-		user: session?.user ?? null 
+		user: session?.user ?? null,
+		signOut
 	};
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { createHashRouter, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Outlet } from 'react-router-dom';
 import { DisplayDataProvider } from '@/contexts/DisplayDataContext';
 import { NetworkSyncProvider } from '@/contexts/NetworkSyncContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
@@ -15,14 +15,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 
 /**
- * The main application router configuration.
- * It defines all the routes for the application, including protected routes
- * that require authentication.
- *
- * Uses HashRouter instead of BrowserRouter to support Electron's file:// protocol.
- * @see https://reactrouter.com/en/main/routers/create-hash-router
+ * Configuração principal de rotas da aplicação.
  */
-export const router = createHashRouter([
+export const router = createBrowserRouter([
 	{
 		element: (
 			<NetworkSyncProvider>
@@ -36,7 +31,7 @@ export const router = createHashRouter([
 			</NetworkSyncProvider>
 		),
 		children: [
-			// Main application layout with protected routes
+			// Layout principal com rotas protegidas
 			{
 				path: '/',
 				element: (
@@ -46,18 +41,16 @@ export const router = createHashRouter([
 				),
 				children: [
 					{ index: true, element: <HomePage /> },
-					{ index: true, element: <HomePage /> },
 					{ path: 'dashboard/warnings', element: <WarningsPage /> },
-
 					{ path: 'settings', element: <SettingsPage /> },
 				],
 			},
-			// Standalone route for the public display screen
+			// Rota para o painel de exibição pública
 			{
 				path: '/display',
 				element: <DisplayPage />,
 			},
-			// Authentication routes
+			// Rotas de autenticação
 			{
 				path: '/auth/login',
 				element: <LoginPage />,

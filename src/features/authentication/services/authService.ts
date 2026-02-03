@@ -8,11 +8,13 @@ import { User } from '@supabase/supabase-js';
 
 // Re-export types if needed or map them
 export type AuthUser = User;
+export type LocalUser = AuthUser;
 
 export interface AuthSession {
   user: AuthUser;
   access_token: string;
 }
+export type LocalSession = AuthSession;
 
 /**
  * Autentica um usuário usando email e senha.
