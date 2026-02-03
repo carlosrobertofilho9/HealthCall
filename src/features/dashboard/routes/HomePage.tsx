@@ -91,6 +91,11 @@ const HomePage: React.FC = () => {
 		setEditingPatient(null);
 	};
 
+	const handleSavePatient = async (updatedPatient: Patient) => {
+		await updatePatient(updatedPatient.id, updatedPatient);
+		closeModal();
+	};
+
 	return (
 		<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
 			<div className="lg:col-span-1">
@@ -118,7 +123,7 @@ const HomePage: React.FC = () => {
 				setSelectedDestination={setSelectedDestination}
 			/>
 			{isModalOpen && editingPatient && (
-				<EditPatientModal patient={editingPatient} onSave={updatePatient} onClose={closeModal} isOpen={isModalOpen} />
+				<EditPatientModal patient={editingPatient} onSave={handleSavePatient} onClose={closeModal} isOpen={isModalOpen} />
 			)}
 			{isConfirmModalOpen && patientToDelete && (
 				<ConfirmDeleteModal

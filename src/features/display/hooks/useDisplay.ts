@@ -14,7 +14,8 @@ export function useDisplay() {
   const [isCalling, setIsCalling] = useState(false);
   const [audioActivated, setAudioActivated] = useState(false);
   const [isActivatingAudio, setIsActivatingAudio] = useState(false);
-  const [activeWarning, setActiveWarning] = useState<Warning | null>(null);
+  const [activeWarnings, setActiveWarnings] = useState<Warning[]>([]);
+  const [warningIndex, setWarningIndex] = useState(0);
   const [shouldShowHeadline, setShouldShowHeadline] = useState(true);
 
   const { speak } = useTextToSpeech();
@@ -22,6 +23,9 @@ export function useDisplay() {
   
   const lastCallIdRef = useRef<string | null>(null);
   const callingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Derived active warning
+  const activeWarning = activeWarnings.length > 0 ? activeWarnings[warningIndex] : null;
 
   const fetchData = useCallback(async () => {
     try {
@@ -46,16 +50,24 @@ export function useDisplay() {
       
       // Update warning state
       if (warnings && warnings.length > 0) {
-        setActiveWarning(warnings[0]);
+        setActiveWarnings(warnings);
+        // Do not reset index here to avoid jumping if data refreshes, unless index invalid
         setShouldShowHeadline(false);
       } else {
-        setActiveWarning(null);
+        setActiveWarnings([]);
         setShouldShowHeadline(true);
       }
     } catch (error) {
       console.error('Erro ao carregar dados do display:', error);
     }
   }, []);
+
+  // Ensure index is valid if warnings list shrinks
+  useEffect(() => {
+    if (activeWarnings.length > 0 && warningIndex >= activeWarnings.length) {
+      setWarningIndex(0);
+    }
+  }, [activeWarnings.length, warningIndex]);
 
   useEffect(() => {
     fetchData();
@@ -109,7 +121,11 @@ export function useDisplay() {
   };
 
   const handleVideoEnd = () => {
-    // Placeholder: Logic for when warning video ends
+    // Cycle to next warning
+    if (activeWarnings.length > 0) {
+      setWarningIndex((prev) => (prev + 1) % activeWarnings.length);
+    }
+    // Refresh data to keep sync
     fetchData();
   };
 

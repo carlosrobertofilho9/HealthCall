@@ -47,7 +47,6 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
         }
     }, [onVideoEnd, isPreview]);
 
-    // Reset the ended flag when warning changes
     useEffect(() => {
         if (warningIdRef.current !== warning.id) {
             console.log(`[WarningOverlay] Warning mudou de ${warningIdRef.current} para ${warning.id} - resetando hasEnded`);
@@ -55,6 +54,33 @@ export const WarningOverlay: React.FC<WarningOverlayProps> = ({ warning, time = 
             warningIdRef.current = warning.id;
         }
     }, [warning.id]);
+
+    // Timer for YouTube and Images (without audio)
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+
+        // Determine if we should use a timer
+        // 1. YouTube always needs a timer (we don't track iframe events)
+        // 2. Images without audio need a timer
+        const shouldUseTimer = isYouTube || (isImage && !warning.audio_url);
+
+        if (shouldUseTimer && !isPreview && onVideoEnd) {
+            const durationSec = warning.duration || 15; // Default 15s if not specified
+            console.log(`[WarningOverlay] Iniciando timer de ${durationSec}s para media tipo: ${warning.media_type}`);
+            
+            timer = setTimeout(() => {
+                if (!hasEndedRef.current) {
+                    console.log('[WarningOverlay] Timer finalizado - avançando');
+                    hasEndedRef.current = true;
+                    onVideoEnd();
+                }
+            }, durationSec * 1000);
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [warning.id, warning.media_type, warning.duration, warning.audio_url, isPreview, onVideoEnd, isYouTube, isImage]);
 
     return (
       <div className={`bg-gray-900 text-white relative flex flex-col overflow-hidden ${isPreview ? 'h-full w-full rounded-lg' : 'min-h-screen'}`} style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
