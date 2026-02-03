@@ -48,8 +48,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchHistory();
 
     // Listen for updates
-    const handleDataUpdate = (event: any, { table }: { table: string }) => {
-      if (table === 'messages') {
+    // Listen for updates
+    const handleDataUpdate = (data: { table?: string } | any) => {
+       const table = data?.table;
+       if (table === 'messages') {
         fetchHistory();
         
         // Se o chat não estiver visível (ou focado), incrementar unread
