@@ -10,15 +10,20 @@ export function useWarnings() {
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Determina se estamos em modo "Cliente de Rede"
+  // Se o syncClient estiver conectado a um servidor remoto, usamos ele.
+  // Caso contrário, usamos o banco local (IPC).
+  const isNetworkMode = !isElectron || syncClient.isConnected();
+
   const fetchWarnings = useCallback(async () => {
     try {
       setLoading(true);
       let data: Warning[] = [];
       
-      if (isElectron) {
-        data = await localDb.getWarnings();
-      } else {
+      if (isNetworkMode) {
         data = await syncClient.getWarnings();
+      } else {
+        data = await localDb.getWarnings();
       }
       
       setWarnings(data || []);
@@ -28,9 +33,9 @@ export function useWarnings() {
     } finally {
       setLoading(false);
     }
-  }, [isElectron]);
+  }, [isNetworkMode]);
 
-  // Initial fetch and listeners
+  // Listeners para atualizações em tempo real
   useEffect(() => {
     fetchWarnings();
 
@@ -40,34 +45,34 @@ export function useWarnings() {
       }
     };
 
-    if (isElectron) {
-      localDb.onDataUpdate(handleDataUpdate);
-    } else {
-      syncClient.on('data_update', handleDataUpdate);
-    }
+    // Registra nos dois para garantir, o serviço correto responderá
+    localDb.onDataUpdate(handleDataUpdate);
+    syncClient.on('data_update', handleDataUpdate);
+    
+    // Também escuta quando a conexão de rede muda
+    syncClient.on('connected', fetchWarnings);
+    syncClient.on('disconnected', fetchWarnings);
 
     return () => {
-      if (isElectron) {
-        localDb.offDataUpdate(handleDataUpdate);
-      } else {
-        syncClient.off('data_update', handleDataUpdate);
-      }
+      localDb.offDataUpdate(handleDataUpdate);
+      syncClient.off('data_update', handleDataUpdate);
+      syncClient.off('connected', fetchWarnings);
+      syncClient.off('disconnected', fetchWarnings);
     };
-  }, [isElectron, fetchWarnings]);
+  }, [fetchWarnings]);
 
   // CRUD Operations
   
   const addWarning = async (warning: Omit<Warning, 'id' | 'created_at'>) => {
     try {
-      if (isElectron) {
-        await localDb.addWarning(warning);
-      } else {
+      if (isNetworkMode) {
         await syncClient.fetch('/api/warnings', {
           method: 'POST',
           body: JSON.stringify(warning),
         });
+      } else {
+        await localDb.addWarning(warning);
       }
-      // Listener will handle state update
       toast.success('Aviso adicionado com sucesso');
       return true;
     } catch (error) {
@@ -79,13 +84,13 @@ export function useWarnings() {
 
   const updateWarning = async (id: string, updates: Partial<Warning>) => {
     try {
-      if (isElectron) {
-        await localDb.updateWarning(id, updates);
-      } else {
+      if (isNetworkMode) {
         await syncClient.fetch(`/api/warnings/${id}`, {
           method: 'PUT',
           body: JSON.stringify(updates),
         });
+      } else {
+        await localDb.updateWarning(id, updates);
       }
       toast.success('Aviso atualizado com sucesso');
       return true;
@@ -98,12 +103,12 @@ export function useWarnings() {
 
   const removeWarning = async (id: string) => {
     try {
-      if (isElectron) {
-        await localDb.removeWarning(id);
-      } else {
+      if (isNetworkMode) {
         await syncClient.fetch(`/api/warnings/${id}`, {
           method: 'DELETE',
         });
+      } else {
+        await localDb.removeWarning(id);
       }
       toast.success('Aviso removido');
       return true;
@@ -116,12 +121,12 @@ export function useWarnings() {
 
   const toggleWarningActive = async (id: string) => {
     try {
-      if (isElectron) {
-        await localDb.toggleWarningActive(id);
-      } else {
+      if (isNetworkMode) {
         await syncClient.fetch(`/api/warnings/${id}/toggle`, {
           method: 'POST',
         });
+      } else {
+        await localDb.toggleWarningActive(id);
       }
       return true;
     } catch (error) {
@@ -133,13 +138,13 @@ export function useWarnings() {
 
   const reorderWarnings = async (orderedIds: string[]) => {
     try {
-      if (isElectron) {
-        await localDb.reorderWarnings(orderedIds);
-      } else {
+      if (isNetworkMode) {
         await syncClient.fetch('/api/warnings/reorder', {
           method: 'POST',
           body: JSON.stringify({ ids: orderedIds }),
         });
+      } else {
+        await localDb.reorderWarnings(orderedIds);
       }
       toast.success('Ordem atualizada');
       return true;
@@ -151,39 +156,23 @@ export function useWarnings() {
   };
 
   const saveWarningMedia = async (file: File) => {
-    if (!isElectron) {
-        // Upload via SyncClient for Browser Mode
-        // Note: The current syncClient might not have a direct file upload method exposed nicely
-        // We'll implemented a basic fetch upload here or rely on localDb if it's just for local electron
-        // But since the requirement is to support sync, we need an endpoint.
-        // Looking at electron/services/syncServer/routes/warnings.js, line 168 supports upload via /api/upload
-        // But `saveWarningMedia` in localDb uses IPC. 
+    // Media upload sempre via localDb se estivermos no Electron principal
+    // Se estivermos em um cliente remoto, a lógica de upload precisaria de um endpoint no servidor
+    if (isNetworkMode) {
+        const formData = new FormData();
+        formData.append('file', file);
         
-        // For now, if we are in browser mode, we might need a specific upload endpoint in syncClient
-        // or we just warn it's not fully supported without the backend proxy.
-        // However, checking syncClient code wasn't part of the request, but I should try to support it if possible.
-        // Let's assume for now we use the localDb abstraction for Electron, 
-        // and for browser we might throw or try a direct fetch if the server supports it.
-        // Given the file `electron/services/electronSyncClient.js` doesn't show file upload, 
-        // we will stick to localDb for electron and maybe alert for browser for now 
-        // OR implement a fetch to the sync server.
+        const serverUrl = syncClient.getServerUrl();
+        const response = await fetch(`${serverUrl}/api/upload`, {
+            method: 'POST',
+            body: formData
+        });
         
-        // Let's look at `useWarnings` implementation again. 
-        // `saveWarningMedia` is only called when `file` is present.
-        
-        // For the sake of this refactor, I will implement a fetch upload if not electron.
-         const formData = new FormData();
-         formData.append('file', file);
-         
-         const response = await fetch(`${syncClient.getServerUrl()}/api/upload`, {
-             method: 'POST',
-             body: formData
-         });
-         
-         if (!response.ok) throw new Error('Upload failed');
-         const data = await response.json();
-         return data.url;
+        if (!response.ok) throw new Error('Falha no upload para o servidor');
+        const data = await response.json();
+        return data.url;
     }
+    
     return await localDb.saveWarningMedia(file);
   };
 

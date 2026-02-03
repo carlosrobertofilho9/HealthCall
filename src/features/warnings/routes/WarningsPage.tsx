@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import * as localDb from '@/services/localDatabase';
+import React, { useState } from 'react';
 import { Warning } from '@/types';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 import { WarningOverlay } from '@/features/display/components/WarningOverlay';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { NewsTicker } from '@/features/display/components/NewsTicker';
@@ -23,10 +21,20 @@ import {
 } from '@dnd-kit/sortable';
 
 import { SortableWarningItem } from '../components/SortableWarningItem';
+import { useWarnings } from '../hooks/useWarnings';
 
 const WarningsPage: React.FC = () => {
-  const [warnings, setWarnings] = useState<Warning[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    warnings,
+    loading,
+    addWarning,
+    updateWarning,
+    removeWarning,
+    toggleWarningActive,
+    reorderWarnings,
+    saveWarningMedia,
+  } = useWarnings();
+
   const [newText, setNewText] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -56,10 +64,6 @@ const WarningsPage: React.FC = () => {
     })
   );
 
-  useEffect(() => {
-    fetchWarnings();
-  }, []);
-
   const handlePreview = async (warning: Warning) => {
     setPreviewWarning(warning);
     try {
@@ -74,23 +78,9 @@ const WarningsPage: React.FC = () => {
     setPreviewWarning(null);
   };
 
-  const fetchWarnings = async () => {
-    try {
-      setLoading(true);
-      const data = await localDb.getWarnings();
-      setWarnings(data || []);
-    } catch (error) {
-      console.error('Error fetching warnings:', error);
-      toast.error('Erro ao carregar avisos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleFileUpload = async (file: File): Promise<string | null> => {
     try {
-      // Upload file to local storage via IPC
-      const localUrl = await localDb.saveWarningMedia(file);
+      const localUrl = await saveWarningMedia(file);
       return localUrl;
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -135,27 +125,17 @@ const WarningsPage: React.FC = () => {
 
       if (editingId) {
         // Update existing
-        await localDb.updateWarning(editingId, warningData);
-
-        setWarnings(
-          warnings.map((w) => (w.id === editingId ? { ...w, ...warningData } : w))
-        );
-        toast.success('Aviso atualizado com sucesso');
+        await updateWarning(editingId, warningData);
       } else {
         // Create new - set order to be last
         const maxOrder = warnings.reduce((max, w) => Math.max(max, w.order || 0), 0);
-        const data = await localDb.addWarning({ ...warningData, active: true, order: maxOrder + 1 });
-
-        if (data) {
-          setWarnings([data, ...warnings]);
-        }
-        toast.success('Aviso adicionado com sucesso');
+        await addWarning({ ...warningData, active: true, order: maxOrder + 1 });
       }
 
       resetForm();
     } catch (error) {
       console.error('Error saving warning:', error);
-      toast.error('Erro ao salvar aviso');
+      // Toast handled in hook
     } finally {
       setIsAdding(false);
     }
@@ -205,47 +185,20 @@ const WarningsPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await localDb.removeWarning(id);
-
-      setWarnings(warnings.filter((w) => w.id !== id));
-      if (editingId === id) resetForm();
-      toast.success('Aviso removido');
+      const success = await removeWarning(id);
+      if (success && editingId === id) resetForm();
     } catch (error) {
       console.error('Error deleting warning:', error);
-      toast.error('Erro ao remover aviso');
     }
   };
 
   const toggleActive = async (warning: Warning) => {
-    try {
-      await localDb.toggleWarningActive(warning.id);
-
-      setWarnings(
-        warnings.map((w) => (w.id === warning.id ? { ...w, active: !w.active } : w))
-      );
-    } catch (error) {
-      console.error('Error updating warning:', error);
-      toast.error('Erro ao atualizar status');
-    }
+    await toggleWarningActive(warning.id);
   };
 
   const togglePriority = async (warning: Warning) => {
-    try {
-      const newPriority = !warning.priority;
-      await localDb.updateWarning(warning.id, { priority: newPriority });
-
-      setWarnings(
-        warnings.map((w) =>
-          w.id === warning.id ? { ...w, priority: newPriority } : w
-        )
-      );
-      
-      // Re-fetch to get proper ordering
-      fetchWarnings();
-    } catch (error) {
-      console.error('Error updating priority:', error);
-      toast.error('Erro ao atualizar prioridade');
-    }
+    const newPriority = !warning.priority;
+    await updateWarning(warning.id, { priority: newPriority });
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -257,20 +210,18 @@ const WarningsPage: React.FC = () => {
     const newIndex = warnings.findIndex((w) => w.id === over.id);
 
     const newWarnings = arrayMove(warnings, oldIndex, newIndex);
-    setWarnings(newWarnings);
-
-    // Update order in database
-    try {
-      const orderedIds = newWarnings.map((w) => w.id);
-      await localDb.reorderWarnings(orderedIds);
-
-      toast.success('Ordem atualizada');
-    } catch (error) {
-      console.error('Error updating order:', error);
-      toast.error('Erro ao atualizar ordem');
-      // Revert on error
-      fetchWarnings();
-    }
+    
+    // Optimistic update handled by hook re-fetch, but for drag we might want local state update?
+    // The hook will update warnings when reorder returns/notifies.
+    // Ideally we should update local state optimistically here if we want super smooth UI,
+    // but DndKit handles the visual drag. When dropped, we call reorder.
+    
+    // However, if we don't update local state immediately, it might snap back until network returns.
+    // For now, let's rely on the hook's fast update or the re-render.
+    // Actually, `useWarnings` doesn't expose a `setWarnings`, so we rely on re-fetch.
+    
+    const orderedIds = newWarnings.map((w) => w.id);
+    await reorderWarnings(orderedIds);
   };
 
   return (

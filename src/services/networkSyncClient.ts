@@ -305,7 +305,11 @@ class NetworkSyncClient {
   // REST API Methods
   // ============================================
   
-  private async fetch<T>(path: string, options?: RequestInit): Promise<T> {
+  public getServerUrl(): string | null {
+    return this.config?.serverUrl || null;
+  }
+  
+  public async fetch<T>(path: string, options?: RequestInit): Promise<T> {
     if (!this.config?.serverUrl) {
       throw new Error('Servidor não configurado');
     }
