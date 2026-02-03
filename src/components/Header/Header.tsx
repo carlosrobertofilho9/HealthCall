@@ -33,7 +33,7 @@ export function Header() {
   };
 
   return (
-    <header className="bg-background border-b border-border sticky top-0 z-50">
+    <header className="bg-background border-b sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -72,6 +72,7 @@ export function Header() {
           <div className="flex items-center gap-2">
             <div className="hidden md:flex items-center gap-2 mr-2">
               <ConnectionStatus />
+              <ThemeToggle />
             </div>
 
             {session && (
@@ -105,7 +106,7 @@ export function Header() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-border p-4 space-y-4 bg-background">
+        <div className="md:hidden border-t p-4 space-y-4 bg-background">
           <nav className="flex flex-col gap-2">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -126,11 +127,11 @@ export function Header() {
               );
             })}
           </nav>
-          <div className="flex flex-col gap-2 pt-4 border-t border-border">
-            {/* <div className="flex items-center justify-between px-2">
+          <div className="flex flex-col gap-2 pt-4 border-t">
+            <div className="flex items-center justify-between px-2">
               <span className="text-sm text-muted-foreground">Tema</span>
               <ThemeToggle />
-            </div> */}
+            </div>
             <div className="flex items-center justify-between px-2">
               <span className="text-sm text-muted-foreground">Status</span>
               <ConnectionStatus />
