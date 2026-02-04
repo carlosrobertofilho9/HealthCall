@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
-import { LayoutList, Monitor, Bell, Settings, LogOut, CalendarDays } from 'lucide-react';
+import { LayoutList, Monitor, Bell, Settings, LogOut, CalendarDays, Menu, X } from 'lucide-react';
 
 /**
  * The main header component for the application.
@@ -9,6 +9,7 @@ import { LayoutList, Monitor, Bell, Settings, LogOut, CalendarDays } from 'lucid
  */
 const Header: React.FC = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [initials, setInitials] = useState<string>('');
 	const navigate = useNavigate();
@@ -33,6 +34,10 @@ const Header: React.FC = () => {
 	const toggleMenu = () => {
 		setIsMenuOpen(!isMenuOpen);
 	};
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
 
 	/**
 	 * Effect to handle clicks outside the user menu to close it.
@@ -127,7 +132,15 @@ const Header: React.FC = () => {
 			</nav>
 
 			<div className="flex items-center gap-4">
-				<div className="relative" ref={menuRef}>
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden text-white"
+          onClick={toggleMobileMenu}
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+
+				<div className="relative hidden md:block" ref={menuRef}>
 					<button 
 						onClick={toggleMenu} 
 						className="focus:outline-none"
@@ -155,13 +168,70 @@ const Header: React.FC = () => {
 								onClick={handleLogout}
 								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
 							>
-								<LogOut className="mr-2 material-symbols-outlined" />
+								<LogOut className="mr-2 w-4 h-4" />
 								Sair
 							</button>
 						</div>
 					)}
 				</div>
 			</div>
+
+      {/* Mobile Menu Overlay */}
+			{isMobileMenuOpen && (
+				<div className="absolute top-full left-0 w-full bg-[#1a3a26] border-b border-[#264532] p-4 flex flex-col gap-4 md:hidden z-50 shadow-xl">
+					<NavLink 
+            to="/" 
+            end 
+            className={(props) => navLinkClass(props)}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+						<LayoutList className="w-5 h-5" />
+						<span>Fila</span>
+					</NavLink>
+					<NavLink 
+            to="/appointments" 
+            className={(props) => navLinkClass(props)}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+						<CalendarDays className="w-5 h-5" />
+						<span>Marcações</span>
+					</NavLink>
+					<NavLink 
+            to="/display" 
+            className={(props) => navLinkClass(props)}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+						<Monitor className="w-5 h-5" />
+						<span>Display</span>
+					</NavLink>
+          <NavLink 
+            to="/warnings" 
+            className={(props) => navLinkClass(props)}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+						<Bell className="w-5 h-5" />
+						<span>Avisos</span>
+					</NavLink>
+					<NavLink 
+            to="/settings" 
+            className={(props) => navLinkClass(props)}
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+						<Settings className="w-5 h-5" />
+						<span>Ajustes</span>
+					</NavLink>
+          
+          <div className="border-t border-[#264532] pt-4 mt-2">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-white font-medium hover:text-red-400 w-full"
+            >
+              <LogOut className="w-5 h-5" />
+              Sair
+            </button>
+          </div>
+				</div>
+			)}
 		</header>
 	);
 };

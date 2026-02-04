@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, AlertTriangle } from 'lucide-react';
+import { Sun, Moon, AlertTriangle, AlertCircle } from 'lucide-react';
 import type { AppointmentSlot, Appointment, DayScheduleConfig } from '@/types';
 import SlotCard from './SlotCard';
 
@@ -53,6 +53,7 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   // Separar slots por período
   const morningSlots = slots.filter(s => s.period === 'Manhã');
   const afternoonSlots = slots.filter(s => s.period === 'Tarde');
+  const reserveSlots = slots.filter(s => s.period === 'Reserva');
 
   return (
     <div className="space-y-8">
@@ -96,6 +97,31 @@ export const SlotsList: React.FC<SlotsListProps> = ({
           </div>
           <div className="grid gap-3">
             {afternoonSlots.map((slot) => (
+              <SlotCard
+                key={slot.slotNumber}
+                slot={slot}
+                onAddClick={onAddClick}
+                onEditClick={onEditClick}
+                onDeleteClick={onDeleteClick}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Slots de Reserva */}
+      {reserveSlots.length > 0 && (
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <AlertCircle className="w-6 h-6 text-red-400" />
+            <h3 className="text-lg font-bold text-white print:text-black">
+              Reservas / Emergência
+            </h3>
+            <span className="text-[#96c5a9] text-sm print:text-gray-600">
+              ({reserveSlots.filter(s => s.appointment).length}/{reserveSlots.length} vagas ocupadas)
+            </span>
+          </div>
+          <div className="grid gap-3">
+            {reserveSlots.map((slot) => (
               <SlotCard
                 key={slot.slotNumber}
                 slot={slot}

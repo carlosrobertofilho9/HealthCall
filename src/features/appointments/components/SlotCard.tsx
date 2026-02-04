@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, FileText, UserCheck, Trash2, Edit } from 'lucide-react';
+import { User, FileText, UserCheck, Trash2, Edit, Clock } from 'lucide-react';
 import type { AppointmentSlot, Appointment } from '@/types';
 
 interface SlotCardProps {
@@ -19,7 +19,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
   onEditClick,
   onDeleteClick,
 }) => {
-  const { slotNumber, period, appointment } = slot;
+  const { slotNumber, period, time, isReserve, appointment } = slot;
 
   const formatDocument = (type: string, value: string): string => {
     if (type === 'CPF') {
@@ -41,7 +41,12 @@ export const SlotCard: React.FC<SlotCardProps> = ({
               {slotNumber}
             </span>
             <div>
-              <p className="text-[#96c5a9] text-sm print:text-gray-500">{period}</p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Clock className="w-3.5 h-3.5 text-[#96c5a9] print:hidden" />
+                <p className="text-[#96c5a9] text-sm font-medium print:text-gray-500">
+                  {time || period}
+                </p>
+              </div>
               <p className="text-white font-medium group-hover:text-primary transition-colors print:text-gray-800">
                 Vaga disponível
               </p>
@@ -64,12 +69,17 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             {slotNumber}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="text-[#96c5a9] text-sm print:text-gray-500">{period}</p>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Clock className="w-3.5 h-3.5 text-[#96c5a9] print:hidden" />
+              <p className="text-[#96c5a9] text-sm font-medium print:text-gray-500">
+                {time || period}
+              </p>
+            </div>
             
             {/* Nome do paciente */}
             <div className="flex items-center gap-2 mt-1">
               <User className="w-4 h-4 text-primary flex-shrink-0" />
-              <p className="text-white font-semibold truncate print:text-black">
+              <p className="text-white font-semibold truncate print:text-black flex-1 min-w-0">
                 {appointment.patient_name}
               </p>
             </div>
@@ -77,7 +87,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             {/* Documento */}
             <div className="flex items-center gap-2 mt-1">
               <FileText className="w-4 h-4 text-[#96c5a9] flex-shrink-0" />
-              <p className="text-[#96c5a9] text-sm truncate print:text-gray-600">
+              <p className="text-[#96c5a9] text-sm truncate print:text-gray-600 flex-1 min-w-0">
                 {formatDocument(appointment.document_type, appointment.document_value)}
               </p>
             </div>
@@ -85,7 +95,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             {/* ACS */}
             <div className="flex items-center gap-2 mt-1">
               <UserCheck className="w-4 h-4 text-[#96c5a9] flex-shrink-0" />
-              <p className="text-[#96c5a9] text-sm truncate print:text-gray-600">
+              <p className="text-[#96c5a9] text-sm truncate print:text-gray-600 flex-1 min-w-0">
                 ACS: {appointment.acs_name}
               </p>
             </div>

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Phone, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import type { CreateAppointmentData, DocumentType } from '@/types';
-import { formatDateToISO } from '../services/appointmentService';
+import { formatDateToISO, getAppointmentMessage } from '../services/appointmentService';
 
 interface AddAppointmentFormProps {
   selectedDate: Date;
@@ -32,6 +32,11 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
   const [acsName, setAcsName] = useState('');
   const [slotNumber, setSlotNumber] = useState<number>(initialSlot || availableSlots[0] || 1);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Estados de sucesso
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdMessage, setCreatedMessage] = useState('');
+  const [isCopied, setIsCopied] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -71,16 +76,38 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       document_value: documentValue.trim(),
       acs_name: acsName.trim(),
     };
-
     const success = await onAdd(data);
     if (success) {
-      // Limpar formulário
+      // Gerar mensagem de sucesso
+      const message = getAppointmentMessage(
+        patientName.trim(),
+        formatDateToISO(selectedDate),
+        slotNumber
+      );
+      setCreatedMessage(message);
+      setShowSuccess(true);
+      
+      // Limpar formulário (para próximo uso)
       setPatientName('');
       setDocumentValue('');
       setAcsName('');
       setSlotNumber(availableSlots[0] || 1);
-      onCancel();
     }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(createdMessage);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Falha ao copiar:', err);
+    }
+  };
+
+  const handleClose = () => {
+    setShowSuccess(false);
+    onCancel();
   };
 
   const formatCPF = (value: string): string => {
@@ -94,6 +121,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
   const formatCartaoSUS = (value: string): string => {
     return value.replace(/\D/g, '').slice(0, 15);
   };
+
+  /* Removed duplicate formatPhone */
 
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -109,10 +138,65 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
     return numbers.length === 11;
   };
 
-  const getSlotPeriod = (slot: number): string => {
-    if (slot <= 15) return 'Manhã';
-    return 'Tarde';
+  const getSlotDisplay = (slot: number): string => {
+    if (slot > 11) return 'Reserva';
+    
+    const startHour = 8;
+    const intervalMinutes = 20;
+    const minutesToAdd = (slot - 1) * intervalMinutes;
+    
+    const hour = startHour + Math.floor(minutesToAdd / 60);
+    const minute = minutesToAdd % 60;
+    
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   };
+
+  if (showSuccess) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-[#1a3a26] rounded-2xl p-6 w-full max-w-md animate-in fade-in zoom-in duration-200">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-[#1a3a26]" />
+            </div>
+            <h3 className="text-xl font-bold text-white">Agendamento Realizado!</h3>
+            <p className="text-[#96c5a9]">Copie a mensagem abaixo para enviar ao paciente</p>
+          </div>
+
+          <div className="bg-[#264532] p-4 rounded-xl mb-6 relative group">
+            <pre className="text-white font-mono text-sm whitespace-pre-wrap">
+              {createdMessage}
+            </pre>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleClose}
+              className="flex-1 py-3 px-4 rounded-full border border-[#264532] text-white font-semibold hover:bg-[#264532] transition-colors"
+            >
+              Fechar
+            </button>
+            <Button 
+              onClick={handleCopy} 
+              className="flex-1 flex items-center justify-center gap-2"
+            >
+              {isCopied ? (
+                <>
+                  <Check className="w-5 h-5" />
+                  Copiado!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-5 h-5" />
+                  Copiar Mensagem
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -138,7 +222,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             >
               {availableSlots.map((slot) => (
                 <option key={slot} value={slot}>
-                  Slot {slot} - {getSlotPeriod(slot)}
+                  Slot {slot} - {getSlotDisplay(slot)}
                 </option>
               ))}
             </select>
@@ -228,6 +312,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
               <p className="text-red-400 text-sm mt-1">{errors.acsName}</p>
             )}
           </div>
+
+{/* Removed Telefone UI block */}
 
           {/* Botões */}
           <div className="flex gap-3 pt-4">

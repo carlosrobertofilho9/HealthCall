@@ -109,7 +109,15 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
         <div className="mb-4 p-3 bg-[#264532] rounded-lg">
           <p className="text-[#96c5a9] text-sm">
             Slot <span className="text-white font-bold">{appointment.slot_number}</span> •{' '}
-            {appointment.slot_number <= 15 ? 'Manhã' : 'Tarde'}
+            {(() => {
+              if (appointment.slot_number > 11) return 'Reserva';
+              const startHour = 8;
+              const intervalMinutes = 20;
+              const minutesToAdd = (appointment.slot_number - 1) * intervalMinutes;
+              const hour = startHour + Math.floor(minutesToAdd / 60);
+              const minute = minutesToAdd % 60;
+              return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+            })()}
           </p>
         </div>
 

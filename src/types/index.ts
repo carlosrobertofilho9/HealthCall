@@ -59,7 +59,9 @@ export type CreateAppointmentData = {
  */
 export type AppointmentSlot = {
 	slotNumber: number;
-	period: 'Manhã' | 'Tarde';
+	period: 'Manhã' | 'Tarde' | 'Reserva';
+	time?: string;
+	isReserve?: boolean;
 	appointment: Appointment | null;
 };
 

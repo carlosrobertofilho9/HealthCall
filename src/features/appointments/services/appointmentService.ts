@@ -13,8 +13,8 @@ import type { Appointment, CreateAppointmentData, AppointmentSlot, DayScheduleCo
  */
 export const SCHEDULE_CONFIG: Record<number, DayScheduleConfig> = {
   0: { dayOfWeek: 0, dayName: 'Domingo', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
-  1: { dayOfWeek: 1, dayName: 'Segunda-feira', hasService: true, morningSlots: 15, afternoonSlots: 15, totalSlots: 30 },
-  2: { dayOfWeek: 2, dayName: 'Terça-feira', hasService: true, morningSlots: 15, afternoonSlots: 0, totalSlots: 15 },
+  1: { dayOfWeek: 1, dayName: 'Segunda-feira', hasService: true, morningSlots: 11, afternoonSlots: 0, totalSlots: 15 },
+  2: { dayOfWeek: 2, dayName: 'Terça-feira', hasService: true, morningSlots: 11, afternoonSlots: 0, totalSlots: 15 },
   3: { dayOfWeek: 3, dayName: 'Quarta-feira', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
   4: { dayOfWeek: 4, dayName: 'Quinta-feira', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
   5: { dayOfWeek: 5, dayName: 'Sexta-feira', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
@@ -52,20 +52,35 @@ export function generateSlotsForDate(date: Date, appointments: Appointment[]): A
     appointmentsBySlot.set(apt.slot_number, apt);
   });
 
-  // Gerar slots da manhã (1 até morningSlots)
+  const generateTime = (slotIndex: number): string => {
+    const startHour = 8;
+    const intervalMinutes = 20;
+    const minutesToAdd = (slotIndex - 1) * intervalMinutes;
+    
+    const hour = startHour + Math.floor(minutesToAdd / 60);
+    const minute = minutesToAdd % 60;
+    
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  };
+
+  // Gerar slots da manhã (1 até morningSlots - que agora são 10)
   for (let i = 1; i <= config.morningSlots; i++) {
     slots.push({
       slotNumber: i,
       period: 'Manhã',
+      time: generateTime(i),
+      isReserve: false,
       appointment: appointmentsBySlot.get(i) || null,
     });
   }
 
-  // Gerar slots da tarde (morningSlots + 1 até totalSlots)
+  // Gerar slots de reserva (morningSlots + 1 até totalSlots)
   for (let i = config.morningSlots + 1; i <= config.totalSlots; i++) {
     slots.push({
       slotNumber: i,
-      period: 'Tarde',
+      period: 'Reserva',
+      time: 'Reserva',
+      isReserve: true,
       appointment: appointmentsBySlot.get(i) || null,
     });
   }
@@ -284,4 +299,43 @@ export function formatDateForDisplay(date: Date): string {
 export function parseISODate(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number);
   return new Date(year, month - 1, day);
+}
+
+/**
+ * Gera a mensagem de notificação para WhatsApp.
+ */
+export function getAppointmentMessage(
+  patientName: string, 
+  date: string, 
+  slotNumber: number
+): string {
+  // Calcular horário
+  let timeStr = '';
+  if (slotNumber > 11) {
+    timeStr = 'Reserva/Encaixe';
+  } else {
+    const startHour = 8;
+    const intervalMinutes = 20;
+    const minutesToAdd = (slotNumber - 1) * intervalMinutes;
+    const hour = startHour + Math.floor(minutesToAdd / 60);
+    const minute = minutesToAdd % 60;
+    timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  }
+
+  // Formatar data
+  const dateObj = parseISODate(date);
+  const dateFormatted = dateObj.toLocaleDateString('pt-BR');
+
+  return `Olá *${patientName}*,
+
+Sua consulta está agendada para:
+📅 *${dateFormatted}*
+⏰ *${timeStr}*
+
+⚠️ *Importante:*
+- Por favor, chegue com *40 minutos de antecedência*.
+- Cancelamentos devem ser avisados com até *1 dia de antecedência*.
+
+Obrigado,
+*Equipe PSF 5 Maria Lucia da Silva*`;
 }
