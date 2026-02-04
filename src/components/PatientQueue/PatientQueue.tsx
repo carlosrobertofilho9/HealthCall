@@ -4,12 +4,12 @@ import type { Patient, PatientStatus } from '@/types';
 import { DESTINATION_ROOMS } from '@/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Input } from '@/components/ui/Input';
-import { Search, Filter, Users, ClipboardList } from 'lucide-react';
+import { Search, Filter, Users, ClipboardList, Printer } from 'lucide-react';
 import {
   DndContext, 
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -23,6 +23,7 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { printPatientList } from './printUtils';
 
 interface PatientQueueProps {
   patients: Patient[];
@@ -110,10 +111,14 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
   onReorder
 }) => {
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 8, // Mouse drag only starts after 8px movement, allowing clicks
+      },
+    }),
     useSensor(TouchSensor, {
         activationConstraint: {
-            delay: 250, // Hold to drag
+            delay: 250, // Mobile users must hold 250ms to drag, distinguishing from tap/scroll
             tolerance: 5,
         }
     }),
@@ -133,26 +138,31 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
     }
   };
 
+  const handlePrint = () => {
+    printPatientList(patients);
+  };
+
   const isFiltered = searchTerm !== '' || (selectedDestination !== '' && selectedDestination !== 'all');
 
   return (
     <div className="lg:col-span-2 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl border border-white/5">
-      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
-        <div className="text-left space-y-1">
-          <h2 className="text-white text-2xl font-bold leading-tight flex items-center gap-2">
-            <Users className="text-[#96c5a9]" size={24} />
+      <div className="flex flex-col gap-6 mb-8 pb-6 border-b border-white/5">
+        <div className="space-y-2 text-left">
+          <h2 className="text-white text-3xl font-bold tracking-tight flex items-center gap-3">
+            <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
+               <Users className="text-[#96c5a9]" size={24} />
+            </div>
             Fila de Espera
           </h2>
-          <p className="text-[#96c5a9] text-sm">
+          <p className="text-[#96c5a9]/80 text-sm max-w-full leading-relaxed pl-1">
              {isFiltered 
-                ? 'Filtros ativos: Reordenação desativada' 
-                : 'Segure um card para reordenar a fila.'}
+                ? 'Visualização filtrada. A reordenação manual está desativada.' 
+                : 'Gerencie a fila de atendimento. Arraste os cards para reordenar a prioridade.'}
           </p>
         </div>
         
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-64 group">
+        <div className="flex flex-col sm:flex-row gap-3 w-full items-stretch sm:items-center">
+          <div className="relative flex-1 group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#96c5a9] transition-colors group-focus-within:text-white" size={18} />
             <Input
               id="search-patient"
@@ -160,26 +170,35 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-[#264532] border-transparent text-white placeholder:text-gray-400 focus:border-[#96c5a9]/50 focus:ring-[#96c5a9]/20 transition-all h-10"
+              className="pl-10 bg-[#264532]/50 border-white/5 text-white placeholder:text-[#96c5a9]/50 focus:bg-[#264532] focus:border-[#96c5a9]/50 focus:ring-[#96c5a9]/20 transition-all h-11 rounded-xl w-full"
             />
           </div>
           
-          <div className="relative w-full sm:w-64">
+          <div className="relative flex-1">
              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10">
                 <Filter className="text-[#96c5a9]" size={18} />
              </div>
             <Select onValueChange={(value) => setSelectedDestination(value === 'all' ? '' : value)} value={selectedDestination || 'all'}>
-              <SelectTrigger id="filter-destination-room" className="pl-10 h-10 bg-[#264532] border-transparent text-white focus:ring-[#96c5a9]/20 focus:border-[#96c5a9]/50">
+              <SelectTrigger id="filter-destination-room" className="pl-10 h-11 bg-[#264532]/50 border-white/5 text-white focus:bg-[#264532] focus:ring-[#96c5a9]/20 focus:border-[#96c5a9]/50 rounded-xl w-full">
                 <SelectValue placeholder="Todas as Salas" />
               </SelectTrigger>
               <SelectContent className="bg-[#1a2c22] border-[#264532] text-white">
-                <SelectItem value="all" className="focus:bg-[#264532] focus:text-white cursor-pointer">Todas as Salas</SelectItem>
+                <SelectItem value="all" className="focus:bg-[#264532] focus:text-white cursor-pointer hover:bg-[#264532]/50">Todas as Salas</SelectItem>
                 {DESTINATION_ROOMS.map(room => (
-                  <SelectItem key={room} value={room} className="focus:bg-[#264532] focus:text-white cursor-pointer">{room}</SelectItem>
+                  <SelectItem key={room} value={room} className="focus:bg-[#264532] focus:text-white cursor-pointer hover:bg-[#264532]/50">{room}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          <button
+            onClick={handlePrint}
+            className="h-11 w-11 flex items-center justify-center bg-[#264532]/50 hover:bg-[#264532] text-[#96c5a9] hover:text-white border border-white/5 hover:border-[#96c5a9]/30 transition-all rounded-xl shadow-sm"
+            title="Imprimir lista"
+            aria-label="Imprimir lista"
+          >
+            <Printer size={20} />
+          </button>
         </div>
       </div>
 
