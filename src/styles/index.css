@@ -207,3 +207,79 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* =============================================================================
+   Estilos de Impressão - Página de Marcações
+   ============================================================================= */
+@media print {
+  /* Reset geral para impressão */
+  body {
+    background-color: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ocultar elementos não necessários na impressão */
+  header,
+  nav,
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Mostrar elementos específicos para impressão */
+  .print\\:block {
+    display: block !important;
+  }
+
+  /* Ajustes de cores para impressão */
+  .print\\:bg-white {
+    background-color: white !important;
+  }
+
+  .print\\:text-black {
+    color: black !important;
+  }
+
+  .print\\:text-gray-500 {
+    color: #6b7280 !important;
+  }
+
+  .print\\:text-gray-600 {
+    color: #4b5563 !important;
+  }
+
+  .print\\:text-gray-700 {
+    color: #374151 !important;
+  }
+
+  .print\\:text-gray-800 {
+    color: #1f2937 !important;
+  }
+
+  .print\\:border-gray-300 {
+    border-color: #d1d5db !important;
+  }
+
+  /* Ajustes de layout para impressão */
+  .print\\:max-w-none {
+    max-width: none !important;
+  }
+
+  /* Evitar quebra de página dentro de cards */
+  .slot-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Configuração da página */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  /* Ajustar tamanho de fonte para impressão */
+  html {
+    font-size: 12px;
+  }
+}

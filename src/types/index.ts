@@ -17,3 +17,61 @@ export type CallRecord = {
 	callCount: number;
 	calledAt: number;
 };
+
+// =============================================================================
+// Tipos para Marcações (PSF - Estratégia de Saúde da Família)
+// =============================================================================
+
+/**
+ * Tipo do documento do paciente
+ */
+export type DocumentType = 'CPF' | 'CARTAO_SUS';
+
+/**
+ * Representa uma marcação de consulta no PSF
+ */
+export type Appointment = {
+	id: string;
+	scheduled_date: string; // formato YYYY-MM-DD
+	slot_number: number;
+	patient_name: string;
+	document_type: DocumentType;
+	document_value: string;
+	acs_name: string;
+	created_at: string;
+	updated_at: string;
+};
+
+/**
+ * Dados para criar uma nova marcação
+ */
+export type CreateAppointmentData = {
+	scheduled_date: string;
+	slot_number: number;
+	patient_name: string;
+	document_type: DocumentType;
+	document_value: string;
+	acs_name: string;
+};
+
+/**
+ * Representa um slot na grade de marcações
+ */
+export type AppointmentSlot = {
+	slotNumber: number;
+	period: 'Manhã' | 'Tarde';
+	appointment: Appointment | null;
+};
+
+/**
+ * Configuração da grade de atendimento por dia da semana
+ * 0 = Domingo, 1 = Segunda, 2 = Terça, etc.
+ */
+export type DayScheduleConfig = {
+	dayOfWeek: number;
+	dayName: string;
+	hasService: boolean;
+	morningSlots: number;
+	afternoonSlots: number;
+	totalSlots: number;
+};
