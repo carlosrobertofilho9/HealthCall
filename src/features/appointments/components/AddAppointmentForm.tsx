@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/Select';
 import { ACS_OPTIONS } from '@/constants';
 import type { CreateAppointmentData, DocumentType } from '@/types';
-import { formatDateToISO, getAppointmentMessage } from '../services/appointmentService';
+import { formatDateToISO, getAppointmentMessage, getSlotTime, getDayConfig } from '../services/appointmentService';
 
 interface AddAppointmentFormProps {
   selectedDate: Date;
@@ -151,18 +151,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
     return numbers.length === 11;
   };
 
-  const getSlotDisplay = (slot: number): string => {
-    if (slot > 11) return 'Reserva';
-    
-    const startHour = 8;
-    const intervalMinutes = 20;
-    const minutesToAdd = (slot - 1) * intervalMinutes;
-    
-    const hour = startHour + Math.floor(minutesToAdd / 60);
-    const minute = minutesToAdd % 60;
-    
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-  };
+
 
   if (showSuccess) {
     return (
@@ -240,7 +229,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
                 <SelectContent>
                   {availableSlots.map((slot) => (
                     <SelectItem key={slot} value={slot.toString()}>
-                      Slot {slot} - {getSlotDisplay(slot)}
+                      Slot {slot} - {getSlotTime(slot, getDayConfig(selectedDate))}
                     </SelectItem>
                   ))}
                 </SelectContent>

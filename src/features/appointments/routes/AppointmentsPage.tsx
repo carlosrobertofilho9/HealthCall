@@ -19,8 +19,8 @@ import type { Appointment } from '@/types';
  * permitindo agendar, editar e remover marcações de pacientes.
  * 
  * Regras:
- * - Segunda-feira: 30 slots (15 manhã + 15 tarde)
- * - Terça-feira: 15 slots (manhã)
+ * - Segunda-feira: 30 slots (11 manhã + 4 reserva manhã + 9 tarde + 6 reserva tarde)
+ * - Terça-feira: 15 slots (11 manhã + 4 reserva manhã)
  * - Demais dias: Sem atendimento
  */
 const AppointmentsPage: React.FC = () => {

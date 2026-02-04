@@ -74,6 +74,8 @@ export type DayScheduleConfig = {
 	dayName: string;
 	hasService: boolean;
 	morningSlots: number;
+    morningReserveSlots?: number;
 	afternoonSlots: number;
+    afternoonReserveSlots?: number;
 	totalSlots: number;
 };
