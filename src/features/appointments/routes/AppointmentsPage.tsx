@@ -81,7 +81,7 @@ const AppointmentsPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto print:max-w-none">
+    <div className="w-full max-w-4xl mx-auto print:max-w-none overflow-hidden">
       {/* Cabeçalho para impressão */}
       <PrintHeader
         selectedDate={selectedDate}

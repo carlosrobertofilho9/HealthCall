@@ -98,7 +98,7 @@ const Header: React.FC = () => {
 		}`;
 
 	return (
-		<header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#264532] px-10 py-4">
+		<header className="relative flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#264532] px-10 py-4">
 			<div className="flex items-center gap-4 text-white">
 				<Link to="/" className="h-8 w-auto">
 					<img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-full w-auto object-contain" />
@@ -178,11 +178,11 @@ const Header: React.FC = () => {
 
       {/* Mobile Menu Overlay */}
 			{isMobileMenuOpen && (
-				<div className="absolute top-full left-0 w-full bg-[#1a3a26] border-b border-[#264532] p-4 flex flex-col gap-4 md:hidden z-50 shadow-xl">
+				<div className="fixed inset-0 top-[73px] bg-[#1a3a26] p-6 flex flex-col gap-6 md:hidden z-50 overflow-y-auto">
 					<NavLink 
             to="/" 
             end 
-            className={(props) => navLinkClass(props)}
+            className={(props) => navLinkClass(props) + ' text-lg py-2'}
             onClick={() => setIsMobileMenuOpen(false)}
           >
 						<LayoutList className="w-5 h-5" />
@@ -190,7 +190,7 @@ const Header: React.FC = () => {
 					</NavLink>
 					<NavLink 
             to="/appointments" 
-            className={(props) => navLinkClass(props)}
+            className={(props) => navLinkClass(props) + ' text-lg py-2'}
             onClick={() => setIsMobileMenuOpen(false)}
           >
 						<CalendarDays className="w-5 h-5" />
@@ -198,7 +198,7 @@ const Header: React.FC = () => {
 					</NavLink>
 					<NavLink 
             to="/display" 
-            className={(props) => navLinkClass(props)}
+            className={(props) => navLinkClass(props) + ' text-lg py-2'}
             onClick={() => setIsMobileMenuOpen(false)}
           >
 						<Monitor className="w-5 h-5" />
@@ -206,7 +206,7 @@ const Header: React.FC = () => {
 					</NavLink>
           <NavLink 
             to="/warnings" 
-            className={(props) => navLinkClass(props)}
+            className={(props) => navLinkClass(props) + ' text-lg py-2'}
             onClick={() => setIsMobileMenuOpen(false)}
           >
 						<Bell className="w-5 h-5" />
@@ -214,17 +214,17 @@ const Header: React.FC = () => {
 					</NavLink>
 					<NavLink 
             to="/settings" 
-            className={(props) => navLinkClass(props)}
+            className={(props) => navLinkClass(props) + ' text-lg py-2'}
             onClick={() => setIsMobileMenuOpen(false)}
           >
 						<Settings className="w-5 h-5" />
 						<span>Ajustes</span>
 					</NavLink>
           
-          <div className="border-t border-[#264532] pt-4 mt-2">
+          <div className="border-t border-[#264532] pt-6 mt-auto">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 text-white font-medium hover:text-red-400 w-full"
+              className="flex items-center gap-3 text-white font-medium hover:text-red-400 w-full text-lg py-2"
             >
               <LogOut className="w-5 h-5" />
               Sair
