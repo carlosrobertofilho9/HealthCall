@@ -3,6 +3,7 @@ import { useDisplayData } from '@/hooks/useDisplayData';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { WarningPlayer } from '../components/WarningPlayer';
 
 /**
  * A página de exibição pública para chamadas de pacientes.
@@ -24,6 +25,8 @@ const DisplayPage: React.FC = () => {
     audioActivated,
     activateAudio,
     isActivatingAudio,
+    showWarnings,
+    stopWarnings,
   } = useDisplayData();
   const { session, loading } = useAuth();
   const navigate = useNavigate();
@@ -53,19 +56,12 @@ const DisplayPage: React.FC = () => {
           <button
             onClick={activateAudio}
             disabled={isActivatingAudio}
-            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {isActivatingAudio ? (
-              <>
-                <span className="material-symbols-outlined align-middle mr-2 animate-spin">refresh</span>
-                Ativando...
-              </>
-            ) : (
-              <>
-                <span className="material-symbols-outlined align-middle mr-2">volume_up</span>
-                Ativar Som e Iniciar
-              </>
-            )}
+            <span className="material-symbols-outlined align-middle mr-2">
+              {isActivatingAudio ? 'hourglass_empty' : 'volume_up'}
+            </span>
+            {isActivatingAudio ? 'Ativando...' : 'Ativar Som e Iniciar'}
           </button>
         </div>
       </div>
@@ -77,8 +73,8 @@ const DisplayPage: React.FC = () => {
 
   if (isCalling) {
     return (
-      <div className="bg-gray-900 text-white" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
-        <div className="flex flex-col min-h-screen">
+      <div className="bg-gray-900 text-white relative" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
+        <div className="flex flex-col min-h-screen relative z-50 bg-gray-900">
           <header className="px-6 py-4 flex items-center justify-between border-b border-gray-700">
             <div className="flex items-center gap-3">
               <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-8 w-auto" />
@@ -101,9 +97,12 @@ const DisplayPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-900 text-white" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
-      <div className="flex flex-col min-h-screen">
-        <header className="px-6 py-4 flex items-center justify-between border-b border-gray-700">
+    <div className="bg-gray-900 text-white relative overflow-hidden" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
+      {/* Warning Overlay - Only appears after 10s without calls */}
+      {showWarnings && <WarningPlayer onFinish={() => {}} />}
+
+      <div className="flex flex-col min-h-screen relative z-10">
+        <header className="px-6 py-4 flex items-center justify-between border-b border-gray-700 bg-gray-900/90 backdrop-blur">
           <div className="flex items-center gap-3">
             <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-8 w-auto" />
             <h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>

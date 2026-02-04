@@ -116,6 +116,16 @@ const Header: React.FC = () => {
 				>
 					Display
 				</NavLink>
+        <NavLink
+					to="/warnings"
+					className={({ isActive }) =>
+						isActive
+							? 'text-primary text-base font-bold leading-normal'
+							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
+					}
+				>
+					Avisos
+				</NavLink>
 				<NavLink
 					to="/settings"
 					className={({ isActive }) =>

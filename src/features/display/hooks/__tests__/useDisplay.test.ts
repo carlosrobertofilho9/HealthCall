@@ -23,6 +23,7 @@ vi.mock('@/hooks/useTextToSpeech', () => ({
   useTextToSpeech: vi.fn(() => ({
     speak: vi.fn().mockResolvedValue(undefined),
     preloadTTS: vi.fn().mockResolvedValue('https://example.com/audio.mp3'),
+    cancel: vi.fn(),
   })),
 }));
 
@@ -242,6 +243,7 @@ describe('useDisplay - Audio System', () => {
       vi.mocked(useTextToSpeech).mockReturnValue({
         speak: mockSpeak,
         preloadTTS: vi.fn().mockResolvedValue('url'),
+        cancel: vi.fn(),
       });
 
       const { result, rerender } = renderHook(() => useDisplay());
@@ -299,6 +301,7 @@ describe('useDisplay - Audio System', () => {
       vi.mocked(useTextToSpeech).mockReturnValue({
         speak: mockSpeak,
         preloadTTS: vi.fn().mockResolvedValue('url'),
+        cancel: vi.fn(),
       });
 
       const { result } = renderHook(() => useDisplay());
@@ -349,6 +352,7 @@ describe('useDisplay - Audio System', () => {
       vi.mocked(useTextToSpeech).mockReturnValue({
         speak: mockSpeak,
         preloadTTS: vi.fn().mockResolvedValue('url'),
+        cancel: vi.fn(),
       });
 
       const { result } = renderHook(() => useDisplay());
@@ -499,6 +503,7 @@ describe('useDisplay - Audio System', () => {
       vi.mocked(useTextToSpeech).mockReturnValue({
         speak: mockSpeak,
         preloadTTS: vi.fn().mockResolvedValue('url'),
+        cancel: vi.fn(),
       });
 
       const { result } = renderHook(() => useDisplay());
@@ -544,6 +549,7 @@ describe('useDisplay - Audio System', () => {
       vi.mocked(useTextToSpeech).mockReturnValue({
         speak: mockSpeak,
         preloadTTS: vi.fn().mockResolvedValue('url'),
+        cancel: vi.fn(),
       });
 
       const { result } = renderHook(() => useDisplay());

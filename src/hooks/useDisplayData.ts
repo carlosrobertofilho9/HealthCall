@@ -15,8 +15,14 @@ export interface DisplayDataContextProps {
   isCalling: boolean;
   /** Um booleano que indica se o usuário interagiu com a página para ativar o áudio. */
   audioActivated: boolean;
+  /** Um booleano que indica se a ativação de áudio está em andamento. */
+  isActivatingAudio: boolean;
+  /** Um booleano que indica se os warnings devem ser exibidos (após 10s sem chamadas). */
+  showWarnings: boolean;
   /** Uma função para marcar o áudio como ativado após a interação do usuário. */
   activateAudio: () => void;
+  /** Uma função para parar os warnings imediatamente. */
+  stopWarnings: () => void;
 }
 
 /**

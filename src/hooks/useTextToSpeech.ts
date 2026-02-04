@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { audioTelemetry } from '@/lib/audioTelemetry';
+import { useRef, useCallback } from 'react';
 
 // Cache em memória com expiração para evitar URLs antigas/inválidas
 interface CacheEntry {
@@ -159,10 +160,35 @@ function isValidAudioUrl(url: string): boolean {
  * não é capturado pelo espelhamento do Chromecast.
  *
  * @returns {{
- *   speak: (text: string) => Promise<void>
+ *   speak: (text: string) => Promise<void>,
+ *   preloadTTS: (text: string) => Promise<string>,
+ *   cancel: () => void
  * }} Um objeto contendo a função `speak` para iniciar a síntese de voz.
  */
 export function useTextToSpeech() {
+  // Ref para rastrear o áudio atual em reprodução
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const cancelledRef = useRef(false);
+
+  /**
+   * Cancela qualquer reprodução de áudio TTS em andamento.
+   */
+  const cancel = useCallback(() => {
+    console.log('[TTS] Cancelando reprodução...');
+    cancelledRef.current = true;
+    
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.src = '';
+      currentAudioRef.current = null;
+    }
+    
+    // Reset após breve delay para permitir novas reproduções
+    setTimeout(() => {
+      cancelledRef.current = false;
+    }, 100);
+  }, []);
+
   /**
    * Converte uma string de texto em áudio falado.
    *
@@ -226,9 +252,23 @@ export function useTextToSpeech() {
       let speechAudio: HTMLAudioElement | null = null;
       const startTime = Date.now();
 
+      // Verifica se foi cancelado antes de começar
+      if (cancelledRef.current) {
+        console.log('[TTS] Reprodução cancelada antes de iniciar');
+        resolve();
+        return;
+      }
+
       try {
         // Obtém a URL do áudio (usa cache se disponível, com retry)
         const speechUrl = await preloadTTS(text);
+
+        // Verifica novamente se foi cancelado após preload
+        if (cancelledRef.current) {
+          console.log('[TTS] Reprodução cancelada após preload');
+          resolve();
+          return;
+        }
 
         // ⚠️ VALIDAÇÃO CRÍTICA DE SEGURANÇA
         // DEVE rejeitar antes de criar elemento Audio
@@ -241,6 +281,7 @@ export function useTextToSpeech() {
 
         // Cria e configura o elemento de áudio
         speechAudio = new Audio(speechUrl);
+        currentAudioRef.current = speechAudio;
 
         // Configurações para Chromecast
         speechAudio.crossOrigin = 'anonymous';
@@ -280,6 +321,7 @@ export function useTextToSpeech() {
           const latency = Date.now() - startTime;
           audioTelemetry.trackPlayback(true, latency);
           cleanup();
+          currentAudioRef.current = null;
           resolve();
         };
 
@@ -296,6 +338,7 @@ export function useTextToSpeech() {
           }
 
           cleanup();
+          currentAudioRef.current = null;
           reject(new Error('Erro ao reproduzir áudio'));
         };
 
@@ -312,11 +355,12 @@ export function useTextToSpeech() {
           speechAudio.pause();
           speechAudio.src = '';
         }
+        currentAudioRef.current = null;
 
         reject(e);
       }
     });
   };
 
-  return { speak, preloadTTS };
+  return { speak, preloadTTS, cancel };
 }
