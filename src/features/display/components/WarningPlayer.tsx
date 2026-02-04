@@ -157,37 +157,46 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
   if (!currentWarning) return null;
 
   return (
-    <div className={`absolute inset-0 z-40 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-      {/* Fundo decorativo */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-green-500/10 to-transparent rounded-full blur-3xl" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-blue-500/10 to-transparent rounded-full blur-3xl" />
+    <div className={`absolute inset-0 z-40 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] transition-opacity duration-500 ease-in-out ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+      {/* Padrão de fundo animado */}
+      <div className="absolute inset-0 opacity-10 bg-[url('/noise.png')] mix-blend-overlay pointer-events-none" />
+      
+      {/* Background Glows Dinâmicos */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-green-500/10 rounded-full blur-[100px] animate-pulse-slow" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[100px] animate-pulse-slow delay-1000" />
       </div>
 
-      {/* Conteúdo principal */}
-      <div className="relative w-full h-full flex items-center justify-center p-8">
+      {/* Conteúdo principal com Container Glassmorphism */}
+      <div className="relative w-full h-full flex items-center justify-center p-8 md:p-12">
+        <div className="relative w-full h-full max-w-[1920px] mx-auto flex flex-col items-center justify-center">
+        
         {currentWarning.media_type === 'video' && currentWarning.content_url ? (
-          <video
-            key={currentWarning.id}
-            ref={videoRef}
-            src={currentWarning.content_url}
-            className="w-full h-full object-contain rounded-2xl shadow-2xl"
-            autoPlay
-            onEnded={handleNext}
-            onError={() => handleNext()}
-          />
-        ) : currentWarning.media_type === 'youtube' && currentWarning.content_url ? (
-          <div className="w-full h-full max-w-6xl mx-auto flex flex-col">
-            <iframe
+          <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-black/50 backdrop-blur-sm">
+            <video
               key={currentWarning.id}
-              src={getYoutubeEmbedUrl(currentWarning.content_url)}
-              className="w-full flex-1 rounded-2xl shadow-2xl"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
+              ref={videoRef}
+              src={currentWarning.content_url}
+              className="w-full h-full object-contain"
+              autoPlay
+              onEnded={handleNext}
+              onError={() => handleNext()}
             />
+          </div>
+        ) : currentWarning.media_type === 'youtube' && currentWarning.content_url ? (
+          <div className="w-full h-full max-w-7xl mx-auto flex flex-col gap-8">
+            <div className="flex-1 rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 bg-black">
+              <iframe
+                key={currentWarning.id}
+                src={getYoutubeEmbedUrl(currentWarning.content_url)}
+                className="w-full h-full"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            </div>
             {currentWarning.message && (
-              <div className="mt-6 text-center">
-                <p className="text-2xl md:text-3xl text-white/90 font-medium">
+              <div className="bg-black/40 backdrop-blur-md rounded-2xl p-6 border border-white/5 animate-slide-up">
+                <p className="text-3xl md:text-4xl text-white font-medium text-center leading-relaxed">
                   {currentWarning.message}
                 </p>
               </div>
@@ -195,76 +204,89 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
           </div>
         ) : currentWarning.content_url ? (
           <div className="relative w-full h-full flex items-center justify-center">
-            {/* Imagem com overlay elegante */}
-            <div className="relative max-w-5xl w-full h-full flex items-center justify-center">
+            {/* Container da Imagem */}
+            <div className="relative max-w-7xl w-full h-full flex items-center justify-center group">
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 rounded-3xl" />
               <img
                 key={currentWarning.id}
                 src={currentWarning.content_url}
                 alt={currentWarning.text || 'Aviso'}
-                className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+                className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl ring-1 ring-white/10"
               />
               
-              {/* Card de mensagem sobreposto */}
+              {/* Overlay de Mensagem Premium */}
               {currentWarning.message && (
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <div className="bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-sm rounded-b-2xl p-8 -mx-0">
-                    <p className="text-3xl md:text-5xl font-bold text-white text-center leading-tight drop-shadow-lg">
-                      {currentWarning.message}
-                    </p>
+                <div className="absolute bottom-6 left-0 right-0 px-6 md:px-12 animate-slide-up">
+                  <div className="bg-black/70 backdrop-blur-md border border-white/5 rounded-xl p-6 shadow-2xl">
+                     {currentWarning.text && (
+                       <h3 className="text-green-400 font-bold tracking-wider uppercase text-xs mb-2">
+                         {currentWarning.text}
+                       </h3>
+                     )}
+                     <p className="text-xl md:text-3xl font-bold text-white text-center leading-snug drop-shadow-md">
+                       {currentWarning.message}
+                     </p>
                   </div>
                 </div>
               )}
             </div>
           </div>
         ) : (
-          /* Aviso apenas com mensagem (sem mídia) - Design moderno */
-          <div className="flex flex-col items-center justify-center text-center max-w-4xl mx-auto px-8">
-            {/* Ícone decorativo */}
-            <div className="mb-8 relative">
-              <div className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
-                <span className="material-symbols-outlined text-5xl text-white">campaign</span>
+          /* Aviso Minimalista de Texto (Design Zen) */
+          <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-5xl mx-auto">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] p-12 md:p-20 shadow-2xl animate-zoom-in">
+              {/* Ícone com Glow */}
+              <div className="mb-10 relative inline-block">
+                <div className="absolute inset-0 bg-green-500 blur-2xl opacity-20 animate-pulse" />
+                <div className="relative w-28 h-28 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl rotate-3 flex items-center justify-center shadow-lg transform transition hover:rotate-0 duration-500">
+                  <span className="material-symbols-outlined text-6xl text-white drop-shadow-md">campaign</span>
+                </div>
               </div>
-              <div className="absolute inset-0 w-24 h-24 bg-green-500/20 rounded-full animate-ping" />
+              
+              {/* Título Elegante */}
+              {currentWarning.text && (
+                <h2 className="text-2xl md:text-3xl font-medium text-green-400 mb-8 tracking-[0.2em] uppercase border-b border-green-500/20 pb-4 inline-block">
+                  {currentWarning.text}
+                </h2>
+              )}
+              
+              {/* Mensagem Principal */}
+              {currentWarning.message && (
+                <p className="text-5xl md:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400 leading-tight tracking-tight">
+                  {currentWarning.message}
+                </p>
+              )}
             </div>
-            
-            {/* Título */}
-            {currentWarning.text && (
-              <h2 className="text-2xl md:text-3xl font-semibold text-green-400 mb-6 tracking-wide uppercase">
-                {currentWarning.text}
-              </h2>
-            )}
-            
-            {/* Mensagem principal */}
-            {currentWarning.message && (
-              <p className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight">
-                {currentWarning.message}
-              </p>
-            )}
           </div>
         )}
+        </div>
       </div>
 
-      {/* Indicador de progresso e navegação */}
-      {activeWarnings.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3">
-          {activeWarnings.map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                idx === currentIndex 
-                  ? 'w-8 bg-green-500 shadow-lg shadow-green-500/50' 
-                  : 'w-2 bg-white/30 hover:bg-white/50'
-              }`}
-            />
-          ))}
-        </div>
-      )}
+      {/* Footer / Barra de Progresso */}
+      <div className="absolute bottom-0 left-0 right-0 p-8 flex items-end justify-center pointer-events-none">
+         {activeWarnings.length > 1 && (
+           <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md rounded-full px-6 py-3 border border-white/5">
+             {activeWarnings.map((_, idx) => (
+               <div
+                 key={idx}
+                 className={`h-1.5 rounded-full transition-all duration-500 ease-out ${
+                   idx === currentIndex 
+                     ? 'w-12 bg-gradient-to-r from-green-400 to-emerald-500 shadow-[0_0_10px_rgba(74,222,128,0.5)]' 
+                     : 'w-2 bg-white/20'
+                 }`}
+               />
+             ))}
+           </div>
+         )}
+      </div>
       
-      {/* Badge de prioridade */}
+      {/* Badge de Prioridade Premium */}
       {currentWarning.priority && (
-        <div className="absolute top-6 right-6 flex items-center gap-2 bg-yellow-500/90 backdrop-blur-sm text-black px-4 py-2 rounded-full font-bold text-sm shadow-lg">
-          <span className="material-symbols-outlined text-lg">star</span>
-          IMPORTANTE
+        <div className="absolute top-8 right-8 animate-bounce-gentle">
+          <div className="flex items-center gap-3 bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 text-black px-6 py-3 rounded-full font-bold text-sm shadow-[0_0_20px_rgba(251,191,36,0.4)] border border-yellow-200/50">
+            <span className="material-symbols-outlined text-xl">verified</span>
+            <span className="tracking-wider text-xs uppercase">Comunicado Oficial</span>
+          </div>
         </div>
       )}
     </div>

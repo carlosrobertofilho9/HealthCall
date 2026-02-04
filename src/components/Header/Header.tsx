@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
+import { LayoutList, Monitor, Bell, Settings, LogOut } from 'lucide-react';
 
 /**
  * The main header component for the application.
@@ -84,6 +85,13 @@ const Header: React.FC = () => {
 		})();
 	}, []);
 
+	const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+		`flex items-center gap-2 text-base leading-normal transition-colors ${
+			isActive
+				? 'text-primary font-bold'
+				: 'text-white font-medium hover:text-primary'
+		}`;
+
 	return (
 		<header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#264532] px-10 py-4">
 			<div className="flex items-center gap-4 text-white">
@@ -94,59 +102,39 @@ const Header: React.FC = () => {
 					<h1 className="text-white text-xl font-bold leading-tight tracking-[-0.015em]">HealthCall</h1>
 				</Link>
 			</div>
-			<nav className="hidden md:flex flex-1 justify-center gap-8">
-				<NavLink
-					to="/"
-					end
-					className={({ isActive }) =>
-						isActive
-							? 'text-primary text-base font-bold leading-normal'
-							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
-					}
-				>
-					Fila de Atendimento
+			
+			<nav className="hidden md:flex items-center gap-8">
+				<NavLink to="/" end className={navLinkClass}>
+					<LayoutList className="w-5 h-5" />
+					<span>Fila</span>
 				</NavLink>
-				<NavLink
-					to="/display"
-					className={({ isActive }) =>
-						isActive
-							? 'text-primary text-base font-bold leading-normal'
-							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
-					}
-				>
-					Display
+				<NavLink to="/display" className={navLinkClass}>
+					<Monitor className="w-5 h-5" />
+					<span>Display</span>
 				</NavLink>
-        <NavLink
-					to="/warnings"
-					className={({ isActive }) =>
-						isActive
-							? 'text-primary text-base font-bold leading-normal'
-							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
-					}
-				>
-					Avisos
+        <NavLink to="/warnings" className={navLinkClass}>
+					<Bell className="w-5 h-5" />
+					<span>Avisos</span>
 				</NavLink>
-				<NavLink
-					to="/settings"
-					className={({ isActive }) =>
-						isActive
-							? 'text-primary text-base font-bold leading-normal'
-							: 'text-white text-base font-medium leading-normal hover:text-primary transition-colors'
-					}
-				>
-					Configurações
+				<NavLink to="/settings" className={navLinkClass}>
+					<Settings className="w-5 h-5" />
+					<span>Ajustes</span>
 				</NavLink>
 			</nav>
+
 			<div className="flex items-center gap-4">
 				<div className="relative" ref={menuRef}>
-					<button onClick={toggleMenu} className="focus:outline-none">
+					<button 
+						onClick={toggleMenu} 
+						className="focus:outline-none"
+					>
 						{avatarUrl ? (
 							<div
 								className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12 border-2 border-primary"
 								style={{ backgroundImage: `url("${avatarUrl}")` }}
 								aria-label="Foto do usuário"
 								role="img"
-							></div>
+							/>
 						) : (
 							<div
 								className="aspect-square rounded-full size-12 border-2 border-primary bg-[#325a42] text-white flex items-center justify-center font-bold"
@@ -163,7 +151,7 @@ const Header: React.FC = () => {
 								onClick={handleLogout}
 								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
 							>
-								<span className="material-symbols-outlined mr-2">logout</span>
+								<LogOut className="mr-2 material-symbols-outlined" />
 								Sair
 							</button>
 						</div>
