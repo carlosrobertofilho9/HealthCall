@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import type { PatientStatus } from '@/types';
+import { CheckCircle, ArrowRight, X } from 'lucide-react';
 
 interface FinishServiceButtonProps {
   patientId: string;
@@ -11,16 +12,6 @@ interface FinishServiceButtonProps {
 
 /**
  * Um botão com um menu suspenso para finalizar o atendimento de um paciente ou encaminhá-lo.
- *
- * Este componente exibe um ícone de verificação. Quando clicado, se o atendimento não estiver finalizado,
- * ele abre um menu com opções para "Finalizar Atendimento" ou encaminhar o paciente para
- * um destino diferente, atualizando seu status e destino conforme necessário.
- *
- * @param {FinishServiceButtonProps} props As propriedades do componente.
- * @param {string} props.patientId O ID do paciente.
- * @param {boolean} props.isFinished Indica se o atendimento do paciente já foi finalizado.
- * @param {(id: string, status: PatientStatus) => void} props.onUpdateStatus Callback para atualizar o status do paciente.
- * @param {(id: string, destination: string) => void} props.onUpdateDestination Callback para atualizar o destino do paciente.
  */
 const FinishServiceButton: React.FC<FinishServiceButtonProps> = ({
   patientId,
@@ -61,10 +52,10 @@ const FinishServiceButton: React.FC<FinishServiceButtonProps> = ({
   }, []);
 
   const options = [
-    { label: 'Finalizar Atendimento', action: 'finish' },
-    { label: 'Encaminhar para Consultorio Médico', action: 'forward', destination: 'Consultorio Médico' },
-    { label: 'Encaminhar para Consultorio Enfermagem', action: 'forward', destination: 'Consultorio Enfermagem' },
-    { label: 'Encaminhar para Consultorio Odontologico', action: 'forward', destination: 'Consultorio Odontologico' },
+    { label: 'Finalizar Atendimento', action: 'finish', icon: CheckCircle, color: 'text-green-400' },
+    { label: 'Encaminhar para Cons. Médico', action: 'forward', destination: 'Consultorio Médico' },
+    { label: 'Encaminhar para Cons. Enfermagem', action: 'forward', destination: 'Consultorio Enfermagem' },
+    { label: 'Encaminhar para Cons. Odontológico', action: 'forward', destination: 'Consultorio Odontologico' },
     { label: 'Encaminhar para Sala de Vacinação', action: 'forward', destination: 'Sala de Vacinação' },
     { label: 'Encaminhar para Triagem', action: 'forward', destination: 'Triagem' },
   ];
@@ -72,29 +63,45 @@ const FinishServiceButton: React.FC<FinishServiceButtonProps> = ({
   return (
     <div className="relative" ref={menuRef}>
       <button
-        className={`flex items-center justify-center rounded-full h-10 w-10 ${
-          isFinished
-            ? 'bg-green-500/10 text-green-400/50 cursor-not-allowed'
-            : 'bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors'
-        }`}
-        title="Finalizar Atendimento"
+        className={`
+          flex items-center justify-center rounded-md h-9 w-9 transition-all active:scale-95
+          ${isFinished
+            ? 'text-green-400/50 cursor-not-allowed'
+            : 'text-green-400 hover:bg-green-500/20 hover:text-green-300'
+          }
+        `}
+        title="Finalizar/Encaminhar"
         onClick={handleToggle}
         disabled={isFinished}
-        aria-label="Finalizar Atendimento"
+        aria-label="Finalizar ou Encaminhar"
+        aria-expanded={isOpen}
       >
-        <span className="material-symbols-outlined text-base">check_circle</span>
+        <CheckCircle size={18} />
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-72 rounded-md bg-[#264532] shadow-lg max-h-60 overflow-auto right-0">
-          <ul className="py-1">
-            {options.map(option => (
+        <div className="absolute right-0 bottom-full mb-2 z-50 w-64 rounded-xl bg-[#1a2c22] border border-[#264532] shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
+            <div className="p-2 border-b border-[#264532] flex items-center justify-between text-xs text-gray-400 font-medium uppercase tracking-wider bg-[#264532]/30">
+                <span>Ações</span>
+                <button onClick={() => setIsOpen(false)} className="hover:text-white"><X size={14}/></button>
+            </div>
+          <ul className="py-1 max-h-64 overflow-y-auto custom-scrollbar">
+            {options.map((option, idx) => (
               <li
-                key={option.label}
-                className="text-white cursor-pointer select-none relative py-2 px-4 hover:bg-[#3a6b4d]"
+                key={idx}
+                className={`
+                    group flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none relative py-2.5 px-3 
+                    hover:bg-[#264532] hover:text-white transition-colors
+                    ${option.action === 'finish' ? 'border-b border-[#264532] mb-1 pb-3 text-green-400 font-medium hover:text-green-300' : ''}
+                `}
                 onClick={() => handleSelect(option.action, option.destination)}
               >
-                {option.label}
+                {option.action === 'finish' ? (
+                    <CheckCircle size={16} className="text-green-500" />
+                ) : (
+                    <ArrowRight size={14} className="text-[#96c5a9] group-hover:text-white transition-colors" />
+                )}
+                <span>{option.label}</span>
               </li>
             ))}
           </ul>

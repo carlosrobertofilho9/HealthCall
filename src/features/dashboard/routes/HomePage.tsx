@@ -35,6 +35,7 @@ const HomePage: React.FC = () => {
     clearQueue,
     updatePatient,
     isAddingPatient,
+    reorderPatients,
   } = usePatientQueue();
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,6 +112,7 @@ const HomePage: React.FC = () => {
 				setSearchTerm={setSearchTerm}
 				selectedDestination={selectedDestination}
 				setSelectedDestination={setSelectedDestination}
+                onReorder={reorderPatients}
 			/>
 			{isModalOpen && editingPatient && (
 				<EditPatientModal patient={editingPatient} onSave={updatePatient} onClose={closeModal} isOpen={isModalOpen} />

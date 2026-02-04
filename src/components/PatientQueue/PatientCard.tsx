@@ -1,98 +1,175 @@
 import React from 'react';
-import PatientStatusBadge from './PatientStatusBadge';
 import type { Patient, PatientStatus } from '@/types';
 import FinishServiceButton from './FinishServiceButton';
+import { Megaphone, Play, Edit, Trash2, MapPin, Clock } from 'lucide-react';
+import { cn } from '@/lib/utils'; // Assuming you have a utility for class merging, otherwise I'll use template literals carefully
 
-/**
- * A card component that displays information about a single patient.
- * It provides action buttons to call, edit, update status, and remove the patient.
- * @param {object} props - The component props.
- * @param {Patient} props.patient - The patient data to display.
- * @param {(patient: Patient) => void} props.onEdit - Callback function to handle editing the patient.
- * @param {(id: string, destination: string) => void} props.onCall - Callback function to handle calling the patient.
- * @param {(id: string, status: PatientStatus) => void} props.onUpdateStatus - Callback function to handle updating the patient's status.
- * @param {(id: string) => void} props.onRemove - Callback function to handle removing the patient.
- * @param {(id: string, destination: string) => void} props.onUpdateDestination - Callback function to handle updating the patient's destination.
- */
-const PatientCard: React.FC<{
+interface PatientCardProps {
   patient: Patient;
+  position: number;
   onEdit: (patient: Patient) => void;
   onCall: (id: string, destination: string) => void;
   onUpdateStatus: (id: string, status: PatientStatus) => void;
   onRemove: (id: string) => void;
   onUpdateDestination: (id: string, destination: string) => void;
-}> = ({ patient, onEdit, onCall, onUpdateStatus, onRemove, onUpdateDestination }) => {
+}
+
+const statusConfig: Record<PatientStatus, { color: string; bg: string; border: string; icon: any }> = {
+  // ... (keep existing config if not redeclared, but here I am redeclaring purely for context in replacement if needed, 
+  // actually I can just leave the interface and component definition start)
+  'Aguardando': { 
+    color: 'text-yellow-400', 
+    bg: 'bg-yellow-500/10', 
+    border: 'border-yellow-500/50',
+    icon: Clock 
+  },
+  'Chamado': { 
+    color: 'text-blue-400', 
+    bg: 'bg-blue-500/10', 
+    border: 'border-blue-500/50',
+    icon: Megaphone
+  },
+  'Em Atendimento': { 
+    color: 'text-green-400', 
+    bg: 'bg-green-500/10', 
+    border: 'border-green-500/50',
+    icon: Play
+  },
+  'Atendimento Finalizado': { 
+    color: 'text-gray-400', 
+    bg: 'bg-gray-500/10', 
+    border: 'border-gray-500/30',
+    icon: Clock
+  }
+};
+
+const PatientCard: React.FC<PatientCardProps> = ({ 
+  patient, 
+  position,
+  onEdit, 
+  onCall, 
+  onUpdateStatus, 
+  onRemove, 
+  onUpdateDestination 
+}) => {
   const isFinished = patient.status === 'Atendimento Finalizado';
-  const canStartService =
-    patient.status !== 'Atendimento Finalizado' && patient.status !== 'Em Atendimento';
+  const canStartService = patient.status !== 'Atendimento Finalizado' && patient.status !== 'Em Atendimento';
+  const statusStyles = statusConfig[patient.status] || statusConfig['Aguardando'];
+  const StatusIcon = statusStyles.icon;
+
   return (
     <div
-      className={`bg-[#264532] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-opacity ${isFinished ? 'opacity-60' : ''}`}
+      className={`
+        relative rounded-xl border border-white/5 bg-[#1a2c22]/60 backdrop-blur-sm p-4 
+        transition-all duration-300 hover:bg-[#1a2c22]/80 hover:shadow-lg hover:border-white/10 hover:z-50 group
+        ${patient.status === 'Chamado' ? 'ring-2 ring-blue-500/30 ring-offset-2 ring-offset-transparent' : ''}
+        ${isFinished ? 'opacity-60 grayscale-[0.5]' : ''}
+      `}
     >
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-white font-bold text-lg">{patient.name}</p>
-          {patient.callCount > 0 && (
-            <span className="bg-blue-500/20 text-blue-300 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-              {patient.callCount}ª chamada
+      {/* Decorative Status Bar on Left */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${statusStyles.bg.replace('/10', '/80')} ${patient.status === 'Chamado' ? 'animate-pulse' : ''}`} />
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pl-3">
+        
+        {/* Position Indicator */}
+        <div className="hidden sm:flex flex-col items-center justify-center shrink-0 w-8">
+            <span className="text-2xl font-bold text-white/20 font-mono leading-none">
+                {String(position).padStart(2, '0')}
             </span>
-          )}
         </div>
-        <p className="text-[#96c5a9] text-sm">Destino: {patient.destination}</p>
-        <PatientStatusBadge status={patient.status} />
-      </div>
-      <div className="flex items-center gap-2 self-end sm:self-center">
-        <button
-          className={`flex items-center justify-center rounded-full h-10 w-10 ${
-            isFinished ? 'bg-primary/10 text-primary/50 cursor-not-allowed' : 'bg-primary/20 text-primary hover:bg-primary/30 transition-colors'
-          }`}
-          title={patient.status === 'Aguardando' ? 'Chamar Paciente' : 'Chamar Novamente'}
-          onClick={() => onCall(patient.id, patient.destination)}
-          disabled={isFinished}
-          aria-label="Chamar Paciente"
-        >
-          <span className="material-symbols-outlined text-base">campaign</span>
-        </button>
-        <button
-          className={`flex items-center justify-center rounded-full h-10 w-10 ${
-            canStartService
-              ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30'
-              : 'bg-blue-500/10 text-blue-300/50 cursor-not-allowed'
-          } transition-colors`}
-          title="Iniciar Atendimento"
-          onClick={() => onUpdateStatus(patient.id, 'Em Atendimento')}
-          disabled={!canStartService}
-          aria-label="Iniciar Atendimento"
-        >
-          <span className="material-symbols-outlined text-base">play_circle</span>
-        </button>
-        <button
-          className={`edit-patient-btn flex items-center justify-center rounded-full h-10 w-10 ${
-            isFinished
-              ? 'bg-yellow-500/10 text-yellow-400/50 cursor-not-allowed'
-              : 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors'
-          }`}
-          title="Editar"
-          onClick={() => onEdit(patient)}
-          disabled={isFinished}
-          aria-label="Editar Paciente"
-        >
-          <span className="material-symbols-outlined text-base">edit</span>
-        </button>
-        <button
-          className="flex items-center justify-center rounded-full h-10 w-10 bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-          title="Remover da Fila"
-          onClick={() => onRemove(patient.id)}
-          aria-label="Remover da Fila"
-        >
-          <span className="material-symbols-outlined text-base">delete</span>
-        </button>
-        <FinishServiceButton
-          patientId={patient.id}
-          isFinished={isFinished}
-          onUpdateStatus={onUpdateStatus}
-          onUpdateDestination={onUpdateDestination}
-        />
+        {/* Main Info */}
+        <div className="flex-1 space-y-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-xl font-bold text-white tracking-tight">{patient.name}</h3>
+            {patient.callCount > 0 && (
+              <span className="flex items-center gap-1.5 bg-blue-500/20 text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <Megaphone size={10} className="stroke-[3]" />
+                {patient.callCount}ª chamada
+              </span>
+            )}
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400">
+            <div className="flex items-center gap-1.5">
+              <MapPin size={14} className="text-[#96c5a9]" />
+              <span className="text-[#96c5a9] font-medium">{patient.destination}</span>
+            </div>
+            <div className={`flex items-center gap-1.5 font-medium ${statusStyles.color}`}>
+               <StatusIcon size={14} className={patient.status === 'Chamado' ? 'animate-bounce' : ''} />
+               <span>{patient.status}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions - Grouped */}
+        <div className="flex items-center gap-3 self-end sm:self-center">
+          
+          {/* Primary Actions Group */}
+          <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/5">
+            <button
+              className={`
+                flex items-center justify-center rounded-md h-9 w-9 transition-all active:scale-95
+                ${isFinished 
+                  ? 'text-gray-500 cursor-not-allowed' 
+                  : 'text-blue-400 hover:bg-blue-500/20 hover:text-blue-300'}
+              `}
+              title={patient.status === 'Aguardando' ? 'Chamar Paciente' : 'Chamar Novamente'}
+              onClick={() => onCall(patient.id, patient.destination)}
+              disabled={isFinished}
+            >
+              <Megaphone size={18} className={patient.status === 'Chamado' ? 'animate-pulse' : ''} />
+            </button>
+
+            <button
+              className={`
+                flex items-center justify-center rounded-md h-9 w-9 transition-all active:scale-95
+                ${canStartService
+                  ? 'text-green-400 hover:bg-green-500/20 hover:text-green-300'
+                  : 'text-gray-600 cursor-not-allowed'}
+              `}
+              title="Iniciar Atendimento"
+              onClick={() => onUpdateStatus(patient.id, 'Em Atendimento')}
+              disabled={!canStartService}
+            >
+              <Play size={18} />
+            </button>
+
+            {/* Injected Finish Button - Wrapper to make it fit if needed, but the component itself manages styles. 
+                Ideally we should pass a prop to FinishServiceButton to match this style, 
+                but for now we'll assume it renders its own button.
+            */}
+            <FinishServiceButton
+              patientId={patient.id}
+              isFinished={isFinished}
+              onUpdateStatus={onUpdateStatus}
+              onUpdateDestination={onUpdateDestination}
+            />
+          </div>
+
+          {/* Secondary Actions Group (Edit/Remove) */}
+          <div className="flex items-center gap-1">
+             <button
+              className={`
+                flex items-center justify-center rounded-full h-8 w-8 transition-colors
+                ${isFinished
+                  ? 'text-gray-600 cursor-not-allowed'
+                  : 'text-gray-400 hover:bg-yellow-500/10 hover:text-yellow-400'}
+              `}
+              title="Editar"
+              onClick={() => onEdit(patient)}
+              disabled={isFinished}
+            >
+              <Edit size={16} />
+            </button>
+            <button
+              className="flex items-center justify-center rounded-full h-8 w-8 text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+              title="Remover da Fila"
+              onClick={() => onRemove(patient.id)}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

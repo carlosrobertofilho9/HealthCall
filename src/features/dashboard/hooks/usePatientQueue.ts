@@ -231,6 +231,26 @@ export function usePatientQueue() {
     [patients, debouncedSearchTerm, selectedDestination]
   );
 
+  const reorderPatients = useCallback(async (newOrder: Patient[]) => {
+    // Optimistic update
+    setPatients(newOrder);
+    
+    // Prepare updates
+    const updates = newOrder.map((patient, index) => ({
+        id: patient.id,
+        queue_order: index + 1
+    }));
+    
+    try {
+        await patientService.updateQueueOrder(updates);
+    } catch (error: any) {
+        toast.error('Erro ao salvar a nova ordem da fila');
+        // Revert (fetch again or store previous)
+        const data = await patientService.getPatients();
+        setPatients(data);
+    }
+  }, []);
+
   return {
     patients: filteredPatients,
     searchTerm,
@@ -245,6 +265,7 @@ export function usePatientQueue() {
     callPatient,
     clearQueue,
     updatePatient,
+    reorderPatients,
     isAddingPatient,
   };
 }

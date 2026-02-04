@@ -11,9 +11,21 @@ export async function getPatients(): Promise<Patient[]> {
     const { data, error } = await supabase
       .from('patients')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('queue_order', { ascending: true })
+      .order('created_at', { ascending: true });
     
     if (error) {
+      // If error relates to missing column 'queue_order', fallback to default
+      if (error.code === '42703' || error.message?.includes('queue_order')) {
+          console.warn('Column queue_order not found, falling back to created_at sort.');
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('patients')
+            .select('*')
+            .order('created_at', { ascending: false }); // Maintaining original DESC sort for safety
+          
+          if (fallbackError) throw fallbackError;
+          return fallbackData || [];
+      }
       console.error('Error fetching patients:', error);
       throw error;
     }
@@ -33,18 +45,43 @@ export async function getPatients(): Promise<Patient[]> {
  * @throws {Error} Se a inserção falhar.
  */
 export async function addPatient(name: string, destination: string): Promise<Patient | null> {
-  const { data, error } = await supabase
+  // Get the current max queue_order
+  const { data: maxOrderData } = await supabase
     .from('patients')
-    .insert([{ name, destination, status: 'Aguardando' }])
-    .select()
+    .select('queue_order')
+    .order('queue_order', { ascending: false })
+    .limit(1)
     .single();
-  
-  if (error) {
+
+  const nextOrder = (maxOrderData?.queue_order ?? 0) + 1;
+
+
+  try {
+    const { data, error } = await supabase
+        .from('patients')
+        .insert([{ name, destination, status: 'Aguardando', queue_order: nextOrder }])
+        .select()
+        .single();
+    
+    if (error) {
+        if (error.code === '42703' || error.message?.includes('queue_order')) {
+            // Fallback for missing column
+             const { data: dataFallback, error: errorFallback } = await supabase
+                .from('patients')
+                .insert([{ name, destination, status: 'Aguardando' }])
+                .select()
+                .single();
+             
+             if (errorFallback) throw errorFallback;
+             return dataFallback;
+        }
+        throw error;
+    }
+    return data;
+  } catch (error) {
     console.error('Error adding patient:', error);
     throw error;
   }
-  
-  return data;
 }
 
 /**
@@ -227,4 +264,19 @@ export async function clearQueue(): Promise<boolean> {
 		console.error('Exception in clearQueue:', error);
 		throw error;
 	}
+}
+
+/**
+ * Updates the order of patients in the queue.
+ * @param items Array of object containing id and new order
+ */
+export async function updateQueueOrder(items: { id: string; queue_order: number }[]): Promise<void> {
+    const updates = items.map(item => 
+        supabase
+            .from('patients')
+            .update({ queue_order: item.queue_order })
+            .eq('id', item.id)
+    );
+
+    await Promise.all(updates);
 }

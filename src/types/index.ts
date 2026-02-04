@@ -7,6 +7,7 @@ export type Patient = {
 	status: PatientStatus;
 	callCount: number;
 	lastCalled?: boolean;
+    queue_order: number;
 };
 
 export type CallRecord = {
