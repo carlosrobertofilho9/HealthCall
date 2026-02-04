@@ -11,6 +11,19 @@ export const DESTINATION_ROOMS = [
 ] as const;
 
 /**
+ * Lista de Agentes Comunitários de Saúde (ACS) e opções de área
+ */
+export const ACS_OPTIONS = [
+  'Margarete',
+  'Layne',
+  'Jô',
+  'Vanessa',
+  'Lurdinha',
+  'Fora de área',
+  'Área descoberta',
+] as const;
+
+/**
  * Um objeto que define chaves consistentes para uso com `localStorage`.
  * Ajuda a evitar erros de digitação e a manter o gerenciamento de armazenamento centralizado.
  */

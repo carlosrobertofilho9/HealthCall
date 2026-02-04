@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
-import { Plus, X, Phone, Copy, Check } from 'lucide-react';
+import { Plus, X, Phone, Copy, Check, Clock, User, FileText, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select';
+import { ACS_OPTIONS } from '@/constants';
 import type { CreateAppointmentData, DocumentType } from '@/types';
 import { formatDateToISO, getAppointmentMessage } from '../services/appointmentService';
 
@@ -29,7 +37,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
   const [patientName, setPatientName] = useState('');
   const [documentType, setDocumentType] = useState<DocumentType>('CPF');
   const [documentValue, setDocumentValue] = useState('');
-  const [acsName, setAcsName] = useState('');
+  const [selectedAcs, setSelectedAcs] = useState<string>('');
+  const [customAcs, setCustomAcs] = useState('');
   const [slotNumber, setSlotNumber] = useState<number>(initialSlot || availableSlots[0] || 1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -51,7 +60,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       newErrors.documentValue = 'CPF inválido';
     }
 
-    if (!acsName.trim()) {
+    const finalAcsName = selectedAcs === 'Outro' ? customAcs : selectedAcs;
+    if (!finalAcsName.trim()) {
       newErrors.acsName = 'ACS é obrigatório';
     }
 
@@ -68,13 +78,15 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
     
     if (!validate()) return;
 
+    const finalAcsName = selectedAcs === 'Outro' ? customAcs : selectedAcs;
+
     const data: CreateAppointmentData = {
       scheduled_date: formatDateToISO(selectedDate),
       slot_number: slotNumber,
       patient_name: patientName.trim(),
       document_type: documentType,
       document_value: documentValue.trim(),
-      acs_name: acsName.trim(),
+      acs_name: finalAcsName.trim(),
     };
     const success = await onAdd(data);
     if (success) {
@@ -90,7 +102,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       // Limpar formulário (para próximo uso)
       setPatientName('');
       setDocumentValue('');
-      setAcsName('');
+      setSelectedAcs('');
+      setCustomAcs('');
       setSlotNumber(availableSlots[0] || 1);
     }
   };
@@ -215,17 +228,24 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
           {/* Slot */}
           <div>
             <Label className="text-white mb-2 block">Slot *</Label>
-            <select
-              value={slotNumber}
-              onChange={(e) => setSlotNumber(Number(e.target.value))}
-              className="w-full rounded-full text-white bg-[#264532] border-none h-14 px-4 focus:ring-2 focus:ring-primary transition-all focus:outline-none"
-            >
-              {availableSlots.map((slot) => (
-                <option key={slot} value={slot}>
-                  Slot {slot} - {getSlotDisplay(slot)}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9] z-10" />
+              <Select
+                value={slotNumber.toString()}
+                onValueChange={(value) => setSlotNumber(Number(value))}
+              >
+                <SelectTrigger className="pl-12">
+                  <SelectValue placeholder="Selecione um horário" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSlots.map((slot) => (
+                    <SelectItem key={slot} value={slot.toString()}>
+                      Slot {slot} - {getSlotDisplay(slot)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {errors.slotNumber && (
               <p className="text-red-400 text-sm mt-1">{errors.slotNumber}</p>
             )}
@@ -234,13 +254,16 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
           {/* Nome do Paciente */}
           <div>
             <Label className="text-white mb-2 block">Nome do Paciente *</Label>
-            <Input
-              type="text"
-              value={patientName}
-              onChange={(e) => setPatientName(e.target.value)}
-              placeholder="Digite o nome completo"
-              className="pl-4"
-            />
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+              <Input
+                type="text"
+                value={patientName}
+                onChange={(e) => setPatientName(e.target.value)}
+                placeholder="Digite o nome completo"
+                className="pl-12"
+              />
+            </div>
             {errors.patientName && (
               <p className="text-red-400 text-sm mt-1">{errors.patientName}</p>
             )}
@@ -286,13 +309,16 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             <Label className="text-white mb-2 block">
               {documentType === 'CPF' ? 'CPF *' : 'Número do Cartão SUS *'}
             </Label>
-            <Input
-              type="text"
-              value={documentValue}
-              onChange={handleDocumentChange}
-              placeholder={documentType === 'CPF' ? '000.000.000-00' : 'Número do cartão'}
-              className="pl-4"
-            />
+            <div className="relative">
+              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+              <Input
+                type="text"
+                value={documentValue}
+                onChange={handleDocumentChange}
+                placeholder={documentType === 'CPF' ? '000.000.000-00' : 'Número do cartão'}
+                className="pl-12"
+              />
+            </div>
             {errors.documentValue && (
               <p className="text-red-400 text-sm mt-1">{errors.documentValue}</p>
             )}
@@ -301,13 +327,39 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
           {/* ACS */}
           <div>
             <Label className="text-white mb-2 block">ACS Responsável *</Label>
-            <Input
-              type="text"
-              value={acsName}
-              onChange={(e) => setAcsName(e.target.value)}
-              placeholder="Nome do Agente Comunitário"
-              className="pl-4"
-            />
+            <div className="relative mb-2">
+              <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9] z-10" />
+              <Select
+                value={selectedAcs}
+                onValueChange={setSelectedAcs}
+              >
+                <SelectTrigger className="pl-12">
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACS_OPTIONS.map((acs) => (
+                    <SelectItem key={acs} value={acs}>
+                      {acs}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="Outro">Outro (Digitar nome)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedAcs === 'Outro' && (
+              <div className="relative animate-in fade-in zoom-in duration-200">
+                <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+                <Input
+                  type="text"
+                  value={customAcs}
+                  onChange={(e) => setCustomAcs(e.target.value)}
+                  placeholder="Digite o nome do ACS"
+                  className="pl-12"
+                />
+              </div>
+            )}
+            
             {errors.acsName && (
               <p className="text-red-400 text-sm mt-1">{errors.acsName}</p>
             )}
