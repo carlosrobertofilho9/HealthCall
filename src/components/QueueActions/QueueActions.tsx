@@ -21,7 +21,7 @@ interface QueueActionsProps {
  */
 const QueueActions: React.FC<QueueActionsProps> = ({ onClearQueue, onAddPatientByNumber, isAddingPatient }) => {
 	return (
-		<div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl h-fit mt-8">
+		<div className="bg-[#1a2c22] rounded-2xl p-6 shadow-2xl border border-white/5 h-fit">
 			<div className="space-y-6">
 				<Button onClick={onAddPatientByNumber} className="w-full" disabled={isAddingPatient}>
 					{isAddingPatient ? <Loader2 className="animate-spin" /> : 'Adicionar Ficha'}

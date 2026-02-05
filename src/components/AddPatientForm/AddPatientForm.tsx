@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/Label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserPlus, User, DoorOpen, Plus } from 'lucide-react';
 
 /**
  * A form component for adding a new patient to the queue.
@@ -43,10 +43,15 @@ const AddPatientForm: React.FC<{
   }, [defaultDestination]);
 
   return (
-    <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl h-fit">
-      <div className="text-left mb-8">
-        <h2 className="text-white text-2xl font-bold leading-tight">Adicionar Paciente</h2>
-        <p className="text-[#96c5a9] mt-1">Insira os dados para adicionar à fila.</p>
+    <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-6 shadow-2xl border border-white/5 h-fit">
+      <div className="flex flex-col gap-2 mb-6">
+        <h2 className="text-white text-2xl font-bold leading-tight flex items-center gap-3">
+            <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
+                <UserPlus className="text-[#96c5a9]" size={24} />
+            </div>
+            Adicionar Paciente
+        </h2>
+        <p className="text-[#96c5a9]/80 text-sm pl-1">Insira os dados para adicionar à fila.</p>
       </div>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
@@ -54,7 +59,9 @@ const AddPatientForm: React.FC<{
             Nome do Paciente
           </Label>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">person</span>
+             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">
+                <User size={20} />
+             </div>
             <Input
               ref={nameInputRef}
               id="patient-name"
@@ -72,9 +79,11 @@ const AddPatientForm: React.FC<{
             Sala de Destino
           </Label>
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">meeting_room</span>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">
+                <DoorOpen size={20} />
+            </div>
             <Select onValueChange={setDestination} value={destination}>
-              <SelectTrigger id="destination-room">
+              <SelectTrigger id="destination-room" className="pl-12">
                 <SelectValue placeholder="Selecione a sala" />
               </SelectTrigger>
               <SelectContent>
@@ -85,12 +94,12 @@ const AddPatientForm: React.FC<{
             </Select>
           </div>
         </div>
-        <div className="pt-4">
-          <Button type="submit" disabled={isAddingPatient}>
+        <div className="pt-2">
+          <Button type="submit" disabled={isAddingPatient} className="w-full">
             {isAddingPatient ? (
-              <Loader2 className="animate-spin" />
+              <Loader2 className="animate-spin mr-2" />
             ) : (
-              <span className="material-symbols-outlined">add</span>
+              <Plus className="mr-2" size={20} />
             )}
             <span className="truncate">{isAddingPatient ? 'Adicionando...' : 'Adicionar à Fila'}</span>
           </Button>

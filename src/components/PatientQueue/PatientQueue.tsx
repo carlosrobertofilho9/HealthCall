@@ -145,7 +145,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
   const isFiltered = searchTerm !== '' || (selectedDestination !== '' && selectedDestination !== 'all');
 
   return (
-    <div className="lg:col-span-2 bg-[#1a2c22] rounded-2xl p-8 shadow-2xl border border-white/5">
+    <div className="lg:col-span-2 bg-[#1a2c22] rounded-2xl p-4 shadow-2xl border border-white/5">
       <div className="flex flex-col gap-6 mb-8 pb-6 border-b border-white/5">
         <div className="space-y-2 text-left">
           <h2 className="text-white text-3xl font-bold tracking-tight flex items-center gap-3">

@@ -7,6 +7,7 @@ import QueueActions from '@/components/QueueActions';
 import type { Patient } from '@/types';
 import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import AppointmentsColumn from '@/features/dashboard/components/AppointmentsColumn';
 
 /**
  * A página principal do painel de controle (dashboard).
@@ -21,22 +22,22 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 const HomePage: React.FC = () => {
 	const { profile } = useUserProfile();
 	const {
-    patients,
-    searchTerm,
-    setSearchTerm,
-    selectedDestination,
-    setSelectedDestination,
-    addPatientByName,
-    addPatientByNumber,
-    updatePatientStatus,
-    updatePatientDestination,
-    removePatient,
-    callPatient,
-    clearQueue,
-    updatePatient,
-    isAddingPatient,
-    reorderPatients,
-  } = usePatientQueue();
+		patients,
+		searchTerm,
+		setSearchTerm,
+		selectedDestination,
+		setSelectedDestination,
+		addPatientByName,
+		addPatientByNumber,
+		updatePatientStatus,
+		updatePatientDestination,
+		removePatient,
+		callPatient,
+		clearQueue,
+		updatePatient,
+		isAddingPatient,
+		reorderPatients,
+	} = usePatientQueue();
 
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -44,7 +45,7 @@ const HomePage: React.FC = () => {
 	const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 	const [isClearQueueModalOpen, setIsClearQueueModalOpen] = useState(false);
 
-  const handleAddPatientByNumber = async () => {
+	const handleAddPatientByNumber = async () => {
 		const destination = profile?.default_destination ?? 'Consultório';
 		await addPatientByNumber(destination);
 	};
@@ -87,9 +88,15 @@ const HomePage: React.FC = () => {
 		setEditingPatient(null);
 	};
 
+    const handleCheckIn = async (name: string) => {
+       const destination = profile?.default_destination ?? 'Consultório';
+       await addPatientByName(name, destination);
+    };
+
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
-			<div className="lg:col-span-1">
+		<div className="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full h-[calc(100vh-8rem)]">
+			{/* Coluna 1: Ações e Formulário */}
+			<div className="lg:col-span-1 flex flex-col gap-6">
 				<AddPatientForm
 					onAddPatient={addPatientByName}
 					defaultDestination={profile?.default_destination ?? undefined}
@@ -101,19 +108,32 @@ const HomePage: React.FC = () => {
 					isAddingPatient={isAddingPatient}
 				/>
 			</div>
-			<PatientQueue
-				patients={patients}
-				onEdit={openModal}
-				onCall={callPatient}
-				onUpdateStatus={updatePatientStatus}
-				onUpdateDestination={updatePatientDestination}
-				onRemove={handleRemovePatient}
-				searchTerm={searchTerm}
-				setSearchTerm={setSearchTerm}
-				selectedDestination={selectedDestination}
-				setSelectedDestination={setSelectedDestination}
-                onReorder={reorderPatients}
-			/>
+
+			{/* Coluna 2: Fila de Espera */}
+            <div className="lg:col-span-2 flex flex-col h-full min-h-0">
+                <PatientQueue
+                    patients={patients}
+                    onEdit={openModal}
+                    onCall={callPatient}
+                    onUpdateStatus={updatePatientStatus}
+                    onUpdateDestination={updatePatientDestination}
+                    onRemove={handleRemovePatient}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    selectedDestination={selectedDestination}
+                    setSelectedDestination={setSelectedDestination}
+                    onReorder={reorderPatients}
+                />
+            </div>
+
+			{/* Coluna 3: Agendamentos */}
+            <div className="lg:col-span-1 flex flex-col h-full min-h-0">
+                <AppointmentsColumn 
+                    onCheckIn={handleCheckIn}
+                    queuedPatients={patients}
+                />
+            </div>
+
 			{isModalOpen && editingPatient && (
 				<EditPatientModal patient={editingPatient} onSave={updatePatient} onClose={closeModal} isOpen={isModalOpen} />
 			)}
