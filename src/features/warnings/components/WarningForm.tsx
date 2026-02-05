@@ -248,7 +248,7 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
                 type="file"
                 accept={formData.media_type === 'video' ? 'video/*' : 'image/*'}
                 onChange={handleFileChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
               {preview ? (
                 <div className="relative">

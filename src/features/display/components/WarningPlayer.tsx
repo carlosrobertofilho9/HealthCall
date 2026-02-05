@@ -205,24 +205,32 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
         ) : currentWarning.content_url ? (
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Container da Imagem */}
-            <div className="relative max-w-7xl w-full h-full flex items-center justify-center group">
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 rounded-3xl" />
+            <div className="relative w-full h-full flex items-center justify-center group overflow-hidden rounded-3xl">
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60 z-10" />
+              
+              {/* Título Estilo Badge Premium (Top Left) */}
+              {currentWarning.text && (
+                <div className="absolute top-8 left-8 z-30 animate-fade-in-down">
+                  <div className="flex items-center gap-4 bg-black/60 backdrop-blur-xl border border-white/10 px-8 py-4 rounded-xl shadow-2xl transform -skew-x-6 hover:skew-x-0 transition-transform duration-500">
+                    <div className="w-2 h-10 bg-green-500 rounded-full shadow-[0_0_15px_rgba(34,197,94,0.8)]" />
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-widest uppercase drop-shadow-lg skew-x-6">
+                      {currentWarning.text}
+                    </h2>
+                  </div>
+                </div>
+              )}
               <img
                 key={currentWarning.id}
                 src={currentWarning.content_url}
                 alt={currentWarning.text || 'Aviso'}
-                className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl ring-1 ring-white/10"
+                className="w-full h-full object-cover shadow-2xl ring-1 ring-white/10"
               />
               
               {/* Overlay de Mensagem Premium */}
               {currentWarning.message && (
-                <div className="absolute bottom-6 left-0 right-0 px-6 md:px-12 animate-slide-up">
+                <div className="absolute bottom-6 left-0 right-0 px-6 md:px-12 animate-slide-up z-20">
                   <div className="bg-black/70 backdrop-blur-md border border-white/5 rounded-xl p-6 shadow-2xl">
-                     {currentWarning.text && (
-                       <h3 className="text-green-400 font-bold tracking-wider uppercase text-xs mb-2">
-                         {currentWarning.text}
-                       </h3>
-                     )}
+
                      <p className="text-xl md:text-3xl font-bold text-white text-center leading-snug drop-shadow-md">
                        {currentWarning.message}
                      </p>

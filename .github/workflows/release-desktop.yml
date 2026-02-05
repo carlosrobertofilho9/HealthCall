@@ -1,0 +1,95 @@
+name: Build Electron (.exe + .dmg)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      # (Opcional) Preenche campos ausentes sem commitar
+      - name: Patch package.json metadata (non-committing)
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'package.json';
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+
+          // Ajuste como quiser (produto interno)
+          pkg.description = pkg.description || "HealthCall (internal build)";
+          pkg.author = pkg.author || "Internal";
+
+          fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
+          console.log("package.json patched for CI build");
+          NODE
+
+      - name: Build web assets
+        run: npm run build
+
+      # ✅ Windows: gerar ICO válido para NSIS (installer/uninstaller)
+      - name: Prepare Windows icons (.ico for NSIS)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+
+          $png = "public/healthcall-icon.png"
+          if (!(Test-Path $png)) {
+            Write-Error "Icon PNG not found at $png"
+            exit 1
+          }
+
+          # Usa ImageMagick (normalmente disponível no windows-latest)
+          magick $png -background none -define icon:auto-resize=256,128,64,48,32,24,16 build/icon.ico
+
+          if (!(Test-Path "build/icon.ico")) {
+            Write-Error "Failed to generate build/icon.ico"
+            exit 1
+          }
+
+          Write-Host "Generated build/icon.ico successfully"
+
+      - name: Build Electron (mac)
+        if: matrix.os == 'macos-latest'
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder --mac --publish never
+
+      - name: Build Electron (win)
+        if: matrix.os == 'windows-latest'
+        run: npx electron-builder --win --publish never
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.os }}
+          path: |
+            dist-electron/*.exe
+            dist-electron/*.dmg
+            dist-electron/*.blockmap
+            dist-electron/latest.yml
+            dist-electron/*.yml
+          if-no-files-found: warn
