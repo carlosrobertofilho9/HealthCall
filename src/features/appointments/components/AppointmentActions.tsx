@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, Plus, RefreshCw } from 'lucide-react';
+import { Printer, Plus, RefreshCw, Users } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface AppointmentActionsProps {
@@ -9,6 +9,7 @@ interface AppointmentActionsProps {
   onPrintClick: () => void;
   onPrintReportClick: () => void;
   onRefreshClick: () => void;
+  onSendToQueueClick: () => void;
   isLoading: boolean;
 }
 
@@ -22,6 +23,7 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
   onPrintClick,
   onPrintReportClick,
   onRefreshClick,
+  onSendToQueueClick,
   isLoading,
 }) => {
   if (!hasService) {
@@ -39,6 +41,15 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
           <Plus className="w-5 h-5" />
           Nova Marcação
         </Button>
+
+        <button
+          onClick={onSendToQueueClick}
+          disabled={isLoading}
+          className="p-3 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors disabled:opacity-50"
+          title="Enviar Turno para Fila"
+        >
+          <Users className="w-5 h-5 text-white" />
+        </button>
 
         <button
           onClick={onRefreshClick}

@@ -7,10 +7,13 @@ import AppointmentActions from '../components/AppointmentActions';
 import AddAppointmentForm from '../components/AddAppointmentForm';
 import EditAppointmentModal from '../components/EditAppointmentModal';
 import ConfirmDeleteAppointmentModal from '../components/ConfirmDeleteAppointmentModal';
+import ConfirmQueueModal from '../components/ConfirmQueueModal';
 import PrintHeader from '../components/PrintHeader';
 import { printPatientList } from '@/components/PatientQueue/printUtils';
 import { printAppointmentReport } from '@/components/PatientQueue/printReportUtils';
 import type { Appointment } from '@/types';
+import { addPatient } from '@/features/dashboard/services/patientService';
+import { toast } from 'sonner';
 
 /**
  * Página de Marcações do PSF (Estratégia de Saúde da Família).
@@ -45,6 +48,13 @@ const AppointmentsPage: React.FC = () => {
   const [initialSlotForAdd, setInitialSlotForAdd] = useState<number | undefined>();
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null);
+  
+  // Estado para envio para fila
+  const [queueModalData, setQueueModalData] = useState<{
+    patients: Appointment[];
+    period: string;
+  } | null>(null);
+  const [isSendingToQueue, setIsSendingToQueue] = useState(false);
 
   // Slots disponíveis para adicionar
   const availableSlots = slots
@@ -78,6 +88,78 @@ const AppointmentsPage: React.FC = () => {
 
   const handlePrintReport = () => {
     printAppointmentReport(slots);
+  };
+
+  const handleSendToQueueClick = () => {
+    const currentHour = new Date().getHours();
+    // Se for antes das 13h, considera manhã. Depois, tarde.
+    // Mas devemos verificar se existem pacientes para o período.
+    
+    // Filtro para Manhã ou Tarde baseado no horário atual
+    // Mas talvez o usuário queira mandar turno da Tarde mesmo sendo de Manhã (pré-preparar)?
+    // Vamos usar a lógica de horário como padrão, mas se estiver vazio, tentamos o outro?
+    // Melhor ser estrito: horário atual define o turno ativo.
+    
+    let targetPeriod = currentHour < 13 ? 'Manhã' : 'Tarde';
+    
+    // Filtrar slots que tem apontamento e são do período alvo
+    let patientsToSend = slots
+        .filter(s => s.appointment && s.period === targetPeriod)
+        .map(s => s.appointment!);
+
+    // Se não houver pacientes no turno atual, mas houver no outro e o usuário clicar...
+    // Talvez seja melhor perguntar qual turno?
+    // Simplificação: Se vazio no turno atual, checa se tem no outro.
+    if (patientsToSend.length === 0) {
+        const otherPeriod = targetPeriod === 'Manhã' ? 'Tarde' : 'Manhã';
+        const otherPatients = slots
+            .filter(s => s.appointment && s.period === otherPeriod)
+            .map(s => s.appointment!);
+        
+        if (otherPatients.length > 0) {
+            // Se tem no outro turno, muda o alvo (assumindo que o usuário quer enviar o que tem)
+            // Ou mostra erro "Nenhum paciente no turno da X".
+            // Vamos mostrar erro para evitar acidentes.
+            toast.warning(`Nenhum paciente encontrado para o turno da ${targetPeriod}.`);
+            return;
+        } else {
+             toast.warning("Não há pacientes agendados para hoje.");
+             return;
+        }
+    }
+
+    setQueueModalData({
+        patients: patientsToSend,
+        period: targetPeriod
+    });
+  };
+
+  const handleConfirmSendToQueue = async () => {
+    if (!queueModalData) return;
+
+    setIsSendingToQueue(true);
+    let successCount = 0;
+    
+    try {
+        // Envia sequencialmente para garantir ordem (ou paralelo se não importar ordem na fila de espera,
+        // mas ordem de chegada/ficha importa).
+        // Vamos enviar na ordem dos slots.
+        const sortedPatients = [...queueModalData.patients].sort((a, b) => a.slot_number - b.slot_number);
+
+        for (const apt of sortedPatients) {
+            // Adiciona para triagem
+            await addPatient(apt.patient_name, 'Triagem');
+            successCount++;
+        }
+        
+        toast.success(`${successCount} pacientes enviados para a fila de Triagem!`);
+        setQueueModalData(null);
+    } catch (error) {
+        console.error('Erro ao enviar para fila:', error);
+        toast.error('Erro ao enviar alguns pacientes para a fila.');
+    } finally {
+        setIsSendingToQueue(false);
+    }
   };
 
   return (
@@ -134,6 +216,7 @@ const AppointmentsPage: React.FC = () => {
           onPrintClick={handlePrint}
           onPrintReportClick={handlePrintReport}
           onRefreshClick={refresh}
+          onSendToQueueClick={handleSendToQueueClick}
           isLoading={isLoading}
         />
       </div>
@@ -181,6 +264,17 @@ const AppointmentsPage: React.FC = () => {
           onConfirm={handleConfirmDelete}
           onClose={() => setDeletingAppointment(null)}
           isLoading={isLoading}
+        />
+      )}
+
+      {/* Modal de envio para fila */}
+      {queueModalData && (
+        <ConfirmQueueModal
+            patientCount={queueModalData.patients.length}
+            period={queueModalData.period}
+            onConfirm={handleConfirmSendToQueue}
+            onClose={() => setQueueModalData(null)}
+            isLoading={isSendingToQueue}
         />
       )}
     </div>

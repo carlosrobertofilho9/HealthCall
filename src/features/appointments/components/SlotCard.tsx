@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, FileText, UserCheck, Trash2, Edit, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 import type { AppointmentSlot, Appointment } from '@/types';
 
 interface SlotCardProps {
@@ -26,6 +27,16 @@ export const SlotCard: React.FC<SlotCardProps> = ({
       return `CPF: ${value}`;
     }
     return `Cartão SUS: ${value}`;
+  };
+
+  const handleCopy = async (text: string, type: 'nome' | 'documento') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${type === 'nome' ? 'Nome' : 'Documento'} copiado!`);
+    } catch (err) {
+      console.error('Falha ao copiar:', err);
+      toast.error('Erro ao copiar');
+    }
   };
 
   // Slot vazio - disponível para marcação
@@ -79,7 +90,11 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             {/* Nome do paciente */}
             <div className="flex items-center gap-2 mt-1 min-w-0">
               <User className="w-4 h-4 text-primary flex-shrink-0" />
-              <p className="text-white font-semibold truncate print:text-black" title={appointment.patient_name}>
+              <p 
+                className="text-white font-semibold truncate print:text-black cursor-pointer hover:text-primary transition-colors" 
+                title="Clique para copiar o nome"
+                onClick={() => handleCopy(appointment.patient_name, 'nome')}
+              >
                 {appointment.patient_name}
               </p>
             </div>
@@ -87,7 +102,11 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             {/* Documento */}
             <div className="flex items-center gap-2 mt-1 min-w-0">
               <FileText className="w-4 h-4 text-[#96c5a9] flex-shrink-0" />
-              <p className="text-[#96c5a9] text-sm truncate print:text-gray-600">
+              <p 
+                className="text-[#96c5a9] text-sm truncate print:text-gray-600 cursor-pointer hover:text-white transition-colors"
+                title="Clique para copiar o documento (sem pontuação)"
+                onClick={() => handleCopy(appointment.document_value.replace(/\D/g, ''), 'documento')}
+              >
                 {formatDocument(appointment.document_type, appointment.document_value)}
               </p>
             </div>
