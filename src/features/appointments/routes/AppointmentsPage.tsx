@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Search } from 'lucide-react';
 import { useAppointments } from '../hooks/useAppointments';
 import DateSelector from '../components/DateSelector';
 import SlotsList from '../components/SlotsList';
@@ -14,6 +14,7 @@ import { printAppointmentReport } from '@/components/PatientQueue/printReportUti
 import type { Appointment } from '@/types';
 import { addPatient } from '@/features/dashboard/services/patientService';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/Input';
 
 /**
  * Página de Marcações do PSF (Estratégia de Saúde da Família).
@@ -26,6 +27,15 @@ import { toast } from 'sonner';
  * - Terça-feira: 15 slots (11 manhã + 4 reserva manhã)
  * - Demais dias: Sem atendimento
  */
+
+// Helper para normalizar texto (remover acentos e converter para minúsculas)
+const normalizeText = (text: string) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
+
 const AppointmentsPage: React.FC = () => {
   const {
     selectedDate,
@@ -48,6 +58,7 @@ const AppointmentsPage: React.FC = () => {
   const [initialSlotForAdd, setInitialSlotForAdd] = useState<number | undefined>();
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Estado para envio para fila
   const [queueModalData, setQueueModalData] = useState<{
@@ -60,6 +71,21 @@ const AppointmentsPage: React.FC = () => {
   const availableSlots = slots
     .filter(s => s.appointment === null)
     .map(s => s.slotNumber);
+
+  // Filtrar slots baseados na busca
+  const filteredSlots = slots.filter(slot => {
+    if (!searchQuery) return true;
+    if (!slot.appointment) return false;
+    
+    const query = normalizeText(searchQuery);
+    const apt = slot.appointment;
+    
+    return (
+      normalizeText(apt.patient_name).includes(query) ||
+      normalizeText(apt.document_value).includes(query) ||
+      normalizeText(apt.acs_name).includes(query)
+    );
+  });
 
   // Handlers
   const handleAddClick = (slotNumber?: number) => {
@@ -207,8 +233,18 @@ const AppointmentsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Ações */}
-      <div className="mb-6">
+      {/* Ações e Busca */}
+      <div className="mb-6 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center print:hidden">
+        <div className='relative flex-1 w-full md:max-w-sm'>
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input 
+             placeholder="Buscar paciente, CPF ou ACS..." 
+             value={searchQuery}
+             onChange={(e) => setSearchQuery(e.target.value)}
+             className="pl-9 bg-[#1a3a26] border-[#264532] text-white placeholder:text-gray-400 focus:ring-primary w-full"
+          />
+        </div>
+
         <AppointmentActions
           hasService={dayConfig.hasService}
           availableSlotsCount={availableSlots.length}
@@ -223,7 +259,7 @@ const AppointmentsPage: React.FC = () => {
 
       {/* Lista de slots */}
       <SlotsList
-        slots={slots}
+        slots={filteredSlots}
         dayConfig={dayConfig}
         onAddClick={handleAddClick}
         onEditClick={handleEditClick}

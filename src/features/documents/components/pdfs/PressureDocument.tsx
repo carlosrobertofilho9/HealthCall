@@ -73,7 +73,7 @@ interface PressureDocumentProps {
   formData?: DocumentFormData;
 }
 
-export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParagraphs }) => {
+export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParagraphs, formData }) => {
   const DAYS = 7;
   const dateColWidth = '8%';
   const morningGroupWidth = '30%';
@@ -82,7 +82,7 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
   const obsColWidth = '8%';
 
   return (
-    <BaseDocument title="Controle de Pressão Arterial (MRPA)" visibleParagraphs={visibleParagraphs} wrap={false}>
+    <BaseDocument title="Controle de Pressão Arterial (MRPA)" visibleParagraphs={visibleParagraphs} wrap={false} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf}>
       <View style={pressureStyles.container}>
         {/* Legend */}
         <View style={pressureStyles.legendRow}>

@@ -244,6 +244,10 @@ interface BaseDocumentProps {
   orientation?: 'portrait' | 'landscape';
   showFooter?: boolean;
   wrap?: boolean;
+  /** Nome do paciente preenchido pelo widget (se houver) */
+  nomePaciente?: string;
+  /** CNS ou CPF preenchido pelo widget (se houver) */
+  cnsCpf?: string;
 }
 
 export const BaseDocument: React.FC<BaseDocumentProps> = ({ 
@@ -252,8 +256,10 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
   children, 
   showFooter = true,
   wrap = true,
+  nomePaciente,
+  cnsCpf,
 }) => (
-  <View style={{ paddingBottom: showFooter ? 25 : 0 }} wrap={wrap}>
+  <View style={{ flex: 1, height: '100%', paddingBottom: showFooter ? 25 : 0 }} wrap={wrap}>
     {/* Header Banner */}
     <View style={commonStyles.headerBanner}>
       <View style={commonStyles.headerLogo}>
@@ -277,25 +283,23 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
       <View style={{ flex: 3, backgroundColor: '#99f6e4', marginLeft: 2, borderRadius: 2 }} />
     </View>
 
-    {/* Patient Info Card */}
-    {visibleParagraphs.length > 0 && (
-      <View style={commonStyles.patientInfoCard}>
-        {visibleParagraphs.map((para, index) => {
-          const parts = para.split(':');
-          const hasLabel = parts.length > 1;
-          return (
-            <View key={index}>
-              {hasLabel && (
-                <Text style={commonStyles.patientInfoLabel}>{parts[0].trim()}</Text>
-              )}
-              <Text style={commonStyles.patientInfoItem}>
-                {hasLabel ? parts.slice(1).join(':').trim() : para}
-              </Text>
-            </View>
-          );
-        })}
+    {/* Patient Info Card — sempre visível com campos Nome e CNS/CPF */}
+    <View style={commonStyles.patientInfoCard}>
+      {/* Nome do Paciente — sempre aparece */}
+      <View style={{ flex: 2, minWidth: 200 }}>
+        <Text style={commonStyles.patientInfoLabel}>Nome do Paciente</Text>
+        <View style={{ borderBottomWidth: 1, borderBottomColor: '#cbd5e1', height: 18, justifyContent: 'center' }}>
+          <Text style={commonStyles.patientInfoItem}>{nomePaciente || ''}</Text>
+        </View>
       </View>
-    )}
+      {/* CNS ou CPF — sempre aparece */}
+      <View style={{ flex: 1, minWidth: 120 }}>
+        <Text style={commonStyles.patientInfoLabel}>CNS ou CPF</Text>
+        <View style={{ borderBottomWidth: 1, borderBottomColor: '#cbd5e1', height: 18, justifyContent: 'center' }}>
+          <Text style={commonStyles.patientInfoItem}>{cnsCpf || ''}</Text>
+        </View>
+      </View>
+    </View>
 
     {/* Document Title with decorative lines */}
     <View style={commonStyles.mainTitleContainer}>
@@ -305,11 +309,11 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
     </View>
 
     {/* Content */}
-    <View style={{ width: '100%' }}>{children}</View>
+    <View style={{ flex: 1, width: '100%' }}>{children}</View>
 
     {/* Footer */}
     {showFooter && (
-      <View style={commonStyles.footer} fixed>
+      <View style={commonStyles.footer}>
         <Text style={commonStyles.footerText}>
           Impresso em {new Date().toLocaleDateString('pt-BR')}
         </Text>

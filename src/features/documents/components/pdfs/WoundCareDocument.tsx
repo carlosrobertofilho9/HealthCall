@@ -154,7 +154,7 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
   const ROWS = 12;
 
   return (
-    <BaseDocument title="Ficha de Evolução de Curativos" visibleParagraphs={visibleParagraphs}>
+    <BaseDocument title="Ficha de Evolução de Curativos" visibleParagraphs={visibleParagraphs} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf}>
       {/* Page 1: Dados da Lesão + Foto Inicial */}
       
       {/* Section 1: Dados da Lesão */}
@@ -321,8 +321,7 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
         </View>
       </View>
 
-      {/* Indicação de continuação na próxima página */}
-      <Text style={s.pageBreakLabel}>▼ Tabela de Evolução na próxima página ▼</Text>
+      {/* Page 2: Tabela de Evolução — usa break para forçar para próxima página */}
 
       {/* Page 2: Tabela de Evolução — usa break para forçar para próxima página */}
       <View style={[s.sectionBox, { marginTop: 10 }]} break>

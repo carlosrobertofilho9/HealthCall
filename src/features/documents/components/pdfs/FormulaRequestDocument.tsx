@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Text, View, StyleSheet, Svg, Line } from '@react-pdf/renderer';
 import { HeaderIcon, BaseDocument, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
@@ -174,9 +174,32 @@ interface FormulaRequestDocumentProps {
   formData?: DocumentFormData;
 }
 
+const VoidPattern = () => (
+  <View style={{ 
+    flex: 1, 
+    marginVertical: 12, 
+    borderRadius: 6, 
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    position: 'relative',
+    overflow: 'hidden'
+  }}>
+    <Svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+       <Line x1="0" y1="0" x2="100%" y2="100%" stroke="#e2e8f0" strokeWidth={1.5} />
+       <Line x1="100%" y1="0" x2="0" y2="100%" stroke="#e2e8f0" strokeWidth={1.5} />
+    </Svg>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+       <Text style={{ fontSize: 9, color: '#94a3b8', fontWeight: 'bold', letterSpacing: 3, textTransform: 'uppercase' }}>
+          — Sem Mais Itens —
+       </Text>
+    </View>
+  </View>
+);
+
 export const FormulaRequestDocument: React.FC<FormulaRequestDocumentProps> = ({ visibleParagraphs, formulaItems = [], formData }) => {
   return (
-    <BaseDocument title="Solicitação de Fórmula Láctea" visibleParagraphs={visibleParagraphs}>
+    <BaseDocument title="Solicitação de Fórmula Láctea" visibleParagraphs={visibleParagraphs} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf} wrap={false}>
       <View style={s.container}>
         {/* Badge */}
         <View style={s.badge}>
@@ -218,8 +241,8 @@ export const FormulaRequestDocument: React.FC<FormulaRequestDocumentProps> = ({ 
           )}
         </View>
 
-        {/* Espaçador para empurrar data/assinaturas/obs para o final da página */}
-        <View style={{ flex: 1 }} />
+        {/* Espaço bloqueado visualmente */}
+        <VoidPattern />
 
         {/* Data */}
         <View style={s.dateField}>
@@ -230,7 +253,7 @@ export const FormulaRequestDocument: React.FC<FormulaRequestDocumentProps> = ({ 
         <View style={s.signatureRow}>
           <View style={s.signatureBlock}>
             <View style={s.signatureLine} />
-            <Text style={s.signatureLabel}>Assinatura e Carimbo do Médico</Text>
+            <Text style={s.signatureLabel}>Assinatura e Carimbo do Profissional</Text>
           </View>
           <View style={s.signatureBlock}>
             <View style={s.signatureLine} />

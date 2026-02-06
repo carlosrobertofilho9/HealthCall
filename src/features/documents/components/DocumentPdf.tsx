@@ -15,6 +15,9 @@ import { StandardDocument } from './pdfs/StandardDocument';
 
 /** Dados de formulário que podem ser pré-preenchidos via widget */
 export interface DocumentFormData {
+  // Identificação do paciente (sempre visível no PDF)
+  nomePaciente?: string;
+  cnsCpf?: string;
   // Medicação / Vacina
   nomeMedicamento?: string;
   apresentacao?: string;
@@ -56,6 +59,8 @@ interface DocumentPdfProps {
 // Extrai os dados do formulário a partir dos values do widget
 function extractFormData(values: Record<string, string>): DocumentFormData {
   return {
+    nomePaciente: values['NOME_PACIENTE'] || undefined,
+    cnsCpf: values['CNS_CPF'] || undefined,
     nomeMedicamento: values['NOME_MEDICAMENTO'] || undefined,
     apresentacao: values['APRESENTACAO'] || undefined,
     doseAdministrada: values['DOSE_ADMINISTRADA'] || undefined,

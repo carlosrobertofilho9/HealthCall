@@ -278,7 +278,7 @@ interface AdverseReactionDocumentProps {
 }
 
 export const AdverseReactionDocument: React.FC<AdverseReactionDocumentProps> = ({ visibleParagraphs, photoUrl, formData }) => (
-  <BaseDocument title="Termo de Administração de Medicamento / Vacina" visibleParagraphs={visibleParagraphs}>
+  <BaseDocument title="Termo de Administração de Medicamento / Vacina" visibleParagraphs={visibleParagraphs} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf}>
     <View style={s.container}>
       {/* Badge */}
       <View style={s.badge}>

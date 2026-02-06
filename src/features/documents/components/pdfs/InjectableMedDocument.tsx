@@ -236,7 +236,7 @@ interface InjectableMedDocumentProps {
 }
 
 export const InjectableMedDocument: React.FC<InjectableMedDocumentProps> = ({ visibleParagraphs, formData }) => (
-  <BaseDocument title="Relatório de Medicação Injetável" visibleParagraphs={visibleParagraphs}>
+  <BaseDocument title="Relatório de Medicação Injetável" visibleParagraphs={visibleParagraphs} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf}>
     <View style={s.container}>
       {/* Badge Comprovante */}
       <View style={s.badge}>

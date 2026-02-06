@@ -239,7 +239,7 @@ interface EarWashDocumentProps {
 }
 
 export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagraphs, formData }) => (
-  <BaseDocument title="Protocolo de Lavagem de Ouvido (Ceruminólise)" visibleParagraphs={visibleParagraphs}>
+  <BaseDocument title="Protocolo de Lavagem de Ouvido (Ceruminólise)" visibleParagraphs={visibleParagraphs} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf}>
     <View style={s.container}>
       {/* Section 1: Dados do Procedimento */}
       <View style={s.sectionBox}>

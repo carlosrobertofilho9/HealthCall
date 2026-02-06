@@ -74,7 +74,7 @@ interface GlycemicDocumentProps {
   formData?: DocumentFormData;
 }
 
-export const GlycemicDocument: React.FC<GlycemicDocumentProps> = ({ visibleParagraphs }) => {
+export const GlycemicDocument: React.FC<GlycemicDocumentProps> = ({ visibleParagraphs, formData }) => {
   const DAYS = 14;
   const dateColWidth = '8%';
   const morningGroupWidth = '23%';
@@ -84,7 +84,7 @@ export const GlycemicDocument: React.FC<GlycemicDocumentProps> = ({ visibleParag
   const obsColWidth = '11.5%';
 
   return (
-    <BaseDocument title="Controle Glicêmico" visibleParagraphs={visibleParagraphs} showFooter={false} wrap={false}>
+    <BaseDocument title="Controle Glicêmico" visibleParagraphs={visibleParagraphs} showFooter={false} wrap={false} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf}>
       <View style={glycemicStyles.container}>
         {/* Legend */}
         <View style={glycemicStyles.legendRow}>

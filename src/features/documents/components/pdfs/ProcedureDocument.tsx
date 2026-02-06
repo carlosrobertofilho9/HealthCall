@@ -221,7 +221,7 @@ interface ProcedureDocumentProps {
 }
 
 export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visibleParagraphs, formData }) => (
-  <BaseDocument title="Protocolo de Procedimento" visibleParagraphs={visibleParagraphs}>
+  <BaseDocument title="Protocolo de Procedimento" visibleParagraphs={visibleParagraphs} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf}>
     <View style={s.container}>
       {/* Section 1: Dados do Procedimento */}
       <View style={s.sectionBox}>
