@@ -96,6 +96,7 @@ const DocumentsPage: React.FC = () => {
                         templateText={selectedTemplate.templateText}
                         values={fieldValues}
                         onChange={handleFieldChange}
+                        templateId={selectedTemplate.id}
                     />
                      {missingKeys.length > 0 && (
                         <div className="mt-4 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20 text-amber-200 text-xs">

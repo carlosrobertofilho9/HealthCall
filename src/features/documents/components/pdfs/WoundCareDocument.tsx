@@ -1,10 +1,9 @@
 import React from 'react';
-import { Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { HeaderIcon, tableStyles, BaseDocument } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { width: '100%' },
-  // --- Section boxes ---
   sectionBox: {
     marginBottom: 10,
     borderWidth: 1,
@@ -31,7 +30,6 @@ const s = StyleSheet.create({
     padding: 10,
     backgroundColor: '#ffffff',
   },
-  // --- Field rows ---
   fieldRow: {
     flexDirection: 'row',
     marginBottom: 6,
@@ -58,7 +56,6 @@ const s = StyleSheet.create({
     fontSize: 9,
     color: '#334155',
   },
-  // --- Wound diagram ---
   diagramBox: {
     borderWidth: 1,
     borderColor: '#e2e8f0',
@@ -67,13 +64,28 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fafafa',
+    overflow: 'hidden',
   },
   diagramLabel: {
     fontSize: 7,
     color: '#94a3b8',
     textAlign: 'center',
   },
-  // --- Table header ---
+  photoBox: {
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 4,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fafafa',
+    overflow: 'hidden',
+  },
+  photoLabel: {
+    fontSize: 7,
+    color: '#94a3b8',
+    textAlign: 'center',
+  },
   colHeader: {
     fontSize: 6.5,
     fontWeight: 'bold',
@@ -86,7 +98,6 @@ const s = StyleSheet.create({
     color: '#ffffff',
     textAlign: 'center',
   },
-  // --- Checkbox ---
   checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -104,7 +115,6 @@ const s = StyleSheet.create({
     fontSize: 7.5,
     color: '#334155',
   },
-  // --- Info box ---
   infoBox: {
     marginTop: 8,
     padding: 8,
@@ -125,17 +135,27 @@ const s = StyleSheet.create({
     lineHeight: 1.4,
     marginBottom: 2,
   },
+  pageBreakLabel: {
+    fontSize: 8,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginTop: 10,
+    fontStyle: 'italic',
+  },
 });
 
 interface WoundCareDocumentProps {
   visibleParagraphs: string[];
+  photoUrl?: string;
 }
 
-export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visibleParagraphs }) => {
-  const ROWS = 10;
+export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visibleParagraphs, photoUrl }) => {
+  const ROWS = 12;
 
   return (
     <BaseDocument title="Ficha de Evolução de Curativos" visibleParagraphs={visibleParagraphs}>
+      {/* Page 1: Dados da Lesão + Foto Inicial */}
+      
       {/* Section 1: Dados da Lesão */}
       <View style={s.sectionBox}>
         <View style={s.sectionHeader}>
@@ -151,7 +171,7 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
             <View style={[s.fieldGroup, { flex: 0.6 }]}>
               <Text style={s.fieldLabel}>Etiologia</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
-                {['Úlcera Varicosa', 'Pé Diabético', 'Úlcera por Pressão', 'Pós-cirúrgica', 'Outra'].map((item) => (
+                {['Úlcera Varicosa', 'Pé Diabético', 'Úlcera por Pressão', 'Pós-cirúrgica', 'Traumática', 'Outra'].map((item) => (
                   <View key={item} style={s.checkRow}>
                     <View style={s.checkBox} />
                     <Text style={s.checkLabel}>{item}</Text>
@@ -170,18 +190,141 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
               <Text style={s.fieldLabel}>Classificação (Grau / Estágio)</Text>
               <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
             </View>
+          </View>
+
+          <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
-              <Text style={s.fieldLabel}>Espaço para Desenho / Foto</Text>
-              <View style={s.diagramBox}>
-                <Text style={s.diagramLabel}>Desenhar localização{'\n'}da lesão aqui</Text>
+              <Text style={s.fieldLabel}>Medida Inicial (C x L x P em cm)</Text>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>______ x ______ x ______</Text></View>
+            </View>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Comorbidades</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                {['DM', 'HAS', 'IVC', 'Tabagismo', 'Obesidade', 'Outra'].map((item) => (
+                  <View key={item} style={s.checkRow}>
+                    <View style={s.checkBox} />
+                    <Text style={s.checkLabel}>{item}</Text>
+                  </View>
+                ))}
               </View>
             </View>
           </View>
         </View>
       </View>
 
-      {/* Section 2: Tabela de Evolução */}
+      {/* Section 2: Registro Fotográfico Inicial + Desenho */}
       <View style={s.sectionBox}>
+        <View style={[s.sectionHeader, { backgroundColor: '#7c3aed' }]}>
+          <HeaderIcon icon="activity" color="#ffffff" />
+          <Text style={s.sectionHeaderText}>Registro Visual Inicial da Lesão</Text>
+        </View>
+        <View style={s.sectionBody}>
+          <View style={s.fieldRow}>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Foto Inicial da Lesão</Text>
+              <View style={s.photoBox}>
+                {photoUrl ? (
+                  <Image src={photoUrl} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                ) : (
+                  <Text style={s.photoLabel}>Inserir foto inicial da lesão{'\n'}(capturada pelo formulário)</Text>
+                )}
+              </View>
+            </View>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Desenho / Localização Anatômica</Text>
+              <View style={s.diagramBox}>
+                <Text style={s.diagramLabel}>Desenhar localização{'\n'}da lesão aqui</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={s.fieldRow}>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Aspecto Inicial do Leito</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                {['Granulação', 'Epitelização', 'Esfacelo', 'Necrose', 'Misto'].map((item) => (
+                  <View key={item} style={s.checkRow}>
+                    <View style={s.checkBox} />
+                    <Text style={s.checkLabel}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Bordas</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                {['Regulares', 'Irregulares', 'Descoladas', 'Maceradas', 'Hiperqueratóticas'].map((item) => (
+                  <View key={item} style={s.checkRow}>
+                    <View style={s.checkBox} />
+                    <Text style={s.checkLabel}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={s.fieldRow}>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Exsudato</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                {['Ausente', 'Seroso', 'Sanguinolento', 'Serossanguinolento', 'Purulento'].map((item) => (
+                  <View key={item} style={s.checkRow}>
+                    <View style={s.checkBox} />
+                    <Text style={s.checkLabel}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Pele Perilesional</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+                {['Íntegra', 'Eritematosa', 'Macerada', 'Descamativa', 'Edemaciada'].map((item) => (
+                  <View key={item} style={s.checkRow}>
+                    <View style={s.checkBox} />
+                    <Text style={s.checkLabel}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={s.fieldRow}>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Odor</Text>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 2 }}>
+                {['Ausente', 'Discreto', 'Fétido'].map((item) => (
+                  <View key={item} style={s.checkRow}>
+                    <View style={s.checkBox} />
+                    <Text style={s.checkLabel}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Dor (Escala 0-10)</Text>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+            </View>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Cobertura Inicial Utilizada</Text>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+            </View>
+          </View>
+
+          <View style={s.fieldRow}>
+            <View style={s.fieldGroup}>
+              <Text style={s.fieldLabel}>Observações / Plano Terapêutico</Text>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={[s.fieldLine, { marginTop: 2 }]}><Text style={s.fieldLineText}></Text></View>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Indicação de continuação na próxima página */}
+      <Text style={s.pageBreakLabel}>▼ Tabela de Evolução na próxima página ▼</Text>
+
+      {/* Page 2: Tabela de Evolução — usa break para forçar para próxima página */}
+      <View style={[s.sectionBox, { marginTop: 10 }]} break>
         <View style={[s.sectionHeader, { backgroundColor: '#7c3aed' }]}>
           <HeaderIcon icon="activity" color="#ffffff" />
           <Text style={s.sectionHeaderText}>Evolução dos Curativos</Text>

@@ -272,7 +272,7 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
     </View>
 
     {/* Content */}
-    <View>{children}</View>
+    <View style={{ flex: 1 }}>{children}</View>
 
     {/* Footer */}
     {showFooter && (
