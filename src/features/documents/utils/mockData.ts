@@ -19,6 +19,27 @@ CNS ou CPF: {{CNS_CPF}}`
     description: 'Tabela para monitoramento residencial da pressão arterial (manhã, tarde e noite).',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`
+  },
+  {
+    id: 'ficha_curativos',
+    title: 'Ficha de Evolução de Curativos',
+    description: 'Ficha para acompanhamento de feridas crônicas com medidas da lesão e coberturas.',
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`
+  },
+  {
+    id: 'protocolo_procedimento',
+    title: 'Protocolo de Procedimento',
+    description: 'Termo de consentimento e orientações para lavagem de ouvido, pequena cirurgia e outros.',
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`
+  },
+  {
+    id: 'medicacao_injetavel',
+    title: 'Relatório de Medicação Injetável',
+    description: 'Comprovante de administração de medicação injetável com lote, validade e via.',
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`
   }
 ];
 
