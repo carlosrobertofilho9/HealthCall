@@ -1,5 +1,36 @@
 import React from 'react';
 import { StyleSheet, Svg, Path, Circle, View, Text } from '@react-pdf/renderer';
+import type { DocumentFormData } from '../DocumentPdf';
+
+/**
+ * Renderiza o texto de um campo preenchível.
+ * Se o valor existir, mostra-o; caso contrário mostra o placeholder vazio original.
+ */
+export const FieldValue: React.FC<{
+  value?: string;
+  fallback?: string;
+  style?: object;
+}> = ({ value, fallback = '', style }) => (
+  <Text style={[{ fontSize: 9, color: '#334155' }, style]}>
+    {value || fallback}
+  </Text>
+);
+
+/**
+ * Formata uma data ISO (YYYY-MM-DD) ou string de data para dd/mm/aaaa.
+ * Se o valor não existir retorna o placeholder.
+ */
+export const formatDate = (value?: string, fallback = '___/___/______'): string => {
+  if (!value) return fallback;
+  // Se já tem o formato dd/mm/aaaa, retorna direto
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
+  // Se está no formato ISO YYYY-MM-DD
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+  return value;
+};
+
+export { type DocumentFormData };
 
 // --- Icons (SVG Paths) ---
 export const icons = {
@@ -147,9 +178,9 @@ export const commonStyles = StyleSheet.create({
   // --- Footer ---
   footer: {
     position: 'absolute',
-    bottom: 15,
-    left: 20,
-    right: 20,
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -212,6 +243,7 @@ interface BaseDocumentProps {
   children: React.ReactNode;
   orientation?: 'portrait' | 'landscape';
   showFooter?: boolean;
+  wrap?: boolean;
 }
 
 export const BaseDocument: React.FC<BaseDocumentProps> = ({ 
@@ -219,8 +251,9 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
   visibleParagraphs, 
   children, 
   showFooter = true,
+  wrap = true,
 }) => (
-  <View style={{ flex: 1 }}>
+  <View style={{ paddingBottom: showFooter ? 25 : 0 }} wrap={wrap}>
     {/* Header Banner */}
     <View style={commonStyles.headerBanner}>
       <View style={commonStyles.headerLogo}>
@@ -272,11 +305,11 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
     </View>
 
     {/* Content */}
-    <View style={{ flex: 1 }}>{children}</View>
+    <View style={{ width: '100%' }}>{children}</View>
 
     {/* Footer */}
     {showFooter && (
-      <View style={commonStyles.footer}>
+      <View style={commonStyles.footer} fixed>
         <Text style={commonStyles.footerText}>
           Impresso em {new Date().toLocaleDateString('pt-BR')}
         </Text>

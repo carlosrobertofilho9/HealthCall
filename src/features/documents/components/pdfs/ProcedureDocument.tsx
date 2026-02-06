@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { HeaderIcon, BaseDocument } from './PdfCommon';
+import { HeaderIcon, BaseDocument, formatDate, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { width: '100%' },
@@ -217,9 +217,10 @@ const s = StyleSheet.create({
 
 interface ProcedureDocumentProps {
   visibleParagraphs: string[];
+  formData?: DocumentFormData;
 }
 
-export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visibleParagraphs }) => (
+export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visibleParagraphs, formData }) => (
   <BaseDocument title="Protocolo de Procedimento" visibleParagraphs={visibleParagraphs}>
     <View style={s.container}>
       {/* Section 1: Dados do Procedimento */}
@@ -246,22 +247,22 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Data do Procedimento</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}>___/___/______</Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formatDate(formData?.dataProcedimento)}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Hora</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}>___:___</Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.horaProcedimento || '___:___'}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Local / Região Anatômica</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.localAnatomico || ''}</Text></View>
             </View>
           </View>
 
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Indicação Clínica</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.indicacaoClinica || ''}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Lateralidade</Text>
@@ -290,7 +291,7 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Volume do Anestésico (mL)</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.volumeAnestesico || ''}</Text></View>
             </View>
           </View>
 
@@ -298,7 +299,7 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
             <View style={{ flex: 1 }}>
               <Text style={s.fieldLabel}>Descrição Detalhada do Procedimento</Text>
               <View style={[s.textArea, { minHeight: 60 }]}>
-                <Text style={s.textAreaLabel}></Text>
+                <Text style={s.textAreaLabel}>{formData?.descricaoProcedimento || ''}</Text>
               </View>
             </View>
           </View>
@@ -317,18 +318,18 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Nº de Pontos</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.numPontos || ''}</Text></View>
             </View>
           </View>
 
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Profissional Responsável</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.profissional || ''}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>CRM / COREN</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.crmCoren || ''}</Text></View>
             </View>
           </View>
         </View>

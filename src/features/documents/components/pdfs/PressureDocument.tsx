@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { HeaderIcon, tableStyles, BaseDocument } from './PdfCommon';
+import { HeaderIcon, tableStyles, BaseDocument, type DocumentFormData } from './PdfCommon';
 
 const pressureStyles = StyleSheet.create({
   container: {
@@ -70,6 +70,7 @@ const pressureStyles = StyleSheet.create({
 
 interface PressureDocumentProps {
   visibleParagraphs: string[];
+  formData?: DocumentFormData;
 }
 
 export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParagraphs }) => {
@@ -81,7 +82,7 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
   const obsColWidth = '8%';
 
   return (
-    <BaseDocument title="Controle de Pressão Arterial (MRPA)" visibleParagraphs={visibleParagraphs}>
+    <BaseDocument title="Controle de Pressão Arterial (MRPA)" visibleParagraphs={visibleParagraphs} wrap={false}>
       <View style={pressureStyles.container}>
         {/* Legend */}
         <View style={pressureStyles.legendRow}>

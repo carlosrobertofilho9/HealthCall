@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { HeaderIcon, BaseDocument } from './PdfCommon';
+import { HeaderIcon, BaseDocument, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { 
@@ -171,9 +171,10 @@ export interface FormulaItem {
 interface FormulaRequestDocumentProps {
   visibleParagraphs: string[];
   formulaItems?: FormulaItem[];
+  formData?: DocumentFormData;
 }
 
-export const FormulaRequestDocument: React.FC<FormulaRequestDocumentProps> = ({ visibleParagraphs, formulaItems = [] }) => {
+export const FormulaRequestDocument: React.FC<FormulaRequestDocumentProps> = ({ visibleParagraphs, formulaItems = [], formData }) => {
   return (
     <BaseDocument title="Solicitação de Fórmula Láctea" visibleParagraphs={visibleParagraphs}>
       <View style={s.container}>

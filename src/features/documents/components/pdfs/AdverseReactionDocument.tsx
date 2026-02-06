@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet, Image } from '@react-pdf/renderer';
-import { HeaderIcon, BaseDocument } from './PdfCommon';
+import { HeaderIcon, BaseDocument, formatDate, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { width: '100%' },
@@ -274,9 +274,10 @@ const s = StyleSheet.create({
 interface AdverseReactionDocumentProps {
   visibleParagraphs: string[];
   photoUrl?: string;
+  formData?: DocumentFormData;
 }
 
-export const AdverseReactionDocument: React.FC<AdverseReactionDocumentProps> = ({ visibleParagraphs, photoUrl }) => (
+export const AdverseReactionDocument: React.FC<AdverseReactionDocumentProps> = ({ visibleParagraphs, photoUrl, formData }) => (
   <BaseDocument title="Termo de Administração de Medicamento / Vacina" visibleParagraphs={visibleParagraphs}>
     <View style={s.container}>
       {/* Badge */}
@@ -295,11 +296,11 @@ export const AdverseReactionDocument: React.FC<AdverseReactionDocumentProps> = (
           <View style={s.medFieldRow}>
             <View style={{ flex: 2 }}>
               <Text style={s.medFieldLabel}>Nome do Medicamento / Vacina</Text>
-              <View style={s.medFieldValue}><Text style={s.medFieldValueText}></Text></View>
+              <View style={s.medFieldValue}><Text style={s.medFieldValueText}>{formData?.nomeMedicamento || ''}</Text></View>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.medFieldLabel}>Apresentação / Dose</Text>
-              <View style={s.medFieldValue}><Text style={s.medFieldValueText}></Text></View>
+              <View style={s.medFieldValue}><Text style={s.medFieldValueText}>{formData?.apresentacao || ''}</Text></View>
             </View>
           </View>
           <View style={s.medFieldRow}>
@@ -329,15 +330,15 @@ export const AdverseReactionDocument: React.FC<AdverseReactionDocumentProps> = (
           <View style={s.medFieldRow}>
             <View style={{ flex: 1 }}>
               <Text style={s.medFieldLabel}>Lote</Text>
-              <View style={s.medFieldValue}><Text style={s.medFieldValueText}></Text></View>
+              <View style={s.medFieldValue}><Text style={s.medFieldValueText}>{formData?.lote || ''}</Text></View>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.medFieldLabel}>Validade</Text>
-              <View style={s.medFieldValue}><Text style={s.medFieldValueText}>___/___/______</Text></View>
+              <View style={s.medFieldValue}><Text style={s.medFieldValueText}>{formatDate(formData?.validade)}</Text></View>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={s.medFieldLabel}>Fabricante</Text>
-              <View style={s.medFieldValue}><Text style={s.medFieldValueText}></Text></View>
+              <View style={s.medFieldValue}><Text style={s.medFieldValueText}>{formData?.fabricante || ''}</Text></View>
             </View>
           </View>
         </View>
@@ -353,25 +354,25 @@ export const AdverseReactionDocument: React.FC<AdverseReactionDocumentProps> = (
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Data da Administração</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}>___/___/______</Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formatDate(formData?.dataProcedimento)}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Hora</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}>___:___</Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.horaProcedimento || '___:___'}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Médico Prescritor</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.medicoPrescritor || ''}</Text></View>
             </View>
           </View>
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Profissional que Administrou</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.profissional || ''}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>COREN / Registro</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.crmCoren || ''}</Text></View>
             </View>
           </View>
         </View>

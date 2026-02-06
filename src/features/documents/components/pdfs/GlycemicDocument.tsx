@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { HeaderIcon, tableStyles, BaseDocument } from './PdfCommon';
+import { HeaderIcon, tableStyles, BaseDocument, type DocumentFormData } from './PdfCommon';
 
 const glycemicStyles = StyleSheet.create({
   container: {
@@ -17,7 +17,7 @@ const glycemicStyles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#0d9488',
-    height: 30,
+    height: 24,
     alignItems: 'center',
   },
   subHeaderText: {
@@ -27,7 +27,7 @@ const glycemicStyles = StyleSheet.create({
   },
   legendRow: {
     flexDirection: 'row',
-    marginTop: 8,
+    marginTop: 6,
     gap: 16,
     justifyContent: 'center',
   },
@@ -46,8 +46,8 @@ const glycemicStyles = StyleSheet.create({
     color: '#475569',
   },
   refBox: {
-    marginTop: 8,
-    padding: 8,
+    marginTop: 6,
+    padding: 6,
     backgroundColor: '#fefce8',
     borderRadius: 4,
     borderWidth: 1,
@@ -71,6 +71,7 @@ const glycemicStyles = StyleSheet.create({
 
 interface GlycemicDocumentProps {
   visibleParagraphs: string[];
+  formData?: DocumentFormData;
 }
 
 export const GlycemicDocument: React.FC<GlycemicDocumentProps> = ({ visibleParagraphs }) => {
@@ -83,7 +84,7 @@ export const GlycemicDocument: React.FC<GlycemicDocumentProps> = ({ visibleParag
   const obsColWidth = '11.5%';
 
   return (
-    <BaseDocument title="Controle Glicêmico" visibleParagraphs={visibleParagraphs} showFooter={false}>
+    <BaseDocument title="Controle Glicêmico" visibleParagraphs={visibleParagraphs} showFooter={false} wrap={false}>
       <View style={glycemicStyles.container}>
         {/* Legend */}
         <View style={glycemicStyles.legendRow}>
@@ -188,7 +189,7 @@ export const GlycemicDocument: React.FC<GlycemicDocumentProps> = ({ visibleParag
             const bgColor = isEven ? '#ffffff' : '#f8fafc';
             const isLast = i === DAYS - 1;
             return (
-              <View style={[tableStyles.row, { backgroundColor: bgColor, height: 22 }, isLast ? { borderBottomWidth: 0 } : {}]} key={i}>
+              <View style={[tableStyles.row, { backgroundColor: bgColor, height: 19 }, isLast ? { borderBottomWidth: 0 } : {}]} key={i}>
                 <View style={[tableStyles.col, { width: dateColWidth }]}>
                   <Text style={[tableStyles.cellText, { fontSize: 8 }]}>___/___</Text>
                 </View>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { HeaderIcon, BaseDocument } from './PdfCommon';
+import { HeaderIcon, BaseDocument, formatDate, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { width: '100%' },
@@ -235,9 +235,10 @@ const s = StyleSheet.create({
 
 interface EarWashDocumentProps {
   visibleParagraphs: string[];
+  formData?: DocumentFormData;
 }
 
-export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagraphs }) => (
+export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagraphs, formData }) => (
   <BaseDocument title="Protocolo de Lavagem de Ouvido (Ceruminólise)" visibleParagraphs={visibleParagraphs}>
     <View style={s.container}>
       {/* Section 1: Dados do Procedimento */}
@@ -250,11 +251,11 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Data do Procedimento</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}>___/___/______</Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formatDate(formData?.dataProcedimento)}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Hora</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}>___:___</Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.horaProcedimento || '___:___'}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Ouvido</Text>
@@ -284,7 +285,7 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Queixa Principal</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.queixaPrincipal || ''}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Uso prévio de ceruminolítico?</Text>
@@ -301,11 +302,11 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Profissional Responsável</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.profissional || ''}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>CRM / COREN</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.crmCoren || ''}</Text></View>
             </View>
           </View>
         </View>

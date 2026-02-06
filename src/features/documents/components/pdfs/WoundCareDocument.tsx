@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet, Image } from '@react-pdf/renderer';
-import { HeaderIcon, tableStyles, BaseDocument } from './PdfCommon';
+import { HeaderIcon, tableStyles, BaseDocument, formatDate, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { width: '100%' },
@@ -147,9 +147,10 @@ const s = StyleSheet.create({
 interface WoundCareDocumentProps {
   visibleParagraphs: string[];
   photoUrl?: string;
+  formData?: DocumentFormData;
 }
 
-export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visibleParagraphs, photoUrl }) => {
+export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visibleParagraphs, photoUrl, formData }) => {
   const ROWS = 12;
 
   return (
@@ -166,7 +167,7 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Localização da Lesão</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.localizacaoLesao || ''}</Text></View>
             </View>
             <View style={[s.fieldGroup, { flex: 0.6 }]}>
               <Text style={s.fieldLabel}>Etiologia</Text>
@@ -184,18 +185,18 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Data de Início da Lesão</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}>___/___/______</Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formatDate(formData?.dataInicioLesao)}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Classificação (Grau / Estágio)</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.classificacaoLesao || ''}</Text></View>
             </View>
           </View>
 
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Medida Inicial (C x L x P em cm)</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}>______ x ______ x ______</Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.medidaLesao || '______ x ______ x ______'}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Comorbidades</Text>
@@ -302,18 +303,18 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Dor (Escala 0-10)</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.dorEscala || ''}</Text></View>
             </View>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Cobertura Inicial Utilizada</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.coberturaInicial || ''}</Text></View>
             </View>
           </View>
 
           <View style={s.fieldRow}>
             <View style={s.fieldGroup}>
               <Text style={s.fieldLabel}>Observações / Plano Terapêutico</Text>
-              <View style={s.fieldLine}><Text style={s.fieldLineText}></Text></View>
+              <View style={s.fieldLine}><Text style={s.fieldLineText}>{formData?.observacoesPlano || ''}</Text></View>
               <View style={[s.fieldLine, { marginTop: 2 }]}><Text style={s.fieldLineText}></Text></View>
             </View>
           </View>
