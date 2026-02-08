@@ -116,25 +116,21 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
   };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-xl animate-in fade-in zoom-in duration-300">
-      <h2 className="text-2xl font-bold text-white mb-6">
-        {initialData ? 'Editar Aviso' : 'Novo Aviso'}
-      </h2>
-      
+    <div className="animate-in fade-in zoom-in duration-300">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Título</label>
+          <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Título</label>
           <Input
             value={formData.text}
             onChange={e => setFormData({ ...formData, text: e.target.value })}
             placeholder="Ex: Campanha de Vacinação"
-            className="bg-gray-700 border-gray-600 pl-4"
+            className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Tipo de Mídia</label>
+            <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Tipo de Mídia</label>
             <select
               value={formData.media_type}
               onChange={e => {
@@ -147,7 +143,7 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
                   setYoutubeUrl('');
                 }
               }}
-              className="w-full bg-gray-700 text-white rounded-lg border border-gray-600 p-2.5 focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full bg-[#264532]/30 text-white rounded-lg border border-white/10 p-2.5 focus:ring-2 focus:ring-[#96c5a9]/40 outline-none"
             >
               <option value="image">Imagem</option>
               <option value="video">Vídeo</option>
@@ -160,7 +156,7 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
                 type="checkbox"
                 checked={formData.priority || false}
                 onChange={e => setFormData({ ...formData, priority: e.target.checked })}
-                className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-yellow-500 focus:ring-yellow-500"
+                className="w-5 h-5 rounded border-white/10 bg-[#264532]/30 text-yellow-500 focus:ring-yellow-500"
               />
               <span className="text-sm text-gray-300 flex items-center gap-1">
                 <span className="material-symbols-outlined text-yellow-500 text-sm">star</span>
@@ -172,42 +168,42 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-1">Mensagem (TTS/Legenda)</label>
+            <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Mensagem (TTS/Legenda)</label>
             <Input
               value={formData.message}
               onChange={e => setFormData({ ...formData, message: e.target.value })}
               placeholder="Ex: Vacine-se hoje mesmo!"
-              className="bg-gray-700 border-gray-600 pl-4"
+              className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Duração (segundos)</label>
+            <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Duração (segundos)</label>
             <Input
               type="number"
               value={formData.duration}
               onChange={e => setFormData({ ...formData, duration: Number(e.target.value) })}
               placeholder="10"
-              className="bg-gray-700 border-gray-600 pl-4"
+              className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
               min={1}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Ordem de Prioridade (Opcional)</label>
+          <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Ordem de Prioridade (Opcional)</label>
           <Input
             type="number"
             value={formData.priority_order}
             onChange={e => setFormData({ ...formData, priority_order: Number(e.target.value) })}
             placeholder="0"
-            className="bg-gray-700 border-gray-600 pl-4"
+            className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
           />
           <p className="text-xs text-gray-500 mt-1">Números menores aparecem primeiro.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-700/50 p-4 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#264532]/20 p-4 rounded-lg border border-white/5">
            <div className="col-span-2">
-             <span className="text-sm font-bold text-gray-300 block mb-2">Agendamento (Opcional)</span>
+             <span className="text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider block mb-2">Agendamento (Opcional)</span>
            </div>
            <div>
              <label className="block text-xs text-gray-400 mb-1">Hora Início</label>
@@ -215,7 +211,7 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
                type="time"
                value={formData.start_time || ''}
                onChange={e => setFormData({ ...formData, start_time: e.target.value })}
-               className="w-full bg-gray-700 text-white rounded-lg border border-gray-600 p-2 focus:ring-2 focus:ring-green-500 outline-none"
+               className="w-full bg-[#264532]/30 text-white rounded-lg border border-white/10 p-2 focus:ring-2 focus:ring-[#96c5a9]/40 outline-none"
              />
            </div>
            <div>
@@ -224,26 +220,26 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
                type="time"
                value={formData.end_time || ''}
                onChange={e => setFormData({ ...formData, end_time: e.target.value })}
-               className="w-full bg-gray-700 text-white rounded-lg border border-gray-600 p-2 focus:ring-2 focus:ring-green-500 outline-none"
+               className="w-full bg-[#264532]/30 text-white rounded-lg border border-white/10 p-2 focus:ring-2 focus:ring-[#96c5a9]/40 outline-none"
              />
            </div>
         </div>
 
         {formData.media_type === 'youtube' ? (
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">URL do YouTube</label>
+            <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">URL do YouTube</label>
             <Input
               value={youtubeUrl}
               onChange={e => setYoutubeUrl(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
-              className="bg-gray-700 border-gray-600 pl-4"
+              className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
             />
             <p className="text-xs text-gray-500 mt-1">Cole a URL completa do vídeo do YouTube</p>
           </div>
         ) : (
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Arquivo ({formData.media_type === 'video' ? 'Vídeo' : 'Imagem'})</label>
-            <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-green-500 transition-colors cursor-pointer relative">
+            <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Arquivo ({formData.media_type === 'video' ? 'Vídeo' : 'Imagem'})</label>
+            <div className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:border-[#96c5a9]/40 transition-colors cursor-pointer relative bg-[#264532]/10">
               <input
                 type="file"
                 accept={formData.media_type === 'video' ? 'video/*' : 'image/*'}
@@ -272,18 +268,18 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-white/5">
           <button
             type="button"
             onClick={onCancel}
-            className="px-6 py-2 rounded-full text-white hover:bg-gray-700 transition"
+            className="px-6 py-2.5 rounded-lg text-gray-400 hover:bg-[#264532]/30 hover:text-white border border-white/5 transition-all text-sm font-medium"
           >
             Cancelar
           </button>
           <Button
             type="submit"
             disabled={loading}
-            className="w-auto px-8"
+            className="w-auto px-8 bg-[#264532] text-[#96c5a9] border border-white/5 hover:bg-green-500 hover:text-white hover:border-green-400 hover:shadow-green-500/20 shadow-sm transition-all"
           >
             {loading ? (
               <>

@@ -6,6 +6,7 @@ import { DisplayPage } from '@/features/display';
 import SettingsPage from '@/features/settings/routes/SettingsPage';
 import WarningsPage from '@/features/warnings/pages/WarningsPage';
 import { AppointmentsPage } from '@/features/appointments';
+import DocumentsPage from '@/features/documents/pages/DocumentsPage';
 import LoginPage from '@/features/authentication/routes/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
 			{ path: 'settings', element: <SettingsPage /> },
       { path: 'warnings', element: <WarningsPage /> },
       { path: 'appointments', element: <AppointmentsPage /> },
+      { path: 'documents', element: <DocumentsPage /> },
 		],
 	},
 	// Standalone route for the public display screen

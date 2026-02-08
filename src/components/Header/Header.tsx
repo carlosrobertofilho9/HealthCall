@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
-import { LayoutList, Monitor, Bell, Settings, LogOut, CalendarDays, Menu, X } from 'lucide-react';
+import { LayoutList, Monitor, Bell, Settings, LogOut, CalendarDays, Menu, X, FileText } from 'lucide-react';
 
 /**
  * The main header component for the application.
@@ -120,6 +120,10 @@ const Header: React.FC = () => {
 				<NavLink to="/display" className={navLinkClass}>
 					<Monitor className="w-5 h-5" />
 					<span>Display</span>
+				</NavLink>
+        <NavLink to="/documents" className={navLinkClass}>
+					<FileText className="w-5 h-5" />
+					<span>Documentos</span>
 				</NavLink>
         <NavLink to="/warnings" className={navLinkClass}>
 					<Bell className="w-5 h-5" />
