@@ -1,4 +1,5 @@
 import { Patient, AppointmentSlot } from '@/types';
+import { formatCPF, formatCNS } from '@/lib/utils';
 
 type SimplifiedPatient = { name: string, document: string, acs: string, period?: string };
 
@@ -19,7 +20,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
         period: 'Manhã',
         patients: morningSlots.filter(s => s.appointment).map(s => ({
           name: s.appointment!.patient_name,
-          document: s.appointment!.document_value,
+          document: s.appointment!.document_type === 'CPF' ? formatCPF(s.appointment!.document_value) : formatCNS(s.appointment!.document_value),
           acs: s.appointment!.acs_name
         }))
       });
@@ -32,7 +33,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
         period: 'Tarde',
         patients: afternoonSlots.filter(s => s.appointment).map(s => ({
           name: s.appointment!.patient_name,
-          document: s.appointment!.document_value,
+          document: s.appointment!.document_type === 'CPF' ? formatCPF(s.appointment!.document_value) : formatCNS(s.appointment!.document_value),
           acs: s.appointment!.acs_name
         }))
       });

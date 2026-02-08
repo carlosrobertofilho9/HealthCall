@@ -189,7 +189,7 @@ const AppointmentsPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto print:max-w-none overflow-hidden">
+    <div className="w-full max-w-7xl mx-auto print:max-w-none overflow-hidden">
       {/* Cabeçalho para impressão */}
       <PrintHeader
         selectedDate={selectedDate}
@@ -217,7 +217,7 @@ const AppointmentsPage: React.FC = () => {
 
       {/* Estatísticas do dia (oculto na impressão) */}
       {dayConfig.hasService && (
-        <div className="grid grid-cols-3 gap-4 mb-6 print:hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 print:hidden">
           <div className="bg-[#1a3a26] rounded-xl p-4 text-center">
             <p className="text-[#96c5a9] text-sm">Total de Vagas</p>
             <p className="text-2xl font-bold text-white">{slotStats.total}</p>
@@ -234,27 +234,31 @@ const AppointmentsPage: React.FC = () => {
       )}
 
       {/* Ações e Busca */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center print:hidden">
-        <div className='relative flex-1 w-full md:max-w-sm'>
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+      <div className="mb-6 flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center print:hidden">
+        {/* Barra de Busca - Largura fixa no desktop para consistência */}
+        <div className='relative w-full xl:w-96'>
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input 
              placeholder="Buscar paciente, CPF ou ACS..." 
              value={searchQuery}
              onChange={(e) => setSearchQuery(e.target.value)}
-             className="pl-9 bg-[#1a3a26] border-[#264532] text-white placeholder:text-gray-400 focus:ring-primary w-full"
+             className="pl-10 bg-[#1a3a26] border-[#264532] text-white placeholder:text-gray-400 focus:ring-primary w-full transition-all focus:border-primary"
           />
         </div>
 
-        <AppointmentActions
-          hasService={dayConfig.hasService}
-          availableSlotsCount={availableSlots.length}
-          onAddClick={() => handleAddClick()}
-          onPrintClick={handlePrint}
-          onPrintReportClick={handlePrintReport}
-          onRefreshClick={refresh}
-          onSendToQueueClick={handleSendToQueueClick}
-          isLoading={isLoading}
-        />
+        {/* Ações - Flexível */}
+        <div className="w-full xl:w-auto">
+          <AppointmentActions
+            hasService={dayConfig.hasService}
+            availableSlotsCount={availableSlots.length}
+            onAddClick={() => handleAddClick()}
+            onPrintClick={handlePrint}
+            onPrintReportClick={handlePrintReport}
+            onRefreshClick={refresh}
+            onSendToQueueClick={handleSendToQueueClick}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
 
       {/* Lista de slots */}

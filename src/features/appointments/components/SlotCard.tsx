@@ -2,6 +2,7 @@ import React from 'react';
 import { User, FileText, UserCheck, Trash2, Edit, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AppointmentSlot, Appointment } from '@/types';
+import { formatCPF, formatCNS } from '@/lib/utils';
 
 interface SlotCardProps {
   slot: AppointmentSlot;
@@ -24,9 +25,9 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
   const formatDocument = (type: string, value: string): string => {
     if (type === 'CPF') {
-      return `CPF: ${value}`;
+      return `CPF: ${formatCPF(value)}`;
     }
-    return `Cartão SUS: ${value}`;
+    return `Cartão SUS: ${formatCNS(value)}`;
   };
 
   const handleCopy = async (text: string, type: 'nome' | 'documento') => {
@@ -44,7 +45,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
     return (
       <div
         onClick={() => onAddClick(slotNumber)}
-        className="bg-[#1a3a26] rounded-xl p-4 border-2 border-dashed border-[#264532] hover:border-primary hover:bg-[#1e4230] transition-all cursor-pointer group print:bg-white print:border-gray-300 print:hover:bg-white print:cursor-default"
+        className="bg-[#1a3a26] rounded-xl p-3 md:p-4 border-2 border-dashed border-[#264532] hover:border-primary hover:bg-[#1e4230] transition-all cursor-pointer group print:bg-white print:border-gray-300 print:hover:bg-white print:cursor-default"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -73,7 +74,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
   // Slot preenchido com marcação
   return (
-    <div className="bg-[#1a3a26] rounded-xl p-4 border border-[#264532] print:bg-white print:border-gray-300 w-full overflow-hidden">
+    <div className="bg-[#1a3a26] rounded-xl p-3 md:p-4 border border-[#264532] print:bg-white print:border-gray-300 w-full overflow-hidden">
       <div className="flex items-start justify-between gap-2 w-full">
         <div className="flex items-start gap-3 flex-1 min-w-0 overflow-hidden">
           <span className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[#122118] font-bold text-sm flex-shrink-0">
@@ -125,17 +126,17 @@ export const SlotCard: React.FC<SlotCardProps> = ({
         <div className="flex items-center gap-1 flex-shrink-0 print:hidden">
           <button
             onClick={() => onEditClick(appointment)}
-            className="p-2 rounded-full hover:bg-[#264532] transition-colors"
+            className="p-3 md:p-2 rounded-full hover:bg-[#264532] transition-colors"
             title="Editar"
           >
-            <Edit className="w-4 h-4 text-[#96c5a9] hover:text-white" />
+            <Edit className="w-5 h-5 md:w-4 md:h-4 text-[#96c5a9] hover:text-white" />
           </button>
           <button
             onClick={() => onDeleteClick(appointment)}
-            className="p-2 rounded-full hover:bg-red-900/30 transition-colors"
+            className="p-3 md:p-2 rounded-full hover:bg-red-900/30 transition-colors"
             title="Remover"
           >
-            <Trash2 className="w-4 h-4 text-[#96c5a9] hover:text-red-400" />
+            <Trash2 className="w-5 h-5 md:w-4 md:h-4 text-[#96c5a9] hover:text-red-400" />
           </button>
         </div>
       </div>

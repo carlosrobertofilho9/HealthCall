@@ -31,54 +31,124 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 flex-wrap print:hidden">
-      <div className="flex items-center gap-3">
-        <Button
-          onClick={onAddClick}
-          disabled={availableSlotsCount === 0 || isLoading}
-          className="flex items-center gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Nova Marcação
-        </Button>
+    <>
+      {/* =================================================================================
+          LAYOUT A: MOBILE (Telas pequenas)
+          Focado em toque, grid para melhor distribuição vertical.
+         ================================================================================= */}
+      <div className="w-full flex flex-col gap-3 md:hidden print:hidden">
+        {/* Linha 1: Ações Principais */}
+        <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+          <Button
+            onClick={onAddClick}
+            disabled={availableSlotsCount === 0 || isLoading}
+            className="flex items-center justify-center gap-2 h-12"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Nova Marcação</span>
+          </Button>
 
-        <button
-          onClick={onSendToQueueClick}
-          disabled={isLoading}
-          className="p-3 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors disabled:opacity-50"
-          title="Enviar Turno para Fila"
-        >
-          <Users className="w-5 h-5 text-white" />
-        </button>
+          <button
+            onClick={onSendToQueueClick}
+            disabled={isLoading}
+            className="w-12 h-12 rounded-lg bg-[#264532] hover:bg-[#305a3e] active:bg-[#1e3828] transition-colors disabled:opacity-50 flex items-center justify-center"
+            title="Enviar Turno para Fila"
+          >
+            <Users className="w-5 h-5 text-white" />
+          </button>
 
-        <button
-          onClick={onRefreshClick}
-          disabled={isLoading}
-          className="p-3 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors disabled:opacity-50"
-          title="Atualizar"
-        >
-          <RefreshCw className={`w-5 h-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
+          <button
+            onClick={onRefreshClick}
+            disabled={isLoading}
+            className="w-12 h-12 rounded-lg bg-[#264532] hover:bg-[#305a3e] active:bg-[#1e3828] transition-colors disabled:opacity-50 flex items-center justify-center"
+            title="Atualizar"
+          >
+            <RefreshCw className={`w-5 h-5 text-white ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+
+        {/* Linha 2: Ações Secundárias (Impressão) */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onPrintReportClick()}
+            className="flex items-center justify-center gap-2 h-12 rounded-lg bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] active:bg-[#1a3a26] transition-colors text-white font-semibold text-sm"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Relatório</span>
+          </button>
+
+          <button
+            onClick={() => onPrintClick()}
+            className="flex items-center justify-center gap-2 h-12 rounded-lg bg-[#264532] hover:bg-[#305a3e] active:bg-[#264532] transition-colors text-white font-semibold text-sm"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Ficha</span>
+          </button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => onPrintReportClick()}
-          className="flex items-center gap-2 px-6 py-3 rounded-full bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] transition-colors text-white font-semibold"
-        >
-          <Printer className="w-5 h-5" />
-          Imprimir Relatório
-        </button>
+      {/* =================================================================================
+          LAYOUT B: DESKTOP (Telas médias e grandes)
+          Layout horizontal limpo, sem quebra de linha.
+         ================================================================================= */}
+      <div className="hidden md:flex items-center gap-3 print:hidden">
+         {/* Grupo 1: Ações Operacionais */}
+         <div className="flex items-center gap-2">
+            <Button
+              onClick={onAddClick}
+              disabled={availableSlotsCount === 0 || isLoading}
+              className="w-auto px-8"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Nova Marcação</span>
+            </Button>
 
-        <button
-          onClick={() => onPrintClick()}
-          className="flex items-center gap-2 px-6 py-3 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors text-white font-semibold"
-        >
-          <Printer className="w-5 h-5" />
-          Imprimir Ficha
-        </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onSendToQueueClick}
+                disabled={isLoading}
+                className="h-14 px-6 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors disabled:opacity-50 text-white font-bold flex items-center gap-2"
+                title="Enviar Turno para Fila"
+              >
+                <Users className="w-5 h-5" />
+                <span>Fila</span>
+              </button>
+
+              <button
+                onClick={onRefreshClick}
+                disabled={isLoading}
+                className="h-14 px-6 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors disabled:opacity-50 text-white font-bold flex items-center gap-2"
+                title="Atualizar"
+              >
+                <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <span>Atualizar</span>
+              </button>
+            </div>
+         </div>
+
+         {/* Divisor Vertical */}
+         <div className="w-px h-8 bg-[#264532] mx-2" />
+
+         {/* Grupo 2: Ações de Impressão */}
+         <div className="flex items-center gap-2">
+            <button
+              onClick={() => onPrintReportClick()}
+              className="h-14 px-6 rounded-full bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] transition-colors text-white font-bold flex items-center gap-2 whitespace-nowrap"
+            >
+              <Printer className="w-5 h-5" />
+              <span>Relatório</span>
+            </button>
+
+            <button
+              onClick={() => onPrintClick()}
+              className="h-14 px-6 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors text-white font-bold flex items-center gap-2 whitespace-nowrap"
+            >
+              <Printer className="w-5 h-5" />
+              <span>Ficha</span>
+            </button>
+         </div>
       </div>
-    </div>
+    </>
   );
 };
 

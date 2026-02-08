@@ -13,6 +13,7 @@ import {
 import { ACS_OPTIONS } from '@/constants';
 import type { Appointment, DocumentType } from '@/types';
 import { getSlotTime, getDayConfig, parseISODate } from '../services/appointmentService';
+import { formatCPF, formatCNS } from '@/lib/utils';
 
 interface EditAppointmentModalProps {
   appointment: Appointment;
@@ -89,24 +90,12 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
     }
   };
 
-  const formatCPF = (value: string): string => {
-    const numbers = value.replace(/\D/g, '').slice(0, 11);
-    if (numbers.length <= 3) return numbers;
-    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
-    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
-    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
-  };
-
-  const formatCartaoSUS = (value: string): string => {
-    return value.replace(/\D/g, '').slice(0, 15);
-  };
-
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (documentType === 'CPF') {
       setDocumentValue(formatCPF(value));
     } else {
-      setDocumentValue(formatCartaoSUS(value));
+      setDocumentValue(formatCNS(value));
     }
   };
 

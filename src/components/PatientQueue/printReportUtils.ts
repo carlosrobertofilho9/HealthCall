@@ -1,4 +1,5 @@
 import { AppointmentSlot } from '@/types';
+import { formatCPF, formatCNS } from '@/lib/utils';
 
 type ReportItem = {
   slot: number;
@@ -17,7 +18,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
         slot: s.slotNumber,
         period: s.period,
         name: app ? app.patient_name : '-',
-        document: app ? `${app.document_type === 'CPF' ? 'CPF' : 'CNS'}: ${app.document_value}` : '-',
+        document: app ? `${app.document_type === 'CPF' ? 'CPF' : 'CNS'}: ${app.document_type === 'CPF' ? formatCPF(app.document_value) : formatCNS(app.document_value)}` : '-',
         acs: app ? app.acs_name : '-'
       };
     });

@@ -13,6 +13,7 @@ import {
 import { ACS_OPTIONS } from '@/constants';
 import type { CreateAppointmentData, DocumentType } from '@/types';
 import { formatDateToISO, getAppointmentMessage, getSlotTime, getDayConfig } from '../services/appointmentService';
+import { formatCPF, formatCNS, isValidCPF, isValidCNS } from '@/lib/utils';
 
 interface AddAppointmentFormProps {
   selectedDate: Date;
@@ -58,6 +59,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       newErrors.documentValue = 'Documento é obrigatório';
     } else if (documentType === 'CPF' && !isValidCPF(documentValue)) {
       newErrors.documentValue = 'CPF inválido';
+    } else if (documentType === 'CARTAO_SUS' && !isValidCNS(documentValue)) {
+      newErrors.documentValue = 'Cartão SUS inválido';
     }
 
     const finalAcsName = selectedAcs === 'Outro' ? customAcs : selectedAcs;
@@ -123,18 +126,6 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
     onCancel();
   };
 
-  const formatCPF = (value: string): string => {
-    const numbers = value.replace(/\D/g, '').slice(0, 11);
-    if (numbers.length <= 3) return numbers;
-    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
-    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
-    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
-  };
-
-  const formatCartaoSUS = (value: string): string => {
-    return value.replace(/\D/g, '').slice(0, 15);
-  };
-
   /* Removed duplicate formatPhone */
 
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,13 +133,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
     if (documentType === 'CPF') {
       setDocumentValue(formatCPF(value));
     } else {
-      setDocumentValue(formatCartaoSUS(value));
+      setDocumentValue(formatCNS(value));
     }
-  };
-
-  const isValidCPF = (cpf: string): boolean => {
-    const numbers = cpf.replace(/\D/g, '');
-    return numbers.length === 11;
   };
 
 
