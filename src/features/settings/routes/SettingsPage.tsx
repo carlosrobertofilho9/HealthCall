@@ -1,86 +1,56 @@
-import { useSettings as useLocalSettings } from '@/features/settings/hooks/useSettings';
-import { useSettings } from '@/contexts/SettingsContext';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/Select"
-import { Button } from '@/components/ui/Button';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Label } from '@/components/ui/Label';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { toast } from 'sonner';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
-/**
- * A página de configurações da aplicação.
- *
- * Este componente permite que os usuários configurem suas preferências, como
- * definir um destino padrão para novos pacientes e escolher se desejam usar
- * a síntese de voz nativa do navegador para os anúncios.
- * Ele utiliza o hook `useSettings` para gerenciar a lógica de carregamento e salvamento
- * do destino padrão.
- *
- * @returns {React.ReactElement} O componente da página de configurações.
- */
-const SettingsPage: React.FC = () => {
-  const {
-    destinations,
-    selected,
-    setSelected,
-    loading: loadingDestination,
-    saving,
-    saveDefaultDestination,
-  } = useLocalSettings();
+export function SettingsPage() {
+  const { profile, setDefaultDestination, loading } = useUserProfile();
+  const [destination, setDestination] = React.useState(profile?.default_destination || '');
 
-  const { useBrowserVoice, setUseBrowserVoice, loading: loadingVoiceSetting } = useSettings();
+  React.useEffect(() => {
+    if (profile?.default_destination) {
+      setDestination(profile.default_destination);
+    }
+  }, [profile]);
 
-  const loading = loadingDestination || loadingVoiceSetting;
+  const handleSave = async () => {
+    try {
+      await setDefaultDestination(destination);
+      toast.success('Configurações salvas com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao salvar configurações');
+    }
+  };
 
   return (
-    <div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl max-w-xl mx-auto">
-      <h2 className="text-white text-2xl font-bold leading-tight mb-6">Configurações</h2>
-      <div className="space-y-6">
-        <div>
-          <Label htmlFor="default-destination" className="text-white font-medium mb-2 block">
-            Destino Padrão
-          </Label>
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">meeting_room</span>
-            <Select onValueChange={setSelected} value={selected} disabled={loading}>
-              <SelectTrigger id="default-destination">
-                <SelectValue placeholder="Nenhum (selecionar ao adicionar)" />
-              </SelectTrigger>
-              <SelectContent>
-                {destinations.map(d => (
-                  <SelectItem key={d} value={d}>{d}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="container mx-auto py-8 space-y-8">
+      <h1 className="text-3xl font-bold">Configurações</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Geral</CardTitle>
+          <CardDescription>Configurações gerais da aplicação</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="destination">Destino Padrão (Ex: Consultório 1)</Label>
+            <Input
+              id="destination"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder="Ex: Consultório 1"
+            />
           </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="browser-voice-switch" className="text-white">
-            Usar chamador de voz do navegador
-          </Label>
-          <Switch
-            id="browser-voice-switch"
-            checked={useBrowserVoice}
-            onCheckedChange={setUseBrowserVoice}
-            disabled={loading}
-          />
-        </div>
-        <div className="pt-2">
-          <Button
-            onClick={saveDefaultDestination}
-            disabled={saving || loading}
-            className="w-full"
-          >
-            {saving ? 'Salvando...' : 'Salvar'}
+          <Button onClick={handleSave} disabled={loading}>
+            {loading ? 'Salvando...' : 'Salvar Alterações'}
           </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
+}
 
 export default SettingsPage;

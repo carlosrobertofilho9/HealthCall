@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { audioTelemetry } from '@/lib/audioTelemetry';
@@ -190,61 +191,88 @@ export function useTextToSpeech() {
   }, []);
 
   /**
-   * Converte uma string de texto em áudio falado.
-   *
-   * Gera áudio através da edge function `generate-tts` do Supabase que usa
-   * a API do Google Translate. Os arquivos de áudio são armazenados em cache
-   * no Supabase Storage e também em memória para melhor performance.
-   *
-   * Os elementos de áudio são configurados com crossOrigin e preload para
-   * garantir compatibilidade com Chromecast durante espelhamento de tela.
-   *
-   * @param {string} text O texto a ser convertido em fala.
-   * @returns {Promise<void>} Uma promessa que é resolvida quando a fala termina.
+   * Cancela qualquer reprodução em andamento
    */
-  /**
-   * Pré-carrega o áudio TTS sem reproduzi-lo.
-   * Usa cache com expiração e retry logic para maior confiabilidade.
-   */
-  const preloadTTS = async (text: string): Promise<string> => {
-    // Verifica o cache antes de invocar a função (agora com validação)
-    const cachedUrl = await cacheHelpers.get(text);
-    if (cachedUrl) {
-      console.log('[TTS] Usando áudio do cache:', text.substring(0, 30) + '...');
-      audioTelemetry.trackCache(true); // Cache hit
-      return cachedUrl;
+  const cancel = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
     }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      currentUtteranceRef.current = null;
+    }
+  };
 
-    audioTelemetry.trackCache(false); // Cache miss
+  /**
+   * Reproduz áudio nativo (Web Speech API)
+   */
+  const speakNative = (text: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === 'undefined' || !window.speechSynthesis) {
+        reject(new Error('Web Speech API indisponível'));
+        return;
+      }
 
-    // Usa retry logic para chamadas à edge function
-    return retryWithBackoff(async () => {
-      console.log('[TTS] Gerando novo áudio:', text.substring(0, 30) + '...');
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 1.0;
+      
+      utterance.onend = () => {
+        currentUtteranceRef.current = null;
+        resolve();
+      };
+      
+      utterance.onerror = (e) => {
+        currentUtteranceRef.current = null;
+        console.error('[TTS] Erro nativo:', e);
+        reject(new Error('Erro na fala nativa'));
+      };
 
+      currentUtteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    });
+  };
+
+  /**
+   * Gera e reproduz o áudio
+   */
+  const speak = async (text: string): Promise<void> => {
+    cancel(); // Para anterior
+    setIsLoading(true);
+
+    try {
+      // 1. Verifica Cache
+      if (audioCache.current.has(text)) {
+        const cachedUrl = audioCache.current.get(text)!;
+        await playAudioUrl(cachedUrl);
+        return;
+      }
+
+      // 2. Tenta Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('generate-tts', {
         body: { text },
       });
 
-      if (error) {
-        throw new Error(`Erro ao invocar função TTS: ${error.message}`);
+      if (error || !data) {
+        throw new Error(error?.message || 'Erro na Edge Function');
       }
 
-      if (!data?.speechUrl) {
-        throw new Error('Falha ao gerar áudio TTS: URL não recebida.');
+      // A Edge Function agora retorna { speechUrl: 'https://...' }
+      if (data.speechUrl) {
+        audioCache.current.set(text, data.speechUrl);
+        await playAudioUrl(data.speechUrl);
+      } else {
+        throw new Error('Formato de resposta inválido da Edge Function');
       }
 
-      // Armazena a nova URL no cache
-      cacheHelpers.set(text, data.speechUrl);
-      console.log('[TTS] Áudio gerado e armazenado no cache');
-
-      return data.speechUrl;
-    }, 3, 1000).catch((e) => {
-      console.error('[TTS] Erro após retry:', e);
-      toast.error('Erro ao gerar áudio da chamada', {
-        description: 'Tentando novamente...',
-      });
-      throw e;
-    });
+    } catch (err) {
+      console.warn('[TTS] Falha ao usar TTS Remoto, usando fallback nativo:', err);
+      // 3. Fallback para Nativo
+      await speakNative(text);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const speak = (text: string): Promise<void> => {
@@ -357,10 +385,23 @@ export function useTextToSpeech() {
         }
         currentAudioRef.current = null;
 
+      const audio = new Audio(url);
+      currentAudioRef.current = audio;
+      
+      audio.onended = () => {
+        currentAudioRef.current = null;
+        resolve();
+      };
+      
+      audio.onerror = (e) => {
+        currentAudioRef.current = null;
         reject(e);
-      }
+      };
+      
+      audio.play().catch(reject);
     });
   };
 
   return { speak, preloadTTS, cancel };
 }
+

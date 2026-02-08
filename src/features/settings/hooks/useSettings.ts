@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAuth } from '@/hooks/useAuth';
 import * as settingsService from '@/features/settings/services/settingsService';
+import { updateUserDestination } from '@/features/authentication/services/authService';
 import { toast } from 'sonner';
 import { DESTINATION_ROOMS } from '@/constants';
 
@@ -25,6 +27,7 @@ import { DESTINATION_ROOMS } from '@/constants';
  */
 export function useSettings() {
   const { profile, loading: profileLoading, setProfile } = useUserProfile();
+  const { user } = useAuth();
   const [destinations, setDestinations] = useState<string[]>([...DESTINATION_ROOMS]);
   const [selected, setSelected] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -46,19 +49,25 @@ export function useSettings() {
     fetchDestinations();
   }, []);
 
+  // Prioriza o destino do usuário autenticado
   useEffect(() => {
-    if (profile?.default_destination) {
+    if (user?.default_destination) {
+      setSelected(user.default_destination);
+    } else if (profile?.default_destination) {
       setSelected(profile.default_destination);
     }
-  }, [profile]);
+  }, [user, profile]);
 
   const saveDefaultDestination = useCallback(async () => {
-    if (!profile) return;
+    if (!user) {
+      toast.error('Usuário não autenticado');
+      return;
+    }
     setSaving(true);
     try {
-      const updatedProfile = await settingsService.updateUserProfile(profile.id, { default_destination: selected || null });
-      if (updatedProfile) {
-        setProfile(updatedProfile);
+      // Salva no usuário autenticado (tabela users)
+      const updatedUser = await updateUserDestination(user.id, selected || null);
+      if (updatedUser) {
         toast.success('Configurações salvas!');
       }
     } catch (error: any) {
@@ -66,7 +75,7 @@ export function useSettings() {
     } finally {
       setSaving(false);
     }
-  }, [profile, selected, setProfile]);
+  }, [user, selected]);
 
   return {
     destinations,

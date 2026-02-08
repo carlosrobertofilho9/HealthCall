@@ -2,23 +2,20 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useDisplay } from '../useDisplay';
 import * as displayService from '@/features/display/services/displayService';
-import { supabase } from '@/lib/supabaseClient';
+import * as localDb from '@/services/localDatabase';
 
-// Mock dos módulos
-vi.mock('@/lib/supabaseClient', () => ({
-  supabase: {
-    channel: vi.fn(),
-    removeChannel: vi.fn(),
-  },
-}));
-
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: vi.fn(() => ({
-    session: { user: { id: '123' } },
-    loading: false,
+// Mock do react-router-dom
+vi.mock('react-router-dom', () => ({
+  useLocation: vi.fn(() => ({
+    pathname: '/display',
+    search: '',
+    hash: '',
+    state: null,
+    key: 'default',
   })),
 }));
 
+// Mock do useTextToSpeech
 vi.mock('@/hooks/useTextToSpeech', () => ({
   useTextToSpeech: vi.fn(() => ({
     speak: vi.fn().mockResolvedValue(undefined),
@@ -41,23 +38,32 @@ vi.mock('sonner', () => ({
   },
 }));
 
+vi.mock('@/lib/audioMonitoring', () => ({
+  audioMonitoring: {
+    start: vi.fn(),
+    stop: vi.fn(),
+    getMetrics: vi.fn(() => ({})),
+  },
+}));
+
+vi.mock('@/lib/audioTelemetry', () => ({
+  audioTelemetry: {
+    trackActivation: vi.fn(),
+    trackPlayback: vi.fn(),
+    trackCache: vi.fn(),
+    trackError: vi.fn(),
+  },
+}));
+
 describe('useDisplay - Audio System', () => {
-  let mockChannel: any;
   let audioContextInstance: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock do Supabase channel
-    mockChannel = {
-      on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn((callback) => {
-        callback('SUBSCRIBED');
-        return mockChannel;
-      }),
-    };
-
-    vi.mocked(supabase.channel).mockReturnValue(mockChannel);
+    // Mock do localDatabase para realtime updates
+    vi.mocked(localDb.onDataUpdate).mockImplementation(() => {});
+    vi.mocked(localDb.offDataUpdate).mockImplementation(() => {});
 
     // Mock dos serviços
     vi.mocked(displayService.getLastCall).mockResolvedValue(null);
@@ -92,6 +98,10 @@ describe('useDisplay - Audio System', () => {
       preload = 'auto';
       onended: (() => void) | null = null;
       onerror: ((e: any) => void) | null = null;
+      oncanplay: (() => void) | null = null;
+      onprogress: (() => void) | null = null;
+      onstalled: (() => void) | null = null;
+      onwaiting: (() => void) | null = null;
       paused = true;
 
       async play() {
@@ -104,6 +114,14 @@ describe('useDisplay - Audio System', () => {
 
       pause() {
         this.paused = true;
+      }
+
+      load() {
+        // Mock implementation
+      }
+
+      remove() {
+        // Mock implementation
       }
     } as any;
   });

@@ -1,17 +1,26 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>HealthCall</title>
-    <link rel="icon" href="/healthcall-icon.png" type="image/png" sizes="any">
-    <link rel="apple-touch-icon" href="/healthcall-icon.png">
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#ffffff">
+    <link rel="icon" href="/healthcall-icon.png" type="image/png" sizes="any" />
+    <link rel="apple-touch-icon" href="/healthcall-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#ffffff" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link as="style" href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="preload" />
-    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'"/>
+    <link
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap"
+      rel="preload"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media = 'all'"
+    />
     <noscript>
       <link
         href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&display=swap"
@@ -22,19 +31,30 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
       rel="stylesheet"
     />
-    <script defer src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/"
-  }
-}
-</script>
-</head>
+    <script type="importmap">
+      {
+        "imports": {
+          "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+          "react": "https://aistudiocdn.com/react@^19.1.1",
+          "react/": "https://aistudiocdn.com/react@^19.1.1/"
+        }
+      }
+    </script>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+      default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;
+      style-src 'self' 'unsafe-inline' https:;
+      font-src 'self' data: https:;
+      img-src 'self' data: blob: https: local: http://localhost:3456;
+      media-src 'self' data: blob: https: local: http://localhost:3456;
+      connect-src 'self' data: blob: https: http: ws: wss:;
+    "
+    />
+  </head>
   <body class="dark">
     <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -6,9 +6,51 @@ import { audioTelemetry } from '@/lib/audioTelemetry';
  */
 export function useAudioContext() {
   const contextRef = useRef<AudioContext | null>(null);
+  const silentNodeRef = useRef<{ osc: OscillatorNode; gain: GainNode } | null>(null);
   const [isHealthy, setIsHealthy] = useState(false);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
   const healthCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  /**
+   * Inicia loop silencioso para manter AudioContext ativo
+   */
+  const startSilentLoop = useCallback(async () => {
+    if (!contextRef.current) return;
+    if (silentNodeRef.current) return; // Já está rodando
+
+    try {
+      const ctx = contextRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.value = 0.0001; // Inaudível
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+
+      silentNodeRef.current = { osc, gain };
+      console.log('[AudioContext] Silent loop iniciado (keep-alive)');
+    } catch (error) {
+      console.error('[AudioContext] Falha ao iniciar silent loop:', error);
+    }
+  }, []);
+
+  /**
+   * Para loop silencioso
+   */
+  const stopSilentLoop = useCallback(() => {
+    if (silentNodeRef.current) {
+      try {
+        silentNodeRef.current.osc.stop();
+        silentNodeRef.current.osc.disconnect();
+        silentNodeRef.current.gain.disconnect();
+      } catch (e) {
+        console.warn('[AudioContext] Erro ao parar silent loop:', e);
+      }
+      silentNodeRef.current = null;
+      console.log('[AudioContext] Silent loop parado');
+    }
+  }, []);
 
   /**
    * Verifica e recupera o estado do AudioContext
@@ -18,6 +60,7 @@ export function useAudioContext() {
       // Se não existe, cria novo
       if (!contextRef.current) {
         contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        (window as any).healthCallAudioContext = contextRef.current;
         console.log('[AudioContext] Novo contexto criado');
       }
 
@@ -28,6 +71,7 @@ export function useAudioContext() {
       if (state === 'closed') {
         console.warn('[AudioContext] Contexto fechado, recriando...');
         contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        (window as any).healthCallAudioContext = contextRef.current;
         audioTelemetry.trackError('audiocontext_closed', 'AudioContext foi fechado e foi recriado');
       }
 
@@ -35,6 +79,11 @@ export function useAudioContext() {
       if (contextRef.current.state === 'suspended') {
         console.log('[AudioContext] Retomando contexto suspenso...');
         await contextRef.current.resume();
+      }
+
+      // Garante que o silent loop está rodando se o contexto estiver ativo
+      if (contextRef.current.state === 'running') {
+        startSilentLoop();
       }
 
       const healthy = contextRef.current.state === 'running';
@@ -58,7 +107,7 @@ export function useAudioContext() {
       );
       return false;
     }
-  }, []);
+  }, [startSilentLoop]);
 
   /**
    * Força retomada do AudioContext
@@ -75,6 +124,10 @@ export function useAudioContext() {
         await contextRef.current.resume();
       }
 
+      if (contextRef.current.state === 'running') {
+        await startSilentLoop();
+      }
+
       const healthy = contextRef.current.state === 'running';
       setIsHealthy(healthy);
       return healthy;
@@ -86,7 +139,7 @@ export function useAudioContext() {
       );
       return false;
     }
-  }, [checkHealth]);
+  }, [checkHealth, startSilentLoop]);
 
   /**
    * Obtém o AudioContext (cria se não existir)
@@ -136,9 +189,10 @@ export function useAudioContext() {
   useEffect(() => {
     return () => {
       stopHealthCheck();
+      stopSilentLoop();
       // Não fecha o AudioContext para evitar problemas de reativação
     };
-  }, [stopHealthCheck]);
+  }, [stopHealthCheck, stopSilentLoop]);
 
   /**
    * Listener para mudanças de visibilidade da página

@@ -1,35 +1,102 @@
+/**
+ * Serviço de autenticação (Supabase)
+ * Substitui a autenticação local do Electron
+ */
+
 import { supabase } from '@/lib/supabaseClient';
-import { SignInWithPasswordCredentials } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
+
+// Re-export types if needed or map them
+export type AuthUser = User;
+export type LocalUser = AuthUser;
+
+export interface AuthSession {
+  user: AuthUser;
+  access_token: string;
+}
+export type LocalSession = AuthSession;
 
 /**
  * Autentica um usuário usando email e senha.
- *
- * @param {SignInWithPasswordCredentials} credentials As credenciais de email e senha do usuário.
- * @returns {Promise<import('@supabase/supabase-js').AuthResponse['data']>} Os dados da resposta de autenticação.
- * @throws {import('@supabase/supabase-js').AuthError} Se a autenticação falhar.
  */
-export async function signInWithPassword(credentials: SignInWithPasswordCredentials) {
-  const { data, error } = await supabase.auth.signInWithPassword(credentials);
+export async function signInWithPassword(credentials: { email: string; password: string }): Promise<AuthSession> {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: credentials.email,
+    password: credentials.password,
+  });
+
   if (error) throw error;
-  return data;
+  if (!data.session || !data.user) throw new Error('Sessão não criada');
+
+  return {
+    user: data.user,
+    access_token: data.session.access_token,
+  };
 }
 
 /**
  * Desconecta o usuário atualmente autenticado.
- *
- * @throws {import('@supabase/supabase-js').AuthError} Se o processo de logout falhar.
  */
-export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+export async function signOut(): Promise<void> {
+  await supabase.auth.signOut();
 }
 
 /**
  * Obtém a sessão de autenticação atual.
- *
- * @returns {Promise<import('@supabase/supabase-js').Session | null>} A sessão atual, ou `null` se não houver sessão ativa.
  */
-export async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+export async function getSession(): Promise<AuthSession | null> {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error || !session) return null;
+
+  return {
+    user: session.user,
+    access_token: session.access_token,
+  };
+}
+
+/**
+ * Verifica se é o primeiro login do usuário
+ * (Mocked or check metadata/profile)
+ */
+export async function isFirstLogin(userId: string): Promise<boolean> {
+  // Check user metadata or a profiles table
+  // For migration simplicity:
+  return false; 
+}
+
+/**
+ * Atualiza as credenciais do usuário
+ */
+export async function updateCredentials(
+  userId: string, 
+  email: string, 
+  password: string, 
+  name: string
+): Promise<User> {
+  const updates: any = {};
+  if (email) updates.email = email;
+  if (password) updates.password = password;
+  if (name) updates.data = { name };
+
+  const { data, error } = await supabase.auth.updateUser(updates);
+
+  if (error) throw error;
+  if (!data.user) throw new Error('Falha ao atualizar usuário');
+  
+  return data.user;
+}
+
+/**
+ * Atualiza o destino/setor de trabalho do usuário
+ */
+export async function updateUserDestination(userId: string, destination: string | null): Promise<User> {
+  const { data, error } = await supabase.auth.updateUser({
+    data: { default_destination: destination }
+  });
+
+  if (error) throw error;
+  if (!data.user) throw new Error('Falha ao atualizar destino');
+
+  return data.user;
 }

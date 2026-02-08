@@ -1,1 +1,1 @@
-export { default as SettingsPage } from './routes/SettingsPage';
+export { SettingsPage } from './routes/SettingsPage';

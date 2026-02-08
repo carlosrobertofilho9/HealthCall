@@ -3,34 +3,22 @@ import { useNavigate, Link, NavLink } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { LayoutList, Monitor, Bell, Settings, LogOut, CalendarDays, Menu, X, FileText } from 'lucide-react';
 
-/**
- * The main header component for the application.
- * It displays the application logo, navigation links, and a user menu with a logout option.
- */
-const Header: React.FC = () => {
+import headerLogo from '@/assets/healthcall-logo-header.png';
+
+export const Header: React.FC = () => {
+	const location = useLocation();
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [initials, setInitials] = useState<string>('');
 	const navigate = useNavigate();
 	const menuRef = useRef<HTMLDivElement>(null);
+	const { user, signOut } = useAuth();
+	
+	// Initials state
+	const [initials, setInitials] = useState<string>('');
+	const [clinicName, setClinicName] = useState<string>('Clínica');
 
-	/**
-	 * Handles the user logout process.
-	 * Signs the user out of Supabase and navigates to the login page.
-	 */
-	const handleLogout = async () => {
-		const { error } = await supabase.auth.signOut();
-		if (error) {
-			console.error('Error logging out:', error);
-		} else {
-			navigate('/login');
-		}
-	};
-
-	/**
-	 * Toggles the visibility of the user dropdown menu.
-	 */
 	const toggleMenu = () => {
 		setIsMenuOpen(!isMenuOpen);
 	};
@@ -48,46 +36,39 @@ const Header: React.FC = () => {
 				setIsMenuOpen(false);
 			}
 		};
+
 		document.addEventListener('mousedown', handleClickOutside);
 		return () => {
 			document.removeEventListener('mousedown', handleClickOutside);
 		};
-	}, []);
+	}, [menuRef]);
 
-	/**
-	 * Effect to fetch the current user's data on component mount
-	 * to display their avatar or initials.
-	 */
+	// Load settings for initials
 	useEffect(() => {
-		/**
-		 * Computes user initials from a name or email string.
-		 * @param {string | null | undefined} text - The user's name or email.
-		 * @returns {string} The computed initials (e.g., "JD" for "John Doe").
-		 */
-		function computeInitials(text: string | null | undefined) {
-			const value = (text ?? '').trim();
-			if (!value) return '?';
-			if (value.includes(' ')) {
-				const parts = value.split(' ').filter(Boolean);
-				const first = parts[0][0] ?? '';
-				const last = parts[parts.length - 1][0] ?? '';
-				return (first + last).toUpperCase();
+		const loadSettings = () => {
+			try {
+				const savedSettings = localStorage.getItem('clinic_settings');
+				if (savedSettings) {
+					const { name } = JSON.parse(savedSettings);
+					setClinicName(name || 'Clínica');
+					
+					const parts = name.split(' ').filter(Boolean);
+					if (parts.length >= 2) {
+						setInitials((parts[0][0] + parts[parts.length - 1][0]).toUpperCase());
+					} else if (parts.length === 1) {
+						setInitials(parts[0].slice(0, 2).toUpperCase());
+					} else {
+						setInitials('CL');
+					}
+				} else {
+					setInitials('CL');
+				}
+			} catch (error) {
+				console.error('Error loading settings:', error);
+				setInitials('CL');
 			}
-			// email or single name
-			return value.slice(0, 2).toUpperCase();
-		}
-
-		(async () => {
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
-			if (!user) return;
-			const meta = (user.user_metadata ?? {}) as Record<string, any>;
-			const name: string | undefined = meta.name || meta.full_name;
-			const avatar: string | undefined = meta.avatar_url;
-			setAvatarUrl(avatar ?? null);
-			setInitials(computeInitials(name || user.email));
-		})();
+		};
+		loadSettings();
 	}, []);
 
 	const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -101,7 +82,7 @@ const Header: React.FC = () => {
 		<header className="relative flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#264532] px-10 py-4">
 			<div className="flex items-center gap-4 text-white">
 				<Link to="/" className="h-8 w-auto">
-					<img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-full w-auto object-contain" />
+					<img src={headerLogo} alt="HealthCall Logo" className="h-full w-auto object-contain" />
 				</Link>
 				<Link to="/">
 					<h1 className="text-white text-xl font-bold leading-tight tracking-[-0.015em]">HealthCall</h1>
@@ -168,9 +149,20 @@ const Header: React.FC = () => {
 					</button>
 					{isMenuOpen && (
 						<div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
+							<div className="px-4 py-2 text-sm text-gray-400 border-b border-gray-700">
+								{user?.email || clinicName}
+							</div>
+							<Link
+								to="/settings"
+								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
+								onClick={() => setIsMenuOpen(false)}
+							>
+								<span className="material-symbols-outlined mr-2">settings</span>
+								Configurações
+							</Link>
 							<button
 								onClick={handleLogout}
-								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
+								className="flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
 							>
 								<LogOut className="mr-2 w-4 h-4" />
 								Sair
@@ -239,5 +231,3 @@ const Header: React.FC = () => {
 		</header>
 	);
 };
-
-export default Header;

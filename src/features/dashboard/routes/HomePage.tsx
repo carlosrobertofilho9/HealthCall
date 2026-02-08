@@ -9,6 +9,8 @@ import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import AppointmentsColumn from '@/features/dashboard/components/AppointmentsColumn';
 
+import { useAuth } from '@/hooks/useAuth';
+
 /**
  * A página principal do painel de controle (dashboard).
  *
@@ -21,6 +23,7 @@ import AppointmentsColumn from '@/features/dashboard/components/AppointmentsColu
  */
 const HomePage: React.FC = () => {
 	const { profile } = useUserProfile();
+  const { user } = useAuth();
 	const {
 		patients,
 		searchTerm,
@@ -49,6 +52,8 @@ const HomePage: React.FC = () => {
 		const destination = profile?.default_destination ?? 'Consultório';
 		await addPatientByNumber(destination);
 	};
+
+
 
 	const handleRemovePatient = (patient: Patient) => {
 		setPatientToDelete(patient);
@@ -135,7 +140,7 @@ const HomePage: React.FC = () => {
             </div>
 
 			{isModalOpen && editingPatient && (
-				<EditPatientModal patient={editingPatient} onSave={updatePatient} onClose={closeModal} isOpen={isModalOpen} />
+				<EditPatientModal patient={editingPatient} onSave={handleSavePatient} onClose={closeModal} isOpen={isModalOpen} />
 			)}
 			{isConfirmModalOpen && patientToDelete && (
 				<ConfirmDeleteModal

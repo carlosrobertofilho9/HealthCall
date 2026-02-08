@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import type { Session } from '@supabase/supabase-js';
 import { clearQueue } from '@/features/dashboard/services/patientService';
+import * as authService from '@/features/authentication/services/authService';
+import type { AuthSession } from '@/features/authentication/services/authService';
+
 /**
- * A custom hook to manage user authentication state with Supabase.
- * It provides the current session, loading status, and user object.
+ * Hook customizado para gerenciar o estado de autenticação do usuário.
+ * Utiliza o Supabase para autenticação.
  *
- * @returns {{ session: Session | null, loading: boolean, user: import('@supabase/supabase-js').User | null }} An object containing:
- * - `session`: The current user session object, or null if not authenticated.
- * - `loading`: A boolean that is true while the session is being fetched, and false otherwise.
- * - `user`: The current user object, or null if not authenticated.
+ * @returns Um objeto contendo:
+ * - `session`: O objeto da sessão atual, ou null se não autenticado.
+ * - `loading`: Um booleano que é true enquanto inicializa.
+ * - `user`: O objeto do usuário atual, ou null se não autenticado.
+ * - `signOut`: Função para deslogar.
  */
 export function useAuth() {
-	const [session, setSession] = useState<Session | null>(null);
+	const [session, setSession] = useState<AuthSession | null>(null);
 	const [loading, setLoading] = useState(true);
+
+	const signOut = async () => {
+		await authService.signOut();
+		setSession(null);
+	};
 
 	useEffect(() => {
 		const runDailyCleanup = async () => {
@@ -32,29 +39,29 @@ export function useAuth() {
 			}
 		};
 
-		const getSession = async () => {
-			const {
-				data: { session },
-			} = await supabase.auth.getSession();
-			setSession(session);
-			if (session) {
-				await runDailyCleanup();
+		const initialize = async () => {
+			try {
+				const existingSession = await authService.getSession();
+				setSession(existingSession);
+				
+				if (existingSession) {
+					await runDailyCleanup();
+				}
+			} catch (error) {
+				console.error('Error initializing auth:', error);
+				setSession(null);
+			} finally {
+				setLoading(false);
 			}
-			setLoading(false);
 		};
 
-		getSession();
-
-		const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-			if (session) {
-				setSession(session);
-			}
-		});
-
-		return () => {
-			authListener?.subscription.unsubscribe();
-		};
+		initialize();
 	}, []);
 
-	return { session, loading, user: session?.user ?? null };
+	return { 
+		session, 
+		loading, 
+		user: session?.user ?? null,
+		signOut
+	};
 }
