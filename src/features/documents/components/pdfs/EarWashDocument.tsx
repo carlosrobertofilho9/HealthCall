@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
 import { HeaderIcon, BaseDocument, formatDate, type DocumentFormData } from './PdfCommon';
-
+import { SmartSection, CriticalSection } from './PdfBreakSystem';
 const s = StyleSheet.create({
   container: { width: '100%' },
   sectionBox: {

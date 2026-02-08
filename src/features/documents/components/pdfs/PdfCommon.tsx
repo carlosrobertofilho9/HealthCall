@@ -2,29 +2,101 @@ import React from 'react';
 import { StyleSheet, Svg, Path, Circle, View, Text } from '@react-pdf/renderer';
 import type { DocumentFormData } from '../DocumentPdf';
 
-/**
- * Renderiza o texto de um campo preenchível.
- * Se o valor existir, mostra-o; caso contrário mostra o placeholder vazio original.
- */
+// --- 1. Design System Theme ---
+export const pdfTheme = {
+  colors: {
+    primary: '#0f766e',
+    primaryDark: '#0d9488',
+    secondary: '#14b8a6',
+    tertiary: '#5eead4',
+    softBg: '#99f6e4',
+    text: {
+      main: '#334155',
+      secondary: '#64748b',
+      light: '#94a3b8',
+      white: '#ffffff',
+      accent: '#99f6e4'
+    },
+    border: '#e2e8f0',
+    borderDark: '#cbd5e1',
+    bgLight: '#f8fafc',
+  },
+  spacing: {
+    xs: 2,
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 20,
+    xxl: 25
+  },
+  fontSize: {
+    xxs: 5,
+    xs: 7,
+    sm: 9,
+    base: 10,
+    lg: 13,
+    xl: 18
+  }
+};
+
+// --- 2. Typography Components ---
+
+export const DocTitle: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => (
+  <Text style={[{ 
+    fontSize: pdfTheme.fontSize.lg, 
+    fontWeight: 'bold', 
+    color: pdfTheme.colors.primary, 
+    textTransform: 'uppercase', 
+    letterSpacing: 1 
+  }, style]}>
+    {children}
+  </Text>
+);
+
+export const DocLabel: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => (
+  <Text style={[{ 
+    fontSize: pdfTheme.fontSize.xs, 
+    color: pdfTheme.colors.text.light, 
+    marginBottom: pdfTheme.spacing.xs 
+  }, style]}>
+    {children}
+  </Text>
+);
+
+export const DocValue: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => (
+  <Text style={[{ 
+    fontSize: pdfTheme.fontSize.sm, 
+    color: pdfTheme.colors.text.main 
+  }, style]}>
+    {children}
+  </Text>
+);
+
+export const DocText: React.FC<{ children: React.ReactNode; style?: any }> = ({ children, style }) => (
+  <Text style={[{ 
+    fontSize: pdfTheme.fontSize.base, 
+    color: pdfTheme.colors.text.main,
+    lineHeight: 1.4
+  }, style]}>
+    {children}
+  </Text>
+);
+
+// --- 3. Helpers & Utilities ---
+
 export const FieldValue: React.FC<{
   value?: string;
   fallback?: string;
   style?: object;
 }> = ({ value, fallback = '', style }) => (
-  <Text style={[{ fontSize: 9, color: '#334155' }, style]}>
+  <DocValue style={style}>
     {value || fallback}
-  </Text>
+  </DocValue>
 );
 
-/**
- * Formata uma data ISO (YYYY-MM-DD) ou string de data para dd/mm/aaaa.
- * Se o valor não existir retorna o placeholder.
- */
 export const formatDate = (value?: string, fallback = '___/___/______'): string => {
   if (!value) return fallback;
-  // Se já tem o formato dd/mm/aaaa, retorna direto
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
-  // Se está no formato ISO YYYY-MM-DD
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (match) return `${match[3]}/${match[2]}/${match[1]}`;
   return value;
@@ -32,7 +104,8 @@ export const formatDate = (value?: string, fallback = '___/___/______'): string 
 
 export { type DocumentFormData };
 
-// --- Icons (SVG Paths) ---
+// --- 4. Icons ---
+
 export const icons = {
   calendar: "M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z M16 2V6 M8 2V6 M3 10H21",
   sun: "M12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17Z M12 1V3 M12 21V23 M4.22 4.22L5.64 5.64 M18.36 18.36L19.78 19.78 M1 12H3 M21 12H23 M4.22 19.78L5.64 18.36 M18.36 5.64L19.78 4.22",
@@ -56,126 +129,205 @@ export const icons = {
   ear: "M6 8.5a6.5 6.5 0 0 1 13 0c0 6-6 6-6 10.5 M17 18.5a2 2 0 0 1-4 0",
 };
 
-export const HeaderIcon = ({ icon, color = "#0f766e" }: { icon: keyof typeof icons, color?: string }) => (
+export const HeaderIcon = ({ icon, color = pdfTheme.colors.primary }: { icon: keyof typeof icons, color?: string }) => (
   <Svg width={12} height={12} viewBox="0 0 24 24">
     <Path d={icons[icon]} stroke={color} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
-// Ícone de saúde grande para o header
-const HealthLogo = () => (
+export const HealthLogo = () => (
   <Svg width={36} height={36} viewBox="0 0 40 40">
-    {/* Círculo de fundo */}
-    <Circle cx="20" cy="20" r="19" fill="#0d9488" stroke="#0f766e" strokeWidth={1} />
-    {/* Cruz médica */}
+    <Circle cx="20" cy="20" r="19" fill={pdfTheme.colors.primaryDark} stroke={pdfTheme.colors.primary} strokeWidth={1} />
     <Path d="M15 12h10v6h6v10h-6v6H15v-6H9V18h6z" fill="#ffffff" />
-    {/* Batimento cardíaco */}
-    <Path d="M9 23h4l2-4 3 8 2-4h4" stroke="#0d9488" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M9 23h4l2-4 3 8 2-4h4" stroke={pdfTheme.colors.primaryDark} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
+// --- 5. Structural Components ---
+
+export const PageHeader = ({ unitName = "PSF 5 Maria Lucia da Silva" }: { unitName?: string }) => (
+  <View>
+    <View style={commonStyles.headerBanner}>
+      <View style={commonStyles.headerLogo}>
+        <HealthLogo />
+      </View>
+      <View style={commonStyles.headerTextGroup}>
+        <Text style={commonStyles.headerPsfName}>{unitName}</Text>
+        <Text style={commonStyles.headerUbs}>Unidade Básica de Saúde • Atenção Primária</Text>
+      </View>
+      <View style={commonStyles.headerBadge}>
+        <Text style={commonStyles.headerBadgeText}>SUS</Text>
+        <Text style={commonStyles.headerBadgeSub}>Sistema Único de Saúde</Text>
+      </View>
+    </View>
+
+    {/* Accent Gradient Line */}
+    <View style={commonStyles.accentLine}>
+      <View style={{ flex: 2, backgroundColor: pdfTheme.colors.primaryDark, borderRadius: 2 }} />
+      <View style={{ flex: 1, backgroundColor: pdfTheme.colors.secondary, marginLeft: 2, borderRadius: 2 }} />
+      <View style={{ flex: 1, backgroundColor: pdfTheme.colors.tertiary, marginLeft: 2, borderRadius: 2 }} />
+      <View style={{ flex: 3, backgroundColor: pdfTheme.colors.softBg, marginLeft: 2, borderRadius: 2 }} />
+    </View>
+  </View>
+);
+
+export const PatientInfoBar = ({ nome, cns }: { nome?: string, cns?: string }) => (
+  <View style={commonStyles.patientInfoCard}>
+    <View style={{ flex: 2, minWidth: 200 }}>
+      <DocLabel>Nome do Paciente</DocLabel>
+      <View style={{ borderBottomWidth: 1, borderBottomColor: pdfTheme.colors.borderDark, height: 18, justifyContent: 'center' }}>
+        <DocValue>{nome || ''}</DocValue>
+      </View>
+    </View>
+    <View style={{ flex: 1, minWidth: 120 }}>
+      <DocLabel>CNS ou CPF</DocLabel>
+      <View style={{ borderBottomWidth: 1, borderBottomColor: pdfTheme.colors.borderDark, height: 18, justifyContent: 'center' }}>
+        <DocValue>{cns || ''}</DocValue>
+      </View>
+    </View>
+  </View>
+);
+
+export const PageFooter = () => (
+  <View style={commonStyles.footer}>
+    <Text style={commonStyles.footerText}>
+      Impresso em {new Date().toLocaleDateString('pt-BR')}
+    </Text>
+    <Text style={commonStyles.footerDot}>•</Text>
+    <Text style={commonStyles.footerBrand}>HealthCall</Text>
+    <Text style={commonStyles.footerDot}>•</Text>
+    <Text style={commonStyles.footerText}>Documento gerado eletronicamente</Text>
+  </View>
+);
+
+// --- 6. Base Document ---
+
+interface BaseDocumentProps {
+  title: string;
+  children: React.ReactNode;
+  visibleParagraphs?: string[]; // Mantido para compatibilidade, mas opcional
+  orientation?: 'portrait' | 'landscape';
+  showFooter?: boolean;
+  wrap?: boolean;
+  nomePaciente?: string;
+  cnsCpf?: string;
+}
+
+export const BaseDocument: React.FC<BaseDocumentProps> = ({ 
+  title, 
+  children, 
+  showFooter = true,
+  wrap = true,
+  nomePaciente,
+  cnsCpf,
+}) => (
+  <View style={[commonStyles.page, { paddingBottom: showFooter ? pdfTheme.spacing.xxl : 0 }]} wrap={wrap}>
+    <PageHeader />
+    
+    <PatientInfoBar nome={nomePaciente} cns={cnsCpf} />
+
+    {/* Document Title */}
+    <View style={commonStyles.mainTitleContainer}>
+      <View style={commonStyles.mainTitleLine} />
+      <DocTitle>{title}</DocTitle>
+      <View style={commonStyles.mainTitleLine} />
+    </View>
+
+    {/* Main Content */}
+    <View style={{ flex: 1, width: '100%' }}>
+      {children}
+    </View>
+
+    {showFooter && <PageFooter />}
+  </View>
+);
+
+// --- 7. Styles ---
+// Mantendo uma versão atualizada do commonStyles usando o tema
 export const commonStyles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    padding: pdfTheme.spacing.xl,
     fontFamily: 'Helvetica',
+    flex: 1,
   },
-  // --- Header Banner ---
   headerBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0f766e',
+    backgroundColor: pdfTheme.colors.primary,
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    padding: pdfTheme.spacing.lg,
+    marginBottom: pdfTheme.spacing.lg,
   },
-  headerLogo: {
-    marginRight: 12,
-  },
-  headerTextGroup: {
-    flex: 1,
-  },
+  headerLogo: { marginRight: pdfTheme.spacing.lg },
+  headerTextGroup: { flex: 1 },
   headerPsfName: {
-    fontSize: 18,
+    fontSize: pdfTheme.fontSize.xl,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
     letterSpacing: 0.5,
   },
   headerUbs: {
-    fontSize: 9,
-    color: '#99f6e4',
-    marginTop: 2,
+    fontSize: pdfTheme.fontSize.sm,
+    color: pdfTheme.colors.text.accent,
+    marginTop: pdfTheme.spacing.xs,
     letterSpacing: 0.3,
   },
   headerBadge: {
-    backgroundColor: '#ffffff',
+    backgroundColor: pdfTheme.colors.text.white,
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
     alignItems: 'center',
   },
   headerBadgeText: {
-    fontSize: 7,
+    fontSize: pdfTheme.fontSize.xs,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
   },
   headerBadgeSub: {
     fontSize: 5,
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
     marginTop: 1,
   },
-  // --- Accent line under header ---
   accentLine: {
     height: 3,
-    borderRadius: 2,
     marginBottom: 10,
     flexDirection: 'row',
   },
-  // --- Document Title ---
   mainTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-    gap: 8,
+    marginBottom: pdfTheme.spacing.lg,
+    gap: pdfTheme.spacing.md,
   },
   mainTitleLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#cbd5e1',
+    backgroundColor: pdfTheme.colors.borderDark,
   },
-  mainTitleText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#0f766e',
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    paddingHorizontal: 10,
-  },
-  // --- Patient Info ---
   patientInfoCard: {
-    marginBottom: 10,
-    padding: 8,
-    backgroundColor: '#f8fafc',
+    marginBottom: pdfTheme.spacing.lg,
+    padding: pdfTheme.spacing.md,
+    backgroundColor: pdfTheme.colors.bgLight,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 16,
   },
-  patientInfoItem: {
-    fontSize: 10,
-    color: '#334155',
-  },
-  patientInfoLabel: {
-    fontSize: 7,
-    color: '#94a3b8',
+  patientInfoLabel: { // Mantido para compatibilidade, mas usar DocLabel preferencialmente
+    fontSize: pdfTheme.fontSize.xs,
+    color: pdfTheme.colors.text.light,
     marginBottom: 1,
   },
-  // --- Footer ---
+  patientInfoItem: { // Mantido para compatibilidade, mas usar DocValue preferencialmente
+    fontSize: pdfTheme.fontSize.base,
+    color: pdfTheme.colors.text.main,
+  },
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -185,22 +337,22 @@ export const commonStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: pdfTheme.colors.border,
     paddingTop: 6,
     gap: 6,
   },
   footerText: {
-    fontSize: 7,
-    color: '#94a3b8',
+    fontSize: pdfTheme.fontSize.xs,
+    color: pdfTheme.colors.text.light,
   },
   footerBrand: {
-    fontSize: 7,
+    fontSize: pdfTheme.fontSize.xs,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
   },
   footerDot: {
-    fontSize: 7,
-    color: '#cbd5e1',
+    fontSize: pdfTheme.fontSize.xs,
+    color: pdfTheme.colors.borderDark,
   },
 });
 
@@ -210,118 +362,27 @@ export const tableStyles = StyleSheet.create({
     width: 'auto',
     borderStyle: 'solid',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     borderRadius: 6,
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    borderBottomColor: pdfTheme.colors.borderDark,
     height: 24,
     alignItems: 'center',
   },
   col: {
     height: '100%',
     borderRightWidth: 1,
-    borderRightColor: '#cbd5e1',
+    borderRightColor: pdfTheme.colors.borderDark,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  lastCol: {
-    borderRightWidth: 0,
-  },
+  lastCol: { borderRightWidth: 0 },
   cellText: {
-    fontSize: 9,
-    color: '#334155',
+    fontSize: pdfTheme.fontSize.sm,
+    color: pdfTheme.colors.text.main,
   },
 });
-
-interface BaseDocumentProps {
-  title: string;
-  visibleParagraphs: string[];
-  children: React.ReactNode;
-  orientation?: 'portrait' | 'landscape';
-  showFooter?: boolean;
-  wrap?: boolean;
-  /** Nome do paciente preenchido pelo widget (se houver) */
-  nomePaciente?: string;
-  /** CNS ou CPF preenchido pelo widget (se houver) */
-  cnsCpf?: string;
-}
-
-export const BaseDocument: React.FC<BaseDocumentProps> = ({ 
-  title, 
-  visibleParagraphs, 
-  children, 
-  showFooter = true,
-  wrap = true,
-  nomePaciente,
-  cnsCpf,
-}) => (
-  <View style={{ flex: 1, height: '100%', paddingBottom: showFooter ? 25 : 0 }} wrap={wrap}>
-    {/* Header Banner */}
-    <View style={commonStyles.headerBanner}>
-      <View style={commonStyles.headerLogo}>
-        <HealthLogo />
-      </View>
-      <View style={commonStyles.headerTextGroup}>
-        <Text style={commonStyles.headerPsfName}>PSF 5 Maria Lucia da Silva</Text>
-        <Text style={commonStyles.headerUbs}>Unidade Básica de Saúde • Atenção Primária</Text>
-      </View>
-      <View style={commonStyles.headerBadge}>
-        <Text style={commonStyles.headerBadgeText}>SUS</Text>
-        <Text style={commonStyles.headerBadgeSub}>Sistema Único de Saúde</Text>
-      </View>
-    </View>
-
-    {/* Accent gradient line */}
-    <View style={commonStyles.accentLine}>
-      <View style={{ flex: 2, backgroundColor: '#0d9488', borderRadius: 2 }} />
-      <View style={{ flex: 1, backgroundColor: '#14b8a6', marginLeft: 2, borderRadius: 2 }} />
-      <View style={{ flex: 1, backgroundColor: '#5eead4', marginLeft: 2, borderRadius: 2 }} />
-      <View style={{ flex: 3, backgroundColor: '#99f6e4', marginLeft: 2, borderRadius: 2 }} />
-    </View>
-
-    {/* Patient Info Card — sempre visível com campos Nome e CNS/CPF */}
-    <View style={commonStyles.patientInfoCard}>
-      {/* Nome do Paciente — sempre aparece */}
-      <View style={{ flex: 2, minWidth: 200 }}>
-        <Text style={commonStyles.patientInfoLabel}>Nome do Paciente</Text>
-        <View style={{ borderBottomWidth: 1, borderBottomColor: '#cbd5e1', height: 18, justifyContent: 'center' }}>
-          <Text style={commonStyles.patientInfoItem}>{nomePaciente || ''}</Text>
-        </View>
-      </View>
-      {/* CNS ou CPF — sempre aparece */}
-      <View style={{ flex: 1, minWidth: 120 }}>
-        <Text style={commonStyles.patientInfoLabel}>CNS ou CPF</Text>
-        <View style={{ borderBottomWidth: 1, borderBottomColor: '#cbd5e1', height: 18, justifyContent: 'center' }}>
-          <Text style={commonStyles.patientInfoItem}>{cnsCpf || ''}</Text>
-        </View>
-      </View>
-    </View>
-
-    {/* Document Title with decorative lines */}
-    <View style={commonStyles.mainTitleContainer}>
-      <View style={commonStyles.mainTitleLine} />
-      <Text style={commonStyles.mainTitleText}>{title}</Text>
-      <View style={commonStyles.mainTitleLine} />
-    </View>
-
-    {/* Content */}
-    <View style={{ flex: 1, width: '100%' }}>{children}</View>
-
-    {/* Footer */}
-    {showFooter && (
-      <View style={commonStyles.footer}>
-        <Text style={commonStyles.footerText}>
-          Impresso em {new Date().toLocaleDateString('pt-BR')}
-        </Text>
-        <Text style={commonStyles.footerDot}>•</Text>
-        <Text style={commonStyles.footerBrand}>HealthCall</Text>
-        <Text style={commonStyles.footerDot}>•</Text>
-        <Text style={commonStyles.footerText}>Documento gerado eletronicamente</Text>
-      </View>
-    )}
-  </View>
-);

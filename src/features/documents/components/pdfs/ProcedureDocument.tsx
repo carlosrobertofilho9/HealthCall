@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
 import { HeaderIcon, BaseDocument, formatDate, type DocumentFormData } from './PdfCommon';
-
+import { SmartSection, CriticalSection } from './PdfBreakSystem';
 const s = StyleSheet.create({
   container: { width: '100%' },
   sectionBox: {
@@ -224,7 +224,7 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
   <BaseDocument title="Protocolo de Procedimento" visibleParagraphs={visibleParagraphs} nomePaciente={formData?.nomePaciente} cnsCpf={formData?.cnsCpf}>
     <View style={s.container}>
       {/* Section 1: Dados do Procedimento */}
-      <View style={s.sectionBox}>
+      <SmartSection type="standard" style={s.sectionBox}>
         <View style={[s.sectionHeader, { backgroundColor: '#0369a1' }]}>
           <HeaderIcon icon="scissors" color="#ffffff" />
           <Text style={s.sectionHeaderText}>Dados do Procedimento</Text>
@@ -333,10 +333,10 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
             </View>
           </View>
         </View>
-      </View>
+      </SmartSection>
 
       {/* Section 2: Riscos por tipo de procedimento */}
-      <View style={s.alertBox}>
+      <SmartSection type="alert" style={s.alertBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
           <HeaderIcon icon="alertTriangle" color="#991b1b" />
           <Text style={s.alertTitle}>Riscos e Complicações Possíveis</Text>
@@ -376,10 +376,10 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
 
         <Text style={{ fontSize: 7, fontWeight: 'bold', color: '#7f1d1d', marginBottom: 2, marginTop: 4 }}>Retirada de Corpo Estranho:</Text>
         <Text style={s.alertText}>• Remoção incompleta. • Lesão tecidual durante extração. • Necessidade de encaminhamento cirúrgico se profundo.</Text>
-      </View>
+      </SmartSection>
 
       {/* Section 3: Termo de Consentimento */}
-      <View style={s.consentBlock}>
+      <CriticalSection style={s.consentBlock}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
           <HeaderIcon icon="shield" color="#92400e" />
           <Text style={s.consentTitle}>Termo de Consentimento Livre e Esclarecido</Text>
@@ -415,10 +415,10 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
             <Text style={s.signatureLabel}>Assinatura do Profissional - Carimbo</Text>
           </View>
         </View>
-      </View>
+      </CriticalSection>
 
       {/* Section 4: Orientações Pré-Procedimento */}
-      <View style={s.noteBox}>
+      <SmartSection type="info" style={s.noteBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
           <HeaderIcon icon="fileText" color="#1e40af" />
           <Text style={s.noteTitle}>Orientações Pré-Procedimento:</Text>
@@ -428,10 +428,10 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
         <Text style={s.noteText}>• Informar sobre doenças crônicas: diabetes, hipertensão, cardiopatias, coagulopatias.</Text>
         <Text style={s.noteText}>• Pacientes com marcapasso devem informar antes do uso de qualquer equipamento elétrico (cautério).</Text>
         <Text style={s.noteText}>• Não é necessário jejum para procedimentos com anestesia local (exceto se orientado diferentemente).</Text>
-      </View>
+      </SmartSection>
 
       {/* Section 5: Orientações Pós-Procedimento */}
-      <View style={s.infoBox}>
+      <SmartSection type="info" style={s.infoBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
           <HeaderIcon icon="clipboard" color="#0f766e" />
           <Text style={s.infoTitle}>Orientações Pós-Procedimento:</Text>
@@ -448,10 +448,10 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
         <Text style={s.infoText}>  • Pontos em face: 5 a 7 dias</Text>
         <Text style={s.infoText}>  • Pontos em tronco/membros: 7 a 10 dias</Text>
         <Text style={s.infoText}>  • Pontos em áreas de tensão (articulações): 10 a 14 dias</Text>
-      </View>
+      </SmartSection>
 
       {/* Section 6: Sinais de Alerta */}
-      <View style={s.alertBox}>
+      <SmartSection type="alert" style={s.alertBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 3 }}>
           <HeaderIcon icon="alertTriangle" color="#991b1b" />
           <Text style={s.alertTitle}>Sinais de Alerta — Procurar Atendimento Imediato:</Text>
@@ -465,10 +465,10 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
         <Text style={s.alertText}>- Dormência, formigamento ou perda de movimento na região.</Text>
         <Text style={s.alertText}>- Abertura dos pontos (deiscência) com exposição do tecido.</Text>
         <Text style={s.alertText}>- Qualquer sinal de reação alérgica: urticária, inchaço facial, dificuldade respiratória.</Text>
-      </View>
+      </SmartSection>
 
       {/* Nota final */}
-      <View style={s.noteBox}>
+      <SmartSection type="info" style={s.noteBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 3 }}>
           <HeaderIcon icon="fileText" color="#1e40af" />
           <Text style={s.noteTitle}>Informações Importantes:</Text>
@@ -477,7 +477,7 @@ export const ProcedureDocument: React.FC<ProcedureDocumentProps> = ({ visiblePar
         <Text style={s.noteText}>• O paciente (ou responsável) recebe uma via deste documento com todas as orientações.</Text>
         <Text style={s.noteText}>• Qualquer intercorrência durante ou após o procedimento deve ser registrada neste documento e no prontuário.</Text>
         <Text style={s.noteText}>• Em caso de menores de idade ou pacientes incapazes, o responsável legal deve assinar o termo de consentimento.</Text>
-      </View>
+      </SmartSection>
     </View>
   </BaseDocument>
 );

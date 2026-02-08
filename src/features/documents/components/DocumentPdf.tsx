@@ -1,7 +1,6 @@
 import React from 'react';
 import { Page, Document } from '@react-pdf/renderer';
 import { renderTemplate } from '../utils/templateUtils';
-import { commonStyles } from './pdfs/PdfCommon';
 import { GlycemicDocument } from './pdfs/GlycemicDocument';
 import { PressureDocument } from './pdfs/PressureDocument';
 import { WoundCareDocument } from './pdfs/WoundCareDocument';
@@ -131,7 +130,7 @@ export const DocumentPdf: React.FC<DocumentPdfProps> = ({ title, templateText, v
 
   return (
     <Document>
-      <Page size="A4" orientation={orientation} style={commonStyles.page} wrap={specialDoc?.multiPage || false}>
+      <Page size="A4" orientation={orientation} wrap={specialDoc?.multiPage || false}>
         {specialDoc ? (
           <specialDoc.component
             visibleParagraphs={visibleParagraphs}

@@ -4,8 +4,9 @@ import { HeaderIcon, BaseDocument, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { 
-    flex: 1,
-    width: '100%' 
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
   },
   badge: {
     alignSelf: 'center',
@@ -177,6 +178,8 @@ interface FormulaRequestDocumentProps {
 const VoidPattern = () => (
   <View style={{ 
     flex: 1, 
+    flexGrow: 1,
+    minHeight: 100,
     marginVertical: 12, 
     borderRadius: 6, 
     backgroundColor: '#f8fafc',
