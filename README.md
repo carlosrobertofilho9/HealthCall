@@ -25,7 +25,7 @@ Projetado com foco na experiência do usuário e eficiência, o sistema permite 
 - **Busca Rápida:** Localização instantânea de agendamentos e pacientes.
 - **Integração com Fila:** Adicione pacientes agendados diretamente à fila de triagem com um clique.
 
-### � Documentação Clínica (PDF)
+### 📝 Documentação Clínica (PDF)
 
 - **Geração Automática:** Crie e imprima documentos médicos instantaneamente.
 - **Modelos Personalizados:**
@@ -89,7 +89,7 @@ Este projeto utiliza as tecnologias mais recentes do ecossistema web para garant
 Clone o repositório e instale as dependências:
 
 ```bash
-git clone https://github.com/seu-usuario/healthcall.git
+git clone https://github.com/carlosrobertofilho9/healthcall.git
 cd healthcall
 npm install
 ```
