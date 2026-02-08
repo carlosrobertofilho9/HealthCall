@@ -88,13 +88,23 @@
 }
 
 @keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 @keyframes slide-up {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @layer utilities {
@@ -236,48 +246,8 @@
 
   /* Ocultar elementos não necessários na impressão */
   header,
-  nav,
-  .print\\:hidden {
+  nav {
     display: none !important;
-  }
-
-  /* Mostrar elementos específicos para impressão */
-  .print\\:block {
-    display: block !important;
-  }
-
-  /* Ajustes de cores para impressão */
-  .print\\:bg-white {
-    background-color: white !important;
-  }
-
-  .print\\:text-black {
-    color: black !important;
-  }
-
-  .print\\:text-gray-500 {
-    color: #6b7280 !important;
-  }
-
-  .print\\:text-gray-600 {
-    color: #4b5563 !important;
-  }
-
-  .print\\:text-gray-700 {
-    color: #374151 !important;
-  }
-
-  .print\\:text-gray-800 {
-    color: #1f2937 !important;
-  }
-
-  .print\\:border-gray-300 {
-    border-color: #d1d5db !important;
-  }
-
-  /* Ajustes de layout para impressão */
-  .print\\:max-w-none {
-    max-width: none !important;
   }
 
   /* Evitar quebra de página dentro de cards */
