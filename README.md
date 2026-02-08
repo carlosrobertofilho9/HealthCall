@@ -1,148 +1,149 @@
 <div align="center">
-  <img width="500" height="500" alt="HealthCall Banner" src="https://healthcall-23d13.web.app/healthcall-logo.png" />
+  <img width="128" height="128" alt="HealthCall Logo" src="https://healthcall-23d13.web.app/healthcall-logo.png" />
+  <h1>HealthCall</h1>
+  <p><strong>Sistema Avançado de Gestão de Clínicas e Chamada de Pacientes</strong></p>
 </div>
 
-# HealthCall - Sistema de Gerenciamento de Fila de Pacientes
+---
 
-O HealthCall é um sistema moderno para gerenciamento e chamada de pacientes em tempo real, projetado para clínicas e hospitais. Ele permite que a equipe gerencie uma lista de espera, chame pacientes para salas específicas e exiba as chamadas em uma tela pública, completa com anúncios de voz.
+O **HealthCall** é uma solução completa e moderna desenvolvida para otimizar o fluxo de atendimento em clínicas e unidades de saúde. Mais do que um simples gerenciador de filas, ele integra agendamentos, geração de documentos médicos e um sistema de avisos multimídia, tudo em tempo real.
 
-## ✨ Funcionalidades
+Projetado com foco na experiência do usuário e eficiência, o sistema permite que a equipe médica e recepcionistas gerenciem pacientes de forma ágil, enquanto oferece uma experiência clara e profissional para os pacientes na sala de espera.
 
--   **Gerenciamento de Pacientes:** Adicione, edite e remova pacientes da fila de espera.
--   **Acompanhamento de Status:** Acompanhe o status do paciente de "Aguardando" para "Em Atendimento" e "Atendimento Finalizado".
--   **Chamada em Tempo Real:** Chame pacientes para destinos específicos com atualizações instantâneas.
--   **Display Público:** Uma visualização dedicada (`/display`) mostra o último paciente chamado em tempo real.
--   **Síntese de Voz:** Anuncia o nome e o destino do paciente na página de exibição com áudio otimizado para Chromecast.
--   **Autenticação:** Login seguro para membros da equipe.
--   **Filtragem e Pesquisa:** Encontre facilmente pacientes na fila.
--   **Configurações Persistentes:** As preferências do usuário, como o destino padrão, são salvas.
+## ✨ Funcionalidades Principais
 
-## 🛠️ Stack de Tecnologias
+### 🏥 Gestão de Fila e Chamada
 
--   **Frontend:** React, TypeScript, Vite
--   **Backend & Banco de Dados:** Supabase (PostgreSQL, Auth, Realtime)
--   **Estilização:** Tailwind CSS
--   **Componentes de UI:** shadcn/ui, Radix UI
--   **Roteamento:** React Router DOM
--   **Notificações:** Sonner
+- **Chamada em Tempo Real:** Convocação instantânea de pacientes para consultórios ou triagem.
+- **Display Público (Painel):** Interface dedicada para TVs e monitores na sala de espera.
+- **Voz Sintetizada (TTS):** Anúncios de voz claros ("Paciente Fulano, comparecer à Sala 1") com suporte otimizado para Chromecast.
+- **Drag & Drop:** Reorganização fácil da fila de espera.
 
-## 📋 Pré-requisitos
+### 📅 Agendamentos Inteligentes
 
-Antes de começar, certifique-se de que você tem o seguinte instalado:
--   [Node.js](https://nodejs.org/) (versão 18 ou superior recomendada)
--   [npm](https://www.npmjs.com/) (gerenciador de pacotes)
--   [Supabase CLI](https://supabase.com/docs/guides/cli) (para gerenciamento do banco de dados local e remoto)
+- **Gestão por Turnos:** Organização automática de pacientes por turnos (Manhã/Tarde).
+- **Busca Rápida:** Localização instantânea de agendamentos e pacientes.
+- **Integração com Fila:** Adicione pacientes agendados diretamente à fila de triagem com um clique.
 
-## 🚀 Começando
+### � Documentação Clínica (PDF)
 
-Siga estes passos para configurar e executar o projeto em sua máquina local.
+- **Geração Automática:** Crie e imprima documentos médicos instantaneamente.
+- **Modelos Personalizados:**
+  - Receitas e Prescrições.
+  - Controle Glicêmico e de Pressão Arterial (MRPA/MAPA).
+  - Solicitações de Fórmulas e Exames.
+- **Layout Otimizado:** Documentos formatados profissionalmente com cabeçalhos e rodapés institucionais.
 
-### 1. Clone o Repositório
+### 📢 Sistema de Avisos
+
+- **Comunicados Multimídia:** Exiba avisos importantes, vídeos educativos ou campanhas de saúde no Display Público.
+- **Gerenciamento de Mídia:** Upload e agendamento de conteúdos visuais e sonoros.
+
+### 🎨 Experiência do Usuário
+
+- **Interface Moderna:** Design limpo, intuitivo e responsivo.
+- **Tema Escuro (Dark Mode):** Suporte nativo para conforto visual.
+- **PWA (Progressive Web App):** Instalação como aplicativo em desktops e dispositivos móveis.
+
+---
+
+## 🛠️ Stack Tecnológico
+
+Este projeto utiliza as tecnologias mais recentes do ecossistema web para garantir performance, segurança e manutenibilidade.
+
+### Frontend
+
+- **Framework:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
+- **Estilização:** [Tailwind CSS v4](https://tailwindcss.com/) + [Tailwind Merge](https://github.com/dcastil/tailwind-merge)
+- **Componentes:** [Radix UI](https://www.radix-ui.com/) / [shadcn/ui](https://ui.shadcn.com/)
+- **Ícones:** [Lucide React](https://lucide.dev/)
+- **PDF:** [React-PDF](https://react-pdf.org/)
+- **Drag & Drop:** [dnd-kit](https://dndkit.com/)
+
+### Backend & Serviços
+
+- **BaaS:** [Supabase](https://supabase.com/)
+  - **Database:** PostgreSQL
+  - **Auth:** Autenticação segura
+  - **Realtime:** Atualizações instantâneas via WebSockets
+  - **Storage:** Armazenamento de arquivos (avisos, mídias)
+
+### Qualidade & Ferramentas
+
+- **Testes:** [Vitest](https://vitest.dev/) + React Testing Library
+- **Linting:** ESLint
+
+---
+
+## 🚀 Como Executar
+
+### Pré-requisitos
+
+- Node.js (v18+)
+- NPM ou Yarn
+- Conta no Supabase
+
+### 1. Instalação
+
+Clone o repositório e instale as dependências:
 
 ```bash
-git clone <URL_DO_SEU_REPOSITORIO>
+git clone https://github.com/seu-usuario/healthcall.git
 cd healthcall
-```
-
-### 2. Instale as Dependências
-
-Instale os pacotes npm necessários.
-
-```bash
 npm install
 ```
 
-### 3. Configure o Supabase
+### 2. Configuração do Ambiente
 
-Este projeto requer um backend Supabase para autenticação, banco de dados e funcionalidades em tempo real.
-
-#### a. Crie um Projeto no Supabase
-
--   Vá para [supabase.com](https://supabase.com/) e crie um novo projeto.
--   Guarde a **URL do Projeto** e a chave **`anon` (pública)**.
-
-#### b. Configure as Variáveis de Ambiente
-
-Crie um arquivo chamado `.env` na raiz do projeto (você pode copiar o `.env.example`, se existir) e adicione suas credenciais do Supabase:
+Crie um arquivo `.env` na raiz do projeto com suas credenciais do Supabase:
 
 ```env
-VITE_SUPABASE_URL=SUA_URL_DO_PROJETO_SUPABASE
-VITE_SUPABASE_ANON_KEY=SUA_CHAVE_ANON_SUPABASE
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima
 ```
 
-#### c. Aplique as Migrações do Banco de Dados
+### 3. Executando Localmente
 
-Com a [Supabase CLI](https://supabase.com/docs/guides/cli) instalada e configurada, você pode aplicar todas as migrações de esquema de banco de dados necessárias com um único comando. Isso criará todas as tabelas, funções e políticas de segurança.
-
-**Importante:** Para ambientes de CI/CD ou não interativos, você precisará configurar a variável de ambiente `SUPABASE_ACCESS_TOKEN`.
-
-```bash
-npx supabase db push
-```
-
-### 4. Execute a Aplicação
-
-Com as dependências instaladas e as variáveis de ambiente configuradas, você pode iniciar o servidor de desenvolvimento.
+Inicie o servidor de desenvolvimento:
 
 ```bash
 npm run dev
 ```
 
-A aplicação estará disponível em `http://localhost:5173`.
+O sistema estará disponível em `http://localhost:5173`.
 
-## 📺 Usando com Chromecast
+### 4. Scripts Úteis
 
-O HealthCall suporta espelhamento de tela via Chromecast com áudio otimizado.
+- `npm run build`: Compila o projeto para produção.
+- `npm run preview`: Visualiza a versão de produção localmente.
+- `npm test`: Executa a suíte de testes.
 
-### Como configurar
-
-1. Abra a página de display no Chrome: `http://localhost:5173/display`
-2. Clique em "Ativar Som e Iniciar"
-3. No menu do Chrome (⋮), selecione **"Transmitir..."**
-4. Escolha seu dispositivo Chromecast
-5. Selecione **"Transmitir guia"** (não "Transmitir área de trabalho")
-
-### Otimizações para Chromecast
-
-O sistema usa automaticamente arquivos de áudio reais (via Google Translate TTS) ao invés da síntese de voz nativa do navegador, garantindo que:
-- ✅ O áudio da campainha seja transmitido para o Chromecast
-- ✅ Os anúncios de voz sejam reproduzidos na TV
-- ✅ Todos os sons tenham configurações CORS corretas
-- ✅ O cache de áudio melhore a performance
-
-**Dica:** Use "Transmitir guia" ao invés de "Transmitir área de trabalho" para melhor qualidade de áudio e vídeo.
+---
 
 ## 📂 Estrutura do Projeto
 
-O projeto segue uma arquitetura baseada em features, onde a lógica de negócio é organizada por domínio.
+A arquitetura é baseada em **Features**, agrupando lógica e componentes por domínio de negócio para facilitar a escalabilidade.
 
 ```
-/
-├── public/                # Assets estáticos
-├── src/
-│   ├── app/               # Configuração central (roteador, providers)
-│   ├── actions/           # (Legado) Funções de interação com o Supabase
-│   ├── components/        # Componentes de UI reutilizáveis (ex: botões, modais)
-│   ├── contexts/          # Contextos React para estado global
-│   ├── features/          # Diretório principal da lógica de negócio
-│   │   ├── authentication/ # Lógica de autenticação
-│   │   ├── dashboard/      # Lógica da fila de pacientes
-│   │   ├── display/        # Lógica da tela de exibição pública
-│   │   └── settings/       # Lógica da página de configurações
-│   ├── hooks/             # Hooks React customizados e globais
-│   ├── lib/               # Instanciação de bibliotecas (cliente Supabase, utils)
-│   ├── styles/            # Estilos globais
-│   └── types/             # Definições de tipos TypeScript
-├── supabase/
-│   └── migrations/        # Migrações do esquema do banco de dados
-├── .env                   # Arquivo de variáveis de ambiente (não versionado)
-├── package.json           # Dependências e scripts do projeto
-└── README.md              # Este arquivo
+src/
+├── app/               # Configurações globais (Router, Providers)
+├── components/        # Componentes de UI genéricos (Design System)
+├── features/          # Módulos principais do sistema
+│   ├── appointments/  # Agendamentos e Turnos
+│   ├── authentication/# Login e Sessão
+│   ├── dashboard/     # Fila de espera e Triagem
+│   ├── display/       # Tela pública (TV)
+│   ├── documents/     # Gerador de PDFs médicos
+│   ├── settings/      # Configurações do sistema
+│   └── warnings/      # Avisos e Mídias
+├── hooks/             # Hooks globais
+├── lib/               # Utilitários e configurações de liberarias (Supabase, Utils)
+└── styles/            # Estilos globais (Tailwind)
 ```
 
-## 📜 Scripts Disponíveis
+---
 
--   `npm run dev`: Inicia o servidor de desenvolvimento.
--   `npm run build`: Compila a aplicação para produção.
--   `npm run preview`: Serve a build de produção localmente para pré-visualização.
-```
+<div align="center">
+  <p>Desenvolvido com ❤️ para modernizar a saúde.</p>
+</div>
