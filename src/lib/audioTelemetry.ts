@@ -47,6 +47,7 @@ class AudioTelemetry {
   private flushInterval: NodeJS.Timeout | null = null;
   private readonly FLUSH_INTERVAL_MS = 60000; // 1 minuto
   private readonly MAX_EVENTS = 100;
+  private remoteLoggingDisabled = false;
 
   constructor() {
     // Inicia flush automático a cada 1 minuto
@@ -220,7 +221,7 @@ class AudioTelemetry {
    * Envia métricas para o backend
    */
   private async flush() {
-    if (this.events.length === 0) return;
+    if (this.events.length === 0 || this.remoteLoggingDisabled) return;
 
     try {
       const metrics = this.getMetrics();
@@ -231,12 +232,22 @@ class AudioTelemetry {
 
       // Envia para Supabase (apenas em produção)
       if (import.meta.env.PROD) {
-        await supabase.from('audio_metrics').insert({
+        const { error } = await supabase.from('audio_metrics').insert({
           metrics,
           events: eventsToSend,
           session_id: this.getSessionId(),
           timestamp: new Date().toISOString(),
         });
+
+        if (error) {
+          // Se a tabela não existir (404/42P01), desativa telemetria para evitar spam
+          if (error.code === '42P01' || error.message?.includes('404')) {
+            console.warn('[Telemetry] Tabela audio_metrics não encontrada. Desativando telemetria remota.');
+            this.remoteLoggingDisabled = true;
+            return;
+          }
+          throw error;
+        }
 
         console.log(`[Telemetry] ${eventsToSend.length} eventos enviados`);
       } else {
@@ -244,6 +255,12 @@ class AudioTelemetry {
         this.printMetrics();
       }
     } catch (error) {
+      // Ignora erro 404 (tabela não existe) para evitar ruído no console
+      if (typeof error === 'object' && error !== null && 'code' in error && (error as any).code === '404') {
+        console.warn('[Telemetry] Tabela audio_metrics não encontrada (404). Métricas não foram salvas.');
+        this.remoteLoggingDisabled = true;
+        return;
+      }
       console.error('[Telemetry] Erro ao enviar métricas:', error);
       // Não propaga erro para não afetar funcionalidade principal
     }

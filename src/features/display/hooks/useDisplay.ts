@@ -108,13 +108,16 @@ export function useDisplay() {
       bell.preload = 'auto';
       bell.volume = 0.01;
 
-      // Aguarda confirmação de que o áudio foi ativado com timeout reduzido
+      // Aguarda confirmação de que o áudio foi ativado
       await new Promise<void>((resolve, reject) => {
+        // Timeout inteligente: Se demorar muito, assumimos que o áudio está ativo (já que resumeAudioContext passou)
+        // mas a campainha falhou/atrasou. Não bloqueamos o usuário.
         const timeout = setTimeout(() => {
+          console.warn('[Audio] Timeout na campainha de ativação - Prosseguindo para não bloquear atendimento');
           bell.pause();
           bell.src = '';
-          reject(new Error('Timeout ao ativar áudio'));
-        }, 3000); // Reduzido de 5s para 3s
+          resolve();
+        }, 3000);
 
         bell.onended = () => {
           clearTimeout(timeout);
@@ -124,12 +127,19 @@ export function useDisplay() {
 
         bell.onerror = (e) => {
           clearTimeout(timeout);
-          bell.pause();
-          bell.src = '';
-          reject(new Error('Erro ao tocar campainha de ativação'));
+          console.error('[Audio] Erro na campainha de ativação (ignorado):', e);
+          // Falha na campainha não deve impedir o uso do sistema. 
+          // O importante é que o resumeAudioContext() funcionou.
+          resolve();
         };
 
-        bell.play().catch(reject);
+        bell.play().catch((err) => {
+          clearTimeout(timeout);
+          console.warn('[Audio] Falha não-crítica no play da ativação (arquivo pode estar indisponível):', err);
+          // Se o play falhar (ex: 503 no arquivo de som), mas o resumeAudioContext passou,
+          // consideramos sucesso para não bloquear o uso do sistema.
+          resolve();
+        });
       });
 
       setAudioActivated(true);
@@ -235,27 +245,39 @@ export function useDisplay() {
 
         await bell.play();
 
-        // Aguarda a campainha terminar
-        await new Promise<void>((resolve, reject) => {
-          const cleanup = () => {
+        // Aguarda a campainha terminar (com timeout de segurança)
+        await new Promise<void>((resolve) => {
+          let resolved = false;
+          
+          const done = () => {
+            if (resolved) return;
+            resolved = true;
             bell.pause();
             bell.onended = null;
             bell.onerror = null;
             bell.src = '';
+            resolve();
           };
+
+          // Timeout de segurança de 4s (o arquivo tem ~2-3s)
+          const timeout = setTimeout(() => {
+            console.warn('[Audio] Timeout na reprodução da campainha - prosseguindo');
+            done();
+          }, 4000);
 
           bell.onended = () => {
             console.log('[Audio] Campainha concluída');
-            cleanup();
-            resolve();
+            clearTimeout(timeout);
+            done();
           };
+
           bell.onerror = (e) => {
             console.error('[Audio] Erro na campainha:', e);
-            cleanup();
             toast.error('Erro ao tocar a campainha', {
               description: 'Continuando com o anúncio...',
             });
-            resolve(); // Continua mesmo com erro na campainha
+            clearTimeout(timeout);
+            done();
           };
         });
 
