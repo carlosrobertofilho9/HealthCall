@@ -96,48 +96,49 @@ export async function clearQueue(): Promise<boolean> {
 }
 
 /**
- * Registra uma chamada para um paciente, atualizando seu status e contador de chamadas.
- * Esta função primeiro busca o paciente para obter o contador de chamadas atual,
- * depois atualiza o paciente e, finalmente, insere um novo registro na tabela `calls`.
+ * Registra uma chamada para um paciente com uma RPC atômica (UPDATE + INSERT na mesma transação).
  * @param {string} patientId - O ID do paciente que está sendo chamado.
  * @param {string} location - O local de onde a chamada está sendo feita.
- * @returns {Promise<any | null>} Uma promessa que resolve para o novo registro de chamada, ou nulo se ocorrer um erro.
+ * @returns {Promise<any | null>} Uma promessa que resolve para o paciente atualizado, ou nulo se ocorrer um erro.
  */
 export async function callPatient(patientId: string, location: string): Promise<any | null> {
-  const { data: patientData, error: patientError } = await supabase
-    .from('patients')
-    .select('callCount')
-    .eq('id', patientId)
-    .single();
+  const context = {
+    action: 'callPatient',
+    patientId,
+    location,
+  };
 
-  if (patientError || !patientData) {
-    console.error('Error fetching patient:', patientError);
+  const { data, error } = await supabase.rpc('call_patient_atomic', {
+    patient_id: patientId,
+    location,
+  });
+
+  if (error) {
+    const stage = error.message?.includes('CALL_PATIENT_UPDATE_FAILED')
+      ? 'update'
+      : error.message?.includes('CALL_PATIENT_INSERT_FAILED')
+        ? 'insert'
+        : 'rpc';
+
+    console.error('Erro ao chamar paciente (RPC atômica):', {
+      ...context,
+      stage,
+      error,
+    });
     return null;
   }
 
-  const newCallCount = patientData.callCount + 1;
-
-  const { error: updateError } = await supabase
-    .from('patients')
-    .update({ status: 'Chamado', callCount: newCallCount })
-    .eq('id', patientId);
-
-  if (updateError) {
-    console.error('Error updating patient:', updateError);
+  const updatedPatient = (data as { patient?: Patient } | null)?.patient;
+  if (!updatedPatient) {
+    console.error('Payload inválido ao chamar paciente (RPC atômica):', {
+      ...context,
+      stage: 'rpc',
+      data,
+    });
     return null;
   }
 
-  const { data, error: callError } = await supabase
-    .from('calls')
-    .insert([{ patient_id: patientId, location: location }])
-    .select();
-
-  if (callError) {
-    console.error('Error creating call:', callError);
-    return null;
-  }
-
-  return data[0];
+  return updatedPatient;
 }
 
 /**

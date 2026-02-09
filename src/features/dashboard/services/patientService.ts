@@ -144,54 +144,42 @@ export async function removePatient(id: string): Promise<boolean> {
  * @throws {Error} Se qualquer uma das operações de base de dados falhar.
  */
 export async function callPatient(id: string, destination: string): Promise<Patient | null> {
-    // First, get the current callCount
-    const { data: patient, error: fetchError } = await supabase
-        .from('patients')
-        .select('callCount, name')
-        .eq('id', id)
-        .single();
+    const context = {
+      action: 'callPatient',
+      patientId: id,
+      location: destination,
+    };
 
-    if (fetchError) {
-        console.error('Error fetching patient:', fetchError);
-        throw fetchError;
+    const { data, error } = await supabase.rpc('call_patient_atomic', {
+      patient_id: id,
+      location: destination,
+    });
+
+    if (error) {
+      const stage = error.message?.includes('CALL_PATIENT_UPDATE_FAILED')
+        ? 'update'
+        : error.message?.includes('CALL_PATIENT_INSERT_FAILED')
+          ? 'insert'
+          : 'rpc';
+
+      console.error('Erro ao chamar paciente (RPC atômica):', {
+        ...context,
+        stage,
+        error,
+      });
+      throw error;
     }
 
-    const newCallCount = patient.callCount + 1;
-
-    // Update the patient's status and callCount
-    const { error: updateError } = await supabase
-        .from('patients')
-        .update({ status: 'Chamado', callCount: newCallCount })
-        .eq('id', id);
-    
-    if (updateError) {
-        console.error('Error updating patient:', updateError);
-        throw updateError;
+    const updatedPatient = (data as { patient?: Patient } | null)?.patient;
+    if (!updatedPatient) {
+      console.error('Payload inválido ao chamar paciente (RPC atômica):', {
+        ...context,
+        stage: 'rpc',
+        data,
+      });
+      throw new Error('CALL_PATIENT_INVALID_RESPONSE');
     }
 
-    // Insert a new record in the calls table - CRITICAL for DisplayPage realtime!
-    const { data: callData, error: callError } = await supabase
-        .from('calls')
-        .insert([{ patient_id: id, location: destination }])
-        .select();
-    
-    if (callError) {
-        console.error('Error creating call record:', callError);
-        throw callError;
-    }
-
-    // Return the updated patient data
-    const { data: updatedPatient, error: selectError } = await supabase
-        .from('patients')
-        .select('*')
-        .eq('id', id)
-        .single();
-    
-    if (selectError) {
-        console.error('Error fetching updated patient:', selectError);
-        throw selectError;
-    }
-    
     return updatedPatient;
 }
 
