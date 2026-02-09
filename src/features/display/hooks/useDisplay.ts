@@ -42,6 +42,8 @@ export function useDisplay() {
   const lastCalledRef = useRef<{ id: string; callCount: number } | null>(null);
   const isPlayingRef = useRef(false);
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingCallsRef = useRef<Patient[]>([]);
+  const callingStateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Tempo em ms para iniciar warnings após inatividade (3 segundos para teste, mudar para 10000 em produção)
   const WARNINGS_DELAY_MS = 3000;
@@ -201,114 +203,124 @@ export function useDisplay() {
     if (!session || !audioActivated) return;
 
     const playBellAndSpeak = async (patient: Patient) => {
-      // Mutex: Verifica se já está tocando
+      console.log('[Audio] Iniciando chamada:', patient.name, '→', patient.destination);
+      setIsCalling(true);
+
+      await resumeAudioContext();
+
+      const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
+
+      let preloadError: Error | null = null;
+      const preloadPromise = preloadTTS(textToSpeak).catch((e) => {
+        preloadError = e;
+        console.error('[Audio] Erro no preload, speak() tentará novamente:', e);
+        return null;
+      });
+
+      const bell = new Audio('/bell.mp3');
+      bell.crossOrigin = 'anonymous';
+      bell.preload = 'auto';
+      bell.volume = 1.0;
+
+      await bell.play();
+
+      await new Promise<void>((resolve) => {
+        let resolved = false;
+
+        const done = () => {
+          if (resolved) return;
+          resolved = true;
+          bell.pause();
+          bell.onended = null;
+          bell.onerror = null;
+          bell.src = '';
+          resolve();
+        };
+
+        const timeout = setTimeout(() => {
+          console.warn('[Audio] Timeout na reprodução da campainha - prosseguindo');
+          done();
+        }, 4000);
+
+        bell.onended = () => {
+          console.log('[Audio] Campainha concluída');
+          clearTimeout(timeout);
+          done();
+        };
+
+        bell.onerror = (e) => {
+          console.error('[Audio] Erro na campainha:', e);
+          toast.error('Erro ao tocar a campainha', {
+            description: 'Continuando com o anúncio...',
+          });
+          clearTimeout(timeout);
+          done();
+        };
+      });
+
+      await preloadPromise;
+
+      if (preloadError) {
+        console.log('[Audio] Preload falhou, speak() tentará novamente');
+      }
+
+      await speak(textToSpeak);
+      console.log('[Audio] Chamada concluída com sucesso');
+    };
+
+    const drainQueue = async () => {
       if (isPlayingRef.current) {
-        console.log('[Audio] Já existe uma reprodução em andamento, ignorando');
         return;
       }
 
-      // Verifica se é duplicata ANTES de atualizar ref
-      const isDuplicate =
+      isPlayingRef.current = true;
+
+      while (pendingCallsRef.current.length > 0) {
+        const patient = pendingCallsRef.current.shift();
+        if (!patient) continue;
+
+        try {
+          await playBellAndSpeak(patient);
+          lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
+        } catch (error) {
+          console.error('[Audio] Erro na chamada:', error);
+          toast.error('Erro ao reproduzir áudio da chamada', {
+            description: error instanceof Error ? error.message : 'Erro desconhecido',
+          });
+        } finally {
+          if (callingStateTimeoutRef.current) {
+            clearTimeout(callingStateTimeoutRef.current);
+          }
+
+          callingStateTimeoutRef.current = setTimeout(() => {
+            setIsCalling(false);
+            callingStateTimeoutRef.current = null;
+          }, 500);
+        }
+      }
+
+      isPlayingRef.current = false;
+    };
+
+    const enqueueCall = (patient: Patient) => {
+      const isLastCalledDuplicate =
         patient.id === lastCalledRef.current?.id &&
         patient.callCount === lastCalledRef.current?.callCount;
 
-      if (isDuplicate) {
+      const isPendingDuplicate = pendingCallsRef.current.some(
+        (pendingPatient) =>
+          pendingPatient.id === patient.id && pendingPatient.callCount === patient.callCount
+      );
+
+      if (isLastCalledDuplicate || isPendingDuplicate) {
         console.log('[Audio] Chamada duplicada ignorada:', patient.name);
         return;
       }
 
-      // Ativa mutex
-      isPlayingRef.current = true;
+      pendingCallsRef.current.push(patient);
 
-      console.log('[Audio] Iniciando chamada:', patient.name, '→', patient.destination);
-      setIsCalling(true);
-
-      // Garante que AudioContext está ativo usando hook de health check
-      await resumeAudioContext();
-
-      try {
-        const textToSpeak = `Chamando ${patient.name}, para ${patient.destination}`;
-
-        // Inicia o pré-carregamento do TTS em paralelo com a campainha
-        let preloadError: Error | null = null;
-        const preloadPromise = preloadTTS(textToSpeak).catch((e) => {
-          preloadError = e;
-          console.error('[Audio] Erro no preload, speak() tentará novamente:', e);
-          return null; // Não propaga erro, speak() tentará
-        });
-
-        // Toca a campainha
-        const bell = new Audio('/bell.mp3');
-        bell.crossOrigin = 'anonymous';
-        bell.preload = 'auto';
-        bell.volume = 1.0;
-
-        await bell.play();
-
-        // Aguarda a campainha terminar (com timeout de segurança)
-        await new Promise<void>((resolve) => {
-          let resolved = false;
-          
-          const done = () => {
-            if (resolved) return;
-            resolved = true;
-            bell.pause();
-            bell.onended = null;
-            bell.onerror = null;
-            bell.src = '';
-            resolve();
-          };
-
-          // Timeout de segurança de 4s (o arquivo tem ~2-3s)
-          const timeout = setTimeout(() => {
-            console.warn('[Audio] Timeout na reprodução da campainha - prosseguindo');
-            done();
-          }, 4000);
-
-          bell.onended = () => {
-            console.log('[Audio] Campainha concluída');
-            clearTimeout(timeout);
-            done();
-          };
-
-          bell.onerror = (e) => {
-            console.error('[Audio] Erro na campainha:', e);
-            toast.error('Erro ao tocar a campainha', {
-              description: 'Continuando com o anúncio...',
-            });
-            clearTimeout(timeout);
-            done();
-          };
-        });
-
-        // Aguarda o preload estar completo
-        await preloadPromise;
-
-        // Se preload falhou, speak() tentará gerar novamente
-        if (preloadError) {
-          console.log('[Audio] Preload falhou, speak() tentará novamente');
-        }
-
-        // Toca o TTS (usa cache se preload foi bem-sucedido)
-        await speak(textToSpeak);
-
-        // Atualiza ref SOMENTE após sucesso completo
-        lastCalledRef.current = { id: patient.id, callCount: patient.callCount };
-        console.log('[Audio] Chamada concluída com sucesso');
-      } catch (error) {
-        console.error('[Audio] Erro na chamada:', error);
-        toast.error('Erro ao reproduzir áudio da chamada', {
-          description: error instanceof Error ? error.message : 'Erro desconhecido',
-        });
-        // NÃO atualiza lastCalledRef em caso de erro para permitir retry
-      } finally {
-        // Libera mutex imediatamente para permitir próximas chamadas
-        isPlayingRef.current = false;
-
-        // Mantém visual de "chamando" por 500ms
-        setTimeout(() => {
-          setIsCalling(false);
-        }, 500);
+      if (!isPlayingRef.current) {
+        void drainQueue();
       }
     };
 
@@ -359,7 +371,7 @@ export function useDisplay() {
               destination: newCall.location,
               status: 'Chamado' as const,
             };
-            playBellAndSpeak(patient);
+            enqueueCall(patient);
           }
           fetchDisplayData();
         }
@@ -375,6 +387,17 @@ export function useDisplay() {
     return () => {
       clearInterval(refetchInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      pendingCallsRef.current = [];
+      if (callingStateTimeoutRef.current) {
+        clearTimeout(callingStateTimeoutRef.current);
+        callingStateTimeoutRef.current = null;
+      }
+      if (warningTimerRef.current) {
+        clearTimeout(warningTimerRef.current);
+        warningTimerRef.current = null;
+      }
+      isPlayingRef.current = false;
+      setIsCalling(false);
       supabase.removeChannel(channel);
     };
   }, [session, audioActivated]);
