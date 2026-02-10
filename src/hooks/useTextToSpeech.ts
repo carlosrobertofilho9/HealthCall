@@ -206,7 +206,7 @@ export function useTextToSpeech() {
    * Pré-carrega o áudio TTS sem reproduzi-lo.
    * Usa cache com expiração e retry logic para maior confiabilidade.
    */
-  const preloadTTS = async (text: string): Promise<string> => {
+  const preloadTTS = useCallback(async (text: string): Promise<string> => {
     // Verifica o cache antes de invocar a função (agora com validação)
     const cachedUrl = await cacheHelpers.get(text);
     if (cachedUrl) {
@@ -245,9 +245,9 @@ export function useTextToSpeech() {
       });
       throw e;
     });
-  };
+  }, []);
 
-  const speak = (text: string): Promise<void> => {
+  const speak = useCallback((text: string): Promise<void> => {
     return new Promise(async (resolve, reject) => {
       let speechAudio: HTMLAudioElement | null = null;
       const startTime = Date.now();
@@ -360,7 +360,7 @@ export function useTextToSpeech() {
         reject(e);
       }
     });
-  };
+  }, [preloadTTS]);
 
   return { speak, preloadTTS, cancel };
 }

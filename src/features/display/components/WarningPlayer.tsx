@@ -17,9 +17,19 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { speak, cancel: cancelTTS } = useTextToSpeech();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const videoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isMountedRef = useRef(true);
-  const hasSpokeRef = useRef(false); // Controla se já falou para o warning atual
+  const hasSpokeRef = useRef(false);
   const lastWarningIdRef = useRef<string | null>(null);
+  const onFinishRef = useRef(onFinish);
+
+  // Tempo máximo que um vídeo pode tocar antes de forçar transição (segurança)
+  const MAX_VIDEO_DURATION_MS = 120000; // 2 minutos
+
+  // Mantém ref atualizada para não desestabilizar handleNext
+  useEffect(() => {
+    onFinishRef.current = onFinish;
+  });
 
   // Atualiza hora atual a cada minuto para o agendamento
   useEffect(() => {
@@ -32,22 +42,50 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
     return () => clearInterval(interval);
   }, [currentTime]);
 
+  // Limpa todos os timers
+  const clearAllTimers = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (videoTimeoutRef.current) {
+      clearTimeout(videoTimeoutRef.current);
+      videoTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Função centralizada para parar toda mídia imediatamente
+  const stopAllMedia = useCallback(() => {
+    console.log('[WarningPlayer] Parando toda mídia imediatamente');
+    cancelTTS();
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.removeAttribute('src');
+      videoRef.current.load(); // Força liberação do stream de mídia
+    }
+    clearAllTimers();
+  }, [cancelTTS, clearAllTimers]);
+
+  // Listener para evento global de parar mídia (chamado pelo useDisplay antes de tocar chamada)
+  // Isso BYPASSA o ciclo do React e para o vídeo/áudio IMEDIATAMENTE
+  useEffect(() => {
+    const handler = () => {
+      console.log('[WarningPlayer] Evento healthcall:stop-media recebido');
+      stopAllMedia();
+    };
+    window.addEventListener('healthcall:stop-media', handler);
+    return () => window.removeEventListener('healthcall:stop-media', handler);
+  }, [stopAllMedia]);
+
   // Cleanup ao desmontar
   useEffect(() => {
     isMountedRef.current = true;
     
     return () => {
       isMountedRef.current = false;
-      cancelTTS();
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = '';
-      }
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      stopAllMedia();
     };
-  }, [cancelTTS]);
+  }, [stopAllMedia]);
 
   // Filter active warnings based on status and time
   useEffect(() => {
@@ -86,14 +124,14 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
       
       const nextIndex = (currentIndex + 1) % activeWarnings.length;
       if (nextIndex === 0) {
-        onFinish();
+        onFinishRef.current();
       }
       setCurrentIndex(nextIndex);
       setIsTransitioning(false);
     }, 300);
-  }, [activeWarnings.length, currentIndex, onFinish, cancelTTS]);
+  }, [activeWarnings.length, currentIndex, cancelTTS]);
 
-  // Efeito principal de reprodução - SEM speak nas dependências
+  // Efeito principal de reprodução
   useEffect(() => {
     if (activeWarnings.length === 0 || isTransitioning) return;
 
@@ -106,15 +144,12 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
       lastWarningIdRef.current = currentWarning.id;
     }
 
-    // Limpa timeout anterior
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+    // Limpa timers anteriores
+    clearAllTimers();
+
+    const durationMs = (currentWarning.duration || 10) * 1000;
 
     const playWarning = async () => {
-      const durationMs = (currentWarning.duration || 10) * 1000;
-
       // Fala a mensagem apenas uma vez
       if (currentWarning.message && !hasSpokeRef.current) {
         hasSpokeRef.current = true;
@@ -127,23 +162,36 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
           if (!isMountedRef.current) return;
           timeoutRef.current = setTimeout(handleNext, durationMs);
         }
-      } else if (!currentWarning.message) {
+      } else {
+        // Mensagem já foi falada OU não tem mensagem: avança por timer
         timeoutRef.current = setTimeout(handleNext, durationMs);
       }
     };
-    
-    // Para imagem e youtube, usa timer
-    if (currentWarning.media_type === 'image' || currentWarning.media_type === 'youtube') {
+
+    if (currentWarning.media_type === 'video') {
+      // VÍDEO: Timeout de segurança para garantir que nunca fique preso
+      // O onEnded do <video> é o caminho normal, mas este timeout é a rede de segurança
+      const safetyDuration = Math.min(durationMs || MAX_VIDEO_DURATION_MS, MAX_VIDEO_DURATION_MS);
+      console.log(`[WarningPlayer] Vídeo: timeout de segurança em ${safetyDuration / 1000}s`);
+      videoTimeoutRef.current = setTimeout(() => {
+        console.warn('[WarningPlayer] Timeout de segurança do vídeo atingido, avançando');
+        if (isMountedRef.current) handleNext();
+      }, safetyDuration);
+
+      // Se tem mensagem TTS, fala junto com o vídeo
+      if (currentWarning.message && !hasSpokeRef.current) {
+        hasSpokeRef.current = true;
+        speak(currentWarning.message).catch(e => console.error('TTS Error:', e));
+      }
+    } else {
+      // IMAGEM, YOUTUBE, TEXTO: usa timer baseado em duração
       playWarning();
     }
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
+      clearAllTimers();
     };
-  }, [currentIndex, activeWarnings, isTransitioning, handleNext]);
+  }, [currentIndex, activeWarnings, isTransitioning, handleNext, clearAllTimers]);
 
   const currentWarning = activeWarnings[currentIndex];
 
@@ -179,8 +227,31 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ onFinish }) => {
               src={currentWarning.content_url}
               className="w-full h-full object-contain"
               autoPlay
-              onEnded={handleNext}
-              onError={() => handleNext()}
+              onEnded={() => {
+                console.log('[WarningPlayer] Vídeo terminou (onEnded)');
+                if (videoTimeoutRef.current) {
+                  clearTimeout(videoTimeoutRef.current);
+                  videoTimeoutRef.current = null;
+                }
+                handleNext();
+              }}
+              onError={(e) => {
+                console.error('[WarningPlayer] Erro no vídeo:', e);
+                if (videoTimeoutRef.current) {
+                  clearTimeout(videoTimeoutRef.current);
+                  videoTimeoutRef.current = null;
+                }
+                handleNext();
+              }}
+              onStalled={() => {
+                console.warn('[WarningPlayer] Vídeo travou (stalled), definindo timeout de recuperação');
+                if (!videoTimeoutRef.current) {
+                  videoTimeoutRef.current = setTimeout(() => {
+                    console.warn('[WarningPlayer] Vídeo não se recuperou do stall, avançando');
+                    if (isMountedRef.current) handleNext();
+                  }, 10000);
+                }
+              }}
             />
           </div>
         ) : currentWarning.media_type === 'youtube' && currentWarning.content_url ? (
