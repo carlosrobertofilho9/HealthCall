@@ -149,11 +149,15 @@ export async function callPatient(id: string, destination: string): Promise<Pati
         .from('patients')
         .select('callCount, name')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
     if (fetchError) {
         console.error('Error fetching patient:', fetchError);
         throw fetchError;
+    }
+
+    if (!patient) {
+        throw new Error('Paciente não encontrado');
     }
 
     const newCallCount = patient.callCount + 1;
@@ -185,11 +189,15 @@ export async function callPatient(id: string, destination: string): Promise<Pati
         .from('patients')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
     
     if (selectError) {
         console.error('Error fetching updated patient:', selectError);
         throw selectError;
+    }
+
+    if (!updatedPatient) {
+         throw new Error('Erro ao recuperar dados do paciente atualizado');
     }
     
     return updatedPatient;

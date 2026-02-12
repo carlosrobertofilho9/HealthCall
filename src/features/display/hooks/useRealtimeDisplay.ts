@@ -79,6 +79,8 @@ export function useRealtimeDisplay(
 
   // Efeito principal: cria canal Supabase Realtime e busca dados iniciais
   // Usa as MESMAS condições do código original: session + audioActivated
+  const [reconnectAttempt, setReconnectAttempt] = useState(0);
+
   useEffect(() => {
     isMountedRef.current = true;
 
@@ -88,7 +90,7 @@ export function useRealtimeDisplay(
       return;
     }
 
-    console.log('[RealtimeDisplay] Sessão e áudio prontos, criando canal Realtime...');
+    console.log(`[RealtimeDisplay] Sessão e áudio prontos, criando canal Realtime... (Tentativa ${reconnectAttempt})`);
 
     // Busca inicial
     fetchDisplayData();
@@ -115,7 +117,7 @@ export function useRealtimeDisplay(
     }
 
     const channel = supabase
-      .channel('realtime-display-global')
+      .channel(`realtime-display-global-${Date.now()}`) // Unique name to force new channel
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, () => {
         console.log('[RealtimeDisplay] Evento patients recebido');
         if (isMountedRef.current) fetchDisplayData();
@@ -158,15 +160,23 @@ export function useRealtimeDisplay(
         if (status === 'SUBSCRIBED') {
           console.log('[RealtimeDisplay] ✅ Canal Supabase Realtime ATIVO!');
           if (isMountedRef.current) fetchDisplayData();
-        } else if (status === 'TIMED_OUT') {
-          console.error('[RealtimeDisplay] ❌ TIMED_OUT — canal será recriado');
-          // Remove e recria o canal após timeout
+        } else if (status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+          console.error(`[RealtimeDisplay] ❌ ${status} — agendando reconexão...`);
+          
           if (channelRef.current) {
             supabase.removeChannel(channelRef.current);
             channelRef.current = null;
           }
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('[RealtimeDisplay] ❌ CHANNEL_ERROR');
+
+          // Exponential backoff with max delay of 30s
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempt), 30000);
+          console.log(`[RealtimeDisplay] Reconectando em ${delay}ms...`);
+          
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              setReconnectAttempt(prev => prev + 1);
+            }
+          }, delay);
         }
       });
 
@@ -182,12 +192,9 @@ export function useRealtimeDisplay(
         channelRef.current = null;
       }
     };
-    // Propositalmente usa apenas session e audioActivated como deps,
-    // seguindo o padrão original que funcionava corretamente.
-    // fetchDisplayData é estável (useCallback com []) então não causa
-    // re-execuções, mas não precisa ser listado.
+    // Re-run effect when reconnectAttempt changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, audioActivated]);
+  }, [session, audioActivated, reconnectAttempt]);
 
   return {
     calledPatient,
