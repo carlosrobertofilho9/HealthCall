@@ -213,7 +213,9 @@ describe('useDisplay - Refactored Architecture', () => {
       });
 
       await waitFor(() => {
-        expect(supabase.channel).toHaveBeenCalledWith('realtime-display-global');
+        expect(supabase.channel).toHaveBeenCalledWith(
+          expect.stringMatching(/^realtime-display-global-/)
+        );
       });
     });
 
@@ -280,6 +282,52 @@ describe('useDisplay - Refactored Architecture', () => {
       await waitFor(() => {
         expect(mockSpeak).toHaveBeenCalledWith(
           'Chamando Paciente 1, para Sala 1'
+        );
+      }, { timeout: 3000 });
+    });
+
+    it('deve anunciar chamada via fallback de UPDATE em patients', async () => {
+      const { useTextToSpeech } = await import('@/hooks/useTextToSpeech');
+      const mockSpeak = vi.fn().mockResolvedValue(undefined);
+
+      vi.mocked(useTextToSpeech).mockReturnValue({
+        speak: mockSpeak,
+        preloadTTS: vi.fn().mockResolvedValue('url'),
+        cancel: vi.fn(),
+      });
+
+      const { result } = renderHook(() => useDisplay());
+
+      await waitFor(() => {
+        expect(result.current).not.toBeNull();
+      });
+
+      await act(async () => {
+        await result.current.activateAudio();
+      });
+
+      const updateCallback = mockChannel.on.mock.calls.find(
+        (call: any) => call[1].event === 'UPDATE' && call[1].table === 'patients'
+      )?.[2];
+
+      expect(updateCallback).toBeDefined();
+
+      await act(async () => {
+        await updateCallback?.({
+          new: {
+            id: '2',
+            name: 'Paciente 2',
+            destination: 'Sala 2',
+            status: 'Chamado',
+            callCount: 1,
+            queue_order: 0,
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(mockSpeak).toHaveBeenCalledWith(
+          'Chamando Paciente 2, para Sala 2'
         );
       }, { timeout: 3000 });
     });
@@ -369,7 +417,9 @@ describe('useDisplay - Refactored Architecture', () => {
       });
 
       await waitFor(() => {
-        expect(supabase.channel).toHaveBeenCalledWith('realtime-display-global');
+        expect(supabase.channel).toHaveBeenCalledWith(
+          expect.stringMatching(/^realtime-display-global-/)
+        );
       });
 
       unmount();

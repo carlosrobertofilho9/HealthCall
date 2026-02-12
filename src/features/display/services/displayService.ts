@@ -1,6 +1,26 @@
 import { supabase } from '@/lib/supabaseClient';
 import { Patient, CallRecord } from '@/types';
 
+type CallWithPatient = {
+    location?: string | null;
+    created_at?: string | null;
+    patients?: Patient | Patient[] | null;
+};
+
+function toTimestamp(value: string | null | undefined): number {
+    if (!value) return Date.now();
+    const ts = new Date(value).getTime();
+    return Number.isNaN(ts) ? Date.now() : ts;
+}
+
+function extractPatient(call: CallWithPatient): Patient | null {
+    if (!call?.patients) return null;
+    if (Array.isArray(call.patients)) {
+        return call.patients[0] ?? null;
+    }
+    return call.patients;
+}
+
 /**
  * Busca o último paciente que foi chamado.
  * @returns {Promise<Patient | null>} Uma promessa que resolve para o paciente chamado.
@@ -39,10 +59,10 @@ export async function getNextPatients(): Promise<Patient[]> {
 
 /**
  * Busca o registro da última chamada feita, incluindo os dados do paciente associado.
- * @returns {Promise<{ patient: Patient; location: string } | null>} Uma promessa que resolve para a última chamada ou nulo.
+ * @returns {Promise<{ patient: Patient; location: string; calledAt: number } | null>} Uma promessa que resolve para a última chamada ou nulo.
  * @throws {Error} Se a busca falhar.
  */
-export async function getLastCall(): Promise<{ patient: Patient; location: string } | null> {
+export async function getLastCall(): Promise<{ patient: Patient; location: string; calledAt: number } | null> {
     const { data, error } = await supabase
         .from('calls')
         .select('*, patients(*)')
@@ -51,11 +71,13 @@ export async function getLastCall(): Promise<{ patient: Patient; location: strin
     
     if (error) throw error;
 
-    const lastCall = data ? data[0] : null;
-    if (lastCall && lastCall.patients) {
+    const lastCall = (data?.[0] ?? null) as CallWithPatient | null;
+    const patient = lastCall ? extractPatient(lastCall) : null;
+    if (lastCall && patient) {
         return {
-            patient: lastCall.patients as Patient,
-            location: lastCall.location,
+            patient,
+            location: lastCall.location ?? patient.destination,
+            calledAt: toTimestamp(lastCall.created_at),
         };
     }
     
@@ -79,16 +101,25 @@ export async function getCallHistory(): Promise<CallRecord[]> {
 
     if (!data) return [];
 
-    const history = data
-        .map((call: any) => ({
-            id: call.patients.id,
-            name: call.patients.name,
-            destination: call.location,
-            callCount: call.patients.callCount,
-            calledAt: new Date(call.created_at).getTime(),
-        }))
-        .filter((v: any, i: number, a: any[]) => a.findIndex((t: any) => t.id === v.id) === i);
-    
+    const history: CallRecord[] = [];
+    const seenPatientIds = new Set<string>();
+
+    for (const row of data as CallWithPatient[]) {
+        const patient = extractPatient(row);
+        if (!patient?.id || seenPatientIds.has(patient.id)) {
+            continue;
+        }
+
+        seenPatientIds.add(patient.id);
+        history.push({
+            id: patient.id,
+            name: patient.name,
+            destination: row.location ?? patient.destination,
+            callCount: typeof patient.callCount === 'number' ? patient.callCount : 0,
+            calledAt: toTimestamp(row.created_at),
+        });
+    }
+
     return history;
 }
 
