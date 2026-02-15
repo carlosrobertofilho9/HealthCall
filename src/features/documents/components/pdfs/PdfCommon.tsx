@@ -211,6 +211,7 @@ interface BaseDocumentProps {
   wrap?: boolean;
   nomePaciente?: string;
   cnsCpf?: string;
+  hidePatientInfo?: boolean;
 }
 
 export const BaseDocument: React.FC<BaseDocumentProps> = ({ 
@@ -220,11 +221,12 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
   wrap = true,
   nomePaciente,
   cnsCpf,
+  hidePatientInfo = false,
 }) => (
   <View style={[commonStyles.page, { paddingBottom: showFooter ? pdfTheme.spacing.xxl : 0 }]} wrap={wrap}>
     <PageHeader />
     
-    <PatientInfoBar nome={nomePaciente} cns={cnsCpf} />
+    {!hidePatientInfo && <PatientInfoBar nome={nomePaciente} cns={cnsCpf} />}
 
     {/* Document Title */}
     <View style={commonStyles.mainTitleContainer}>

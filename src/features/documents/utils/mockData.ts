@@ -60,13 +60,20 @@ CNS ou CPF: {{CNS_CPF}}`
     title: 'Solicitação de Fórmula Láctea',
     description: 'Solicitação de fórmulas lácteas (Aptamil e outras) com quantidades.',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}`
+  },
+  {
+    id: 'folha_pendencias',
+    title: 'Folha de Pendências',
+    description: 'Folha para registro de até 3 pendências da semana (encaminhamentos, laudos, etc) de pacientes diferentes.',
+    templateText: ``
   }
 ];
 
 export interface FieldHint {
   label: string;
-  type: 'text' | 'textarea' | 'date' | 'number' | 'photo' | 'item-list';
+  type: 'text' | 'textarea' | 'date' | 'number' | 'photo' | 'item-list' | 'select';
   placeholder?: string;
+  options?: string[];
 }
 
 export const fieldHints: Record<string, FieldHint> = {
@@ -112,6 +119,40 @@ export const fieldHints: Record<string, FieldHint> = {
 
   // --- Fórmula Láctea ---
   FORMULA_ITEMS: { label: 'Fórmulas Solicitadas', type: 'item-list' },
+
+  // --- Folha de Pendências ---
+  // Pendência 1
+  NOME_PACIENTE_1: { label: 'Nome do Paciente (1)', type: 'text', placeholder: 'Nome completo' },
+  CNS_CPF_1: { label: 'CNS ou CPF (1)', type: 'text', placeholder: 'Documento' },
+  TIPO_PENDENCIA_1: {
+    label: 'Tipo de Pendência (1)',
+    type: 'select',
+    options: ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'],
+    placeholder: 'Selecione o tipo'
+  },
+  RESUMO_PENDENCIA_1: { label: 'Resumo da Pendência (1)', type: 'textarea', placeholder: 'Descreva o que está pendente...' },
+
+  // Pendência 2
+  NOME_PACIENTE_2: { label: 'Nome do Paciente (2)', type: 'text', placeholder: 'Nome completo (opcional)' },
+  CNS_CPF_2: { label: 'CNS ou CPF (2)', type: 'text', placeholder: 'Documento (opcional)' },
+  TIPO_PENDENCIA_2: {
+    label: 'Tipo de Pendência (2)',
+    type: 'select',
+    options: ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'],
+    placeholder: 'Selecione o tipo (opcional)'
+  },
+  RESUMO_PENDENCIA_2: { label: 'Resumo da Pendência (2)', type: 'textarea', placeholder: 'Descreva o que está pendente (opcional)...' },
+
+  // Pendência 3
+  NOME_PACIENTE_3: { label: 'Nome do Paciente (3)', type: 'text', placeholder: 'Nome completo (opcional)' },
+  CNS_CPF_3: { label: 'CNS ou CPF (3)', type: 'text', placeholder: 'Documento (opcional)' },
+  TIPO_PENDENCIA_3: {
+    label: 'Tipo de Pendência (3)',
+    type: 'select',
+    options: ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'],
+    placeholder: 'Selecione o tipo (opcional)'
+  },
+  RESUMO_PENDENCIA_3: { label: 'Resumo da Pendência (3)', type: 'textarea', placeholder: 'Descreva o que está pendente (opcional)...' },
 };
 
 /**
@@ -148,6 +189,11 @@ export const extraFieldsByTemplate: Record<string, string[]> = {
     'MEDICO_PRESCRITOR', 'PROFISSIONAL', 'CRM_COREN',
   ],
   formula_lactea: ['FORMULA_ITEMS'],
+  folha_pendencias: [
+    'NOME_PACIENTE_1', 'CNS_CPF_1', 'TIPO_PENDENCIA_1', 'RESUMO_PENDENCIA_1',
+    'NOME_PACIENTE_2', 'CNS_CPF_2', 'TIPO_PENDENCIA_2', 'RESUMO_PENDENCIA_2',
+    'NOME_PACIENTE_3', 'CNS_CPF_3', 'TIPO_PENDENCIA_3', 'RESUMO_PENDENCIA_3',
+  ],
 };
 
 /**
