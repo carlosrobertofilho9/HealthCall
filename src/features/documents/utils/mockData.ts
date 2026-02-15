@@ -64,7 +64,7 @@ CNS ou CPF: {{CNS_CPF}}`
   {
     id: 'folha_pendencias',
     title: 'Folha de Pendências',
-    description: 'Folha para registro de até 3 pendências da semana (encaminhamentos, laudos, etc) de pacientes diferentes.',
+    description: 'Folha para registro de até 4 pendências da semana (encaminhamentos, laudos, etc) de pacientes diferentes.',
     templateText: ``
   }
 ];
@@ -153,6 +153,17 @@ export const fieldHints: Record<string, FieldHint> = {
     placeholder: 'Selecione o tipo (opcional)'
   },
   RESUMO_PENDENCIA_3: { label: 'Resumo da Pendência (3)', type: 'textarea', placeholder: 'Descreva o que está pendente (opcional)...' },
+
+  // Pendência 4
+  NOME_PACIENTE_4: { label: 'Nome do Paciente (4)', type: 'text', placeholder: 'Nome completo (opcional)' },
+  CNS_CPF_4: { label: 'CNS ou CPF (4)', type: 'text', placeholder: 'Documento (opcional)' },
+  TIPO_PENDENCIA_4: {
+    label: 'Tipo de Pendência (4)',
+    type: 'select',
+    options: ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'],
+    placeholder: 'Selecione o tipo (opcional)'
+  },
+  RESUMO_PENDENCIA_4: { label: 'Resumo da Pendência (4)', type: 'textarea', placeholder: 'Descreva o que está pendente (opcional)...' },
 };
 
 /**
@@ -193,6 +204,7 @@ export const extraFieldsByTemplate: Record<string, string[]> = {
     'NOME_PACIENTE_1', 'CNS_CPF_1', 'TIPO_PENDENCIA_1', 'RESUMO_PENDENCIA_1',
     'NOME_PACIENTE_2', 'CNS_CPF_2', 'TIPO_PENDENCIA_2', 'RESUMO_PENDENCIA_2',
     'NOME_PACIENTE_3', 'CNS_CPF_3', 'TIPO_PENDENCIA_3', 'RESUMO_PENDENCIA_3',
+    'NOME_PACIENTE_4', 'CNS_CPF_4', 'TIPO_PENDENCIA_4', 'RESUMO_PENDENCIA_4',
   ],
 };
 

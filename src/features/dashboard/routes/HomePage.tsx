@@ -94,7 +94,7 @@ const HomePage: React.FC = () => {
     };
 
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full h-[calc(100vh-8rem)]">
+		<div className="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full h-auto lg:h-[calc(100vh-8rem)] pb-4 lg:pb-0">
 			{/* Coluna 1: Ações e Formulário */}
 			<div className="lg:col-span-1 flex flex-col gap-6">
 				<AddPatientForm
@@ -110,7 +110,7 @@ const HomePage: React.FC = () => {
 			</div>
 
 			{/* Coluna 2: Fila de Espera */}
-            <div className="lg:col-span-2 flex flex-col h-full min-h-0">
+			<div className="lg:col-span-2 flex flex-col h-auto lg:h-full min-h-0">
                 <PatientQueue
                     patients={patients}
                     onEdit={openModal}
@@ -127,7 +127,7 @@ const HomePage: React.FC = () => {
             </div>
 
 			{/* Coluna 3: Agendamentos */}
-            <div className="lg:col-span-1 flex flex-col h-full min-h-0">
+			<div className="lg:col-span-1 flex flex-col h-auto lg:h-full min-h-0">
                 <AppointmentsColumn 
                     onCheckIn={handleCheckIn}
                     queuedPatients={patients}

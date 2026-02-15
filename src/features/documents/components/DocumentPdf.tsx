@@ -70,7 +70,7 @@ interface DocumentPdfProps {
 function extractFormData(values: Record<string, string>): DocumentFormData {
   // Extrair pendências (1 a 3)
   const pendencias: PendingItem[] = [];
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= 4; i++) {
     // Adicionar se tiver pelo menos o nome ou o tipo preenchido
     if (values[`NOME_PACIENTE_${i}`] || values[`TIPO_PENDENCIA_${i}`] || values[`RESUMO_PENDENCIA_${i}`]) {
       pendencias.push({

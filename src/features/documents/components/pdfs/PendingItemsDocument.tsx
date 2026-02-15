@@ -1,102 +1,155 @@
 import React from 'react';
-import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { BaseDocument } from './PdfCommon';
+import { Text, View, StyleSheet, Svg, Rect } from '@react-pdf/renderer';
+import { BaseDocument, pdfTheme } from './PdfCommon';
 import { DocumentFormData } from '../DocumentPdf';
 
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 12,
-    padding: 12,
+  // Each pending item card
+  card: {
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#cbd5e1',
     borderRadius: 6,
-    backgroundColor: '#f8fafc',
-    height: 230, // Fixed height to fit 3 per page
-    justifyContent: 'flex-start',
-    position: 'relative',
+    overflow: 'hidden',
+    height: 148,
   },
-  headerRow: {
+  // Colored top bar with item number
+  cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
-    paddingBottom: 8,
-    marginBottom: 10,
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: pdfTheme.colors.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 6,
   },
-  headerLeft: {
-    flexDirection: 'column',
-    width: '65%',
-  },
-  headerRight: {
-     flexDirection: 'column',
-     alignItems: 'flex-end',
-     width: '35%',
-  },
-  label: {
-    fontSize: 8,
-    color: '#64748b',
-    textTransform: 'uppercase',
-    marginBottom: 2,
-    fontWeight: 'bold',
-  },
-  value: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  typeContainer: {
-    alignItems: 'flex-end',
-  },
-  typeBadge: {
+  cardHeaderNumber: {
     fontSize: 10,
     fontWeight: 'bold',
     color: '#ffffff',
-    backgroundColor: '#0f766e',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    marginTop: 2,
-    textAlign: 'center',
   },
-  summaryContainer: {
+  cardHeaderTitle: {
+    fontSize: 9,
+    color: '#99f6e4',
     flex: 1,
-    marginTop: 4,
+  },
+  resolvedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  resolvedLabel: {
+    fontSize: 7,
+    color: '#99f6e4',
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+  },
+  // Card body
+  cardBody: {
+    padding: 8,
+    paddingTop: 6,
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  // Row with fields
+  fieldsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 5,
+  },
+  field: {
+    flex: 1,
+  },
+  fieldSmall: {
+    width: '35%',
+  },
+  fieldLarge: {
+    width: '65%',
+  },
+  fieldLabel: {
+    fontSize: 7,
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  fieldLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#cbd5e1',
+    height: 14,
+    justifyContent: 'center',
+  },
+  fieldValue: {
+    fontSize: 9,
+    color: '#1e293b',
+    fontWeight: 'bold',
+  },
+  // Type checkboxes row
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginBottom: 5,
+  },
+  typeLabel: {
+    fontSize: 7,
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    marginRight: 4,
+  },
+  typeOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginRight: 6,
+  },
+  typeOptionText: {
+    fontSize: 8,
+    color: '#334155',
+  },
+  // Summary section
+  summarySection: {
+    flex: 1,
   },
   summaryLabel: {
-    fontSize: 9,
+    fontSize: 7,
+    color: '#94a3b8',
+    textTransform: 'uppercase',
     fontWeight: 'bold',
-    color: '#334155',
-    marginBottom: 6,
+    marginBottom: 3,
+  },
+  summaryLine: {
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
-    paddingBottom: 2,
+    height: 14,
+    justifyContent: 'center',
   },
   summaryText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#334155',
-    lineHeight: 1.5,
+    lineHeight: 1.4,
   },
-  emptyLines: {
-    marginTop: 10,
-    gap: 18,
-  },
-  line: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    height: 1,
-    width: '100%',
-  },
-  itemNumber: {
-    position: 'absolute',
-    top: 6,
-    right: 10,
-    fontSize: 60,
-    color: '#f1f5f9',
-    fontWeight: 'bold',
-    zIndex: -1,
-  }
 });
+
+// Checkbox component: a simple square box for hand-marking
+const Checkbox = ({ size = 10 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 10 10">
+    <Rect
+      x={0.5}
+      y={0.5}
+      width={9}
+      height={9}
+      rx={1.5}
+      ry={1.5}
+      stroke="#94a3b8"
+      strokeWidth={1}
+      fill="none"
+    />
+  </Svg>
+);
+
+// Types of pending items for the checkboxes
+const PENDING_TYPES = ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'];
 
 interface PendingItemsDocumentProps {
   visibleParagraphs?: string[];
@@ -104,8 +157,7 @@ interface PendingItemsDocumentProps {
 }
 
 export const PendingItemsDocument: React.FC<PendingItemsDocumentProps> = ({ formData }) => {
-  // Ensure we have 3 slots
-  const slots = [0, 1, 2];
+  const slots = [0, 1, 2, 3];
   const items = formData?.pendencias || [];
 
   return (
@@ -114,50 +166,66 @@ export const PendingItemsDocument: React.FC<PendingItemsDocumentProps> = ({ form
         {slots.map((i) => {
           const item = items[i];
           return (
-             <View key={i} style={styles.section}>
-                {/* Visual number background */}
-                <Text style={styles.itemNumber}>{i + 1}</Text>
+            <View key={i} style={styles.card}>
+              {/* Colored header bar */}
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardHeaderNumber}>#{i + 1}</Text>
+                <Text style={styles.cardHeaderTitle}>Pendência</Text>
+                <View style={styles.resolvedContainer}>
+                  <Text style={styles.resolvedLabel}>Resolvido</Text>
+                  <Svg width={10} height={10} viewBox="0 0 10 10">
+                    <Rect x={0.5} y={0.5} width={9} height={9} rx={1.5} ry={1.5} stroke="#99f6e4" strokeWidth={1} fill="none" />
+                  </Svg>
+                </View>
+              </View>
 
-                {/* Header with Patient Info and Type */}
-                <View style={styles.headerRow}>
-                    <View style={styles.headerLeft}>
-                        <View style={{ marginBottom: 8 }}>
-                            <Text style={styles.label}>Nome do Paciente</Text>
-                            <Text style={styles.value}>{item?.nomePaciente || '________________________________________________'}</Text>
-                        </View>
-                        <View>
-                            <Text style={styles.label}>CNS ou CPF</Text>
-                            <Text style={[styles.value, { fontSize: 10 }]}>{item?.cnsCpf || '________________________'}</Text>
-                        </View>
+              {/* Card body */}
+              <View style={styles.cardBody}>
+                {/* Row 1: Nome do Paciente + CNS/CPF */}
+                <View style={styles.fieldsRow}>
+                  <View style={styles.fieldLarge}>
+                    <Text style={styles.fieldLabel}>Nome do Paciente</Text>
+                    <View style={styles.fieldLine}>
+                      {item?.nomePaciente ? (
+                        <Text style={styles.fieldValue}>{item.nomePaciente}</Text>
+                      ) : null}
                     </View>
-                    <View style={styles.headerRight}>
-                        <View style={styles.typeContainer}>
-                            <Text style={styles.label}>Tipo de Pendência</Text>
-                            {item?.tipo ? (
-                                <Text style={styles.typeBadge}>{item.tipo.toUpperCase()}</Text>
-                            ) : (
-                                <View style={{ height: 20, width: 100, borderBottomWidth: 1, borderBottomColor: '#cbd5e1' }} />
-                            )}
-                        </View>
+                  </View>
+                  <View style={styles.fieldSmall}>
+                    <Text style={styles.fieldLabel}>CNS / CPF</Text>
+                    <View style={styles.fieldLine}>
+                      {item?.cnsCpf ? (
+                        <Text style={styles.fieldValue}>{item.cnsCpf}</Text>
+                      ) : null}
                     </View>
+                  </View>
                 </View>
 
-                {/* Summary Section */}
-                <View style={styles.summaryContainer}>
-                     <Text style={styles.summaryLabel}>Resumo / Descrição:</Text>
-                     {item?.resumo ? (
-                        <Text style={styles.summaryText}>{item.resumo}</Text>
-                     ) : (
-                        <View style={styles.emptyLines}>
-                             <View style={styles.line} />
-                             <View style={styles.line} />
-                             <View style={styles.line} />
-                             <View style={styles.line} />
-                             <View style={styles.line} />
-                        </View>
-                     )}
+                {/* Row 2: Tipo checkboxes */}
+                <View style={styles.typeRow}>
+                  <Text style={styles.typeLabel}>Tipo:</Text>
+                  {PENDING_TYPES.map((type) => (
+                    <View key={type} style={styles.typeOption}>
+                      <Checkbox size={9} />
+                      <Text style={styles.typeOptionText}>{type}</Text>
+                    </View>
+                  ))}
                 </View>
-             </View>
+
+                {/* Row 3: Resumo (2 lines for hand-writing) */}
+                <View style={styles.summarySection}>
+                  <Text style={styles.summaryLabel}>Resumo</Text>
+                  {item?.resumo ? (
+                    <Text style={styles.summaryText}>{item.resumo}</Text>
+                  ) : (
+                    <View style={{ gap: 14 }}>
+                      <View style={styles.summaryLine} />
+                      <View style={styles.summaryLine} />
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
           );
         })}
       </View>
