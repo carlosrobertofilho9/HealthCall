@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { Label } from '@/components/ui/Label';
 import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { extractPlaceholders } from '../utils/templateUtils';
 import { fieldHints, extraFieldsByTemplate, itemListConfigByTemplate } from '../utils/mockData';
 import { AlertCircle, User, CreditCard, Calendar, Hash, Type, AlignLeft, Camera, X, Plus, Trash2, List } from 'lucide-react';
@@ -161,6 +162,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
       case 'textarea': return <AlignLeft size={18} />;
       case 'photo': return <Camera size={18} />;
       case 'item-list': return <List size={18} />;
+      case 'select': return <List size={18} />;
       default: return <Type size={18} />;
     }
   };
@@ -285,6 +287,37 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                     onChange={(e) => handlePhotoChange(key, e)}
                     className="hidden"
                   />
+                </div>
+              </div>
+            );
+          }
+
+          // Renderização especial para campo de select
+          if (type === 'select' && hint?.options) {
+            return (
+              <div key={key} className="space-y-2">
+                <Label htmlFor={key} className="text-sm font-medium text-[#96c5a9] pl-1">
+                  {label}
+                </Label>
+                <div className="relative group">
+                  <div className="absolute z-10 left-3 top-1/2 -translate-y-1/2 text-[#96c5a9]/40 group-focus-within:text-[#96c5a9] transition-colors pointer-events-none">
+                    {icon}
+                  </div>
+                  <Select value={value} onValueChange={(val) => onChange(key, val)}>
+                    <SelectTrigger
+                        id={key}
+                        className="w-full rounded-xl border border-white/10 bg-[#264532]/30 text-white h-11 pl-10 focus:ring-1 focus:ring-green-500/50 focus:border-green-500/50 transition-all text-sm"
+                    >
+                      <SelectValue placeholder={placeholder} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hint.options.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             );

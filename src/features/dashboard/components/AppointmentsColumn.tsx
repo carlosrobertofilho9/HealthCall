@@ -65,7 +65,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
 
 
   return (
-    <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-6 shadow-2xl border border-white/5 flex flex-col h-full max-h-[calc(100vh-2rem)]">
+    <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-6 shadow-2xl border border-white/5 flex flex-col h-auto lg:h-full lg:max-h-[calc(100vh-2rem)]">
       {/* Header */}
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6 pb-4 border-b border-white/5">
@@ -122,7 +122,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-6">
+      <div className="flex-1 lg:overflow-y-auto custom-scrollbar pr-2 space-y-6">
         {isLoading ? (
           <div className="flex justify-center items-center h-40">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>

@@ -202,7 +202,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
         </div>
       </div>
 
-      <div className={`space-y-0 pr-1 ${patients.length > 4 ? 'max-h-[calc(100vh-22rem)] overflow-y-auto custom-scrollbar' : ''}`}>
+      <div className={`space-y-0 pr-1 ${patients.length > 4 ? 'lg:max-h-[calc(100vh-22rem)] lg:overflow-y-auto custom-scrollbar' : ''}`}>
         {patients.length > 0 ? (
            <DndContext 
             sensors={sensors} 

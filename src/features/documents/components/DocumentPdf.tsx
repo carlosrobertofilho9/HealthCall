@@ -11,6 +11,15 @@ import { FormulaRequestDocument } from './pdfs/FormulaRequestDocument';
 import type { FormulaItem } from './pdfs/FormulaRequestDocument';
 import { InjectableMedDocument } from './pdfs/InjectableMedDocument';
 import { StandardDocument } from './pdfs/StandardDocument';
+import { PendingItemsDocument } from './pdfs/PendingItemsDocument';
+
+/** Estrutura para itens de pendência */
+export interface PendingItem {
+  nomePaciente: string;
+  cnsCpf: string;
+  tipo: string;
+  resumo: string;
+}
 
 /** Dados de formulário que podem ser pré-preenchidos via widget */
 export interface DocumentFormData {
@@ -46,6 +55,8 @@ export interface DocumentFormData {
   coberturaInicial?: string;
   dorEscala?: string;
   observacoesPlano?: string;
+  // Pendências
+  pendencias?: PendingItem[];
 }
 
 interface DocumentPdfProps {
@@ -57,6 +68,20 @@ interface DocumentPdfProps {
 
 // Extrai os dados do formulário a partir dos values do widget
 function extractFormData(values: Record<string, string>): DocumentFormData {
+  // Extrair pendências (1 a 3)
+  const pendencias: PendingItem[] = [];
+  for (let i = 1; i <= 4; i++) {
+    // Adicionar se tiver pelo menos o nome ou o tipo preenchido
+    if (values[`NOME_PACIENTE_${i}`] || values[`TIPO_PENDENCIA_${i}`] || values[`RESUMO_PENDENCIA_${i}`]) {
+      pendencias.push({
+        nomePaciente: values[`NOME_PACIENTE_${i}`] || '',
+        cnsCpf: values[`CNS_CPF_${i}`] || '',
+        tipo: values[`TIPO_PENDENCIA_${i}`] || '',
+        resumo: values[`RESUMO_PENDENCIA_${i}`] || '',
+      });
+    }
+  }
+
   return {
     nomePaciente: values['NOME_PACIENTE'] || undefined,
     cnsCpf: values['CNS_CPF'] || undefined,
@@ -84,6 +109,7 @@ function extractFormData(values: Record<string, string>): DocumentFormData {
     coberturaInicial: values['COBERTURA_INICIAL'] || undefined,
     dorEscala: values['DOR_ESCALA'] || undefined,
     observacoesPlano: values['OBSERVACOES_PLANO'] || undefined,
+    pendencias: pendencias.length > 0 ? pendencias : undefined,
   };
 }
 
@@ -101,6 +127,7 @@ const specialDocuments: Record<string, {
   'Termo de Administração de Medicamento / Vacina': { component: AdverseReactionDocument, multiPage: true },
   'Relatório de Medicação Injetável': { component: InjectableMedDocument, multiPage: true },
   'Solicitação de Fórmula Láctea': { component: FormulaRequestDocument },
+  'Folha de Pendências': { component: PendingItemsDocument },
 };
 
 export const DocumentPdf: React.FC<DocumentPdfProps> = ({ title, templateText, values }) => {
