@@ -15,6 +15,8 @@ import type { Appointment } from '@/types';
 import { addPatient } from '@/features/dashboard/services/patientService';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/Input';
+import { blockDay } from '../services/appointmentService';
+import { BlockDayModal } from '../components/BlockDayModal';
 
 /**
  * Página de Marcações do PSF (Estratégia de Saúde da Família).
@@ -59,6 +61,8 @@ const AppointmentsPage: React.FC = () => {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isBlockDayModalOpen, setIsBlockDayModalOpen] = useState(false);
+  const [isBlockingDay, setIsBlockingDay] = useState(false);
   
   // Estado para envio para fila
   const [queueModalData, setQueueModalData] = useState<{
@@ -118,13 +122,6 @@ const AppointmentsPage: React.FC = () => {
 
   const handleSendToQueueClick = () => {
     const currentHour = new Date().getHours();
-    // Se for antes das 13h, considera manhã. Depois, tarde.
-    // Mas devemos verificar se existem pacientes para o período.
-    
-    // Filtro para Manhã ou Tarde baseado no horário atual
-    // Mas talvez o usuário queira mandar turno da Tarde mesmo sendo de Manhã (pré-preparar)?
-    // Vamos usar a lógica de horário como padrão, mas se estiver vazio, tentamos o outro?
-    // Melhor ser estrito: horário atual define o turno ativo.
     
     let targetPeriod = currentHour < 13 ? 'Manhã' : 'Tarde';
     
@@ -133,9 +130,6 @@ const AppointmentsPage: React.FC = () => {
         .filter(s => s.appointment && s.period === targetPeriod)
         .map(s => s.appointment!);
 
-    // Se não houver pacientes no turno atual, mas houver no outro e o usuário clicar...
-    // Talvez seja melhor perguntar qual turno?
-    // Simplificação: Se vazio no turno atual, checa se tem no outro.
     if (patientsToSend.length === 0) {
         const otherPeriod = targetPeriod === 'Manhã' ? 'Tarde' : 'Manhã';
         const otherPatients = slots
@@ -143,9 +137,6 @@ const AppointmentsPage: React.FC = () => {
             .map(s => s.appointment!);
         
         if (otherPatients.length > 0) {
-            // Se tem no outro turno, muda o alvo (assumindo que o usuário quer enviar o que tem)
-            // Ou mostra erro "Nenhum paciente no turno da X".
-            // Vamos mostrar erro para evitar acidentes.
             toast.warning(`Nenhum paciente encontrado para o turno da ${targetPeriod}.`);
             return;
         } else {
@@ -167,13 +158,9 @@ const AppointmentsPage: React.FC = () => {
     let successCount = 0;
     
     try {
-        // Envia sequencialmente para garantir ordem (ou paralelo se não importar ordem na fila de espera,
-        // mas ordem de chegada/ficha importa).
-        // Vamos enviar na ordem dos slots.
         const sortedPatients = [...queueModalData.patients].sort((a, b) => a.slot_number - b.slot_number);
 
         for (const apt of sortedPatients) {
-            // Adiciona para triagem
             await addPatient(apt.patient_name, 'Triagem');
             successCount++;
         }
@@ -185,6 +172,25 @@ const AppointmentsPage: React.FC = () => {
         toast.error('Erro ao enviar alguns pacientes para a fila.');
     } finally {
         setIsSendingToQueue(false);
+    }
+  };
+
+  const handleBlockDay = async (reason: string) => {
+    setIsBlockingDay(true);
+    try {
+      const count = await blockDay(selectedDate, reason);
+      if (count > 0) {
+        toast.success(`${count} horários bloqueados com sucesso!`);
+        await refresh();
+      } else {
+        toast.info('Não havia horários vazios para bloquear.');
+      }
+      setIsBlockDayModalOpen(false);
+    } catch (error) {
+      console.error('Erro ao bloquear dia:', error);
+      toast.error('Erro ao bloquear o dia. Tente novamente.');
+    } finally {
+      setIsBlockingDay(false);
     }
   };
 
@@ -256,6 +262,7 @@ const AppointmentsPage: React.FC = () => {
             onPrintReportClick={handlePrintReport}
             onRefreshClick={refresh}
             onSendToQueueClick={handleSendToQueueClick}
+            onBlockDayClick={() => setIsBlockDayModalOpen(true)}
             isLoading={isLoading}
           />
         </div>
@@ -315,6 +322,16 @@ const AppointmentsPage: React.FC = () => {
             onConfirm={handleConfirmSendToQueue}
             onClose={() => setQueueModalData(null)}
             isLoading={isSendingToQueue}
+        />
+      )}
+
+      {/* Modal de bloquear dia */}
+      {isBlockDayModalOpen && (
+        <BlockDayModal
+          date={selectedDate}
+          onConfirm={handleBlockDay}
+          onClose={() => setIsBlockDayModalOpen(false)}
+          isLoading={isBlockingDay}
         />
       )}
     </div>
