@@ -421,3 +421,60 @@ Sua consulta está agendada para:
 Obrigado,
 *Equipe PSF 5 Maria Lucia da Silva*`;
 }
+
+/**
+ * Bloqueia horários vazios de um dia com um motivo específico.
+ * @param date - A data a ser bloqueada
+ * @param reason - O motivo do bloqueio (ex: "Reunião", "Férias")
+ * @param startSlot - Slot inicial (opcional, padrão 1)
+ * @param endSlot - Slot final (opcional, padrão totalSlots)
+ * @returns O número de slots bloqueados
+ */
+export async function blockDay(
+  date: Date, 
+  reason: string,
+  startSlot?: number,
+  endSlot?: number
+): Promise<number> {
+  const config = getDayConfig(date);
+  if (!config.hasService) {
+    throw new Error('Este dia não possui atendimento para ser bloqueado.');
+  }
+
+  const dateStr = formatDateToISO(date);
+  const existingAppointments = await getAppointmentsByDate(dateStr);
+  const occupiedSlots = new Set(existingAppointments.map(a => a.slot_number));
+
+  const newAppointments: CreateAppointmentData[] = [];
+  
+  const from = startSlot || 1;
+  const to = endSlot || config.totalSlots;
+
+  for (let i = from; i <= to; i++) {
+    if (!occupiedSlots.has(i)) {
+      newAppointments.push({
+        scheduled_date: dateStr,
+        slot_number: i,
+        patient_name: reason,
+        document_type: 'CPF',
+        document_value: 'BLOQUEIO',
+        acs_name: 'Administração',
+      });
+    }
+  }
+
+  if (newAppointments.length === 0) {
+    return 0;
+  }
+
+  const { error } = await supabase
+    .from('appointments')
+    .insert(newAppointments);
+
+  if (error) {
+    console.error('Erro ao bloquear dia:', error);
+    throw error;
+  }
+
+  return newAppointments.length;
+}
