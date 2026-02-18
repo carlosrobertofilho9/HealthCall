@@ -423,12 +423,19 @@ Obrigado,
 }
 
 /**
- * Bloqueia todos os horários vazios de um dia com um motivo específico.
+ * Bloqueia horários vazios de um dia com um motivo específico.
  * @param date - A data a ser bloqueada
  * @param reason - O motivo do bloqueio (ex: "Reunião", "Férias")
+ * @param startSlot - Slot inicial (opcional, padrão 1)
+ * @param endSlot - Slot final (opcional, padrão totalSlots)
  * @returns O número de slots bloqueados
  */
-export async function blockDay(date: Date, reason: string): Promise<number> {
+export async function blockDay(
+  date: Date, 
+  reason: string,
+  startSlot?: number,
+  endSlot?: number
+): Promise<number> {
   const config = getDayConfig(date);
   if (!config.hasService) {
     throw new Error('Este dia não possui atendimento para ser bloqueado.');
@@ -439,8 +446,11 @@ export async function blockDay(date: Date, reason: string): Promise<number> {
   const occupiedSlots = new Set(existingAppointments.map(a => a.slot_number));
 
   const newAppointments: CreateAppointmentData[] = [];
+  
+  const from = startSlot || 1;
+  const to = endSlot || config.totalSlots;
 
-  for (let i = 1; i <= config.totalSlots; i++) {
+  for (let i = from; i <= to; i++) {
     if (!occupiedSlots.has(i)) {
       newAppointments.push({
         scheduled_date: dateStr,

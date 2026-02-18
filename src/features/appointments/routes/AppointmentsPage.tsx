@@ -116,10 +116,10 @@ const AppointmentsPage: React.FC = () => {
 
 
 
-  const handleBlockDay = async (reason: string) => {
+  const handleBlockDay = async (reason: string, startSlot?: number, endSlot?: number) => {
     setIsBlockingDay(true);
     try {
-      const count = await blockDay(selectedDate, reason);
+      const count = await blockDay(selectedDate, reason, startSlot, endSlot);
       if (count > 0) {
         toast.success(`${count} horários bloqueados com sucesso!`);
         await refresh();
@@ -260,6 +260,7 @@ const AppointmentsPage: React.FC = () => {
       {isBlockDayModalOpen && (
         <BlockDayModal
           date={selectedDate}
+          dayConfig={dayConfig}
           onConfirm={handleBlockDay}
           onClose={() => setIsBlockDayModalOpen(false)}
           isLoading={isBlockingDay}

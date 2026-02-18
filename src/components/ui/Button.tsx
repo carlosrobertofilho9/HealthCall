@@ -1,17 +1,24 @@
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'w-full flex items-center justify-center gap-2 rounded-full h-14 px-6 text-base font-bold transition-all focus:outline-none',
+  'w-full flex items-center justify-center gap-2 transition-all focus:outline-none disabled:opacity-50 disabled:pointer-events-none',
   {
     variants: {
       variant: {
-        default: 'bg-primary text-[#122118] hover:bg-opacity-80',
-        destructive: 'bg-red-700 text-white hover:bg-red-800',
+        default: 'bg-primary text-[#122118] hover:bg-opacity-80 font-bold',
+        destructive: 'bg-red-700 text-white hover:bg-red-800 font-bold',
+        ghost: 'bg-transparent text-white border border-white/10 hover:bg-white/5',
       },
+      size: {
+        default: 'rounded-full h-14 px-6 text-base',
+        sm: 'rounded-xl h-11 px-4 text-sm',
+      }
     },
     defaultVariants: {
       variant: 'default',
+      size: 'default',
     },
   }
 );
@@ -22,20 +29,12 @@ export interface ButtonProps
 
 /**
  * Um componente de botão reutilizável com variantes de estilo.
- *
- * Este componente usa `class-variance-authority` para aplicar diferentes estilos
- * com base na propriedade `variant`. Ele encaminha a `ref` para o elemento de botão subjacente
- * e passa todas as outras propriedades de botão padrão.
- *
- * @param {ButtonProps} props As propriedades do componente.
- * @param {React.Ref<HTMLButtonElement>} ref A ref a ser encaminhada para o elemento de botão.
- * @returns {React.ReactElement} O componente de botão renderizado.
  */
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, ...props }, ref) => {
+  ({ className, variant, size, ...props }, ref) => {
     return (
       <button
-        className={buttonVariants({ variant, className })}
+        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
       />
