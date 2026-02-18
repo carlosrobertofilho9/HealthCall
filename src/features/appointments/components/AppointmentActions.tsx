@@ -1,5 +1,5 @@
 import React from 'react';
-import { Printer, Plus, RefreshCw, Users } from 'lucide-react';
+import { Printer, Plus, RefreshCw, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 interface AppointmentActionsProps {
@@ -9,7 +9,7 @@ interface AppointmentActionsProps {
   onPrintClick: () => void;
   onPrintReportClick: () => void;
   onRefreshClick: () => void;
-  onSendToQueueClick: () => void;
+  onBlockDayClick: () => void;
   isLoading: boolean;
 }
 
@@ -23,7 +23,7 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
   onPrintClick,
   onPrintReportClick,
   onRefreshClick,
-  onSendToQueueClick,
+  onBlockDayClick,
   isLoading,
 }) => {
   if (!hasService) {
@@ -45,16 +45,16 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
             className="flex items-center justify-center gap-2 h-12"
           >
             <Plus className="w-5 h-5" />
-            <span>Nova Marcação</span>
+            <span className="truncate">Novo</span>
           </Button>
 
           <button
-            onClick={onSendToQueueClick}
+            onClick={onBlockDayClick}
             disabled={isLoading}
             className="w-12 h-12 rounded-lg bg-[#264532] hover:bg-[#305a3e] active:bg-[#1e3828] transition-colors disabled:opacity-50 flex items-center justify-center"
-            title="Enviar Turno para Fila"
+            title="Bloquear Dia"
           >
-            <Users className="w-5 h-5 text-white" />
+            <Ban className="w-5 h-5 text-red-500" />
           </button>
 
           <button
@@ -105,13 +105,13 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
 
             <div className="flex items-center gap-2">
               <button
-                onClick={onSendToQueueClick}
+                onClick={onBlockDayClick}
                 disabled={isLoading}
                 className="h-14 px-6 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors disabled:opacity-50 text-white font-bold flex items-center gap-2"
-                title="Enviar Turno para Fila"
+                title="Bloquear Dia"
               >
-                <Users className="w-5 h-5" />
-                <span>Fila</span>
+                <Ban className="w-5 h-5 text-red-500" />
+                <span>Bloquear</span>
               </button>
 
               <button

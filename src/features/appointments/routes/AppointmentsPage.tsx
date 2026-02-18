@@ -7,12 +7,10 @@ import AppointmentActions from '../components/AppointmentActions';
 import AddAppointmentForm from '../components/AddAppointmentForm';
 import EditAppointmentModal from '../components/EditAppointmentModal';
 import ConfirmDeleteAppointmentModal from '../components/ConfirmDeleteAppointmentModal';
-import ConfirmQueueModal from '../components/ConfirmQueueModal';
 import PrintHeader from '../components/PrintHeader';
 import { printPatientList } from '@/components/PatientQueue/printUtils';
 import { printAppointmentReport } from '@/components/PatientQueue/printReportUtils';
 import type { Appointment } from '@/types';
-import { addPatient } from '@/features/dashboard/services/patientService';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/Input';
 import { blockDay } from '../services/appointmentService';
@@ -64,12 +62,8 @@ const AppointmentsPage: React.FC = () => {
   const [isBlockDayModalOpen, setIsBlockDayModalOpen] = useState(false);
   const [isBlockingDay, setIsBlockingDay] = useState(false);
   
-  // Estado para envio para fila
-  const [queueModalData, setQueueModalData] = useState<{
-    patients: Appointment[];
-    period: string;
-  } | null>(null);
-  const [isSendingToQueue, setIsSendingToQueue] = useState(false);
+  
+
 
   // Slots disponíveis para adicionar
   const availableSlots = slots
@@ -120,60 +114,7 @@ const AppointmentsPage: React.FC = () => {
     printAppointmentReport(slots);
   };
 
-  const handleSendToQueueClick = () => {
-    const currentHour = new Date().getHours();
-    
-    let targetPeriod = currentHour < 13 ? 'Manhã' : 'Tarde';
-    
-    // Filtrar slots que tem apontamento e são do período alvo
-    let patientsToSend = slots
-        .filter(s => s.appointment && s.period === targetPeriod)
-        .map(s => s.appointment!);
 
-    if (patientsToSend.length === 0) {
-        const otherPeriod = targetPeriod === 'Manhã' ? 'Tarde' : 'Manhã';
-        const otherPatients = slots
-            .filter(s => s.appointment && s.period === otherPeriod)
-            .map(s => s.appointment!);
-        
-        if (otherPatients.length > 0) {
-            toast.warning(`Nenhum paciente encontrado para o turno da ${targetPeriod}.`);
-            return;
-        } else {
-             toast.warning("Não há pacientes agendados para hoje.");
-             return;
-        }
-    }
-
-    setQueueModalData({
-        patients: patientsToSend,
-        period: targetPeriod
-    });
-  };
-
-  const handleConfirmSendToQueue = async () => {
-    if (!queueModalData) return;
-
-    setIsSendingToQueue(true);
-    let successCount = 0;
-    
-    try {
-        const sortedPatients = [...queueModalData.patients].sort((a, b) => a.slot_number - b.slot_number);
-
-        for (const apt of sortedPatients) {
-            await addPatient(apt.patient_name, 'Triagem');
-            successCount++;
-        }
-        
-        toast.success(`${successCount} pacientes enviados para a fila de Triagem!`);
-        setQueueModalData(null);
-    } catch (error) {
-        console.error('Erro ao enviar para fila:', error);
-        toast.error('Erro ao enviar alguns pacientes para a fila.');
-    } finally {
-        setIsSendingToQueue(false);
-    }
-  };
 
   const handleBlockDay = async (reason: string) => {
     setIsBlockingDay(true);
@@ -261,7 +202,6 @@ const AppointmentsPage: React.FC = () => {
             onPrintClick={handlePrint}
             onPrintReportClick={handlePrintReport}
             onRefreshClick={refresh}
-            onSendToQueueClick={handleSendToQueueClick}
             onBlockDayClick={() => setIsBlockDayModalOpen(true)}
             isLoading={isLoading}
           />
@@ -314,16 +254,7 @@ const AppointmentsPage: React.FC = () => {
         />
       )}
 
-      {/* Modal de envio para fila */}
-      {queueModalData && (
-        <ConfirmQueueModal
-            patientCount={queueModalData.patients.length}
-            period={queueModalData.period}
-            onConfirm={handleConfirmSendToQueue}
-            onClose={() => setQueueModalData(null)}
-            isLoading={isSendingToQueue}
-        />
-      )}
+
 
       {/* Modal de bloquear dia */}
       {isBlockDayModalOpen && (
