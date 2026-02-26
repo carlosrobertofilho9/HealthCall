@@ -191,6 +191,31 @@ describe('useTextToSpeech - Testes Simplificados', () => {
         expect(audioInstance.volume).toBe(1.0);
       });
     }, 10000);
+
+    it('deve finalizar speak ao cancelar sem travar', async () => {
+      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+        data: { speechUrl: 'https://example.com/audio.mp3' },
+        error: null,
+      });
+
+      global.Audio = class MockAudio {
+        onended: (() => void) | null = null;
+        onerror: ((e: any) => void) | null = null;
+        src = '';
+        pause() {}
+        load() {}
+        remove() {}
+        async play() {
+          return Promise.resolve();
+        }
+      } as any;
+
+      const { result } = renderHook(() => useTextToSpeech());
+      const speaking = result.current.speak('teste');
+
+      result.current.cancel();
+      await expect(speaking).resolves.not.toThrow();
+    });
   });
 
   describe('Validação de URLs', () => {

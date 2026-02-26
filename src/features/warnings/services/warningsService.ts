@@ -62,8 +62,7 @@ export const deleteWarning = async (id: string, contentUrl: string): Promise<voi
     if (fileName) {
       await supabase.storage.from('warnings').remove([fileName]);
     }
-  } catch (error) {
-    console.error('Error deleting file from storage:', error);
+  } catch {
     // Don't throw here, as the record is already deleted
   }
 };

@@ -104,40 +104,22 @@ export async function clearQueue(): Promise<boolean> {
  * @returns {Promise<any | null>} Uma promessa que resolve para o novo registro de chamada, ou nulo se ocorrer um erro.
  */
 export async function callPatient(patientId: string, location: string): Promise<any | null> {
-  const { data: patientData, error: patientError } = await supabase
-    .from('patients')
-    .select('callCount')
-    .eq('id', patientId)
-    .single();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (patientError || !patientData) {
-    console.error('Error fetching patient:', patientError);
+  const { data, error } = await supabase.rpc('display_enqueue_call', {
+    p_patient_id: patientId,
+    p_destination: location,
+    p_called_by: user?.id ?? null,
+  });
+
+  if (error) {
+    console.error('Error enqueueing call:', error);
     return null;
   }
 
-  const newCallCount = patientData.callCount + 1;
-
-  const { error: updateError } = await supabase
-    .from('patients')
-    .update({ status: 'Chamado', callCount: newCallCount })
-    .eq('id', patientId);
-
-  if (updateError) {
-    console.error('Error updating patient:', updateError);
-    return null;
-  }
-
-  const { data, error: callError } = await supabase
-    .from('calls')
-    .insert([{ patient_id: patientId, location: location }])
-    .select();
-
-  if (callError) {
-    console.error('Error creating call:', callError);
-    return null;
-  }
-
-  return data[0];
+  return Array.isArray(data) ? data[0] : data;
 }
 
 /**

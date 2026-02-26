@@ -1,4 +1,4 @@
-export type MediaType = 'video' | 'image' | 'youtube';
+export type MediaType = 'video' | 'image';
 
 export interface Warning {
   id: string;

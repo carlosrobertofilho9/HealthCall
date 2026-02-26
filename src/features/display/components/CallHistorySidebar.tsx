@@ -29,7 +29,7 @@ export const CallHistorySidebar: React.FC<CallHistorySidebarProps> = ({
         )}
         {recentCalls.map((rec, idx) => (
           <div
-            key={`${rec.id}-${rec.callCount}-${rec.calledAt}`}
+            key={`${rec.id}-${rec.callCount}-${rec.calledAt}-${idx}`}
             className={`p-4 rounded-lg transition-all duration-300 ${
               idx === 0
                 ? 'bg-green-800/50 border border-green-600 shadow-lg'

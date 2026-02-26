@@ -1,49 +1,64 @@
 import React, { useState } from 'react';
-import { useWarnings } from '../hooks/useWarnings';
-import { WarningForm } from '../components/WarningForm';
-import { deleteWarning, updateWarning } from '../services/warningsService';
 import { toast } from 'sonner';
-import { usePageTitle } from '@/hooks/usePageTitle';
-import { Megaphone, Plus, Edit, Eye, EyeOff, Trash2, Star, Clock, Image, Video, Youtube, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { WarningForm } from '../components/WarningForm';
+import { useWarnings } from '../hooks/useWarnings';
+import { deleteWarning, updateWarning } from '../services/warningsService';
 import type { Warning } from '../types';
+import {
+  Megaphone,
+  Plus,
+  Edit,
+  Eye,
+  EyeOff,
+  Trash2,
+  Star,
+  Clock,
+  Image,
+  Video,
+  RefreshCw,
+} from 'lucide-react';
 
 const WarningsPage: React.FC = () => {
   usePageTitle('Gerenciar Avisos');
+
   const { warnings, loading, refetch } = useWarnings();
   const [showForm, setShowForm] = useState(false);
-  const [editingWarning, setEditingWarning] = useState<Warning | undefined>(undefined);
+  const [editingWarning, setEditingWarning] = useState<Warning | undefined>();
   const [selectedWarning, setSelectedWarning] = useState<Warning | null>(null);
-
-  const handleDelete = async (id: string, url: string) => {
-    if (!confirm('Tem certeza que deseja excluir este aviso?')) return;
-    try {
-      await deleteWarning(id, url);
-      toast.success('Aviso excluído');
-      if (selectedWarning?.id === id) setSelectedWarning(null);
-      refetch();
-    } catch (e) {
-      toast.error('Erro ao excluir');
-    }
-  };
-
-  const toggleActive = async (id: string, currentStatus: boolean) => {
-    try {
-      await updateWarning({ id, active: !currentStatus });
-      toast.success(currentStatus ? 'Aviso desativado' : 'Aviso ativado');
-      refetch();
-    } catch (e) {
-      toast.error('Erro ao atualizar status');
-    }
-  };
 
   const activeWarning = selectedWarning || (warnings.length > 0 ? warnings[0] : null);
 
+  const handleDelete = async (id: string, contentUrl: string) => {
+    if (!confirm('Tem certeza que deseja excluir este aviso?')) return;
+
+    try {
+      await deleteWarning(id, contentUrl);
+      toast.success('Aviso excluído');
+      if (selectedWarning?.id === id) {
+        setSelectedWarning(null);
+      }
+      refetch();
+    } catch {
+      toast.error('Erro ao excluir aviso');
+    }
+  };
+
+  const toggleActive = async (warning: Warning) => {
+    try {
+      await updateWarning({ id: warning.id, active: !warning.active });
+      toast.success(warning.active ? 'Aviso desativado' : 'Aviso ativado');
+      refetch();
+    } catch {
+      toast.error('Erro ao atualizar status do aviso');
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full h-[calc(100vh-8rem)]">
-      {/* Coluna 1: Lista de Avisos */}
       <div className="bg-[#1a2c22] rounded-2xl shadow-2xl border border-white/5 flex flex-col h-full overflow-hidden lg:col-span-1">
-        <div className="flex flex-col gap-1 p-6 pb-4 border-b border-white/5 shrink-0">
+        <div className="p-6 pb-4 border-b border-white/5">
           <h2 className="text-white text-xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
               <Megaphone className="text-[#96c5a9]" size={20} />
@@ -51,7 +66,8 @@ const WarningsPage: React.FC = () => {
             Avisos
           </h2>
         </div>
-        <div className="p-3 border-b border-white/5 shrink-0">
+
+        <div className="p-3 border-b border-white/5">
           <button
             onClick={() => {
               setEditingWarning(undefined);
@@ -63,6 +79,7 @@ const WarningsPage: React.FC = () => {
             Novo Aviso
           </button>
         </div>
+
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -76,46 +93,43 @@ const WarningsPage: React.FC = () => {
               </div>
               <div className="max-w-xs">
                 <p className="font-medium text-gray-400">Nenhum aviso</p>
-                <p className="text-xs mt-1 opacity-60">
-                  Cadastre vídeos ou imagens para a tela de espera.
-                </p>
+                <p className="text-xs mt-1 opacity-60">Cadastre vídeos ou imagens para o display.</p>
               </div>
             </div>
           ) : (
             <div className="flex flex-col">
-              {warnings.map(warning => (
+              {warnings.map((warning) => (
                 <button
                   key={warning.id}
                   onClick={() => setSelectedWarning(warning)}
                   className={cn(
-                    "w-full text-left px-4 py-3 border-b border-white/5 transition-all hover:bg-[#264532]/50",
-                    activeWarning?.id === warning.id && "bg-[#264532] border-l-2 border-l-[#96c5a9]"
+                    'w-full text-left px-4 py-3 border-b border-white/5 transition-all hover:bg-[#264532]/50',
+                    activeWarning?.id === warning.id && 'bg-[#264532] border-l-2 border-l-[#96c5a9]'
                   )}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={cn(
-                      "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
-                      warning.active ? "bg-[#264532] text-[#96c5a9]" : "bg-gray-800 text-gray-500"
-                    )}>
-                      {warning.media_type === 'video' ? <Video size={18} /> : warning.media_type === 'youtube' ? <Youtube size={18} /> : <Image size={18} />}
+                    <div
+                      className={cn(
+                        'w-10 h-10 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
+                        warning.active ? 'bg-[#264532] text-[#96c5a9]' : 'bg-gray-800 text-gray-500'
+                      )}
+                    >
+                      {warning.media_type === 'video' ? <Video size={18} /> : <Image size={18} />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={cn(
-                          "text-sm font-semibold truncate",
-                          warning.active ? "text-white" : "text-gray-500"
-                        )}>
+                        <p className={cn('text-sm font-semibold truncate', warning.active ? 'text-white' : 'text-gray-500')}>
                           {warning.text || 'Sem título'}
                         </p>
-                        {warning.priority && (
-                          <Star size={12} className="text-yellow-500 shrink-0 fill-yellow-500" />
-                        )}
+                        {warning.priority && <Star size={12} className="text-yellow-500 shrink-0 fill-yellow-500" />}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <div className={cn(
-                          "w-1.5 h-1.5 rounded-full shrink-0",
-                          warning.active ? "bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" : "bg-gray-600"
-                        )} />
+                        <div
+                          className={cn(
+                            'w-1.5 h-1.5 rounded-full shrink-0',
+                            warning.active ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]' : 'bg-gray-600'
+                          )}
+                        />
                         <span className="text-xs text-gray-500">
                           {warning.active ? 'Ativo' : 'Inativo'} · {warning.duration || 10}s
                         </span>
@@ -129,9 +143,8 @@ const WarningsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Coluna 2: Formulário ou Detalhes */}
       <div className="bg-[#1a2c22] rounded-2xl shadow-2xl border border-white/5 flex flex-col h-full overflow-hidden lg:col-span-1">
-        <div className="flex flex-col gap-1 p-6 pb-4 border-b border-white/5 shrink-0">
+        <div className="p-6 pb-4 border-b border-white/5">
           <h2 className="text-white text-xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
               <Edit className="text-[#96c5a9]" size={20} />
@@ -139,6 +152,7 @@ const WarningsPage: React.FC = () => {
             {showForm ? (editingWarning ? 'Editar Aviso' : 'Novo Aviso') : 'Detalhes'}
           </h2>
         </div>
+
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6">
           {showForm ? (
             <WarningForm
@@ -159,33 +173,32 @@ const WarningsPage: React.FC = () => {
                 <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Título</label>
                 <p className="text-white font-semibold">{activeWarning.text || 'Sem título'}</p>
               </div>
+
               {activeWarning.message && (
                 <div>
                   <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Mensagem</label>
                   <p className="text-gray-300 text-sm">{activeWarning.message}</p>
                 </div>
               )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-[#264532]/30 rounded-lg p-3 border border-white/5">
                   <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Status</label>
-                  <div className="flex items-center gap-2">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full",
-                      activeWarning.active ? "bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" : "bg-gray-600"
-                    )} />
-                    <span className={cn("text-sm font-medium", activeWarning.active ? "text-green-400" : "text-gray-500")}>
-                      {activeWarning.active ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </div>
+                  <span className={cn('text-sm font-medium', activeWarning.active ? 'text-green-400' : 'text-gray-500')}>
+                    {activeWarning.active ? 'Ativo' : 'Inativo'}
+                  </span>
                 </div>
+
                 <div className="bg-[#264532]/30 rounded-lg p-3 border border-white/5">
                   <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Duração</label>
                   <p className="text-white text-sm font-medium">{activeWarning.duration || 10}s</p>
                 </div>
+
                 <div className="bg-[#264532]/30 rounded-lg p-3 border border-white/5">
                   <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Tipo</label>
                   <p className="text-white text-sm font-medium capitalize">{activeWarning.media_type}</p>
                 </div>
+
                 {activeWarning.priority && (
                   <div className="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/20">
                     <label className="block text-xs font-medium text-yellow-500/80 uppercase tracking-wider mb-1">Prioridade</label>
@@ -196,30 +209,34 @@ const WarningsPage: React.FC = () => {
                   </div>
                 )}
               </div>
+
               {(activeWarning.start_time || activeWarning.end_time) && (
                 <div className="bg-[#264532]/30 rounded-lg p-3 border border-white/5">
                   <label className="block text-xs font-medium text-[#96c5a9]/60 uppercase tracking-wider mb-1">Agendamento</label>
                   <div className="flex items-center gap-2 text-white text-sm">
                     <Clock size={14} className="text-[#96c5a9]/60" />
                     <span>
-                      {activeWarning.start_time ? activeWarning.start_time.slice(0, 5) : '00:00'} - {activeWarning.end_time ? activeWarning.end_time.slice(0, 5) : '23:59'}
+                      {activeWarning.start_time ? activeWarning.start_time.slice(0, 5) : '00:00'} -{' '}
+                      {activeWarning.end_time ? activeWarning.end_time.slice(0, 5) : '23:59'}
                     </span>
                   </div>
                 </div>
               )}
+
               <div className="pt-4 mt-2 border-t border-white/5 flex gap-2">
                 <button
-                  onClick={() => toggleActive(activeWarning.id, activeWarning.active)}
+                  onClick={() => toggleActive(activeWarning)}
                   className={cn(
-                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium border transition-all",
+                    'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium border transition-all',
                     activeWarning.active
-                      ? "bg-gray-800/50 border-white/5 text-gray-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20"
-                      : "bg-[#264532]/30 border-white/5 text-[#96c5a9] hover:bg-green-500/10 hover:text-green-400 hover:border-green-500/20"
+                      ? 'bg-gray-800/50 border-white/5 text-gray-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20'
+                      : 'bg-[#264532]/30 border-white/5 text-[#96c5a9] hover:bg-green-500/10 hover:text-green-400 hover:border-green-500/20'
                   )}
                 >
                   {activeWarning.active ? <EyeOff size={16} /> : <Eye size={16} />}
                   {activeWarning.active ? 'Desativar' : 'Ativar'}
                 </button>
+
                 <button
                   onClick={() => {
                     setEditingWarning(activeWarning);
@@ -230,6 +247,7 @@ const WarningsPage: React.FC = () => {
                   <Edit size={16} />
                   Editar
                 </button>
+
                 <button
                   onClick={() => handleDelete(activeWarning.id, activeWarning.content_url || '')}
                   className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium bg-gray-800/50 text-gray-400 border border-white/5 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all"
@@ -247,10 +265,9 @@ const WarningsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Coluna 3 e 4: Preview da Mídia */}
       <div className="lg:col-span-2 flex flex-col h-full min-h-0">
         <div className="bg-[#1a2c22] rounded-2xl shadow-2xl border border-white/5 flex flex-col h-full overflow-hidden">
-          <div className="flex flex-col gap-1 p-6 pb-4 border-b border-white/5 shrink-0">
+          <div className="p-6 pb-4 border-b border-white/5">
             <h2 className="text-white text-xl font-bold tracking-tight flex items-center gap-3">
               <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
                 <Eye className="text-[#96c5a9]" size={20} />
@@ -258,6 +275,7 @@ const WarningsPage: React.FC = () => {
               Visualização
             </h2>
           </div>
+
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white/5 relative">
             {activeWarning?.content_url ? (
               <div className="flex-1 flex items-center justify-center p-6">
@@ -270,16 +288,6 @@ const WarningsPage: React.FC = () => {
                     muted
                     playsInline
                   />
-                ) : activeWarning.media_type === 'youtube' ? (
-                  <div className="w-full max-w-2xl aspect-video rounded-xl overflow-hidden shadow-2xl">
-                    <iframe
-                      src={activeWarning.content_url.replace('watch?v=', 'embed/')}
-                      className="w-full h-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      title={activeWarning.text}
-                    />
-                  </div>
                 ) : (
                   <img
                     key={activeWarning.id}
@@ -296,9 +304,7 @@ const WarningsPage: React.FC = () => {
                 </div>
                 <div className="max-w-xs">
                   <p className="font-medium text-gray-400">Aguardando seleção</p>
-                  <p className="text-xs mt-1 opacity-60">
-                    Selecione um aviso na lista para visualizar a mídia aqui.
-                  </p>
+                  <p className="text-xs mt-1 opacity-60">Selecione um aviso para visualizar a mídia.</p>
                 </div>
               </div>
             )}

@@ -1,69 +1,102 @@
-const CACHE_NAME = 'healthcall-v2.0.0';
-const urlsToCache = [
+const CACHE_NAME = 'healthcall-static-v3.0.0';
+const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/healthcall-icon.png',
   '/healthcall-logo.png',
+  '/healthcall-logo-header.png',
 ];
 
-// Instalar o Service Worker
+const STATIC_EXTENSIONS = [
+  '.js',
+  '.css',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.svg',
+  '.webp',
+  '.ico',
+  '.woff',
+  '.woff2',
+];
+
+function isSupabaseDynamicPath(pathname) {
+  return (
+    pathname.startsWith('/rest/v1') ||
+    pathname.startsWith('/auth/v1') ||
+    pathname.startsWith('/realtime/v1') ||
+    pathname.startsWith('/storage/v1') ||
+    pathname.startsWith('/functions/v1')
+  );
+}
+
+function isCacheableStaticRequest(request) {
+  if (request.method !== 'GET') return false;
+
+  const url = new URL(request.url);
+
+  if (url.origin !== self.location.origin) return false;
+  if (isSupabaseDynamicPath(url.pathname)) return false;
+
+  if (request.mode === 'navigate') return true;
+
+  return STATIC_EXTENSIONS.some((extension) => url.pathname.endsWith(extension));
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache).catch((error) => {
-        console.warn('Falha ao fazer cache de alguns recursos:', error);
-      });
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
+
   self.skipWaiting();
 });
 
-// Ativar o Service Worker
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then((cacheNames) =>
+      Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName !== CACHE_NAME)
+          .map((cacheName) => caches.delete(cacheName))
+      )
+    )
   );
+
   self.clients.claim();
 });
 
-// Estratégia de cache: network first, fall back to cache
 self.addEventListener('fetch', (event) => {
-  // Pular requisições não-GET
-  if (event.request.method !== 'GET') {
+  if (!isCacheableStaticRequest(event.request)) {
     return;
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Não fazer cache de requisições não-sucesso
-        if (!response || response.status !== 200 || response.type === 'error') {
+    caches.match(event.request).then((cached) => {
+      if (cached) {
+        return cached;
+      }
+
+      return fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200) {
+            return response;
+          }
+
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+
           return response;
-        }
+        })
+        .catch(() => {
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html');
+          }
 
-        // Fazer cache de respostas bem-sucedidas
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+          return new Response('Recurso indisponível offline', { status: 503 });
         });
-
-        return response;
-      })
-      .catch(() => {
-        // Retornar do cache se a rede falhar
-        return caches.match(event.request).then((response) => {
-          return response || new Response('Offline - recurso não disponível', { status: 503 });
-        });
-      })
+    })
   );
 });
-

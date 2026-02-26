@@ -1,29 +1,29 @@
 import React from 'react';
-import { DisplayHeader } from './DisplayHeader';
 
 interface CallingOverlayProps {
+  visible: boolean;
   patientName: string;
   room: string;
 }
 
-/**
- * Overlay fullscreen exibido durante a chamada ativa de um paciente.
- * Mostra nome do paciente e destino em tamanho grande para visibilidade máxima.
- */
-export const CallingOverlay: React.FC<CallingOverlayProps> = ({ patientName, room }) => (
-  <div className="bg-gray-900 text-white relative" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
-    <div className="flex flex-col min-h-screen relative z-50 bg-gray-900">
-      <DisplayHeader />
-      <main className="flex-grow flex flex-col justify-center items-center text-center p-8">
-        <div className="animate-slide-in w-full max-w-4xl">
-          <h2 className="text-6xl md:text-7xl font-bold text-[#38e07b] mb-4">Chamando</h2>
-          <p className="text-7xl md:text-8xl font-black mb-6">{patientName}</p>
-          <div className="inline-flex items-center gap-4 bg-gray-800 rounded-full px-8 py-4">
-            <span className="material-symbols-outlined text-5xl text-[#38e07b]">meeting_room</span>
-            <p className="text-6xl md:text-7xl font-bold">{room}</p>
-          </div>
+export const CallingOverlay: React.FC<CallingOverlayProps> = ({ visible, patientName, room }) => {
+  return (
+    <div
+      className={`absolute inset-0 z-50 transition-opacity duration-200 ${
+        visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
+    >
+      <div className="absolute inset-0 bg-gray-900/95 backdrop-blur-sm" />
+
+      <div className="relative h-full w-full flex flex-col items-center justify-center text-center p-8">
+        <h2 className="text-6xl md:text-7xl font-black text-[#38e07b] uppercase tracking-[0.1em] mb-6">Chamando</h2>
+        <p className="text-6xl md:text-8xl font-black mb-8 max-w-6xl leading-[1.05]">{patientName}</p>
+
+        <div className="inline-flex items-center gap-4 bg-gray-800 rounded-full px-8 py-4 border border-white/10 shadow-2xl">
+          <span className="material-symbols-outlined text-5xl text-[#38e07b]">meeting_room</span>
+          <p className="text-5xl md:text-7xl font-black">{room}</p>
         </div>
-      </main>
+      </div>
     </div>
-  </div>
-);
+  );
+};

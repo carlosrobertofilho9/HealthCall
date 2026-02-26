@@ -144,62 +144,36 @@ export async function removePatient(id: string): Promise<boolean> {
  * @throws {Error} Se qualquer uma das operações de base de dados falhar.
  */
 export async function callPatient(id: string, destination: string): Promise<Patient | null> {
-    // First, get the current callCount
-    const { data: patient, error: fetchError } = await supabase
-        .from('patients')
-        .select('callCount, name')
-        .eq('id', id)
-        .maybeSingle();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
 
-    if (fetchError) {
-        console.error('Error fetching patient:', fetchError);
-        throw fetchError;
+    const { error: enqueueError } = await supabase.rpc('display_enqueue_call', {
+        p_patient_id: id,
+        p_destination: destination,
+        p_called_by: user?.id ?? null,
+    });
+
+    if (enqueueError) {
+        console.error('Error enqueueing patient call:', enqueueError);
+        throw enqueueError;
     }
 
-    if (!patient) {
-        throw new Error('Paciente não encontrado');
-    }
-
-    const newCallCount = patient.callCount + 1;
-
-    // Update the patient's status and callCount
-    const { error: updateError } = await supabase
-        .from('patients')
-        .update({ status: 'Chamado', callCount: newCallCount })
-        .eq('id', id);
-    
-    if (updateError) {
-        console.error('Error updating patient:', updateError);
-        throw updateError;
-    }
-
-    // Insert a new record in the calls table - CRITICAL for DisplayPage realtime!
-    const { data: callData, error: callError } = await supabase
-        .from('calls')
-        .insert([{ patient_id: id, location: destination }])
-        .select();
-    
-    if (callError) {
-        console.error('Error creating call record:', callError);
-        throw callError;
-    }
-
-    // Return the updated patient data
     const { data: updatedPatient, error: selectError } = await supabase
         .from('patients')
         .select('*')
         .eq('id', id)
         .maybeSingle();
-    
+
     if (selectError) {
         console.error('Error fetching updated patient:', selectError);
         throw selectError;
     }
 
     if (!updatedPatient) {
-         throw new Error('Erro ao recuperar dados do paciente atualizado');
+        throw new Error('Erro ao recuperar dados do paciente atualizado');
     }
-    
+
     return updatedPatient;
 }
 

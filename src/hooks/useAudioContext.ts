@@ -18,22 +18,18 @@ export function useAudioContext() {
       // Se não existe, cria novo
       if (!contextRef.current) {
         contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        console.log('[AudioContext] Novo contexto criado');
       }
 
       const state = contextRef.current.state;
-      console.log(`[AudioContext] Health check - Estado: ${state}`);
 
       // Se fechado, recria
       if (state === 'closed') {
-        console.warn('[AudioContext] Contexto fechado, recriando...');
         contextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         audioTelemetry.trackError('audiocontext_closed', 'AudioContext foi fechado e foi recriado');
       }
 
       // Se suspenso, retoma
       if (contextRef.current.state === 'suspended') {
-        console.log('[AudioContext] Retomando contexto suspenso...');
         await contextRef.current.resume();
       }
 
@@ -50,7 +46,6 @@ export function useAudioContext() {
 
       return healthy;
     } catch (error) {
-      console.error('[AudioContext] Erro no health check:', error);
       setIsHealthy(false);
       audioTelemetry.trackError(
         'audiocontext_check_failed',
@@ -66,12 +61,10 @@ export function useAudioContext() {
   const resume = useCallback(async (): Promise<boolean> => {
     try {
       if (!contextRef.current) {
-        console.warn('[AudioContext] Contexto não existe, criando...');
         return await checkHealth();
       }
 
       if (contextRef.current.state === 'suspended') {
-        console.log('[AudioContext] Retomando contexto...');
         await contextRef.current.resume();
       }
 
@@ -79,7 +72,6 @@ export function useAudioContext() {
       setIsHealthy(healthy);
       return healthy;
     } catch (error) {
-      console.error('[AudioContext] Erro ao retomar:', error);
       audioTelemetry.trackError(
         'audiocontext_resume_failed',
         error instanceof Error ? error.message : String(error)
@@ -116,7 +108,6 @@ export function useAudioContext() {
       checkHealth();
     }, intervalMs);
 
-    console.log(`[AudioContext] Health check iniciado (${intervalMs}ms)`);
   }, [checkHealth]);
 
   /**
@@ -126,7 +117,6 @@ export function useAudioContext() {
     if (healthCheckIntervalRef.current) {
       clearInterval(healthCheckIntervalRef.current);
       healthCheckIntervalRef.current = null;
-      console.log('[AudioContext] Health check parado');
     }
   }, []);
 
@@ -146,7 +136,6 @@ export function useAudioContext() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('[AudioContext] Página visível, verificando saúde...');
         checkHealth();
       }
     };

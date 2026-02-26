@@ -1,25 +1,19 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDisplayData } from '@/hooks/useDisplayData';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { WarningPlayer } from '../components/WarningPlayer';
 import { AudioActivationScreen } from '../components/AudioActivationScreen';
+import { CallHistorySidebar } from '../components/CallHistorySidebar';
 import { CallingOverlay } from '../components/CallingOverlay';
 import { DisplayHeader } from '../components/DisplayHeader';
-import { PatientCallArea } from '../components/PatientCallArea';
-import { CallHistorySidebar } from '../components/CallHistorySidebar';
 import { NextPatientsFooter } from '../components/NextPatientsFooter';
+import { PatientCallArea } from '../components/PatientCallArea';
+import { WarningPlayer } from '../components/WarningPlayer';
 
-/**
- * A página de exibição pública para chamadas de pacientes.
- *
- * Este componente é o ponto de entrada do display/painel mostrado em TVs ou monitores
- * na sala de espera. Compõe os sub-componentes especializados e gerencia as telas
- * condicionais (loading, auth, ativação de áudio, chamada ativa).
- */
 const DisplayPage: React.FC = () => {
-  usePageTitle();
+  usePageTitle('Display');
+
   const {
     calledPatient,
     nextPatients,
@@ -30,6 +24,7 @@ const DisplayPage: React.FC = () => {
     isActivatingAudio,
     showWarnings,
   } = useDisplayData();
+
   const { session, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -51,26 +46,27 @@ const DisplayPage: React.FC = () => {
     return <AudioActivationScreen onActivate={activateAudio} isActivating={isActivatingAudio} />;
   }
 
-  if (isCalling) {
-    const patientName = calledPatient?.name || 'Aguardando chamada...';
-    const room = calledPatient?.destination || '-';
-    return <CallingOverlay patientName={patientName} room={room} />;
-  }
+  const patientName = calledPatient?.name || 'Aguardando chamada...';
+  const room = calledPatient?.destination || '-';
 
   return (
-    <div className="bg-gray-900 text-white relative overflow-hidden" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
-      {showWarnings && <WarningPlayer onFinish={() => {}} />}
+    <div className="bg-gray-900 text-white relative overflow-hidden min-h-screen" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
+      <WarningPlayer enabled={showWarnings} paused={isCalling || !showWarnings} />
 
-      <div className="flex flex-col min-h-screen relative z-10">
+      <div className="relative z-10 flex flex-col min-h-screen">
         <DisplayHeader />
+
         <main className="flex-grow p-6 md:p-10 w-full flex flex-col">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch flex-grow">
             <PatientCallArea calledPatient={calledPatient} />
             <CallHistorySidebar callHistory={callHistory} calledPatient={calledPatient} />
           </div>
+
           <NextPatientsFooter nextPatients={nextPatients} />
         </main>
       </div>
+
+      <CallingOverlay visible={isCalling} patientName={patientName} room={room} />
     </div>
   );
 };

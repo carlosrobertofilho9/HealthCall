@@ -25,8 +25,7 @@ async function verifyCacheUrl(url: string): Promise<boolean> {
       mode: 'cors',
     });
     return response.ok;
-  } catch (error) {
-    console.error('[TTS] Erro ao verificar URL de cache:', error);
+  } catch {
     return false;
   }
 }
@@ -41,7 +40,6 @@ const cacheHelpers = {
 
     // Verifica se expirou
     if (Date.now() - entry.timestamp > CACHE_EXPIRATION_MS) {
-      console.log('[TTS] Cache expirado, removendo:', key.substring(0, 30));
       ttsCache.delete(key);
       return null;
     }
@@ -49,11 +47,8 @@ const cacheHelpers = {
     // Verifica integridade periodicamente (a cada 5 minutos)
     const VERIFY_INTERVAL = 300000; // 5 minutos
     if (!entry.verified || Date.now() - entry.timestamp > VERIFY_INTERVAL) {
-      console.log('[TTS] Verificando integridade do cache:', key.substring(0, 30));
-
       const isValid = await verifyCacheUrl(entry.url);
       if (!isValid) {
-        console.warn('[TTS] URL de cache inválida, removendo:', entry.url);
         ttsCache.delete(key);
         return null;
       }
@@ -71,12 +66,11 @@ const cacheHelpers = {
       const oldest = Array.from(ttsCache.entries())
         .sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
       if (oldest) {
-        console.log('[TTS] Cache cheio, removendo mais antigo:', oldest[0].substring(0, 30));
         ttsCache.delete(oldest[0]);
       }
     }
 
-    ttsCache.set(key, { url, timestamp: Date.now(), verified: true });
+    ttsCache.set(key, { url, timestamp: Date.now(), verified: false });
   },
 
   clear() {
@@ -102,7 +96,6 @@ async function retryWithBackoff<T>(
 
       if (i < maxRetries - 1) {
         const delay = baseDelay * Math.pow(2, i);
-        console.log(`[TTS] Tentativa ${i + 1} falhou. Tentando novamente em ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -120,7 +113,6 @@ function isValidAudioUrl(url: string): boolean {
 
     // CRÍTICO: Bloqueia protocolos perigosos
     if (!['https:', 'http:'].includes(parsed.protocol)) {
-      console.error('[TTS] Protocolo inválido bloqueado:', parsed.protocol);
       return false;
     }
 
@@ -134,18 +126,16 @@ function isValidAudioUrl(url: string): boolean {
         const mainDomain = supabaseDomain.split('.').slice(-2).join('.');
 
         if (!parsed.hostname.includes(mainDomain)) {
-          console.error('[TTS] Domínio não autorizado:', parsed.hostname);
           return false;
         }
       } catch (e) {
         // Se não conseguir validar domínio, permite (fail open em dev)
-        console.warn('[TTS] Não foi possível validar domínio:', e);
+        void e;
       }
     }
 
     return true;
-  } catch (e) {
-    console.error('[TTS] URL malformada:', url);
+  } catch {
     return false;
   }
 }
@@ -168,25 +158,34 @@ function isValidAudioUrl(url: string): boolean {
 export function useTextToSpeech() {
   // Ref para rastrear o áudio atual em reprodução
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const cancelledRef = useRef(false);
+  const cancelVersionRef = useRef(0);
+  const activeCancelRef = useRef<(() => void) | null>(null);
+  const initializedRef = useRef(false);
+
+  if (!initializedRef.current) {
+    initializedRef.current = true;
+    if (import.meta.env.MODE === 'test') {
+      cacheHelpers.clear();
+    }
+  }
 
   /**
    * Cancela qualquer reprodução de áudio TTS em andamento.
    */
   const cancel = useCallback(() => {
-    console.log('[TTS] Cancelando reprodução...');
-    cancelledRef.current = true;
-    
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current.src = '';
-      currentAudioRef.current = null;
+    cancelVersionRef.current += 1;
+
+    const activeCancel = activeCancelRef.current;
+    activeCancelRef.current = null;
+    if (activeCancel) {
+      activeCancel();
+      return;
     }
-    
-    // Reset após breve delay para permitir novas reproduções
-    setTimeout(() => {
-      cancelledRef.current = false;
-    }, 100);
+
+    if (!currentAudioRef.current) return;
+    currentAudioRef.current.pause();
+    currentAudioRef.current.src = '';
+    currentAudioRef.current = null;
   }, []);
 
   /**
@@ -210,7 +209,6 @@ export function useTextToSpeech() {
     // Verifica o cache antes de invocar a função (agora com validação)
     const cachedUrl = await cacheHelpers.get(text);
     if (cachedUrl) {
-      console.log('[TTS] Usando áudio do cache:', text.substring(0, 30) + '...');
       audioTelemetry.trackCache(true); // Cache hit
       return cachedUrl;
     }
@@ -219,8 +217,6 @@ export function useTextToSpeech() {
 
     // Usa retry logic para chamadas à edge function
     return retryWithBackoff(async () => {
-      console.log('[TTS] Gerando novo áudio:', text.substring(0, 30) + '...');
-
       const { data, error } = await supabase.functions.invoke('generate-tts', {
         body: { text },
       });
@@ -235,15 +231,13 @@ export function useTextToSpeech() {
 
       // Armazena a nova URL no cache
       cacheHelpers.set(text, data.speechUrl);
-      console.log('[TTS] Áudio gerado e armazenado no cache');
 
       return data.speechUrl;
-    }, 3, 1000).catch((e) => {
-      console.error('[TTS] Erro após retry:', e);
+    }, 3, 1000).catch((error) => {
       toast.error('Erro ao gerar áudio da chamada', {
         description: 'Tentando novamente...',
       });
-      throw e;
+      throw error;
     });
   }, []);
 
@@ -251,10 +245,67 @@ export function useTextToSpeech() {
     return new Promise(async (resolve, reject) => {
       let speechAudio: HTMLAudioElement | null = null;
       const startTime = Date.now();
+      const callVersion = cancelVersionRef.current;
+      let settled = false;
+
+      const cleanup = () => {
+        if (!speechAudio) return;
+
+        speechAudio.pause();
+        speechAudio.onended = null;
+        speechAudio.onerror = null;
+        speechAudio.onloadeddata = null;
+        speechAudio.oncanplay = null;
+        speechAudio.onprogress = null;
+        speechAudio.onstalled = null;
+        speechAudio.onwaiting = null;
+
+        speechAudio.src = '';
+        speechAudio.load();
+
+        if (speechAudio.remove) {
+          speechAudio.remove();
+        }
+
+        if (currentAudioRef.current === speechAudio) {
+          currentAudioRef.current = null;
+        }
+
+        speechAudio = null;
+      };
+
+      const finalizeResolve = () => {
+        if (settled) return;
+        settled = true;
+
+        cleanup();
+        if (activeCancelRef.current === cancelPlayback) {
+          activeCancelRef.current = null;
+        }
+
+        resolve();
+      };
+
+      const finalizeReject = (error: unknown) => {
+        if (settled) return;
+        settled = true;
+
+        cleanup();
+        if (activeCancelRef.current === cancelPlayback) {
+          activeCancelRef.current = null;
+        }
+
+        reject(error);
+      };
+
+      const cancelPlayback = () => {
+        const latency = Date.now() - startTime;
+        audioTelemetry.trackPlayback(false, latency, 'cancelled');
+        finalizeResolve();
+      };
 
       // Verifica se foi cancelado antes de começar
-      if (cancelledRef.current) {
-        console.log('[TTS] Reprodução cancelada antes de iniciar');
+      if (callVersion !== cancelVersionRef.current) {
         resolve();
         return;
       }
@@ -264,9 +315,8 @@ export function useTextToSpeech() {
         const speechUrl = await preloadTTS(text);
 
         // Verifica novamente se foi cancelado após preload
-        if (cancelledRef.current) {
-          console.log('[TTS] Reprodução cancelada após preload');
-          resolve();
+        if (callVersion !== cancelVersionRef.current) {
+          finalizeResolve();
           return;
         }
 
@@ -282,82 +332,39 @@ export function useTextToSpeech() {
         // Cria e configura o elemento de áudio
         speechAudio = new Audio(speechUrl);
         currentAudioRef.current = speechAudio;
+        activeCancelRef.current = cancelPlayback;
 
         // Configurações para Chromecast
         speechAudio.crossOrigin = 'anonymous';
         speechAudio.preload = 'auto';
         speechAudio.volume = 1.0;
 
-        // Gerencia eventos de áudio com cleanup completo
-        const cleanup = () => {
-          if (speechAudio) {
-            // Pausa reprodução
-            speechAudio.pause();
-
-            // Remove todos os event listeners
-            speechAudio.onended = null;
-            speechAudio.onerror = null;
-            speechAudio.onloadeddata = null;
-            speechAudio.oncanplay = null;
-            speechAudio.onprogress = null;
-            speechAudio.onstalled = null;
-            speechAudio.onwaiting = null;
-
-            // Limpa src e força descarga do buffer
-            speechAudio.src = '';
-            speechAudio.load();
-
-            // Remove do DOM se foi adicionado
-            if (speechAudio.remove) {
-              speechAudio.remove();
-            }
-
-            speechAudio = null;
-          }
-        };
-
         speechAudio.onended = () => {
-          console.log('[TTS] Reprodução concluída');
           const latency = Date.now() - startTime;
           audioTelemetry.trackPlayback(true, latency);
-          cleanup();
-          currentAudioRef.current = null;
-          resolve();
+          finalizeResolve();
         };
 
         speechAudio.onerror = (e) => {
-          console.error('[TTS] Erro na reprodução:', e);
           const latency = Date.now() - startTime;
           audioTelemetry.trackPlayback(false, latency, 'Erro ao reproduzir áudio');
           audioTelemetry.trackError('playback_error', e?.toString() || 'Unknown error');
 
           // Se erro de reprodução, invalida o cache (URL pode estar corrompida)
-          if (cacheHelpers.get(text) === speechUrl) {
-            console.log('[TTS] Removendo URL corrompida do cache');
+          if (ttsCache.get(text)?.url === speechUrl) {
             ttsCache.delete(text);
           }
 
-          cleanup();
-          currentAudioRef.current = null;
-          reject(new Error('Erro ao reproduzir áudio'));
+          finalizeReject(new Error('Erro ao reproduzir áudio'));
         };
 
-        console.log('[TTS] Iniciando reprodução');
         await speechAudio.play();
       } catch (e) {
-        console.error('[TTS] Erro no speak():', e);
         const latency = Date.now() - startTime;
         audioTelemetry.trackPlayback(false, latency, e instanceof Error ? e.message : 'Unknown error');
         audioTelemetry.trackError('speak_error', e instanceof Error ? e.message : String(e));
 
-        // Cleanup em caso de erro
-        if (speechAudio) {
-          speechAudio.pause();
-          speechAudio.src = '';
-        }
-        currentAudioRef.current = null;
-
-        reject(e);
+        finalizeReject(e);
       }
     });
   }, [preloadTTS]);

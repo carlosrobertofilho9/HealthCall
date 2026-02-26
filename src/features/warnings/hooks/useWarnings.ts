@@ -30,7 +30,6 @@ export function useWarnings() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'warnings' },
         () => {
-          console.log('[Warnings] Alteração detectada via Realtime, recarregando...');
           fetchWarnings();
         }
       )
