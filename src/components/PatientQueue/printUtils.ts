@@ -61,7 +61,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
       <head>
         <title>Lista de Pacientes</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
           
           @page { 
             size: A4 landscape;
@@ -76,8 +76,9 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
 
           body { 
             font-family: 'Inter', sans-serif; 
-            color: #000000; /* Pure black for max contrast */
+            color: #334155;
             -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
 
           .page-break {
@@ -95,97 +96,177 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
             page-break-after: auto;
           }
 
-          /* Header Styling */
-          .header-container {
+          /* Header Banner */
+          .header-banner {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding-bottom: 20px;
-            margin-bottom: 5px;
-            border-bottom: 3px solid #000000; /* Thicker, darker border */
+            flex-direction: row;
+            align-items: center;
+            background-color: #0f766e;
+            border-radius: 8px;
+            padding: 12px 16px;
           }
 
-          .header-left {
-            display: flex;
-            gap: 15px;
+          .header-logo {
+            margin-right: 16px;
+            width: 36px;
+            height: 36px;
           }
 
-          .brand-bar {
-            width: 8px;
-            background-color: #000000;
-            border-radius: 2px;
+          .header-text-group {
+            flex: 1;
           }
 
-          .header-title h1 { 
-            font-size: 28px;
-            font-weight: 800;
-            color: #000000; 
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: -0.5px;
-            line-height: 1.1;
-          }
-
-          .header-title .subtitle {
-            font-size: 14px;
-            color: #4b5563; /* Darker gray */
-            margin-top: 4px;
-            font-weight: 600;
-            letter-spacing: 0.2px;
-          }
-
-          .date-box {
-            text-align: right;
-            background: #fdfdfd;
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: 2px solid #e5e7eb;
-          }
-
-          .date-box .label {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: #374151; /* Darker gray */
+          .header-psf-name {
+            font-size: 18px;
             font-weight: 700;
+            color: #ffffff;
             letter-spacing: 0.5px;
-            margin-bottom: 2px;
+            margin: 0;
           }
 
-          .date-box .value {
-            font-size: 15px;
+          .header-ubs {
+            font-size: 11px;
+            color: #99f6e4;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
+          }
+
+          .header-badge {
+            background-color: #ffffff;
+            border-radius: 4px;
+            padding: 4px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+
+          .header-badge-text {
+            font-size: 11px;
+            font-weight: 800;
+            color: #0f766e;
+            margin: 0;
+          }
+
+          .header-badge-sub {
+            font-size: 6px;
+            color: #64748b;
+            margin-top: 1px;
+          }
+
+          .accent-line {
+            display: flex;
+            flex-direction: row;
+            height: 3px;
+            margin-bottom: 12px;
+            margin-top: 6px;
+          }
+
+          .accent-1 { flex: 2; background-color: #0d9488; border-radius: 2px; }
+          .accent-2 { flex: 1; background-color: #14b8a6; border-radius: 2px; margin-left: 2px; }
+          .accent-3 { flex: 1; background-color: #5eead4; border-radius: 2px; margin-left: 2px; }
+          .accent-4 { flex: 3; background-color: #99f6e4; border-radius: 2px; margin-left: 2px; }
+
+          /* Info Box */
+          .info-card {
+            display: flex;
+            flex-direction: row;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px 16px;
+            margin-bottom: 12px;
+            gap: 32px;
+          }
+
+          .info-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+          }
+
+          .info-label {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
             font-weight: 700;
-            color: #000000;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
           }
 
-          /* Table Styling */
+          .info-value-line {
+            border-bottom: 1px solid #cbd5e1;
+            height: 18px;
+            display: flex;
+            align-items: center;
+          }
+
+          .info-value {
+            font-size: 13px;
+            color: #334155;
+            font-weight: 600;
+          }
+
+          /* Main Title */
+          .main-title-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            gap: 12px;
+          }
+
+          .main-title-line {
+            flex: 1;
+            height: 1px;
+            background-color: #cbd5e1;
+          }
+
+          .doc-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f766e;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+
+          /* Table Container */
           .table-container {
             flex: 1;
             display: flex;
             flex-direction: column;
-            margin-top: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            background-color: #ffffff;
           }
 
           table { 
             width: 100%; 
             border-collapse: collapse; 
-            font-size: 14px;
             height: 100%;
           }
 
           thead tr {
-            height: 45px;
-            border-bottom: 2px solid #000000; /* Explicit border instead of background color */
+            height: 32px;
+            background-color: #f5f3ff; /* Matching WoundCareDocument Header background somewhat, though that's #f5f3ff which is purple tint. Let's use light teal #f0fdfa or #0f766e for contrast */
+            /* Using solid header */
+            background-color: #0f766e;
           }
 
           th { 
-            background-color: transparent;
-            color: #000000; 
-            padding: 0 16px; 
+            color: #ffffff; 
+            padding: 0 12px; 
             text-align: left; 
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase; 
-            font-size: 12px;
+            font-size: 10px;
             letter-spacing: 0.05em;
+            border-right: 1px solid #0d9488;
+          }
+          th:last-child {
+            border-right: none;
+            text-align: center;
           }
           
           tbody {
@@ -193,39 +274,45 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
           }
 
           tbody tr {
-             /* Calculate height to fill page perfectly */
-             /* (Page Height - Paddings - Header - Footer - TableHeader - Gap) */
-            height: calc((100% - 50px) / 15);
+            height: calc((100% - 32px) / 15);
+            border-bottom: 1px solid #e2e8f0;
+          }
+          tbody tr:last-child {
+            border-bottom: none;
+          }
+
+          /* Striping */
+          tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+          }
+
+          tr.empty-row td {
+            border-bottom: 1px dashed #e2e8f0;
           }
 
           td { 
-            padding: 0 16px; 
+            padding: 0 12px; 
             vertical-align: middle;
-            color: #000000;
-            border-bottom: 1px solid #d1d5db; /* Darker, crisper border */
+            color: #334155;
+            font-size: 12px;
             font-weight: 500;
+            border-right: 1px solid #e2e8f0;
+          }
+          td:last-child {
+            border-right: none;
+            text-align: center;
           }
 
-          /* Striping - make it very subtle light gray merely for guidance */
-          tbody tr:nth-child(even) {
-            background-color: #f9fafb;
-          }
-          
-          /* Row dividers for empty rows */
-          tr.empty-row td {
-            border-bottom: 1px dashed #d1d5db;
-          }
-
-          .col-name { width: 48%; color: #000000; font-size: 16px; font-weight: 700; }
-          .col-doc { width: 22%; color: #000000; }
-          .col-acs { width: 15%; color: #4b5563; font-size: 11px; }
+          .col-name { width: 45%; font-weight: 600; }
+          .col-doc { width: 25%; }
+          .col-acs { width: 15%; font-size: 11px; }
           .col-check { width: 15%; text-align: center; }
 
           .checkbox { 
-            width: 24px; 
-            height: 24px; 
-            border: 2px solid #6b7280; /* Darker border for visibility */
-            border-radius: 4px;
+            width: 14px; 
+            height: 14px; 
+            border: 1px solid #94a3b8;
+            border-radius: 3px;
             display: inline-block; 
             vertical-align: middle;
             background: white;
@@ -234,51 +321,91 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
           /* Footer */
           .footer {
             margin-top: auto;
-            border-top: 2px solid #e5e7eb;
-            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 8px;
             display: flex;
-            justify-content: space-between;
+            flex-direction: row;
+            justify-content: center;
             align-items: center;
-            font-size: 11px;
-            color: #4b5563; /* Darker gray */
-            height: 30px;
+            gap: 8px;
+            font-size: 9px;
+            color: #64748b;
+            height: 20px;
           }
 
-          .footer-logo {
+          .footer-brand {
             font-weight: 700;
-            color: #000000;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            color: #0f766e;
           }
-           
-          @media print {
-            body { 
-              -webkit-print-color-adjust: exact; 
-              print-color-adjust: exact; 
-            }
+
+          .footer-dot {
+            color: #cbd5e1;
+          }
+          
+          .page-number {
+            position: absolute;
+            bottom: 12mm;
+            right: 15mm;
+            font-size: 9px;
+            color: #64748b;
           }
         </style>
       </head>
       <body>
-        ${pages.map(page => `
+        ${pages.map((page, index) => `
           <div class="page-break">
-            <div class="header-container">
-              <div class="header-left">
-                <div class="brand-bar"></div>
-                <div class="header-title">
-                  <h1>${page.title}</h1>
-                  <div class="subtitle">${page.subtitle}</div>
+            <!-- Header Banner -->
+            <div class="header-banner">
+              <div class="header-logo" style="width: 48px; height: 48px; background-color: white; border-radius: 50%; padding: 4px; display: flex; align-items: center; justify-content: center;">
+                <img src="/1708612751_brasao5180.png" alt="Brasão Prefeitura" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+              </div>
+              <div class="header-text-group">
+                <h1 class="header-psf-name">Unidade de Saúde</h1>
+                <div class="header-ubs">Unidade Básica de Saúde • Atenção Primária</div>
+              </div>
+              <div class="header-badge">
+                <div class="header-badge-text">SUS</div>
+                <div class="header-badge-sub">Sistema Único de Saúde</div>
+              </div>
+            </div>
+
+            <!-- Accent Gradient Line -->
+            <div class="accent-line">
+              <div class="accent-1"></div>
+              <div class="accent-2"></div>
+              <div class="accent-3"></div>
+              <div class="accent-4"></div>
+            </div>
+
+            <!-- Info Bar -->
+            <div class="info-card">
+              <div class="info-group">
+                <div class="info-label">Data de Impressão</div>
+                <div class="info-value-line">
+                  <div class="info-value" style="text-transform: capitalize;">
+                    ${new Date().toLocaleDateString('pt-BR', { weekday: 'long' })}, ${new Date().toLocaleDateString('pt-BR')}
+                  </div>
                 </div>
               </div>
-              <div class="date-box">
-                <div class="label">Data de Impressão</div>
-                <div class="value">
-                  ${new Date().toLocaleDateString('pt-BR', { weekday: 'long' })}, 
-                  ${new Date().toLocaleDateString('pt-BR')} - 
-                  ${page.period}
+              <div class="info-group" style="flex: 0.5">
+                <div class="info-label">Período</div>
+                <div class="info-value-line">
+                  <div class="info-value">${page.period}</div>
                 </div>
               </div>
+              <div class="info-group" style="flex: 0.5">
+                <div class="info-label">Lista</div>
+                <div class="info-value-line">
+                  <div class="info-value">${page.subtitle}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Document Title -->
+            <div class="main-title-container">
+              <div class="main-title-line"></div>
+              <div class="doc-title">${page.title}</div>
+              <div class="main-title-line"></div>
             </div>
 
             <div class="table-container">
@@ -288,7 +415,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
                     <th class="col-name">Nome do Paciente</th>
                     <th class="col-doc">CNS / CPF</th>
                     <th class="col-acs">ACS</th>
-                    <th class="col-check">Checklist</th>
+                    <th class="col-check">Presença</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -298,17 +425,21 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
             </div>
 
             <div class="footer">
-              <div class="footer-logo">
-                 <span>HealthCall</span> | Sistema de Gestão
-              </div>
-              <div>Página ${pages.indexOf(page) + 1} de ${pages.length}</div>
+              <div>Impresso em ${new Date().toLocaleDateString('pt-BR')}</div>
+              <div class="footer-dot">•</div>
+              <div class="footer-brand">HealthCall</div>
+              <div class="footer-dot">•</div>
+              <div>Documento gerado eletronicamente</div>
             </div>
+            <div class="page-number">Página ${index + 1} de ${pages.length}</div>
           </div>
         `).join('')}
 
         <script>
           window.onload = function() { 
-            window.print(); 
+            setTimeout(() => {
+              window.print(); 
+            }, 300);
           }
         </script>
       </body>
@@ -340,7 +471,7 @@ const generateRows = (patients: { name: string, document: string, acs: string }[
           <td class="col-name">&nbsp;</td>
           <td class="col-doc"></td>
           <td class="col-acs"></td>
-          <td class="col-check"><div class="checkbox" style="border-color: #d1d5db"></div></td>
+          <td class="col-check"><div class="checkbox" style="border-color: #cbd5e1"></div></td>
         </tr>
       `);
     }

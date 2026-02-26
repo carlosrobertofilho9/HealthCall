@@ -60,7 +60,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
       <head>
         <title>Relatório de Marcações</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
           
           @page { 
             size: A4 portrait;
@@ -71,188 +71,319 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
             margin: 0;
             padding: 0;
             background: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
           }
 
           body { 
             font-family: 'Inter', sans-serif; 
-            color: #1f2937;
+            color: #334155;
             -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
 
-          /* Header Layout */
-          .header {
+          /* Header Banner */
+          .header-banner {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            background-color: #0f766e;
+            border-radius: 8px;
+            padding: 12px 16px;
+          }
+
+          .header-logo {
+            margin-right: 16px;
+            width: 36px;
+            height: 36px;
+          }
+
+          .header-text-group {
+            flex: 1;
+          }
+
+          .header-psf-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            margin: 0;
+          }
+
+          .header-ubs {
+            font-size: 11px;
+            color: #99f6e4;
+            margin-top: 2px;
+            letter-spacing: 0.3px;
+          }
+
+          .header-badge {
+            background-color: #ffffff;
+            border-radius: 4px;
+            padding: 4px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+
+          .header-badge-text {
+            font-size: 11px;
+            font-weight: 800;
+            color: #0f766e;
+            margin: 0;
+          }
+
+          .header-badge-sub {
+            font-size: 6px;
+            color: #64748b;
+            margin-top: 1px;
+          }
+
+          .accent-line {
+            display: flex;
+            flex-direction: row;
+            height: 3px;
+            margin-bottom: 12px;
+            margin-top: 6px;
+          }
+
+          .accent-1 { flex: 2; background-color: #0d9488; border-radius: 2px; }
+          .accent-2 { flex: 1; background-color: #14b8a6; border-radius: 2px; margin-left: 2px; }
+          .accent-3 { flex: 1; background-color: #5eead4; border-radius: 2px; margin-left: 2px; }
+          .accent-4 { flex: 3; background-color: #99f6e4; border-radius: 2px; margin-left: 2px; }
+
+          /* Info Box */
+          .info-card {
+            display: flex;
+            flex-direction: row;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px 16px;
+            margin-bottom: 16px;
+            gap: 32px;
+          }
+
+          .info-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+          }
+
+          .info-label {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+          }
+
+          .info-value-line {
+            border-bottom: 1px solid #cbd5e1;
+            height: 18px;
             display: flex;
             align-items: center;
-            border-bottom: 2px solid #1a3a26;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            gap: 20px;
           }
 
-          .logo-container {
-            width: 80px;
-            height: 80px;
-            flex-shrink: 0;
+          .info-value {
+            font-size: 13px;
+            color: #334155;
+            font-weight: 600;
+          }
+
+          /* Main Title */
+          .main-title-container {
             display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
+            margin-bottom: 12px;
+            gap: 12px;
           }
 
-          .logo-container img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+          .main-title-line {
+            flex: 1;
+            height: 1px;
+            background-color: #cbd5e1;
           }
 
-          .header-content {
+          .doc-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f766e;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+
+          /* Table Container */
+          .table-container {
             flex: 1;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-          }
-
-          .title-section h1 {
-            font-size: 20px;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin: 0;
-            color: #1a3a26;
-            line-height: 1.2;
-          }
-
-          .title-section .subtitle {
-            font-size: 13px;
-            color: #4b5563;
-            font-weight: 500;
-            margin-top: 4px;
-          }
-
-          .meta-box {
-            text-align: right;
-            background-color: #f3f4f6;
-            padding: 8px 12px;
+            flex-direction: column;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
-            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            background-color: #ffffff;
+            margin-bottom: 20px;
           }
 
-          .meta-box .label {
-            font-size: 10px;
-            text-transform: uppercase;
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+          }
+
+          thead tr {
+            background-color: #0f766e;
+          }
+
+          th { 
+            color: #ffffff; 
+            padding: 8px 12px; 
+            text-align: left; 
             font-weight: 700;
-            color: #6b7280;
-          }
-
-          .meta-box .value {
-            font-size: 12px;
-            font-weight: 600;
-            color: #111827;
-          }
-
-          /* Table Design */
-          table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            text-transform: uppercase; 
             font-size: 10px;
+            letter-spacing: 0.05em;
+            border-right: 1px solid #0d9488;
+          }
+          th:last-child {
+            border-right: none;
+          }
+          
+          tbody {
+            display: table-row-group;
           }
 
-          thead th {
-            background-color: #1a3a26;
-            color: white;
-            padding: 8px;
-            text-align: left;
-            text-transform: uppercase;
-            font-weight: 600;
-            font-size: 9px;
-            letter-spacing: 0.5px;
-            border: none;
+          tbody tr {
+            border-bottom: 1px solid #e2e8f0;
           }
-
-          thead th:first-child { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
-          thead th:last-child { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
-
-          tbody td {
-            padding: 6px 8px;
-            border-bottom: 1px solid #f3f4f6;
-            vertical-align: middle;
-            color: #374151;
-          }
-
-          tbody tr:last-child td {
+          tbody tr:last-child {
             border-bottom: none;
           }
 
-          tr.even { background-color: #fcfdfd; }
-          tr:nth-child(even) td { background-color: #f9fafb; }
+          /* Striping */
+          tbody tr.even { background-color: #ffffff; }
+          tbody tr.odd { background-color: #f8fafc; }
 
-          /* Columns */
+          td { 
+            padding: 8px 12px; 
+            vertical-align: middle;
+            color: #334155;
+            font-size: 11px;
+            font-weight: 500;
+            border-right: 1px solid #e2e8f0;
+          }
+          td:last-child {
+            border-right: none;
+          }
+
           .col-slot { width: 6%; text-align: center; font-weight: 700; }
           .col-period { width: 6%; text-align: center; } 
-          .col-name { width: 48%; font-weight: 700; font-size: 12px; }
-          .col-doc { width: 22%; }
-          .col-acs { width: 18%; font-size: 9px; }
-          
-          /* Body Colors */
-          tbody td.col-slot { color: #000000; }
-          tbody td.col-name { color: #374151; }
-          tbody td.col-doc { color: #374151; }
-          tbody td.col-acs { color: #4b5563; }
+          .col-name { width: 44%; font-weight: 600; font-size: 12px; }
+          .col-doc { width: 29%; }
+          .col-acs { width: 15%; font-size: 10px; }
 
+          /* Footer */
           .footer {
             margin-top: auto;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 10px;
-            font-size: 9px;
-            color: #9ca3af;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 8px;
             display: flex;
-            justify-content: space-between;
+            flex-direction: row;
+            justify-content: center;
             align-items: center;
+            gap: 8px;
+            font-size: 9px;
+            color: #64748b;
+            height: 20px;
           }
-          
-          /* Ensure footer stays at bottom if content is short, but doesn't overlap if long (flex column on body/page wrapper preferable but simple margin-top auto works for single page often) */
+
+          .footer-brand {
+            font-weight: 700;
+            color: #0f766e;
+          }
+
+          .footer-dot {
+            color: #cbd5e1;
+          }
         </style>
       </head>
       <body>
-        <div class="header">
-          <div class="logo-container">
-            <img src="/1708612751_brasao5180.png" alt="Brasão Prefeitura" />
+        <!-- Header Banner -->
+        <div class="header-banner">
+          <div class="header-logo" style="width: 48px; height: 48px; background-color: white; border-radius: 50%; padding: 4px; display: flex; align-items: center; justify-content: center;">
+            <img src="/1708612751_brasao5180.png" alt="Brasão Prefeitura" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
           </div>
-          <div class="header-content">
-            <div class="title-section">
-              <h1>Relatório Diário de Marcações</h1>
-              <div class="subtitle">Secretaria Municipal de Saúde</div>
-            </div>
-            <div class="meta-box">
-              <div class="label">Data de Emissão</div>
-              <div class="value">
-                ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          <div class="header-text-group">
+            <h1 class="header-psf-name">Unidade de Saúde</h1>
+            <div class="header-ubs">Secretaria Municipal de Saúde • Atenção Primária</div>
+          </div>
+          <div class="header-badge">
+            <div class="header-badge-text">SUS</div>
+            <div class="header-badge-sub">Sistema Único de Saúde</div>
+          </div>
+        </div>
+
+        <!-- Accent Gradient Line -->
+        <div class="accent-line">
+          <div class="accent-1"></div>
+          <div class="accent-2"></div>
+          <div class="accent-3"></div>
+          <div class="accent-4"></div>
+        </div>
+
+        <!-- Info Bar -->
+        <div class="info-card">
+          <div class="info-group">
+            <div class="info-label">Data de Emissão</div>
+            <div class="info-value-line">
+              <div class="info-value" style="text-transform: capitalize;">
+                ${new Date().toLocaleDateString('pt-BR', { weekday: 'long' })}, ${new Date().toLocaleDateString('pt-BR')}
               </div>
             </div>
           </div>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th class="col-slot">Nº</th>
-              <th class="col-period" style="text-align: center">T</th>
-              <th class="col-name">Paciente</th>
-              <th class="col-doc">Documento</th>
-              <th class="col-acs">ACS Responsável</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${generateRows(items)}
-          </tbody>
-        </table>
+        <!-- Document Title -->
+        <div class="main-title-container">
+          <div class="main-title-line"></div>
+          <div class="doc-title">Relatório Diário de Marcações</div>
+          <div class="main-title-line"></div>
+        </div>
 
-        <div class="footer" style="margin-top: 20px;">
-          <div>HealthCall - Gestão Inteligente</div>
-          <div>Página 1</div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-slot">Nº</th>
+                <th class="col-period" style="text-align: center">T</th>
+                <th class="col-name">Paciente</th>
+                <th class="col-doc">Documento</th>
+                <th class="col-acs">ACS</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${generateRows(items)}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="footer">
+          <div>Impresso em ${new Date().toLocaleDateString('pt-BR')}</div>
+          <div class="footer-dot">•</div>
+          <div class="footer-brand">HealthCall</div>
+          <div class="footer-dot">•</div>
+          <div>Documento gerado eletronicamente</div>
         </div>
 
         <script>
-          window.onload = function() { window.print(); }
+          window.onload = function() { 
+            setTimeout(() => {
+              window.print(); 
+            }, 300);
+          }
         </script>
       </body>
     </html>
