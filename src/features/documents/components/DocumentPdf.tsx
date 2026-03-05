@@ -12,6 +12,7 @@ import type { FormulaItem } from './pdfs/FormulaRequestDocument';
 import { InjectableMedDocument } from './pdfs/InjectableMedDocument';
 import { StandardDocument } from './pdfs/StandardDocument';
 import { PendingItemsDocument } from './pdfs/PendingItemsDocument';
+import { CapaCadernetaDocument } from './pdfs/CapaCadernetaDocument';
 
 /** Estrutura para itens de pendência */
 export interface PendingItem {
@@ -57,6 +58,10 @@ export interface DocumentFormData {
   observacoesPlano?: string;
   // Pendências
   pendencias?: PendingItem[];
+  // Capa Caderneta
+  receitaSimples?: string;
+  receitaControleEspecial?: string;
+  receitaAzul?: string;
 }
 
 interface DocumentPdfProps {
@@ -109,6 +114,9 @@ function extractFormData(values: Record<string, string>): DocumentFormData {
     coberturaInicial: values['COBERTURA_INICIAL'] || undefined,
     dorEscala: values['DOR_ESCALA'] || undefined,
     observacoesPlano: values['OBSERVACOES_PLANO'] || undefined,
+    receitaSimples: values['RECEITA_SIMPLES'] || undefined,
+    receitaControleEspecial: values['RECEITA_CONTROLE_ESPECIAL'] || undefined,
+    receitaAzul: values['RECEITA_AZUL'] || undefined,
     pendencias: pendencias.length > 0 ? pendencias : undefined,
   };
 }
@@ -128,6 +136,7 @@ const specialDocuments: Record<string, {
   'Relatório de Medicação Injetável': { component: InjectableMedDocument, multiPage: true },
   'Solicitação de Fórmula Láctea': { component: FormulaRequestDocument },
   'Folha de Pendências': { component: PendingItemsDocument },
+  'Capa de Caderneta': { component: CapaCadernetaDocument as any, landscape: true },
 };
 
 export const DocumentPdf: React.FC<DocumentPdfProps> = ({ title, templateText, values }) => {

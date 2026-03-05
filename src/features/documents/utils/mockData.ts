@@ -1,8 +1,23 @@
+import { 
+  Activity, 
+  HeartPulse, 
+  Bandage, 
+  Ear,
+  Stethoscope,
+  ShieldAlert,
+  Syringe,
+  Baby,
+  ClipboardList,
+  Book,
+  LucideIcon
+} from 'lucide-react';
+
 export interface Template {
   id: string;
   title: string;
   description?: string;
   templateText: string;
+  icon?: LucideIcon;
 }
 
 export const mockTemplates: Template[] = [
@@ -11,67 +26,83 @@ export const mockTemplates: Template[] = [
     title: 'Controle Glicêmico',
     description: 'Tabela para acompanhamento diário das taxas glicêmicas.',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Activity
   },
   {
     id: 'controle_pressao',
     title: 'Controle de Pressão Arterial (MRPA)',
     description: 'Tabela para monitoramento residencial da pressão arterial (manhã, tarde e noite).',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: HeartPulse
   },
   {
     id: 'ficha_curativos',
     title: 'Ficha de Evolução de Curativos',
     description: 'Ficha para acompanhamento de feridas crônicas com registro fotográfico, medidas da lesão e coberturas.',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Bandage
   },
   {
     id: 'lavagem_ouvido',
     title: 'Protocolo de Lavagem de Ouvido',
     description: 'Protocolo completo com contraindicações, descrição técnica, riscos, termo de consentimento e orientações.',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Ear
   },
   {
     id: 'protocolo_procedimento',
     title: 'Protocolo de Procedimento',
     description: 'Termo de consentimento e orientações para sutura, cantoplastia, drenagem de abscesso e outros procedimentos.',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Stethoscope
   },
   {
     id: 'reacao_adversa',
     title: 'Termo de Administração de Medicamento / Vacina',
     description: 'Termo de administração de medicamento/vacina com registro de possíveis reações adversas.',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: ShieldAlert
   },
   {
     id: 'medicacao_injetavel',
     title: 'Relatório de Medicação Injetável',
     description: 'Comprovante de administração de medicação injetável com dados do medicamento e profissional.',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Syringe
   },
   {
     id: 'formula_lactea',
     title: 'Solicitação de Fórmula Láctea',
     description: 'Solicitação de fórmulas lácteas (Aptamil e outras) com quantidades.',
-    templateText: `Nome do Paciente: {{NOME_PACIENTE}}`
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}`,
+    icon: Baby
   },
   {
     id: 'folha_pendencias',
     title: 'Folha de Pendências',
     description: 'Folha para registro de até 4 pendências da semana (encaminhamentos, laudos, etc) de pacientes diferentes.',
-    templateText: ``
+    templateText: ``,
+    icon: ClipboardList
+  },
+  {
+    id: 'capa_caderneta',
+    title: 'Capa de Caderneta',
+    description: 'Capa da caderneta com selos de receita opcionais. Preenchida horizontalmente.',
+    templateText: ``,
+    icon: Book
   }
 ];
 
 export interface FieldHint {
   label: string;
-  type: 'text' | 'textarea' | 'date' | 'number' | 'photo' | 'item-list' | 'select';
+  type: 'text' | 'textarea' | 'date' | 'number' | 'photo' | 'item-list' | 'select' | 'checkbox';
   placeholder?: string;
   options?: string[];
 }
@@ -164,6 +195,11 @@ export const fieldHints: Record<string, FieldHint> = {
     placeholder: 'Selecione o tipo (opcional)'
   },
   RESUMO_PENDENCIA_4: { label: 'Resumo da Pendência (4)', type: 'textarea', placeholder: 'Descreva o que está pendente (opcional)...' },
+
+  // --- Capa de Caderneta ---
+  RECEITA_SIMPLES: { label: 'Receita Simples (Verde)', type: 'checkbox' },
+  RECEITA_CONTROLE_ESPECIAL: { label: 'Controle Especial (Laranja)', type: 'checkbox' },
+  RECEITA_AZUL: { label: 'Receita Azul', type: 'checkbox' },
 };
 
 /**
@@ -205,6 +241,9 @@ export const extraFieldsByTemplate: Record<string, string[]> = {
     'NOME_PACIENTE_2', 'CNS_CPF_2', 'TIPO_PENDENCIA_2', 'RESUMO_PENDENCIA_2',
     'NOME_PACIENTE_3', 'CNS_CPF_3', 'TIPO_PENDENCIA_3', 'RESUMO_PENDENCIA_3',
     'NOME_PACIENTE_4', 'CNS_CPF_4', 'TIPO_PENDENCIA_4', 'RESUMO_PENDENCIA_4',
+  ],
+  capa_caderneta: [
+    'NOME_PACIENTE', 'CNS_CPF', 'RECEITA_SIMPLES', 'RECEITA_CONTROLE_ESPECIAL', 'RECEITA_AZUL'
   ],
 };
 

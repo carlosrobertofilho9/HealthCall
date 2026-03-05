@@ -179,7 +179,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                         ? "bg-[#203a2b] border-[#96c5a9]/20 text-[#96c5a9] shadow-inner"
                         : "bg-[#14211a] border-white/5 text-gray-500 group-hover:text-[#96c5a9] group-hover:border-[#96c5a9]/20"
                 )}>
-                    <FileText size={18} />
+                    {template.icon ? <template.icon size={18} /> : <FileText size={18} />}
                 </div>
 
                 <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">

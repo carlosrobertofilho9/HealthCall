@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { extractPlaceholders } from '../utils/templateUtils';
 import { fieldHints, extraFieldsByTemplate, itemListConfigByTemplate } from '../utils/mockData';
-import { AlertCircle, User, CreditCard, Calendar, Hash, Type, AlignLeft, Camera, X, Plus, Trash2, List } from 'lucide-react';
+import { AlertCircle, User, CreditCard, Calendar, Hash, Type, AlignLeft, Camera, X, Plus, Trash2, List, CheckSquare } from 'lucide-react';
 
 interface DynamicFieldsFormProps {
   templateText: string;
@@ -163,6 +163,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
       case 'photo': return <Camera size={18} />;
       case 'item-list': return <List size={18} />;
       case 'select': return <List size={18} />;
+      case 'checkbox': return <CheckSquare size={18} />;
       default: return <Type size={18} />;
     }
   };
@@ -242,6 +243,24 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                 onAdd={(name, qty) => addItem(key, name, qty)}
                 onRemove={(index) => removeItem(key, index)}
               />
+            );
+          }
+
+          // Renderização especial para campo de checkbox
+          if (type === 'checkbox') {
+            return (
+              <div key={key} className="flex items-center space-x-3 p-3 rounded-xl border border-white/10 bg-[#264532]/20 hover:bg-[#264532]/30 transition-colors">
+                <input
+                  type="checkbox"
+                  id={key}
+                  checked={value === 'true'}
+                  onChange={(e) => onChange(key, e.target.checked ? 'true' : '')}
+                  className="w-5 h-5 rounded border-white/20 bg-black/20 text-green-500 focus:ring-green-500/50 focus:ring-offset-0 transition-all"
+                />
+                <Label htmlFor={key} className="text-sm font-medium text-[#96c5a9] cursor-pointer select-none flex-1">
+                  {label}
+                </Label>
+              </div>
             );
           }
 
