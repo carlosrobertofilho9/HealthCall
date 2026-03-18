@@ -21,6 +21,7 @@ export interface UseRealtimeDisplayReturn {
 
 // Intervalo de polling de fallback (1 minuto)
 const REFETCH_INTERVAL_MS = 60000;
+const REALTIME_REFETCH_DEBOUNCE_MS = 750;
 // Evita replay de chamada antiga no primeiro carregamento, mas captura uma chamada recém-feita.
 const INITIAL_RECENT_CALL_WINDOW_MS = 15000;
 
@@ -66,6 +67,7 @@ export function useRealtimeDisplay(
   const lastAnnouncedCallRef = useRef<{ id: string; callCount: number } | null>(null);
   const callCountByPatientRef = useRef<Record<string, number>>({});
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const realtimeRefetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptRef = useRef(0);
 
   useEffect(() => {
@@ -192,6 +194,22 @@ export function useRealtimeDisplay(
     hasHydratedRef.current = true;
   }, [announceIfNew, registerCallCount]);
 
+  const scheduleRefetch = useCallback((reason: string) => {
+    if (!isMountedRef.current) return;
+
+    if (realtimeRefetchTimeoutRef.current) {
+      clearTimeout(realtimeRefetchTimeoutRef.current);
+    }
+
+    realtimeRefetchTimeoutRef.current = setTimeout(() => {
+      realtimeRefetchTimeoutRef.current = null;
+      if (isMountedRef.current) {
+        console.log(`[RealtimeDisplay] Refetch consolidado após ${reason}`);
+        fetchDisplayData();
+      }
+    }, REALTIME_REFETCH_DEBOUNCE_MS);
+  }, [fetchDisplayData]);
+
   // Efeito principal: cria canal Supabase Realtime e busca dados iniciais
   // Usa as MESMAS condições do código original: session + audioActivated
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
@@ -208,6 +226,10 @@ export function useRealtimeDisplay(
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
+      }
+      if (realtimeRefetchTimeoutRef.current) {
+        clearTimeout(realtimeRefetchTimeoutRef.current);
+        realtimeRefetchTimeoutRef.current = null;
       }
     }
   }, [session, audioActivated]);
@@ -248,11 +270,7 @@ export function useRealtimeDisplay(
     }
 
     const channel = supabase
-      .channel(`realtime-display-global-${Date.now()}`) // Unique name to force new channel
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, () => {
-        console.log('[RealtimeDisplay] Evento patients recebido');
-        if (isMountedRef.current) fetchDisplayData();
-      })
+      .channel('realtime-display-global')
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'patients' },
@@ -291,14 +309,20 @@ export function useRealtimeDisplay(
             // Mesmo com erro, para warnings via evento global como fallback
             window.dispatchEvent(new CustomEvent('healthcall:stop-media'));
           }
-          if (isMountedRef.current) fetchDisplayData();
+          scheduleRefetch('calls.insert');
         }
       )
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'calls' }, () => {
-        if (isMountedRef.current) fetchDisplayData();
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'display_call_events' }, () => {
+        scheduleRefetch('display_call_events.insert');
       })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'calls' }, () => {
-        if (isMountedRef.current) fetchDisplayData();
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'patients' }, () => {
+        scheduleRefetch('patients.update');
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'patients' }, () => {
+        scheduleRefetch('patients.insert');
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'patients' }, () => {
+        scheduleRefetch('patients.delete');
       })
       .subscribe((status) => {
         console.log('[RealtimeDisplay] Status da inscrição:', status);
@@ -344,6 +368,10 @@ export function useRealtimeDisplay(
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
+      if (realtimeRefetchTimeoutRef.current) {
+        clearTimeout(realtimeRefetchTimeoutRef.current);
+        realtimeRefetchTimeoutRef.current = null;
+      }
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
@@ -351,7 +379,7 @@ export function useRealtimeDisplay(
     };
     // Re-run effect when reconnectAttempt changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, audioActivated, reconnectAttempt, fetchDisplayData, announceIfNew, handlePatientUpdateFallback]);
+  }, [session, audioActivated, reconnectAttempt, fetchDisplayData, announceIfNew, handlePatientUpdateFallback, scheduleRefetch]);
 
   return {
     calledPatient,
