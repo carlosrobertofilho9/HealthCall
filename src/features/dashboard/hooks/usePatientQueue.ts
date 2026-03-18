@@ -4,33 +4,41 @@ import * as patientService from '@/features/dashboard/services/patientService';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 
-/**
- * Um hook abrangente para gerenciar o estado e as interações da fila de pacientes.
- *
- * Este hook encapsula toda a lógica relacionada à fila de pacientes, incluindo:
- * - Buscar a lista inicial de pacientes.
- * - Inscrever-se para atualizações em tempo real do Supabase.
- * - Gerenciar os estados de pesquisa e filtro.
- * - Fornecer funções para adicionar, atualizar, remover, chamar e limpar pacientes.
- * - Lidar com o estado de carregamento e exibir notificações de brinde para as ações.
- *
- * @returns {{
- *   patients: Patient[],
- *   searchTerm: string,
- *   setSearchTerm: (term: string) => void,
- *   selectedDestination: string,
- *   setSelectedDestination: (destination: string) => void,
- *   addPatientByName: (name: string, destination: string) => Promise<void>,
- *   addPatientByNumber: (destination: string) => Promise<void>,
- *   updatePatientStatus: (id: string, status: PatientStatus) => Promise<void>,
- *   updatePatientDestination: (id: string, destination: string) => Promise<void>,
- *   removePatient: (id: string) => Promise<void>,
- *   callPatient: (id: string, destination: string) => Promise<void>,
- *   clearQueue: () => Promise<void>,
- *   updatePatient: (patient: Patient) => Promise<void>,
- *   isAddingPatient: boolean
- * }} Um objeto contendo o estado da fila e as funções para manipulá-la.
- */
+type PatientRow = {
+  id?: string;
+  name?: string;
+  destination?: string;
+  status?: PatientStatus;
+  callCount?: number;
+  queue_order?: number;
+};
+
+function comparePatients(a: Patient, b: Patient) {
+  const queueOrderA = typeof a.queue_order === 'number' ? a.queue_order : Number.MAX_SAFE_INTEGER;
+  const queueOrderB = typeof b.queue_order === 'number' ? b.queue_order : Number.MAX_SAFE_INTEGER;
+
+  if (queueOrderA !== queueOrderB) {
+    return queueOrderA - queueOrderB;
+  }
+
+  return a.name.localeCompare(b.name, 'pt-BR');
+}
+
+function normalizePatient(row: PatientRow): Patient | null {
+  if (!row.id || !row.name || !row.destination || !row.status) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    destination: row.destination,
+    status: row.status,
+    callCount: typeof row.callCount === 'number' ? row.callCount : 0,
+    queue_order: typeof row.queue_order === 'number' ? row.queue_order : 0,
+  };
+}
+
 export function usePatientQueue() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,12 +66,32 @@ export function usePatientQueue() {
       }
     };
 
+    const applyRealtimeChange = (eventType: string, newRow?: PatientRow, oldRow?: PatientRow) => {
+      setPatients((current) => {
+        if (eventType === 'DELETE' && oldRow?.id) {
+          return current.filter((patient) => patient.id !== oldRow.id);
+        }
+
+        const normalized = normalizePatient(newRow ?? oldRow ?? {});
+        if (!normalized) {
+          return current;
+        }
+
+        const withoutCurrent = current.filter((patient) => patient.id !== normalized.id);
+        return [...withoutCurrent, normalized].sort(comparePatients);
+      });
+    };
+
     fetchPatients();
 
     const channel = supabase
       .channel('realtime-patients')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, (payload) => {
-        fetchPatients();
+        applyRealtimeChange(
+          payload.eventType,
+          payload.new as PatientRow | undefined,
+          payload.old as PatientRow | undefined,
+        );
       })
       .subscribe();
 
@@ -77,11 +105,12 @@ export function usePatientQueue() {
       toast.error('Nome e destino são obrigatórios!');
       return;
     }
+
     setIsAddingPatient(true);
     try {
       const newPatient = await patientService.addPatient(name, destination);
       if (newPatient) {
-        setPatients((current) => [newPatient, ...current]);
+        setPatients((current) => [newPatient, ...current].sort(comparePatients));
         toast.success('Paciente adicionado com sucesso!');
       }
     } catch (error: any) {
@@ -96,7 +125,7 @@ export function usePatientQueue() {
     try {
       const newPatient = await patientService.addPatientByNumber(destination);
       if (newPatient) {
-        setPatients((current) => [newPatient, ...current]);
+        setPatients((current) => [newPatient, ...current].sort(comparePatients));
         toast.success(`${newPatient.name} adicionada com sucesso!`);
       }
     } catch (error: any) {
@@ -108,36 +137,36 @@ export function usePatientQueue() {
 
   const updatePatientStatus = useCallback(async (id: string, status: PatientStatus) => {
     const patient = patients.find((p) => p.id === id);
-    if (patient) {
+    if (!patient) return;
+
+    setPatients((current) =>
+      current.map((p) => (p.id === id ? { ...p, status } : p)).sort(comparePatients)
+    );
+
+    try {
+      await patientService.updatePatient({ ...patient, status });
+      toast.info(`Status de ${patient.name} alterado para "${status}"!`);
+    } catch (error: any) {
       setPatients((current) =>
-        current.map((p) => (p.id === id ? { ...p, status } : p))
+        current.map((p) => (p.id === id ? patient : p)).sort(comparePatients)
       );
-      
-      try {
-        await patientService.updatePatient({ ...patient, status });
-        toast.info(`Status de ${patient.name} alterado para "${status}"!`);
-      } catch (error: any) {
-        setPatients((current) =>
-          current.map((p) => (p.id === id ? patient : p))
-        );
-        toast.error(error.message);
-      }
+      toast.error(error.message);
     }
   }, [patients]);
 
   const updatePatient = useCallback(async (patient: Patient) => {
     const oldPatient = patients.find((p) => p.id === patient.id);
     setPatients((current) =>
-      current.map((p) => (p.id === patient.id ? patient : p))
+      current.map((p) => (p.id === patient.id ? patient : p)).sort(comparePatients)
     );
-    
+
     try {
       await patientService.updatePatient(patient);
       toast.info('Paciente atualizado com sucesso!');
     } catch (error: any) {
       if (oldPatient) {
         setPatients((current) =>
-          current.map((p) => (p.id === patient.id ? oldPatient : p))
+          current.map((p) => (p.id === patient.id ? oldPatient : p)).sort(comparePatients)
         );
       }
       toast.error(error.message);
@@ -146,34 +175,34 @@ export function usePatientQueue() {
 
   const updatePatientDestination = useCallback(async (id: string, destination: string) => {
     const patient = patients.find((p) => p.id === id);
-    if (patient) {
+    if (!patient) return;
+
+    setPatients((current) =>
+      current.map((p) => (p.id === id ? { ...p, destination } : p)).sort(comparePatients)
+    );
+
+    try {
+      await patientService.updatePatient({ ...patient, destination });
+      toast.info(`Destino de ${patient.name} alterado para "${destination}"!`);
+    } catch (error: any) {
       setPatients((current) =>
-        current.map((p) => (p.id === id ? { ...p, destination } : p))
+        current.map((p) => (p.id === id ? patient : p)).sort(comparePatients)
       );
-      
-      try {
-        await patientService.updatePatient({ ...patient, destination });
-        toast.info(`Destino de ${patient.name} alterado para "${destination}"!`);
-      } catch (error: any) {
-        setPatients((current) =>
-          current.map((p) => (p.id === id ? patient : p))
-        );
-        toast.error(error.message);
-      }
+      toast.error(error.message);
     }
   }, [patients]);
 
   const removePatient = useCallback(async (id: string) => {
     const removedPatient = patients.find((p) => p.id === id);
-    
+
     setPatients((current) => current.filter((p) => p.id !== id));
-    
+
     try {
       await patientService.removePatient(id);
       toast('Paciente removido da fila!');
     } catch (error: any) {
       if (removedPatient) {
-        setPatients((current) => [removedPatient, ...current]);
+        setPatients((current) => [removedPatient, ...current].sort(comparePatients));
       }
       toast.error(error.message);
     }
@@ -182,17 +211,18 @@ export function usePatientQueue() {
   const callPatient = useCallback(async (id: string, destination: string) => {
     const patient = patients.find((p) => p.id === id);
     if (!patient) return;
-    
+
     const updatedPatient = {
       ...patient,
       status: 'Chamado' as PatientStatus,
       callCount: patient.callCount + 1,
       destination,
     };
+
     setPatients((current) =>
-      current.map((p) => (p.id === id ? updatedPatient : p))
+      current.map((p) => (p.id === id ? updatedPatient : p)).sort(comparePatients)
     );
-    
+
     try {
       const calledPatient = await patientService.callPatient(id, destination);
       if (calledPatient) {
@@ -201,7 +231,7 @@ export function usePatientQueue() {
       }
     } catch (error: any) {
       setPatients((current) =>
-        current.map((p) => (p.id === id ? patient : p))
+        current.map((p) => (p.id === id ? patient : p)).sort(comparePatients)
       );
       toast.error(error.message);
     }
@@ -209,9 +239,9 @@ export function usePatientQueue() {
 
   const clearQueue = useCallback(async () => {
     const previousPatients = patients;
-    
+
     setPatients([]);
-    
+
     try {
       await patientService.clearQueue();
       toast('Fila de pacientes limpa!');
@@ -221,35 +251,35 @@ export function usePatientQueue() {
     }
   }, [patients]);
 
-  const filteredPatients = useMemo(
-    () =>
-      patients.filter(
-        (p) =>
-          p.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) &&
-          (selectedDestination === '' || p.destination === selectedDestination)
-      ),
-    [patients, debouncedSearchTerm, selectedDestination]
-  );
-
   const reorderPatients = useCallback(async (newOrder: Patient[]) => {
-    // Optimistic update
-    setPatients(newOrder);
-    
-    // Prepare updates
-    const updates = newOrder.map((patient, index) => ({
-        id: patient.id,
-        queue_order: index + 1
+    const previousPatients = patients;
+    const normalizedOrder = newOrder.map((patient, index) => ({
+      ...patient,
+      queue_order: index + 1,
     }));
-    
+
+    setPatients(normalizedOrder);
+
+    const updates = normalizedOrder.map((patient) => ({
+      id: patient.id,
+      queue_order: patient.queue_order,
+    }));
+
     try {
-        await patientService.updateQueueOrder(updates);
+      await patientService.updateQueueOrder(updates);
     } catch (error: any) {
-        toast.error('Erro ao salvar a nova ordem da fila');
-        // Revert (fetch again or store previous)
-        const data = await patientService.getPatients();
-        setPatients(data);
+      toast.error('Erro ao salvar a nova ordem da fila');
+      setPatients(previousPatients);
     }
-  }, []);
+  }, [patients]);
+
+  const filteredPatients = useMemo(() => {
+    return patients.filter((patient) => {
+      const matchesSearch = patient.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      const matchesDestination = !selectedDestination || patient.destination === selectedDestination;
+      return matchesSearch && matchesDestination;
+    });
+  }, [patients, debouncedSearchTerm, selectedDestination]);
 
   return {
     patients: filteredPatients,
