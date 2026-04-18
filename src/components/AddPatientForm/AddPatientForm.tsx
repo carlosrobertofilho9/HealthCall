@@ -43,19 +43,19 @@ const AddPatientForm: React.FC<{
   }, [defaultDestination]);
 
   return (
-    <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-6 shadow-2xl border border-white/5 h-fit">
+    <div className="lg:col-span-1 bg-card rounded-2xl p-6 shadow-sm border border-border h-fit">
       <div className="flex flex-col gap-2 mb-6">
-        <h2 className="text-white text-2xl font-bold leading-tight flex items-center gap-3">
-            <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
-                <UserPlus className="text-[#96c5a9]" size={24} />
+      <h2 className="text-card-foreground text-2xl font-bold leading-tight flex items-center gap-3">
+        <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
+          <UserPlus className="text-muted-foreground" size={24} />
             </div>
             Adicionar Paciente
         </h2>
-        <p className="text-[#96c5a9]/80 text-sm pl-1">Insira os dados para adicionar à fila.</p>
+      <p className="text-muted-foreground text-sm pl-1">Insira os dados para adicionar à fila.</p>
       </div>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
-          <Label htmlFor="patient-name" className="text-white font-medium mb-2 block">
+          <Label htmlFor="patient-name" className="text-card-foreground font-medium mb-2 block">
             Nome do Paciente
           </Label>
           <Input
@@ -70,11 +70,11 @@ const AddPatientForm: React.FC<{
           />
         </div>
         <div>
-          <Label htmlFor="destination-room" className="text-white font-medium mb-2 block">
+          <Label htmlFor="destination-room" className="text-card-foreground font-medium mb-2 block">
             Sala de Destino
           </Label>
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground z-10">
                 <DoorOpen size={20} />
             </div>
             <Select onValueChange={setDestination} value={destination}>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, X } from 'lucide-react';
+import Modal from '@/components/ui/Modal';
 import { getDayConfig } from '../services/appointmentService';
 import type { DayScheduleConfig } from '@/types';
 
@@ -33,18 +34,6 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
 }) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [viewDate, setViewDate] = useState(new Date(selectedDate));
-  const calendarRef = useRef<HTMLDivElement>(null);
-
-  // Fechar calendário ao clicar fora
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
-        setIsCalendarOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Atualizar viewDate quando selectedDate mudar
   useEffect(() => {
@@ -122,14 +111,14 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
     : 'Sem atendimento';
 
   return (
-    <div className="rounded-3xl border border-[#264532] bg-[#1a3a26] p-4 sm:p-5 print:rounded-2xl print:border-gray-300 print:bg-white">
+    <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 print:rounded-2xl print:border-gray-300 print:bg-white">
       <div className="flex flex-col gap-4">
-        <div className="rounded-2xl bg-[#1a3a26] p-3 sm:p-4">
+        <div className="rounded-2xl bg-card p-3 sm:p-4">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onPreviousDay}
-              className="w-auto shrink-0 rounded-xl bg-transparent p-2.5 text-white transition-colors hover:bg-[#264532]/40 print:hidden"
+              className="w-auto shrink-0 rounded-xl bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden"
               aria-label="Dia anterior"
             >
               <ChevronLeft className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
@@ -138,15 +127,15 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             <button
               type="button"
               onClick={() => setIsCalendarOpen(true)}
-              className="rounded-xl bg-transparent px-3 py-3 text-center transition-colors hover:bg-[#264532]/30 print:bg-transparent"
+              className="rounded-xl bg-transparent px-3 py-3 text-center transition-colors hover:bg-secondary/30 print:bg-transparent"
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-primary sm:text-sm">
                 {formatWeekday(selectedDate)}
               </p>
-              <h2 className="mt-1 text-2xl font-bold text-white sm:text-3xl print:text-black">
+              <h2 className="mt-1 text-2xl font-bold text-card-foreground sm:text-3xl print:text-black">
                 {selectedDate.getDate()} de {MONTHS[selectedDate.getMonth()]}
               </h2>
-              <p className={`mt-1 text-xs font-medium sm:text-sm ${dayConfig.hasService ? 'text-[#96c5a9]' : 'text-red-400'} print:text-gray-500`}>
+              <p className={`mt-1 text-xs font-medium sm:text-sm ${dayConfig.hasService ? 'text-muted-foreground' : 'text-red-400'} print:text-gray-500`}>
                 {serviceSummary}
               </p>
             </button>
@@ -154,7 +143,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             <button
               type="button"
               onClick={onNextDay}
-              className="w-auto shrink-0 rounded-xl bg-transparent p-2.5 text-white transition-colors hover:bg-[#264532]/40 print:hidden"
+              className="w-auto shrink-0 rounded-xl bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden"
               aria-label="Próximo dia"
             >
               <ChevronRight className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
@@ -162,7 +151,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
           </div>
 
           <div className="mt-3 flex items-center justify-center">
-            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isToday() ? 'border-primary bg-primary/20 text-primary' : 'border-[#264532] bg-[#264532]/60 text-[#96c5a9]'}`}>
+            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isToday() ? 'border-primary bg-primary/20 text-primary' : 'border-border bg-secondary/60 text-muted-foreground'}`}>
               {isToday() ? 'Hoje' : 'Dia selecionado'}
             </span>
           </div>
@@ -172,7 +161,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
           <button
             type="button"
             onClick={() => setIsCalendarOpen(true)}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#264532] bg-[#264532] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#305a3e]"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90"
           >
             <Calendar className="h-4 w-4" />
             <span>Calendário</span>
@@ -182,7 +171,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             type="button"
             onClick={onToday}
             disabled={isToday()}
-            className="h-11 rounded-xl bg-primary px-4 text-sm font-bold text-[#122118] transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-11 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
           >
             Ir para Hoje
           </button>
@@ -191,28 +180,30 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
 
       {/* Modal do Calendário */}
       {isCalendarOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-          <div 
-            ref={calendarRef}
-            className="w-full overflow-hidden rounded-t-3xl border border-[#264532] bg-[#1a3a26] animate-slide-up sm:w-auto sm:min-w-85 sm:max-w-100 sm:rounded-2xl"
-          >
-            <div className="flex items-center justify-between border-b border-[#264532] p-4">
+        <Modal
+          isOpen
+          onClose={() => setIsCalendarOpen(false)}
+          position="bottom"
+          overlayClassName="p-0 sm:p-4"
+          panelClassName="w-full overflow-hidden animate-slide-up sm:w-auto sm:min-w-85 sm:max-w-100"
+        >
+            <div className="flex items-center justify-between border-b border-border p-4">
               <button
                 type="button"
                 onClick={goToPreviousMonth}
-                className="rounded-xl p-2 text-white transition-colors hover:bg-[#264532]"
+                className="rounded-xl p-2 text-card-foreground transition-colors hover:bg-secondary"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-card-foreground">
                 {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
               </h3>
               
               <button
                 type="button"
                 onClick={goToNextMonth}
-                className="rounded-xl p-2 text-white transition-colors hover:bg-[#264532]"
+                className="rounded-xl p-2 text-card-foreground transition-colors hover:bg-secondary"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
@@ -220,7 +211,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
 
             <div className="grid grid-cols-7 gap-1 p-3 pb-0">
               {WEEKDAYS.map((day) => (
-                <div key={day} className="text-center text-xs font-medium text-[#96c5a9] py-2">
+                <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
                   {day}
                 </div>
               ))}
@@ -246,12 +237,12 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
                       aspect-square rounded-xl flex flex-col items-center justify-center
                       text-sm font-medium transition-all
                       ${isSelected 
-                        ? 'bg-primary text-[#122118] scale-105' 
+                        ? 'bg-primary text-primary-foreground scale-105' 
                         : isCurrentDay
-                          ? 'bg-[#264532] text-primary ring-2 ring-primary'
+                          ? 'bg-secondary text-primary ring-2 ring-primary'
                           : hasService
-                            ? 'text-white hover:bg-[#264532]'
-                            : 'text-[#4a6b56] hover:bg-[#264532]/50'
+                            ? 'text-card-foreground hover:bg-secondary'
+                            : 'text-muted-foreground/50 hover:bg-secondary/50'
                       }
                     `}
                   >
@@ -264,22 +255,22 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
               })}
             </div>
 
-            <div className="p-4 pt-2 border-t border-[#264532]">
+            <div className="p-4 pt-2 border-t border-border">
               <div className="mb-4 flex items-center justify-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-primary" />
-                  <span className="text-[#96c5a9]">Com atendimento</span>
+                  <span className="text-muted-foreground">Com atendimento</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#4a6b56]" />
-                  <span className="text-[#96c5a9]">Sem atendimento</span>
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+                  <span className="text-muted-foreground">Sem atendimento</span>
                 </div>
               </div>
               
               <button
                 type="button"
                 onClick={() => setIsCalendarOpen(false)}
-                className="w-full rounded-xl bg-[#264532] py-3 font-semibold text-white transition-colors hover:bg-[#305a3e]"
+                className="w-full rounded-xl bg-secondary py-3 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90"
               >
                 <span className="inline-flex items-center gap-2">
                   <X className="h-4 w-4" />
@@ -287,8 +278,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
                 </span>
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

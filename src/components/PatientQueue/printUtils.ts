@@ -1,6 +1,7 @@
 import { Patient, AppointmentSlot } from '@/types';
 import { formatCPF, formatCNS } from '@/lib/utils';
 import { getAppointmentStatus } from '@/features/appointments/services/appointmentService';
+import { PRINT_COLORS } from './printTheme';
 
 type SimplifiedPatient = { name: string, document: string, acs: string, status?: string, period?: string };
 export type PatientListPeriodFilter = 'Manhã' | 'Tarde';
@@ -94,7 +95,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
 
           body { 
             font-family: 'Inter', sans-serif; 
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
@@ -119,7 +120,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
             display: flex;
             flex-direction: row;
             align-items: center;
-            background-color: #0f766e;
+            background-color: ${PRINT_COLORS.primary};
             border-radius: 8px;
             padding: 12px 16px;
           }
@@ -137,20 +138,20 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
           .header-psf-name {
             font-size: 18px;
             font-weight: 700;
-            color: #ffffff;
+            color: ${PRINT_COLORS.textOnDark};
             letter-spacing: 0.5px;
             margin: 0;
           }
 
           .header-ubs {
             font-size: 11px;
-            color: #99f6e4;
+            color: ${PRINT_COLORS.primarySoft};
             margin-top: 2px;
             letter-spacing: 0.3px;
           }
 
           .header-badge {
-            background-color: #ffffff;
+            background-color: ${PRINT_COLORS.surface};
             border-radius: 4px;
             padding: 4px 8px;
             display: flex;
@@ -161,13 +162,13 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
           .header-badge-text {
             font-size: 11px;
             font-weight: 800;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
             margin: 0;
           }
 
           .header-badge-sub {
             font-size: 6px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
             margin-top: 1px;
           }
 
@@ -179,17 +180,17 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
             margin-top: 6px;
           }
 
-          .accent-1 { flex: 2; background-color: #0d9488; border-radius: 2px; }
-          .accent-2 { flex: 1; background-color: #14b8a6; border-radius: 2px; margin-left: 2px; }
-          .accent-3 { flex: 1; background-color: #5eead4; border-radius: 2px; margin-left: 2px; }
-          .accent-4 { flex: 3; background-color: #99f6e4; border-radius: 2px; margin-left: 2px; }
+          .accent-1 { flex: 2; background-color: ${PRINT_COLORS.accent1}; border-radius: 2px; }
+          .accent-2 { flex: 1; background-color: ${PRINT_COLORS.accent2}; border-radius: 2px; margin-left: 2px; }
+          .accent-3 { flex: 1; background-color: ${PRINT_COLORS.accent3}; border-radius: 2px; margin-left: 2px; }
+          .accent-4 { flex: 3; background-color: ${PRINT_COLORS.accent4}; border-radius: 2px; margin-left: 2px; }
 
           /* Info Box */
           .info-card {
             display: flex;
             flex-direction: row;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background-color: ${PRINT_COLORS.surfaceAlt};
+            border: 1px solid ${PRINT_COLORS.border};
             border-radius: 6px;
             padding: 10px 16px;
             margin-bottom: 12px;
@@ -204,7 +205,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
 
           .info-label {
             font-size: 9px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
             text-transform: uppercase;
             font-weight: 700;
             margin-bottom: 4px;
@@ -212,7 +213,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
           }
 
           .info-value-line {
-            border-bottom: 1px solid #cbd5e1;
+            border-bottom: 1px solid ${PRINT_COLORS.borderStrong};
             height: 18px;
             display: flex;
             align-items: center;
@@ -220,7 +221,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
 
           .info-value {
             font-size: 13px;
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             font-weight: 600;
           }
 
@@ -237,13 +238,13 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
           .main-title-line {
             flex: 1;
             height: 1px;
-            background-color: #cbd5e1;
+            background-color: ${PRINT_COLORS.borderStrong};
           }
 
           .doc-title {
             font-size: 14px;
             font-weight: 800;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
             text-transform: uppercase;
             letter-spacing: 1px;
           }
@@ -253,10 +254,10 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
             flex: 1;
             display: flex;
             flex-direction: column;
-            border: 1px solid #e2e8f0;
+            border: 1px solid ${PRINT_COLORS.border};
             border-radius: 6px;
             overflow: hidden;
-            background-color: #ffffff;
+            background-color: ${PRINT_COLORS.surface};
           }
 
           table { 
@@ -267,20 +268,18 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
 
           thead tr {
             height: 32px;
-            background-color: #f5f3ff; /* Matching WoundCareDocument Header background somewhat, though that's #f5f3ff which is purple tint. Let's use light teal #f0fdfa or #0f766e for contrast */
-            /* Using solid header */
-            background-color: #0f766e;
+            background-color: ${PRINT_COLORS.primary};
           }
 
           th { 
-            color: #ffffff; 
+            color: ${PRINT_COLORS.textOnDark}; 
             padding: 0 12px; 
             text-align: left; 
             font-weight: 700;
             text-transform: uppercase; 
             font-size: 10px;
             letter-spacing: 0.05em;
-            border-right: 1px solid #0d9488;
+            border-right: 1px solid ${PRINT_COLORS.primaryStrong};
           }
           th:last-child {
             border-right: none;
@@ -293,7 +292,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
 
           tbody tr {
             height: calc((100% - 32px) / 15);
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid ${PRINT_COLORS.border};
           }
           tbody tr:last-child {
             border-bottom: none;
@@ -301,20 +300,20 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
 
           /* Striping */
           tbody tr:nth-child(even) {
-            background-color: #f8fafc;
+            background-color: ${PRINT_COLORS.surfaceAlt};
           }
 
           tr.empty-row td {
-            border-bottom: 1px dashed #e2e8f0;
+            border-bottom: 1px dashed ${PRINT_COLORS.border};
           }
 
           td { 
             padding: 0 12px; 
             vertical-align: middle;
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             font-size: 12px;
             font-weight: 500;
-            border-right: 1px solid #e2e8f0;
+            border-right: 1px solid ${PRINT_COLORS.border};
           }
           td:last-child {
             border-right: none;
@@ -341,17 +340,17 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
           .checkbox { 
             width: 14px; 
             height: 14px; 
-            border: 1px solid #94a3b8;
+            border: 1px solid ${PRINT_COLORS.checkboxBorder};
             border-radius: 3px;
             display: inline-block; 
             vertical-align: middle;
-            background: white;
+            background: ${PRINT_COLORS.surface};
           }
 
           /* Footer */
           .footer {
             margin-top: auto;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid ${PRINT_COLORS.border};
             padding-top: 8px;
             display: flex;
             flex-direction: row;
@@ -359,17 +358,17 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilt
             align-items: center;
             gap: 8px;
             font-size: 9px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
             height: 20px;
           }
 
           .footer-brand {
             font-weight: 700;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
           }
 
           .footer-dot {
-            color: #cbd5e1;
+            color: ${PRINT_COLORS.borderStrong};
           }
           
           .page-number {

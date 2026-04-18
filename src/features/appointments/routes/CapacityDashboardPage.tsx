@@ -40,6 +40,13 @@ import {
   getCapacityAnalyticsForDateRange,
   getWeekStart,
 } from '../services/appointmentService';
+import {
+  APPOINTMENTS_CHART_COLORS,
+  APPOINTMENTS_CHART_LEGEND_WRAPPER_STYLE,
+  APPOINTMENTS_CHART_TOOLTIP_CONTENT_STYLE,
+  APPOINTMENTS_CHART_TOOLTIP_ITEM_STYLE,
+  APPOINTMENTS_CHART_TOOLTIP_LABEL_STYLE,
+} from '../constants/chartTheme';
 
 const RANGE_DAYS = 28;
 
@@ -128,12 +135,12 @@ const CapacityDashboardPage: React.FC = () => {
   };
 
   const occupancyDeltaClass = useMemo(() => {
-    if (!analytics) return 'text-[#96c5a9]';
+    if (!analytics) return 'text-muted-foreground';
     return analytics.deltas.occupancyRate >= 0 ? 'text-primary' : 'text-red-300';
   }, [analytics]);
 
   const showRateDeltaClass = useMemo(() => {
-    if (!analytics) return 'text-[#96c5a9]';
+    if (!analytics) return 'text-muted-foreground';
     return analytics.deltas.showRate >= 0 ? 'text-primary' : 'text-red-300';
   }, [analytics]);
 
@@ -141,12 +148,12 @@ const CapacityDashboardPage: React.FC = () => {
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <AppointmentsNav />
 
-      <section className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6 space-y-5">
+      <section className="rounded-2xl bg-card border border-border p-4 sm:p-6 space-y-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="text-sm font-medium text-primary">Dashboard de capacidade analítica</p>
-            <h2 className="text-2xl font-bold text-white">{formatRangeLabel(rangeStart, rangeEnd)}</h2>
-            <p className="text-sm text-[#96c5a9]">Comparação automática com o período imediatamente anterior</p>
+            <h2 className="text-2xl font-bold text-card-foreground">{formatRangeLabel(rangeStart, rangeEnd)}</h2>
+            <p className="text-sm text-muted-foreground">Comparação automática com o período imediatamente anterior</p>
           </div>
 
           <div className="flex gap-2">
@@ -165,35 +172,35 @@ const CapacityDashboardPage: React.FC = () => {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div>
+          <div className="min-w-0">
             <Input
               type="date"
               value={formatInputDate(rangeStart)}
               onChange={event => setRangeStart(parseInputDate(event.target.value))}
-              className="h-11 pl-12"
+              className="h-11 min-w-0"
               icon={<CalendarDays className="h-4 w-4" />}
               aria-label="Data inicial"
             />
           </div>
 
-          <div>
+          <div className="min-w-0">
             <Input
               type="date"
               value={formatInputDate(rangeEnd)}
               onChange={event => setRangeEnd(parseInputDate(event.target.value))}
-              className="h-11 pl-12"
+              className="h-11 min-w-0"
               icon={<CalendarDays className="h-4 w-4" />}
               aria-label="Data final"
             />
           </div>
 
-          <div className="relative">
-            <Users className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-[#96c5a9]" />
+          <div className="relative min-w-0">
+            <Users className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
             <Select
               value={filters.acsName}
               onValueChange={value => setFilters(prev => ({ ...prev, acsName: value as CapacityAnalyticsFilters['acsName'] }))}
             >
-              <SelectTrigger className="h-11 pl-12">
+              <SelectTrigger className="h-11 pl-12 min-w-0">
                 <SelectValue placeholder="Filtrar ACS" />
               </SelectTrigger>
               <SelectContent>
@@ -205,13 +212,13 @@ const CapacityDashboardPage: React.FC = () => {
             </Select>
           </div>
 
-          <div className="relative">
-            <Activity className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-[#96c5a9]" />
+          <div className="relative min-w-0">
+            <Activity className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
             <Select
               value={filters.status}
               onValueChange={value => setFilters(prev => ({ ...prev, status: value as CapacityStatusFilter }))}
             >
-              <SelectTrigger className="h-11 pl-12">
+              <SelectTrigger className="h-11 pl-12 min-w-0">
                 <SelectValue placeholder="Filtrar status" />
               </SelectTrigger>
               <SelectContent>
@@ -229,9 +236,9 @@ const CapacityDashboardPage: React.FC = () => {
       </section>
 
       {isLoading ? (
-        <div className="rounded-2xl bg-[#1a3a26] p-12 text-center">
+        <div className="rounded-2xl bg-card border border-border p-12 text-center">
           <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-primary" />
-          <p className="text-[#96c5a9]">Carregando capacidade analítica...</p>
+          <p className="text-muted-foreground">Carregando capacidade analítica...</p>
         </div>
       ) : analytics ? (
         <>
@@ -274,13 +281,13 @@ const CapacityDashboardPage: React.FC = () => {
             <ChartCard title="Evolução diária (ocupação x comparecimento)">
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={analytics.trend}>
-                  <CartesianGrid stroke="#264532" strokeDasharray="3 3" />
-                  <XAxis dataKey="label" stroke="#96c5a9" />
-                  <YAxis stroke="#96c5a9" domain={[0, 100]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="occupancyRate" name="Ocupação (%)" stroke="#7ed957" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="showRate" name="Comparecimento (%)" stroke="#38bdf8" strokeWidth={2} dot={false} />
+                  <CartesianGrid stroke={APPOINTMENTS_CHART_COLORS.grid} strokeDasharray="3 3" />
+                  <XAxis dataKey="label" stroke={APPOINTMENTS_CHART_COLORS.axis} />
+                  <YAxis stroke={APPOINTMENTS_CHART_COLORS.axis} domain={[0, 100]} />
+                  <Tooltip contentStyle={APPOINTMENTS_CHART_TOOLTIP_CONTENT_STYLE} labelStyle={APPOINTMENTS_CHART_TOOLTIP_LABEL_STYLE} itemStyle={APPOINTMENTS_CHART_TOOLTIP_ITEM_STYLE} />
+                  <Legend wrapperStyle={APPOINTMENTS_CHART_LEGEND_WRAPPER_STYLE} />
+                  <Line type="monotone" dataKey="occupancyRate" name="Ocupação (%)" stroke={APPOINTMENTS_CHART_COLORS.primary} strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="showRate" name="Comparecimento (%)" stroke={APPOINTMENTS_CHART_COLORS.info} strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -288,12 +295,12 @@ const CapacityDashboardPage: React.FC = () => {
             <ChartCard title="Distribuição por status">
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={analytics.statusDistribution}>
-                  <CartesianGrid stroke="#264532" strokeDasharray="3 3" />
-                  <XAxis dataKey="status" stroke="#96c5a9" />
-                  <YAxis stroke="#96c5a9" />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" name="Quantidade" fill="#7ed957" radius={[8, 8, 0, 0]} />
+                  <CartesianGrid stroke={APPOINTMENTS_CHART_COLORS.grid} strokeDasharray="3 3" />
+                  <XAxis dataKey="status" stroke={APPOINTMENTS_CHART_COLORS.axis} />
+                  <YAxis stroke={APPOINTMENTS_CHART_COLORS.axis} />
+                  <Tooltip contentStyle={APPOINTMENTS_CHART_TOOLTIP_CONTENT_STYLE} labelStyle={APPOINTMENTS_CHART_TOOLTIP_LABEL_STYLE} itemStyle={APPOINTMENTS_CHART_TOOLTIP_ITEM_STYLE} />
+                  <Legend wrapperStyle={APPOINTMENTS_CHART_LEGEND_WRAPPER_STYLE} />
+                  <Bar dataKey="count" name="Quantidade" fill={APPOINTMENTS_CHART_COLORS.primary} radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -304,15 +311,15 @@ const CapacityDashboardPage: React.FC = () => {
               <ChartCard title="Distribuição por turno">
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={analytics.turnDistribution}>
-                    <CartesianGrid stroke="#264532" strokeDasharray="3 3" />
-                    <XAxis dataKey="period" stroke="#96c5a9" />
-                    <YAxis stroke="#96c5a9" />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="occupied" name="Ocupadas" fill="#7ed957" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="showCount" name="Compareceu" fill="#38bdf8" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="noShowCount" name="Faltou" fill="#f97316" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="rescheduledCount" name="Remarcado" fill="#a78bfa" radius={[6, 6, 0, 0]} />
+                    <CartesianGrid stroke={APPOINTMENTS_CHART_COLORS.grid} strokeDasharray="3 3" />
+                    <XAxis dataKey="period" stroke={APPOINTMENTS_CHART_COLORS.axis} />
+                    <YAxis stroke={APPOINTMENTS_CHART_COLORS.axis} />
+                    <Tooltip contentStyle={APPOINTMENTS_CHART_TOOLTIP_CONTENT_STYLE} labelStyle={APPOINTMENTS_CHART_TOOLTIP_LABEL_STYLE} itemStyle={APPOINTMENTS_CHART_TOOLTIP_ITEM_STYLE} />
+                    <Legend wrapperStyle={APPOINTMENTS_CHART_LEGEND_WRAPPER_STYLE} />
+                    <Bar dataKey="occupied" name="Ocupadas" fill={APPOINTMENTS_CHART_COLORS.primary} radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="showCount" name="Compareceu" fill={APPOINTMENTS_CHART_COLORS.info} radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="noShowCount" name="Faltou" fill={APPOINTMENTS_CHART_COLORS.danger} radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="rescheduledCount" name="Remarcado" fill={APPOINTMENTS_CHART_COLORS.warning} radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -320,13 +327,13 @@ const CapacityDashboardPage: React.FC = () => {
               <ChartCard title="Movimentações por dia (faltou x remarcado)">
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={analytics.trend}>
-                    <CartesianGrid stroke="#264532" strokeDasharray="3 3" />
-                    <XAxis dataKey="label" stroke="#96c5a9" />
-                    <YAxis stroke="#96c5a9" />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="noShowCount" name="Faltou" stroke="#f97316" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="rescheduledCount" name="Remarcado" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                    <CartesianGrid stroke={APPOINTMENTS_CHART_COLORS.grid} strokeDasharray="3 3" />
+                    <XAxis dataKey="label" stroke={APPOINTMENTS_CHART_COLORS.axis} />
+                    <YAxis stroke={APPOINTMENTS_CHART_COLORS.axis} />
+                    <Tooltip contentStyle={APPOINTMENTS_CHART_TOOLTIP_CONTENT_STYLE} labelStyle={APPOINTMENTS_CHART_TOOLTIP_LABEL_STYLE} itemStyle={APPOINTMENTS_CHART_TOOLTIP_ITEM_STYLE} />
+                    <Legend wrapperStyle={APPOINTMENTS_CHART_LEGEND_WRAPPER_STYLE} />
+                    <Line type="monotone" dataKey="noShowCount" name="Faltou" stroke={APPOINTMENTS_CHART_COLORS.danger} strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="rescheduledCount" name="Remarcado" stroke={APPOINTMENTS_CHART_COLORS.warning} strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -337,28 +344,28 @@ const CapacityDashboardPage: React.FC = () => {
                 {analytics.acsRanking.length > 0 ? (
                   <div className="space-y-2">
                     {analytics.acsRanking.slice(0, 7).map(item => (
-                      <div key={item.acsName} className="rounded-xl border border-[#264532] bg-[#122118]/40 p-3">
+                      <div key={item.acsName} className="rounded-xl border border-border bg-background/40 p-3">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="truncate font-semibold text-white">{item.acsName}</p>
+                          <p className="truncate font-semibold text-card-foreground">{item.acsName}</p>
                           <p className="font-bold text-primary">{item.total}</p>
                         </div>
-                        <p className="mt-1 text-xs text-[#96c5a9]">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           Comparecimento: {item.showRate}% · Faltas: {item.noShowCount}
                         </p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-[#96c5a9]">Sem registros para os filtros atuais.</p>
+                  <p className="text-sm text-muted-foreground">Sem registros para os filtros atuais.</p>
                 )}
               </ChartCard>
 
               <ChartCard title="Dias mais cheios">
                 <div className="space-y-2.5">
                   {analytics.busiestDays.map(day => (
-                    <div key={day.date} className="rounded-xl border border-[#264532] bg-[#122118]/40 p-3">
-                      <p className="text-sm font-semibold text-white">{day.label}</p>
-                      <p className="text-xs text-[#96c5a9]">{day.occupiedSlots + day.blockedSlots}/{day.totalSlots} fichas</p>
+                    <div key={day.date} className="rounded-xl border border-border bg-background/40 p-3">
+                      <p className="text-sm font-semibold text-card-foreground">{day.label}</p>
+                      <p className="text-xs text-muted-foreground">{day.occupiedSlots + day.blockedSlots}/{day.totalSlots} fichas</p>
                       <p className="mt-1 text-sm font-bold text-primary">{day.occupancyRate}% ocupado</p>
                     </div>
                   ))}
@@ -368,7 +375,7 @@ const CapacityDashboardPage: React.FC = () => {
           </section>
         </>
       ) : (
-        <div className="rounded-2xl bg-[#1a3a26] p-10 text-center text-sm text-[#96c5a9]">
+        <div className="rounded-2xl bg-card border border-border p-10 text-center text-sm text-muted-foreground">
           Não há dados para o período informado.
         </div>
       )}
@@ -391,20 +398,20 @@ const KpiCard = ({
   delta: string;
   deltaClass: string;
 }) => (
-  <article className="rounded-2xl border border-[#264532] bg-[#1a3a26] p-5">
+  <article className="rounded-2xl border border-border bg-card p-5">
     <div className="flex items-center justify-between gap-3">
-      <p className="text-sm font-semibold text-[#96c5a9]">{label}</p>
+      <p className="text-sm font-semibold text-muted-foreground">{label}</p>
       {icon}
     </div>
-    <p className="mt-3 text-3xl font-bold text-white">{value}</p>
-    <p className="mt-2 text-sm text-[#96c5a9]">{helper}</p>
+    <p className="mt-3 text-3xl font-bold text-card-foreground">{value}</p>
+    <p className="mt-2 text-sm text-muted-foreground">{helper}</p>
     <p className={`mt-2 text-xs font-bold ${deltaClass}`}>vs. período anterior: {delta}</p>
   </article>
 );
 
 const ChartCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <article className="rounded-2xl border border-[#264532] bg-[#1a3a26] p-4 sm:p-5">
-    <h3 className="mb-4 text-base font-bold text-white">{title}</h3>
+  <article className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <h3 className="mb-4 text-base font-bold text-card-foreground">{title}</h3>
     {children}
   </article>
 );

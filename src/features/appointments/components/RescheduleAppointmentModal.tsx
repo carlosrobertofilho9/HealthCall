@@ -3,6 +3,7 @@ import { CalendarClock, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import Modal from '@/components/ui/Modal';
 import {
   Select,
   SelectContent,
@@ -92,15 +93,6 @@ export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProp
     };
   }, [canUseSelectedDate, selectedConfig.hasService, selectedDate, originalConfig.serviceType]);
 
-  useEffect(() => {
-    const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
-    };
-
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -116,34 +108,38 @@ export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center">
-      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-[#1a2c22] p-5 safe-area-bottom sm:max-w-md sm:rounded-2xl sm:p-6">
-        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-white/20 sm:hidden" />
+    <Modal
+      isOpen
+      onClose={onClose}
+      position="bottom"
+      showMobileHandle
+      panelClassName="max-h-[92vh] overflow-y-auto p-5 sm:p-6"
+    >
 
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-white sm:text-xl">Remarcar</h3>
-            <p className="mt-1 text-sm text-[#96c5a9]">{appointment.patient_name}</p>
+            <h3 className="text-lg font-bold text-card-foreground sm:text-xl">Remarcar</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{appointment.patient_name}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-2.5 transition-colors hover:bg-[#264532] active:bg-[#264532]"
+            className="rounded-xl p-2.5 transition-colors hover:bg-secondary active:bg-secondary"
           >
-            <X className="h-5 w-5 text-white" />
+            <X className="h-5 w-5 text-card-foreground" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="rounded-xl border border-[#264532] bg-[#122118]/40 p-3 text-sm text-[#96c5a9]">
-            Ficha atual: <span className="font-bold text-white">{appointment.slot_number}</span> em{' '}
-            <span className="font-bold text-white">
+          <div className="rounded-xl border border-border bg-background/40 p-3 text-sm text-muted-foreground">
+            Ficha atual: <span className="font-bold text-card-foreground">{appointment.slot_number}</span> em{' '}
+            <span className="font-bold text-card-foreground">
               {parseISODate(appointment.scheduled_date).toLocaleDateString('pt-BR')}
             </span>
           </div>
 
           <div>
-            <Label className="mb-2 block text-white">Nova data *</Label>
+            <Label className="mb-2 block text-card-foreground">Nova data *</Label>
             <Input
               type="date"
               value={dateValue}
@@ -155,7 +151,7 @@ export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProp
           </div>
 
           <div>
-            <Label className="mb-2 block text-white">Novo slot *</Label>
+            <Label className="mb-2 block text-card-foreground">Novo slot *</Label>
             <Select
               value={slotNumber?.toString() ?? ''}
               onValueChange={(value) => setSlotNumber(Number(value))}
@@ -180,7 +176,7 @@ export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProp
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl bg-[#264532] px-4 py-3.5 font-semibold text-white transition-colors hover:bg-[#305a3e] active:bg-[#305a3e]"
+              className="flex-1 rounded-xl bg-secondary px-4 py-3.5 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90 active:bg-secondary/90"
             >
               Cancelar
             </button>
@@ -193,8 +189,7 @@ export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProp
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

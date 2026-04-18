@@ -23,6 +23,8 @@ export const createPendencia = async (payload: CreatePendenciaDTO): Promise<Pend
     .insert({
       ...payload,
       resumo: payload.resumo?.trim() || null,
+      prazo: payload.prazo || null,
+      responsavel: payload.responsavel?.trim() || null,
       status: PENDENCIA_STATUS.ABERTO,
     })
     .select()
@@ -60,7 +62,16 @@ export const deletePendencia = async (id: string): Promise<void> => {
 };
 
 export const updatePendencia = async (payload: UpdatePendenciaDTO): Promise<Pendencia> => {
-  const { id, nome_paciente, cns_cpf, tipo, resumo } = payload;
+  const {
+    id,
+    nome_paciente,
+    cns_cpf,
+    tipo,
+    resumo,
+    prioridade,
+    prazo,
+    responsavel,
+  } = payload;
 
   const { data, error } = await supabase
     .from('pendencias')
@@ -69,6 +80,9 @@ export const updatePendencia = async (payload: UpdatePendenciaDTO): Promise<Pend
       cns_cpf,
       tipo,
       resumo: resumo?.trim() || null,
+      prioridade,
+      prazo: prazo || null,
+      responsavel: responsavel?.trim() || null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

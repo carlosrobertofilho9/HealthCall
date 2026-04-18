@@ -4,6 +4,7 @@ import type { Patient, PatientStatus } from '@/types';
 import { DESTINATION_ROOMS } from '@/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { Filter, Users, ClipboardList, Printer, Search } from 'lucide-react';
 import {
   DndContext, 
@@ -145,16 +146,16 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
   const isFiltered = searchTerm !== '' || (selectedDestination !== '' && selectedDestination !== 'all');
 
   return (
-    <div className="lg:col-span-2 bg-[#1a2c22] rounded-2xl p-4 shadow-2xl border border-white/5">
-      <div className="flex flex-col gap-6 mb-8 pb-6 border-b border-white/5">
+    <div className="lg:col-span-2 bg-card rounded-2xl p-4 shadow-sm border border-border">
+      <div className="flex flex-col gap-6 mb-8 pb-6 border-b border-border">
         <div className="space-y-2 text-left">
-          <h2 className="text-white text-3xl font-bold tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
-               <Users className="text-[#96c5a9]" size={24} />
+          <h2 className="text-card-foreground text-3xl font-bold tracking-tight flex items-center gap-3">
+            <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
+               <Users className="text-muted-foreground" size={24} />
             </div>
             Fila de Espera
           </h2>
-          <p className="text-[#96c5a9]/80 text-sm max-w-full leading-relaxed pl-1">
+          <p className="text-muted-foreground text-sm max-w-full leading-relaxed pl-1">
              {isFiltered 
                 ? 'Visualização filtrada. A reordenação manual está desativada.' 
                 : 'Gerencie a fila de atendimento. Arraste os cards para reordenar a prioridade.'}
@@ -170,35 +171,38 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               icon={<Search className="h-4 w-4" />}
-              className="bg-[#264532]/50 border-white/5 text-white placeholder:text-[#96c5a9]/50 focus:bg-[#264532] focus:border-[#96c5a9]/50 focus:ring-[#96c5a9]/20 transition-all h-11 rounded-xl w-full"
+              className="bg-input/80 border-border text-foreground placeholder:text-muted-foreground focus:bg-input focus:border-ring/50 focus:ring-ring/20 transition-all h-11 rounded-xl w-full"
             />
           </div>
           
           <div className="relative flex-1">
              <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10">
-                <Filter className="text-[#96c5a9]" size={18} />
+                <Filter className="text-muted-foreground" size={18} />
              </div>
             <Select onValueChange={(value) => setSelectedDestination(value === 'all' ? '' : value)} value={selectedDestination || 'all'}>
-              <SelectTrigger id="filter-destination-room" className="pl-10 h-11 bg-[#264532]/50 border-white/5 text-white focus:bg-[#264532] focus:ring-[#96c5a9]/20 focus:border-[#96c5a9]/50 rounded-xl w-full">
+              <SelectTrigger id="filter-destination-room" className="pl-10 h-11 rounded-xl w-full bg-input/80 border-border focus:bg-input focus:ring-ring/20 focus:border-ring/50">
                 <SelectValue placeholder="Todas as Salas" />
               </SelectTrigger>
-              <SelectContent className="bg-[#1a2c22] border-[#264532] text-white">
-                <SelectItem value="all" className="focus:bg-[#264532] focus:text-white cursor-pointer hover:bg-[#264532]/50">Todas as Salas</SelectItem>
+              <SelectContent>
+                <SelectItem value="all" className="cursor-pointer">Todas as Salas</SelectItem>
                 {DESTINATION_ROOMS.map(room => (
-                  <SelectItem key={room} value={room} className="focus:bg-[#264532] focus:text-white cursor-pointer hover:bg-[#264532]/50">{room}</SelectItem>
+                  <SelectItem key={room} value={room} className="cursor-pointer">{room}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <button
+          <Button
             onClick={handlePrint}
-            className="h-11 w-11 flex items-center justify-center bg-[#264532]/50 hover:bg-[#264532] text-[#96c5a9] hover:text-white border border-white/5 hover:border-[#96c5a9]/30 transition-all rounded-xl shadow-sm"
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 rounded-xl bg-input/80 border-border text-muted-foreground hover:text-foreground"
             title="Imprimir lista"
             aria-label="Imprimir lista"
           >
             <Printer size={20} />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -230,11 +234,11 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
             </SortableContext>
            </DndContext>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-[#96c5a9] bg-[#264532]/20 rounded-xl border border-dashed border-[#264532]">
-            <div className="bg-[#264532] p-4 rounded-full mb-4">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-secondary/20 rounded-xl border border-dashed border-border">
+            <div className="bg-secondary p-4 rounded-full mb-4">
                <ClipboardList size={32} className="opacity-80" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-1">A fila está vazia</h3>
+            <h3 className="text-lg font-semibold text-card-foreground mb-1">A fila está vazia</h3>
             <p className="text-sm opacity-80">Nenhum paciente encontrado com os filtros atuais.</p>
           </div>
         )}

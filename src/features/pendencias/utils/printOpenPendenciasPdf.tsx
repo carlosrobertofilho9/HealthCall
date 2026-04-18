@@ -2,10 +2,11 @@ import { pdf } from '@react-pdf/renderer';
 import { OpenPendenciasPdf } from '../components';
 import type { Pendencia } from '../types';
 
-const PRINT_WINDOW_TITLE = 'Pendências em Aberto';
-
+const PRINT_WINDOW_TITLE = 'Relatório de Pendências';
 export const printOpenPendenciasPdf = async (pendencias: Pendencia[]) => {
-  const blob = await pdf(<OpenPendenciasPdf pendencias={pendencias} />).toBlob();
+  const blob = await pdf(
+    <OpenPendenciasPdf pendencias={pendencias} />,
+  ).toBlob();
   const blobUrl = URL.createObjectURL(blob);
 
   const printWindow = window.open('', '_blank');

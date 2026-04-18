@@ -8,6 +8,7 @@ import {
   FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import {
   Select,
   SelectContent,
@@ -75,11 +76,15 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm">
-      <div className="min-h-full p-4 flex items-end sm:items-center justify-center">
-        <div className="w-full sm:max-w-md overflow-hidden rounded-t-3xl sm:rounded-2xl bg-[#1a2c22] shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+    <Modal
+      isOpen
+      onClose={onClose}
+      position="bottom"
+      overlayClassName="p-4"
+      panelClassName="overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-200"
+    >
           {/* Header */}
-          <div className="px-6 pt-6 pb-4 border-b border-white/10">
+          <div className="px-6 pt-6 pb-4 border-b border-border">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 p-2 rounded-xl bg-red-500/10 border border-red-500/20">
@@ -87,10 +92,10 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="text-lg font-semibold text-white leading-none">
+                  <h3 className="text-lg font-semibold text-card-foreground leading-none">
                     Bloquear agenda
                   </h3>
-                  <p className="text-sm text-gray-300 capitalize">
+                  <p className="text-sm text-muted-foreground capitalize">
                     {formattedDate}
                   </p>
                 </div>
@@ -98,7 +103,7 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
 
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-white/5 text-gray-300 hover:text-white transition-colors"
+                className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
@@ -136,9 +141,9 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
             {/* Interval */}
             <section className="space-y-3">
               <div className="flex items-baseline justify-between">
-                <h4 className="text-sm font-semibold text-white">Intervalo</h4>
+                <h4 className="text-sm font-semibold text-card-foreground">Intervalo</h4>
                 {!isFullDay && (
-                  <span className="text-xs text-gray-300">
+                  <span className="text-xs text-muted-foreground">
                     Selecione as fichas
                   </span>
                 )}
@@ -147,16 +152,12 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Select value={startSlotStr} onValueChange={setStartSlotStr}>
-                    <SelectTrigger className="w-full h-11 bg-[#264532] border border-white/5 text-white rounded-xl">
+                    <SelectTrigger className="w-full h-11 rounded-xl bg-input border-input">
                       <SelectValue placeholder="Início" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1a2c22] border-[#264532] max-h-64">
+                    <SelectContent className="max-h-64">
                       {slotOptions.map((opt) => (
-                        <SelectItem
-                          key={`start-${opt.value}`}
-                          value={opt.value}
-                          className="text-white hover:bg-[#264532] focus:bg-[#264532]"
-                        >
+                        <SelectItem key={`start-${opt.value}`} value={opt.value}>
                           {opt.label}
                         </SelectItem>
                       ))}
@@ -166,16 +167,12 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
 
                 <div className="space-y-2">
                   <Select value={endSlotStr} onValueChange={setEndSlotStr}>
-                    <SelectTrigger className="w-full h-11 bg-[#264532] border border-white/5 text-white rounded-xl">
+                    <SelectTrigger className="w-full h-11 rounded-xl bg-input border-input">
                       <SelectValue placeholder="Fim" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#1a2c22] border-[#264532] max-h-64">
+                    <SelectContent className="max-h-64">
                       {slotOptions.map((opt) => (
-                        <SelectItem
-                          key={`end-${opt.value}`}
-                          value={opt.value}
-                          className="text-white hover:bg-[#264532] focus:bg-[#264532]"
-                        >
+                        <SelectItem key={`end-${opt.value}`} value={opt.value}>
                           {opt.label}
                         </SelectItem>
                       ))}
@@ -193,38 +190,38 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
 
             {/* Motivo com ícones */}
             <section className="space-y-3">
-              <h4 className="text-sm font-semibold text-white">Motivo</h4>
+              <h4 className="text-sm font-semibold text-card-foreground">Motivo</h4>
 
               <Select value={reasonType} onValueChange={setReasonType}>
-                <SelectTrigger className="w-full h-11 bg-[#264532] border border-white/5 text-white rounded-xl">
+                <SelectTrigger className="w-full h-11 rounded-xl bg-input border-input">
                   <SelectValue>
                     <div className="flex items-center gap-2">
-                      {reasonType === 'Reunião' && <Calendar className="w-4 h-4 text-gray-300" />}
-                      {reasonType === 'Férias' && <Plane className="w-4 h-4 text-gray-300" />}
-                      {reasonType === 'Outros' && <FileText className="w-4 h-4 text-gray-300" />}
+                      {reasonType === 'Reunião' && <Calendar className="w-4 h-4 text-muted-foreground" />}
+                      {reasonType === 'Férias' && <Plane className="w-4 h-4 text-muted-foreground" />}
+                      {reasonType === 'Outros' && <FileText className="w-4 h-4 text-muted-foreground" />}
                       <span>{reasonType}</span>
                     </div>
                   </SelectValue>
                 </SelectTrigger>
 
-                <SelectContent className="bg-[#1a2c22] border-[#264532]">
-                  <SelectItem value="Reunião" className="text-white hover:bg-[#264532] focus:bg-[#264532]">
+                <SelectContent>
+                  <SelectItem value="Reunião">
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-300" />
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
                       Reunião
                     </div>
                   </SelectItem>
 
-                  <SelectItem value="Férias" className="text-white hover:bg-[#264532] focus:bg-[#264532]">
+                  <SelectItem value="Férias">
                     <div className="flex items-center gap-2">
-                      <Plane className="w-4 h-4 text-gray-300" />
+                      <Plane className="w-4 h-4 text-muted-foreground" />
                       Férias
                     </div>
                   </SelectItem>
 
-                  <SelectItem value="Outros" className="text-white hover:bg-[#264532] focus:bg-[#264532]">
+                  <SelectItem value="Outros">
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-300" />
+                      <FileText className="w-4 h-4 text-muted-foreground" />
                       Outros
                     </div>
                   </SelectItem>
@@ -238,7 +235,7 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
                     onChange={(e) => setCustomReason(e.target.value)}
                     placeholder="Descreva o motivo..."
                     icon={<FileText className="h-4 w-4" />}
-                    className="bg-[#264532] border border-white/5 text-white placeholder:text-gray-400 h-11 rounded-xl"
+                    className="h-11 rounded-xl bg-input border-input"
                     autoFocus
                   />
                 </div>
@@ -247,14 +244,14 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-white/10 bg-[#1a2c22]">
+          <div className="px-6 py-4 border-t border-border bg-card">
             <div className="flex gap-3">
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 onClick={onClose}
-                className="flex-1 text-white px-0"
+                className="flex-1 px-0"
               >
                 Cancelar
               </Button>
@@ -270,8 +267,6 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
               </Button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

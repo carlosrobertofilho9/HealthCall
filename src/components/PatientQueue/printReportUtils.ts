@@ -1,6 +1,7 @@
 import { AppointmentSlot } from '@/types';
 import { formatCPF, formatCNS } from '@/lib/utils';
 import { getAppointmentStatus } from '@/features/appointments/services/appointmentService';
+import { PRINT_COLORS } from './printTheme';
 
 type ReportItem = {
   slot: number;
@@ -50,9 +51,9 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
   // Helper para ícone do período
   const getPeriodIcon = (period: string) => {
     if (period === 'Manhã') {
-      return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f59e0b; vertical-align: middle;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+      return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: ${PRINT_COLORS.warning}; vertical-align: middle;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
     }
-    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #3b82f6; vertical-align: middle;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: ${PRINT_COLORS.info}; vertical-align: middle;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
   };
 
   const generateRows = (items: ReportItem[]) => {
@@ -92,7 +93,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
 
           body { 
             font-family: 'Inter', sans-serif; 
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
@@ -102,7 +103,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
             display: flex;
             flex-direction: row;
             align-items: center;
-            background-color: #0f766e;
+            background-color: ${PRINT_COLORS.primary};
             border-radius: 8px;
             padding: 12px 16px;
           }
@@ -120,20 +121,20 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
           .header-psf-name {
             font-size: 18px;
             font-weight: 700;
-            color: #ffffff;
+            color: ${PRINT_COLORS.textOnDark};
             letter-spacing: 0.5px;
             margin: 0;
           }
 
           .header-ubs {
             font-size: 11px;
-            color: #99f6e4;
+            color: ${PRINT_COLORS.primarySoft};
             margin-top: 2px;
             letter-spacing: 0.3px;
           }
 
           .header-badge {
-            background-color: #ffffff;
+            background-color: ${PRINT_COLORS.surface};
             border-radius: 4px;
             padding: 4px 8px;
             display: flex;
@@ -144,13 +145,13 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
           .header-badge-text {
             font-size: 11px;
             font-weight: 800;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
             margin: 0;
           }
 
           .header-badge-sub {
             font-size: 6px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
             margin-top: 1px;
           }
 
@@ -162,17 +163,17 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
             margin-top: 6px;
           }
 
-          .accent-1 { flex: 2; background-color: #0d9488; border-radius: 2px; }
-          .accent-2 { flex: 1; background-color: #14b8a6; border-radius: 2px; margin-left: 2px; }
-          .accent-3 { flex: 1; background-color: #5eead4; border-radius: 2px; margin-left: 2px; }
-          .accent-4 { flex: 3; background-color: #99f6e4; border-radius: 2px; margin-left: 2px; }
+          .accent-1 { flex: 2; background-color: ${PRINT_COLORS.accent1}; border-radius: 2px; }
+          .accent-2 { flex: 1; background-color: ${PRINT_COLORS.accent2}; border-radius: 2px; margin-left: 2px; }
+          .accent-3 { flex: 1; background-color: ${PRINT_COLORS.accent3}; border-radius: 2px; margin-left: 2px; }
+          .accent-4 { flex: 3; background-color: ${PRINT_COLORS.accent4}; border-radius: 2px; margin-left: 2px; }
 
           /* Info Box */
           .info-card {
             display: flex;
             flex-direction: row;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background-color: ${PRINT_COLORS.surfaceAlt};
+            border: 1px solid ${PRINT_COLORS.border};
             border-radius: 6px;
             padding: 10px 16px;
             margin-bottom: 16px;
@@ -187,7 +188,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
 
           .info-label {
             font-size: 9px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
             text-transform: uppercase;
             font-weight: 700;
             margin-bottom: 4px;
@@ -195,7 +196,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
           }
 
           .info-value-line {
-            border-bottom: 1px solid #cbd5e1;
+            border-bottom: 1px solid ${PRINT_COLORS.borderStrong};
             height: 18px;
             display: flex;
             align-items: center;
@@ -203,7 +204,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
 
           .info-value {
             font-size: 13px;
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             font-weight: 600;
           }
 
@@ -220,13 +221,13 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
           .main-title-line {
             flex: 1;
             height: 1px;
-            background-color: #cbd5e1;
+            background-color: ${PRINT_COLORS.borderStrong};
           }
 
           .doc-title {
             font-size: 14px;
             font-weight: 800;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
             text-transform: uppercase;
             letter-spacing: 1px;
           }
@@ -236,10 +237,10 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
             flex: 1;
             display: flex;
             flex-direction: column;
-            border: 1px solid #e2e8f0;
+            border: 1px solid ${PRINT_COLORS.border};
             border-radius: 6px;
             overflow: hidden;
-            background-color: #ffffff;
+            background-color: ${PRINT_COLORS.surface};
             margin-bottom: 20px;
           }
 
@@ -249,18 +250,18 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
           }
 
           thead tr {
-            background-color: #0f766e;
+            background-color: ${PRINT_COLORS.primary};
           }
 
           th { 
-            color: #ffffff; 
+            color: ${PRINT_COLORS.textOnDark}; 
             padding: 8px 12px; 
             text-align: left; 
             font-weight: 700;
             text-transform: uppercase; 
             font-size: 10px;
             letter-spacing: 0.05em;
-            border-right: 1px solid #0d9488;
+            border-right: 1px solid ${PRINT_COLORS.primaryStrong};
           }
           th:last-child {
             border-right: none;
@@ -271,23 +272,23 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
           }
 
           tbody tr {
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid ${PRINT_COLORS.border};
           }
           tbody tr:last-child {
             border-bottom: none;
           }
 
           /* Striping */
-          tbody tr.even { background-color: #ffffff; }
-          tbody tr.odd { background-color: #f8fafc; }
+          tbody tr.even { background-color: ${PRINT_COLORS.surface}; }
+          tbody tr.odd { background-color: ${PRINT_COLORS.surfaceAlt}; }
 
           td { 
             padding: 8px 12px; 
             vertical-align: middle;
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             font-size: 11px;
             font-weight: 500;
-            border-right: 1px solid #e2e8f0;
+            border-right: 1px solid ${PRINT_COLORS.border};
           }
           td:last-child {
             border-right: none;
@@ -303,7 +304,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
           /* Footer */
           .footer {
             margin-top: auto;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid ${PRINT_COLORS.border};
             padding-top: 8px;
             display: flex;
             flex-direction: row;
@@ -311,17 +312,17 @@ export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: 
             align-items: center;
             gap: 8px;
             font-size: 9px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
             height: 20px;
           }
 
           .footer-brand {
             font-weight: 700;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
           }
 
           .footer-dot {
-            color: #cbd5e1;
+            color: ${PRINT_COLORS.borderStrong};
           }
         </style>
       </head>

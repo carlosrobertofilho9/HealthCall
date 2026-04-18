@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
+import { PENDENCIA_RESPONSAVEL_OPTIONS } from '@/constants';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { isValidCNS, isValidCPF } from '@/lib/utils';
 import {
@@ -17,9 +19,12 @@ import {
   updatePendenciaStatus,
 } from '../services/pendenciasService';
 import {
+  PENDENCIA_PRIORIDADE,
+  PENDENCIA_PRIORIDADE_LABEL,
   PENDENCIA_STATUS,
   PENDENCIA_STATUS_LABEL,
   type Pendencia,
+  type PendenciaPrioridade,
   type PendenciaStatus,
 } from '../types';
 import {
@@ -29,6 +34,14 @@ import {
   parseTipoTags,
   TIPO_OPTIONS,
 } from '../utils/pendenciasUiUtils';
+import {
+  getAlertLevel,
+  getCurrentWeekRange,
+  isDateInRange,
+  isDueToday,
+  sortPendenciasByOperationalSeverity,
+  toDateInputValue,
+} from '../utils/pendenciasOperationalUtils';
 import { printOpenPendenciasPdf } from '../utils/printOpenPendenciasPdf';
 
 const PendenciasPage: React.FC = () => {
@@ -41,8 +54,12 @@ const PendenciasPage: React.FC = () => {
   const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
   const [tipoPersonalizado, setTipoPersonalizado] = useState('');
   const [resumo, setResumo] = useState('');
+  const [prioridade, setPrioridade] = useState<PendenciaPrioridade>(PENDENCIA_PRIORIDADE.NORMAL);
+  const [prazo, setPrazo] = useState('');
+  const [responsavel, setResponsavel] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('em_aberto');
+  const [dueTodayOnly, setDueTodayOnly] = useState(false);
   const [mobileTab, setMobileTab] = useState<'new' | 'existing'>('new');
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -53,6 +70,9 @@ const PendenciasPage: React.FC = () => {
   const [editTiposSelecionados, setEditTiposSelecionados] = useState<string[]>([]);
   const [editTipoPersonalizado, setEditTipoPersonalizado] = useState('');
   const [editResumo, setEditResumo] = useState('');
+  const [editPrioridade, setEditPrioridade] = useState<PendenciaPrioridade>(PENDENCIA_PRIORIDADE.NORMAL);
+  const [editPrazo, setEditPrazo] = useState('');
+  const [editResponsavel, setEditResponsavel] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
@@ -61,12 +81,18 @@ const PendenciasPage: React.FC = () => {
     [pendencias],
   );
 
+  const dueTodayCount = useMemo(
+    () => openPendencias.filter((item) => isDueToday(item)).length,
+    [openPendencias],
+  );
+
   const filteredPendencias = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return pendencias.filter((item) => {
+    const filtered = pendencias.filter((item) => {
       if (statusFilter === 'em_aberto' && item.status === PENDENCIA_STATUS.RESOLVIDO) return false;
       if (statusFilter === 'resolvido' && item.status !== PENDENCIA_STATUS.RESOLVIDO) return false;
+      if (dueTodayOnly && !isDueToday(item)) return false;
       if (!normalizedSearch) return true;
 
       return (
@@ -74,9 +100,12 @@ const PendenciasPage: React.FC = () => {
         || item.cns_cpf.toLowerCase().includes(normalizedSearch)
         || item.tipo.toLowerCase().includes(normalizedSearch)
         || (item.resumo || '').toLowerCase().includes(normalizedSearch)
+        || (item.responsavel || '').toLowerCase().includes(normalizedSearch)
       );
     });
-  }, [pendencias, search, statusFilter]);
+
+    return sortPendenciasByOperationalSeverity(filtered);
+  }, [pendencias, search, statusFilter, dueTodayOnly]);
 
   const validateCnsCpf = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -91,6 +120,9 @@ const PendenciasPage: React.FC = () => {
     setSelectedTipos([]);
     setTipoPersonalizado('');
     setResumo('');
+    setPrioridade(PENDENCIA_PRIORIDADE.NORMAL);
+    setPrazo('');
+    setResponsavel('');
   };
 
   const toggleTipo = (tipo: string) => {
@@ -116,6 +148,16 @@ const PendenciasPage: React.FC = () => {
       return;
     }
 
+    if (!responsavel.trim()) {
+      toast.error('Selecione o responsável da pendência.');
+      return;
+    }
+
+    if (!prazo) {
+      toast.error('Informe o prazo da pendência.');
+      return;
+    }
+
     if (!validateCnsCpf(cnsCpf)) {
       toast.error('CNS/CPF inválido. Informe CPF (11 dígitos) ou CNS (15 dígitos).');
       return;
@@ -128,6 +170,9 @@ const PendenciasPage: React.FC = () => {
         cns_cpf: cnsCpf.trim(),
         tipo: tipoComposto,
         resumo: resumo.trim(),
+        prioridade,
+        prazo,
+        responsavel,
       });
       toast.success('Pendência cadastrada com sucesso.');
       clearForm();
@@ -162,6 +207,9 @@ const PendenciasPage: React.FC = () => {
     setEditTiposSelecionados(knownTags);
     setEditTipoPersonalizado(customTags.join(', '));
     setEditResumo(item.resumo || '');
+    setEditPrioridade(item.prioridade);
+    setEditPrazo(toDateInputValue(item.prazo));
+    setEditResponsavel(item.responsavel || '');
   };
 
   const cancelEditing = () => {
@@ -171,6 +219,9 @@ const PendenciasPage: React.FC = () => {
     setEditTiposSelecionados([]);
     setEditTipoPersonalizado('');
     setEditResumo('');
+    setEditPrioridade(PENDENCIA_PRIORIDADE.NORMAL);
+    setEditPrazo('');
+    setEditResponsavel('');
   };
 
   const handleUpdate = async () => {
@@ -180,6 +231,16 @@ const PendenciasPage: React.FC = () => {
 
     if (!editNomePaciente.trim() || !editCnsCpf.trim() || !tipoComposto.trim()) {
       toast.error('Preencha Nome, CNS/CPF e Tipo da pendência.');
+      return;
+    }
+
+    if (!editResponsavel.trim()) {
+      toast.error('Selecione o responsável da pendência.');
+      return;
+    }
+
+    if (!editPrazo) {
+      toast.error('Informe o prazo da pendência.');
       return;
     }
 
@@ -196,6 +257,9 @@ const PendenciasPage: React.FC = () => {
         cns_cpf: editCnsCpf.trim(),
         tipo: tipoComposto,
         resumo: editResumo.trim(),
+        prioridade: editPrioridade,
+        prazo: editPrazo,
+        responsavel: editResponsavel,
       });
       toast.success('Pendência atualizada com sucesso.');
       cancelEditing();
@@ -225,14 +289,17 @@ const PendenciasPage: React.FC = () => {
   };
 
   const handleGenerateOpenPdf = async () => {
-    if (openPendencias.length === 0) {
-      toast.info('Não há pendências em aberto para imprimir.');
+    const { start, end } = getCurrentWeekRange();
+    const weeklyPendencias = openPendencias.filter((item) => isDateInRange(item.prazo, start, end));
+
+    if (weeklyPendencias.length === 0) {
+      toast.info('Não há pendências da semana atual para imprimir.');
       return;
     }
 
     try {
       setIsGeneratingPdf(true);
-      await printOpenPendenciasPdf(openPendencias);
+      await printOpenPendenciasPdf(weeklyPendencias);
       toast.success('Janela de impressão aberta com sucesso.');
     } catch {
       toast.error('Erro ao gerar PDF de pendências.');
@@ -247,6 +314,14 @@ const PendenciasPage: React.FC = () => {
     return 'bg-green-500/10 text-green-300 border border-green-500/20';
   };
 
+  const getAlertLabel = (item: Pendencia) => {
+    const alertLevel = getAlertLevel(item);
+    if (alertLevel === 'overdue') return 'Atrasado';
+    if (alertLevel === 'due_today') return 'Vence hoje';
+    if (alertLevel === 'high_priority') return `Prioridade ${PENDENCIA_PRIORIDADE_LABEL[item.prioridade].toLowerCase()}`;
+    return '';
+  };
+
   return (
     <div className="-mt-6 -mb-6 xl:my-0 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen xl:static xl:left-auto xl:right-auto xl:ml-0 xl:mr-0 xl:w-full flex flex-col gap-0 xl:gap-4 h-auto min-h-[calc(100dvh-73px)] xl:h-[calc(100vh-8rem)] pb-[calc(env(safe-area-inset-bottom)+5.5rem)] xl:pb-0">
       <div className="grid min-h-0 grid-cols-1 xl:grid-cols-12 gap-0 xl:gap-4 w-full xl:h-full xl:flex-1">
@@ -257,6 +332,10 @@ const PendenciasPage: React.FC = () => {
             selectedTipos={selectedTipos}
             tipoPersonalizado={tipoPersonalizado}
             resumo={resumo}
+            prioridade={prioridade}
+            prazo={prazo}
+            responsavel={responsavel}
+            responsavelOptions={PENDENCIA_RESPONSAVEL_OPTIONS}
             isSaving={isSaving}
             tipoOptions={TIPO_OPTIONS}
             onSubmit={handleCreate}
@@ -265,20 +344,26 @@ const PendenciasPage: React.FC = () => {
             onToggleTipo={toggleTipo}
             onTipoPersonalizadoChange={setTipoPersonalizado}
             onResumoChange={setResumo}
+            onPrioridadeChange={setPrioridade}
+            onPrazoChange={setPrazo}
+            onResponsavelChange={setResponsavel}
           />
         </div>
 
         <section
-          className={`${mobileTab === 'existing' ? 'flex' : 'hidden'} xl:flex xl:col-span-8 rounded-none xl:rounded-2xl border border-white/10 border-x-0 xl:border-x bg-[#1a2c22] overflow-visible xl:overflow-hidden shadow-none xl:shadow-2xl flex-col min-h-0 xl:h-full`}
+          className={`${mobileTab === 'existing' ? 'flex' : 'hidden'} xl:flex xl:col-span-8 rounded-none xl:rounded-2xl border border-border border-x-0 xl:border-x bg-card overflow-visible xl:overflow-hidden shadow-none xl:shadow-sm flex-col min-h-0 xl:h-full`}
         >
           <PendenciasListHeader
             openCount={openPendencias.length}
             totalCount={pendencias.length}
+            dueTodayCount={dueTodayCount}
             search={search}
             statusFilter={statusFilter}
+            dueTodayOnly={dueTodayOnly}
             isGeneratingPdf={isGeneratingPdf}
             onSearchChange={setSearch}
             onStatusFilterChange={setStatusFilter}
+            onDueTodayOnlyChange={setDueTodayOnly}
             onGenerateOpenPdf={handleGenerateOpenPdf}
           />
 
@@ -310,17 +395,26 @@ const PendenciasPage: React.FC = () => {
                     editTiposSelecionados={editTiposSelecionados}
                     editTipoPersonalizado={editTipoPersonalizado}
                     editResumo={editResumo}
+                    editPrioridade={editPrioridade}
+                    editPrazo={editPrazo}
+                    editResponsavel={editResponsavel}
+                    responsavelOptions={PENDENCIA_RESPONSAVEL_OPTIONS}
                     onEditNomePacienteChange={setEditNomePaciente}
                     onEditCnsCpfChange={(value) => setEditCnsCpf(formatCnsCpfForInput(value))}
                     onToggleEditTipo={toggleEditTipo}
                     onEditTipoPersonalizadoChange={setEditTipoPersonalizado}
                     onEditResumoChange={setEditResumo}
+                    onEditPrioridadeChange={setEditPrioridade}
+                    onEditPrazoChange={setEditPrazo}
+                    onEditResponsavelChange={setEditResponsavel}
                     onStatusChange={(status) => handleStatusChange(item, status)}
                     onStartEditing={() => startEditing(item)}
                     onCancelEditing={cancelEditing}
                     onSaveEditing={handleUpdate}
                     onDelete={() => handleDelete(item.id)}
                     statusBadgeClass={statusBadgeClass}
+                    alertLevel={getAlertLevel(item)}
+                    alertLabel={getAlertLabel(item)}
                   />
                 );
               })}
@@ -331,33 +425,24 @@ const PendenciasPage: React.FC = () => {
       </div>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] xl:hidden">
-        <nav className="pointer-events-auto grid w-full grid-cols-2 rounded-full border border-[#264532] bg-[#1a3a26] p-1 shadow-2xl">
-          <button
-            type="button"
-            onClick={() => setMobileTab('new')}
-            className={`flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors ${
-              mobileTab === 'new'
-                ? 'bg-primary text-[#122118]'
-                : 'text-[#96c5a9] hover:bg-[#264532] hover:text-white'
-            }`}
+        <div className="pointer-events-auto">
+          <Tabs
+            value={mobileTab}
+            onValueChange={(value) => setMobileTab(value as 'new' | 'existing')}
           >
-            <CirclePlus className="h-4 w-4 shrink-0" />
-            Nova
-          </button>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="new">
+                <CirclePlus className="h-4 w-4 shrink-0" />
+                Nova
+              </TabsTrigger>
 
-          <button
-            type="button"
-            onClick={() => setMobileTab('existing')}
-            className={`flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors ${
-              mobileTab === 'existing'
-                ? 'bg-primary text-[#122118]'
-                : 'text-[#96c5a9] hover:bg-[#264532] hover:text-white'
-            }`}
-          >
-            <ListTodo className="h-4 w-4 shrink-0" />
-            Pendências
-          </button>
-        </nav>
+              <TabsTrigger value="existing">
+                <ListTodo className="h-4 w-4 shrink-0" />
+                Pendências
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
     </div>
   );

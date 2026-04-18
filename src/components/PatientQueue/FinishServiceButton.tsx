@@ -80,26 +80,26 @@ const FinishServiceButton: React.FC<FinishServiceButtonProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 bottom-full mb-2 z-50 w-64 rounded-xl bg-[#1a2c22] border border-[#264532] shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
-            <div className="p-2 border-b border-[#264532] flex items-center justify-between text-xs text-gray-400 font-medium uppercase tracking-wider bg-[#264532]/30">
+        <div className="absolute right-0 bottom-full mb-2 z-50 w-64 rounded-xl bg-popover border border-border shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
+            <div className="p-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground font-medium uppercase tracking-wider bg-secondary/30">
                 <span>Ações</span>
-                <button onClick={() => setIsOpen(false)} className="hover:text-white"><X size={14}/></button>
+                <button onClick={() => setIsOpen(false)} className="hover:text-popover-foreground"><X size={14}/></button>
             </div>
           <ul className="py-1 max-h-64 overflow-y-auto custom-scrollbar">
             {options.map((option, idx) => (
               <li
                 key={idx}
                 className={`
-                    group flex items-center gap-2 text-sm text-gray-300 cursor-pointer select-none relative py-2.5 px-3 
-                    hover:bg-[#264532] hover:text-white transition-colors
-                    ${option.action === 'finish' ? 'border-b border-[#264532] mb-1 pb-3 text-green-400 font-medium hover:text-green-300' : ''}
+                    group flex items-center gap-2 text-sm text-popover-foreground/90 cursor-pointer select-none relative py-2.5 px-3 
+                    hover:bg-accent hover:text-accent-foreground transition-colors
+                    ${option.action === 'finish' ? 'border-b border-border mb-1 pb-3 text-green-400 font-medium hover:text-green-300' : ''}
                 `}
                 onClick={() => handleSelect(option.action, option.destination)}
               >
                 {option.action === 'finish' ? (
                     <CheckCircle size={16} className="text-green-500" />
                 ) : (
-                    <ArrowRight size={14} className="text-[#96c5a9] group-hover:text-white transition-colors" />
+                    <ArrowRight size={14} className="text-muted-foreground group-hover:text-accent-foreground transition-colors" />
                 )}
                 <span>{option.label}</span>
               </li>

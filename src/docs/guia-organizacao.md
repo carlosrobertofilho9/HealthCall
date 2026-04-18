@@ -6,6 +6,22 @@ Este guia propõe uma estrutura clara para escalar o app, separando páginas, co
 
 ---
 
+## Convenções de Design System (governança mínima)
+
+Estas regras passam a valer para novos componentes e refactors:
+
+- **Cores e superfícies:** usar apenas tokens semânticos (`bg-card`, `text-foreground`, `border-border`, `bg-input`, `text-muted-foreground`, etc.).
+- **Proibição de hardcode visual novo:** evitar novos `#hex` para cor, raio, sombra e tipografia dentro de componentes de produto.
+- **Componentes base obrigatórios:** priorizar `Button`, `Input`, `Select`, `Card`, `Label` de `src/components/ui` antes de criar variações locais.
+- **Variantes primeiro:** novas diferenças visuais devem entrar via variantes (`cva`) nos componentes base, não com cópia de classes em telas.
+- **Acessibilidade mínima:** manter foco visível, estados `disabled` e rótulos (`label`/`aria-label`) em ações interativas.
+- **Checklist de PR (UI):**
+  - não adiciona hardcode de cor sem token;
+  - reaproveita componente `ui` quando equivalente existir;
+  - mantém consistência de espaçamento e tipografia da tela.
+
+---
+
 ## Estrutura alvo (proposta)
 
 ```

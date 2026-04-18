@@ -15,7 +15,16 @@ import {
   getDocumentLabel,
   parseTipoTags,
 } from '../utils/pendenciasUiUtils';
-import { PENDENCIA_STATUS, PENDENCIA_STATUS_LABEL, type Pendencia, type PendenciaStatus } from '../types';
+import {
+  PENDENCIA_PRIORIDADE,
+  PENDENCIA_PRIORIDADE_LABEL,
+  PENDENCIA_STATUS,
+  PENDENCIA_STATUS_LABEL,
+  type Pendencia,
+  type PendenciaPrioridade,
+  type PendenciaStatus,
+} from '../types';
+import { type PendenciaAlertLevel } from '../utils/pendenciasOperationalUtils';
 
 interface PendenciaListItemProps {
   item: Pendencia;
@@ -28,17 +37,26 @@ interface PendenciaListItemProps {
   editTiposSelecionados: string[];
   editTipoPersonalizado: string;
   editResumo: string;
+  editPrioridade: PendenciaPrioridade;
+  editPrazo: string;
+  editResponsavel: string;
+  responsavelOptions: readonly string[];
   onEditNomePacienteChange: (value: string) => void;
   onEditCnsCpfChange: (value: string) => void;
   onToggleEditTipo: (tipo: string) => void;
   onEditTipoPersonalizadoChange: (value: string) => void;
   onEditResumoChange: (value: string) => void;
+  onEditPrioridadeChange: (value: PendenciaPrioridade) => void;
+  onEditPrazoChange: (value: string) => void;
+  onEditResponsavelChange: (value: string) => void;
   onStatusChange: (status: PendenciaStatus) => void;
   onStartEditing: () => void;
   onCancelEditing: () => void;
   onSaveEditing: () => void;
   onDelete: () => void;
   statusBadgeClass: (status: PendenciaStatus) => string;
+  alertLevel: PendenciaAlertLevel;
+  alertLabel: string;
 }
 
 export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
@@ -52,24 +70,44 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
   editTiposSelecionados,
   editTipoPersonalizado,
   editResumo,
+  editPrioridade,
+  editPrazo,
+  editResponsavel,
+  responsavelOptions,
   onEditNomePacienteChange,
   onEditCnsCpfChange,
   onToggleEditTipo,
   onEditTipoPersonalizadoChange,
   onEditResumoChange,
+  onEditPrioridadeChange,
+  onEditPrazoChange,
+  onEditResponsavelChange,
   onStatusChange,
   onStartEditing,
   onCancelEditing,
   onSaveEditing,
   onDelete,
   statusBadgeClass,
+  alertLevel,
+  alertLabel,
 }) => {
   const tipos = parseTipoTags(item.tipo);
   const documentoFormatado = formatCnsCpfForDisplay(item.cns_cpf);
   const editingTipos = [...editTiposSelecionados, editTipoPersonalizado.trim()].filter(Boolean);
+  const alertClassByLevel: Record<PendenciaAlertLevel, string> = {
+    none: 'border-white/10',
+    high_priority: 'border-orange-400/50',
+    due_today: 'border-amber-400/60',
+    overdue: 'border-red-500/60',
+  };
+  const prioridadeClassByValue: Record<PendenciaPrioridade, string> = {
+    baixa: 'bg-slate-500/10 text-slate-200 border border-slate-400/20',
+    normal: 'bg-blue-500/10 text-blue-200 border border-blue-400/20',
+    alta: 'bg-orange-500/10 text-orange-200 border border-orange-400/30',
+  };
 
   return (
-    <article className="rounded-xl border border-white/10 bg-[#264532]/35 p-4 hover:border-[#96c5a9]/30 transition-all">
+    <article className={`rounded-xl border ${alertClassByLevel[alertLevel]} bg-[#264532]/35 p-4 hover:border-[#96c5a9]/30 transition-all`}>
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
         <div className="space-y-3 flex-1">
           {isEditing ? (
@@ -107,6 +145,40 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <Select
+                  value={editPrioridade}
+                  onValueChange={(value) => onEditPrioridadeChange(value as PendenciaPrioridade)}
+                >
+                  <SelectTrigger className="h-10 rounded-xl pl-4">
+                    <SelectValue placeholder="Prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={PENDENCIA_PRIORIDADE.BAIXA}>{PENDENCIA_PRIORIDADE_LABEL.baixa}</SelectItem>
+                    <SelectItem value={PENDENCIA_PRIORIDADE.NORMAL}>{PENDENCIA_PRIORIDADE_LABEL.normal}</SelectItem>
+                    <SelectItem value={PENDENCIA_PRIORIDADE.ALTA}>{PENDENCIA_PRIORIDADE_LABEL.alta}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <input
+                  type="date"
+                  value={editPrazo}
+                  onChange={(event) => onEditPrazoChange(event.target.value)}
+                  className="h-10 w-full rounded-xl border border-input bg-input px-4 text-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none"
+                />
+              </div>
+
+              <Select value={editResponsavel} onValueChange={onEditResponsavelChange}>
+                <SelectTrigger className="h-10 rounded-xl pl-4">
+                  <SelectValue placeholder="Responsável" />
+                </SelectTrigger>
+                <SelectContent>
+                  {responsavelOptions.map((option) => (
+                    <SelectItem key={`${item.id}-responsavel-${option}`} value={option}>{option}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <div className="flex flex-wrap gap-2">
                 {editingTipos.map((tipoTag) => (
                   <span
@@ -142,6 +214,26 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
               <div className="rounded-lg border border-white/10 bg-[#1f3a2b] p-3">
                 <p className="text-xs uppercase tracking-wide text-[#96c5a9]/60 mb-1">Pendência</p>
                 <p className="text-gray-100 leading-relaxed">{item.resumo || '-'}</p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span className={`text-xs px-2.5 py-1 rounded-full ${prioridadeClassByValue[item.prioridade]}`}>
+                  Prioridade: {PENDENCIA_PRIORIDADE_LABEL[item.prioridade]}
+                </span>
+
+                <span className="text-xs px-2.5 py-1 rounded-full bg-[#1f3a2b] border border-white/10 text-[#96c5a9]">
+                  Prazo: {item.prazo ? new Date(`${item.prazo}T00:00:00`).toLocaleDateString('pt-BR') : 'Não definido'}
+                </span>
+
+                <span className="text-xs px-2.5 py-1 rounded-full bg-[#1f3a2b] border border-white/10 text-[#96c5a9]">
+                  Responsável: {item.responsavel || 'Não definido'}
+                </span>
+
+                {alertLevel !== 'none' ? (
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/10 text-red-200 border border-red-400/30">
+                    {alertLabel}
+                  </span>
+                ) : null}
               </div>
             </>
           )}

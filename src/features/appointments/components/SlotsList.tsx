@@ -29,10 +29,10 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   /* ── Sem atendimento ── */
   if (!dayConfig.hasService) {
     return (
-      <div className="rounded-2xl border border-[#264532] bg-[#1a3a26] p-10 text-center print:bg-white print:border-gray-300">
-        <CalendarX className="w-12 h-12 text-[#264532] mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-white mb-1 print:text-black">Sem agenda neste dia</h3>
-        <p className="text-sm text-[#96c5a9] print:text-gray-600">
+      <div className="rounded-2xl border border-border bg-card p-10 text-center print:bg-white print:border-gray-300">
+        <CalendarX className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-card-foreground mb-1 print:text-black">Sem agenda neste dia</h3>
+        <p className="text-sm text-muted-foreground print:text-gray-600">
           {dayConfig.dayName} não possui atendimento agendado.{' '}
           <br className="hidden sm:block" />
           Selecione uma Segunda, Terça ou Quarta-feira.
@@ -44,9 +44,9 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   /* ── Carregando ── */
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-[#264532] bg-[#1a3a26] p-10 text-center">
+      <div className="rounded-2xl border border-border bg-card p-10 text-center">
         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-[#96c5a9]">Carregando marcações...</p>
+        <p className="text-muted-foreground">Carregando marcações...</p>
       </div>
     );
   }
@@ -137,9 +137,9 @@ export const SlotsList: React.FC<SlotsListProps> = ({
 
       {/* Resultado vazio da busca */}
       {slots.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[#264532] p-10 text-center">
-          <AlertTriangle className="w-8 h-8 text-[#264532] mx-auto mb-3" />
-          <p className="text-[#96c5a9] text-sm">Nenhum resultado encontrado para esta busca.</p>
+        <div className="rounded-2xl border border-dashed border-border p-10 text-center">
+          <AlertTriangle className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm">Nenhum resultado encontrado para esta busca.</p>
         </div>
       )}
     </div>
@@ -174,19 +174,19 @@ const PeriodSection: React.FC<PeriodSectionProps> = ({
       {/* Section header */}
       <div className={`flex items-center gap-3 mb-3 rounded-xl border px-4 py-2.5 ${accentClass} print:hidden`}>
         {icon}
-        <h3 className="text-sm font-bold text-white print:text-black flex-1">{title}</h3>
+        <h3 className="text-sm font-bold text-card-foreground print:text-black flex-1">{title}</h3>
 
         {/* Mini progress */}
         <div className="flex items-center gap-2 print:hidden">
           <div className="hidden sm:flex items-center gap-1.5">
-            <div className="w-14 h-1.5 rounded-full bg-[#264532] overflow-hidden">
+            <div className="w-14 h-1.5 rounded-full bg-secondary overflow-hidden">
               <div
                 className="h-full rounded-full bg-primary/60 transition-all"
                 style={{ width: `${pct}%` }}
               />
             </div>
           </div>
-          <span className="text-xs text-[#96c5a9] font-medium whitespace-nowrap">
+          <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
             {occupied}/{total} {label}
           </span>
         </div>

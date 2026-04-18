@@ -256,12 +256,12 @@ const AppointmentsPage: React.FC = () => {
 
             {/* Stats card – only when service */}
             {dayConfig.hasService && (
-              <div className="rounded-2xl bg-[#1a3a26] p-5 space-y-4">
+              <div className="rounded-2xl bg-card border border-border p-5 space-y-4">
                 {/* Occupancy header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <BarChart2 className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold text-white">Ocupação do dia</span>
+                    <span className="text-sm font-semibold text-card-foreground">Ocupação do dia</span>
                   </div>
                   <span className={`text-lg font-bold ${
                     occupancyPct >= 90 ? 'text-red-400' :
@@ -270,7 +270,7 @@ const AppointmentsPage: React.FC = () => {
                 </div>
 
                 {/* Progress bar */}
-                <div className="h-2.5 rounded-full bg-[#264532] overflow-hidden">
+                <div className="h-2.5 rounded-full bg-secondary overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-700 ${
                       occupancyPct >= 90 ? 'bg-red-400' :
@@ -300,14 +300,14 @@ const AppointmentsPage: React.FC = () => {
                 </div>
 
                 {/* Quick status breakdown */}
-                <div className="space-y-2 pt-1 border-t border-[#264532]">
-                  <p className="text-[11px] uppercase tracking-widest text-[#96c5a9] font-semibold">
+                <div className="space-y-2 pt-1 border-t border-border">
+                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
                     Próxima vaga livre
                   </p>
                   {availableSlots.length > 0 ? (
                     <div className="flex items-center gap-2">
                       <Circle className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-sm font-semibold text-white">
+                      <span className="text-sm font-semibold text-card-foreground">
                         Ficha {availableSlots[0]}
                         {slots[availableSlots[0] - 1]?.time
                           ? ` · ${slots[availableSlots[0] - 1].time}`
@@ -350,7 +350,7 @@ const AppointmentsPage: React.FC = () => {
                     disabled={isLoading}
                   />
                 </div>
-                <div className="h-px bg-[#264532] my-1" />
+                <div className="h-px bg-border my-1" />
                 {isHomeVisit ? (
                   <DesktopActionButton
                     icon={<Printer className="w-4 h-4" />}
@@ -367,16 +367,16 @@ const AppointmentsPage: React.FC = () => {
                       />
 
                       {shouldShowReportMenu && isReportMenuOpen && (
-                        <div className="absolute right-0 z-50 mt-2 w-40 rounded-xl border border-[#264532] bg-[#1a3a26] p-1 shadow-lg">
+                        <div className="absolute right-0 z-50 mt-2 w-40 rounded-xl border border-border bg-popover p-1 shadow-lg">
                           <button
                             onClick={() => handleReportPrint('Manhã')}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-[#264532] transition-colors"
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-popover-foreground hover:bg-accent transition-colors"
                           >
                             Imprimir manhã
                           </button>
                           <button
                             onClick={() => handleReportPrint('Tarde')}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-[#264532] transition-colors"
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-popover-foreground hover:bg-accent transition-colors"
                           >
                             Imprimir tarde
                           </button>
@@ -391,16 +391,16 @@ const AppointmentsPage: React.FC = () => {
                       />
 
                       {shouldShowReportMenu && isPatientListMenuOpen && (
-                        <div className="absolute right-0 z-50 mt-2 w-40 rounded-xl border border-[#264532] bg-[#1a3a26] p-1 shadow-lg">
+                        <div className="absolute right-0 z-50 mt-2 w-40 rounded-xl border border-border bg-popover p-1 shadow-lg">
                           <button
                             onClick={() => handlePatientListPrint('Manhã')}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-[#264532] transition-colors"
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-popover-foreground hover:bg-accent transition-colors"
                           >
                             Imprimir manhã
                           </button>
                           <button
                             onClick={() => handlePatientListPrint('Tarde')}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-[#264532] transition-colors"
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-popover-foreground hover:bg-accent transition-colors"
                           >
                             Imprimir tarde
                           </button>
@@ -424,19 +424,19 @@ const AppointmentsPage: React.FC = () => {
                 {isSearchOpen ? (
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#96c5a9]" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <input
                         autoFocus
                         type="text"
                         placeholder="Buscar paciente, CPF, ACS..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-3 rounded-xl bg-[#1a3a26] border border-[#264532] text-white placeholder:text-[#96c5a9]/60 text-sm focus:outline-none focus:border-primary transition-colors"
+                        className="w-full pl-9 pr-4 py-3 rounded-xl bg-card border border-border text-card-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:border-primary transition-colors"
                       />
                     </div>
                     <button
                       onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
-                      className="p-3 rounded-xl bg-[#1a3a26] border border-[#264532] text-[#96c5a9]"
+                      className="p-3 rounded-xl bg-card border border-border text-muted-foreground"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -444,7 +444,7 @@ const AppointmentsPage: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => setIsSearchOpen(true)}
-                    className="flex items-center gap-2 w-full px-4 py-3 rounded-xl bg-[#1a3a26] border border-[#264532] text-[#96c5a9] text-sm hover:border-primary transition-colors"
+                    className="flex items-center gap-2 w-full px-4 py-3 rounded-xl bg-card border border-border text-muted-foreground text-sm hover:border-primary transition-colors"
                   >
                     <Search className="w-4 h-4" />
                     <span>Buscar paciente, CPF ou ACS...</span>
@@ -459,18 +459,18 @@ const AppointmentsPage: React.FC = () => {
 
               {/* Desktop: always visible */}
               <div className="hidden lg:block relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#96c5a9]" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Buscar paciente, CPF ou ACS..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#1a3a26] border border-[#264532] text-white placeholder:text-[#96c5a9]/60 text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-card border border-border text-card-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:border-primary transition-colors"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#96c5a9] hover:text-white"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -500,13 +500,13 @@ const AppointmentsPage: React.FC = () => {
       {dayConfig.hasService && (
         <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden print:hidden">
           {/* Blur backdrop */}
-          <div className="bg-[#0d1f14]/90 backdrop-blur-xl border-t border-[#264532] px-4 pt-3 pb-safe-or-3">
+          <div className="bg-background/90 backdrop-blur-xl border-t border-border px-4 pt-3 pb-safe-or-3">
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center max-w-xl mx-auto">
               {/* Primary CTA */}
               <button
                 onClick={() => handleAddClick()}
                 disabled={availableSlots.length === 0 || isLoading}
-                className="flex items-center justify-center gap-2 h-12 rounded-xl bg-primary text-[#0d1f14] font-bold text-sm disabled:opacity-50 active:scale-95 transition-all"
+                className="flex items-center justify-center gap-2 h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 active:scale-95 transition-all"
               >
                 <Plus className="w-5 h-5" />
                 {isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
@@ -515,17 +515,17 @@ const AppointmentsPage: React.FC = () => {
               {/* Search toggle */}
               <button
                 onClick={() => { setIsSearchOpen(v => !v); }}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#1a3a26] border border-[#264532] active:scale-95 transition-all"
+                className="w-12 h-12 flex items-center justify-center rounded-xl bg-card border border-border active:scale-95 transition-all"
                 aria-label="Buscar"
               >
-                <Search className={`w-5 h-5 ${isSearchOpen ? 'text-primary' : 'text-[#96c5a9]'}`} />
+                <Search className={`w-5 h-5 ${isSearchOpen ? 'text-primary' : 'text-muted-foreground'}`} />
               </button>
 
               {/* Block */}
               <button
                 onClick={() => setIsBlockDayModalOpen(true)}
                 disabled={isLoading}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#1a3a26] border border-[#264532] active:scale-95 transition-all disabled:opacity-50"
+                className="w-12 h-12 flex items-center justify-center rounded-xl bg-card border border-border active:scale-95 transition-all disabled:opacity-50"
                 aria-label="Bloquear dia"
               >
                 <Ban className="w-5 h-5 text-red-400" />
@@ -535,10 +535,10 @@ const AppointmentsPage: React.FC = () => {
               <button
                 onClick={refresh}
                 disabled={isLoading}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#1a3a26] border border-[#264532] active:scale-95 transition-all disabled:opacity-50"
+                className="w-12 h-12 flex items-center justify-center rounded-xl bg-card border border-border active:scale-95 transition-all disabled:opacity-50"
                 aria-label="Atualizar"
               >
-                <RefreshCw className={`w-5 h-5 text-[#96c5a9] ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
@@ -615,12 +615,12 @@ const StatPill = ({
   const valueClass =
     color === 'green' ? 'text-primary' :
     color === 'blue'  ? 'text-blue-300' :
-    'text-white';
+    'text-card-foreground';
 
   return (
-    <div className="rounded-xl bg-[#122118] border border-[#264532] py-3 text-center">
+    <div className="rounded-xl bg-background border border-border py-3 text-center">
       <p className={`text-xl font-bold ${valueClass}`}>{value}</p>
-      <p className="text-[10px] uppercase tracking-widest text-[#96c5a9] font-semibold mt-0.5">{label}</p>
+      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mt-0.5">{label}</p>
     </div>
   );
 };
@@ -647,8 +647,8 @@ const DesktopActionButton = ({
       flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl
       font-semibold text-sm transition-all active:scale-95 disabled:opacity-50
       ${primary
-        ? 'bg-primary text-[#0d1f14] hover:brightness-110'
-        : 'bg-[#1a3a26] border border-[#264532] text-white hover:bg-[#264532]'
+        ? 'bg-primary text-primary-foreground hover:brightness-110'
+        : 'bg-card border border-border text-card-foreground hover:bg-secondary'
       }
     `}
   >
@@ -663,38 +663,38 @@ const ReleasedAppointmentsSection = ({ appointments }: { appointments: Appointme
   if (appointments.length === 0) return null;
 
   return (
-    <section className="mt-6 rounded-2xl border border-[#264532] bg-[#1a3a26] overflow-hidden print:hidden">
-      <div className="flex items-center justify-between p-4 border-b border-[#264532]">
+    <section className="mt-6 rounded-2xl border border-border bg-card overflow-hidden print:hidden">
+      <div className="flex items-center justify-between p-4 border-b border-border">
         <div>
-          <h3 className="font-bold text-white">Remarcadas</h3>
-          <p className="text-xs text-[#96c5a9] mt-0.5">Mantidas no histórico sem ocupar ficha no dia original.</p>
+          <h3 className="font-bold text-card-foreground">Remarcadas</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Mantidas no histórico sem ocupar ficha no dia original.</p>
         </div>
-        <span className="rounded-full bg-[#264532] px-3 py-1 text-sm font-bold text-[#96c5a9]">
+        <span className="rounded-full bg-secondary px-3 py-1 text-sm font-bold text-muted-foreground">
           {appointments.length}
         </span>
       </div>
 
-      <div className="divide-y divide-[#264532]">
+      <div className="divide-y divide-border">
         {appointments.map(appointment => (
           <div
             key={appointment.id}
-            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 hover:bg-[#122118]/40 transition-colors"
+            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 hover:bg-background/40 transition-colors"
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <span className="rounded-full bg-[#264532] px-2.5 py-0.5 text-xs font-bold text-primary">
+                <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold text-primary">
                   Ficha {appointment.slot_number}
                 </span>
                 <span className="rounded-full bg-purple-500/15 border border-purple-500/20 px-2.5 py-0.5 text-xs font-bold text-purple-300">
                   {getAppointmentStatus(appointment)}
                 </span>
               </div>
-              <p className="font-semibold text-white truncate">{appointment.patient_name}</p>
-              <p className="text-sm text-[#96c5a9]">
+              <p className="font-semibold text-card-foreground truncate">{appointment.patient_name}</p>
+              <p className="text-sm text-muted-foreground">
                 {appointment.document_value} · ACS: {appointment.acs_name}
               </p>
             </div>
-            <p className="text-xs text-[#96c5a9] shrink-0">
+            <p className="text-xs text-muted-foreground shrink-0">
               {new Date(appointment.status_updated_at || appointment.updated_at).toLocaleString('pt-BR', {
                 day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
               })}

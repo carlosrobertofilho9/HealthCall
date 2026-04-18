@@ -6,6 +6,14 @@ export const PENDENCIA_STATUS = {
 
 export type PendenciaStatus = (typeof PENDENCIA_STATUS)[keyof typeof PENDENCIA_STATUS];
 
+export const PENDENCIA_PRIORIDADE = {
+  BAIXA: 'baixa',
+  NORMAL: 'normal',
+  ALTA: 'alta',
+} as const;
+
+export type PendenciaPrioridade = (typeof PENDENCIA_PRIORIDADE)[keyof typeof PENDENCIA_PRIORIDADE];
+
 export interface Pendencia {
   id: string;
   nome_paciente: string;
@@ -13,6 +21,9 @@ export interface Pendencia {
   tipo: string;
   resumo: string | null;
   status: PendenciaStatus;
+  prioridade: PendenciaPrioridade;
+  prazo: string | null;
+  responsavel: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -24,6 +35,9 @@ export interface CreatePendenciaDTO {
   cns_cpf: string;
   tipo: string;
   resumo?: string;
+  prioridade: PendenciaPrioridade;
+  prazo?: string | null;
+  responsavel?: string | null;
 }
 
 export interface UpdatePendenciaStatusDTO {
@@ -37,10 +51,19 @@ export interface UpdatePendenciaDTO {
   cns_cpf: string;
   tipo: string;
   resumo?: string;
+  prioridade: PendenciaPrioridade;
+  prazo?: string | null;
+  responsavel?: string | null;
 }
 
 export const PENDENCIA_STATUS_LABEL: Record<PendenciaStatus, string> = {
   aberto: 'Aberto',
   em_andamento: 'Em andamento',
   resolvido: 'Resolvido',
+};
+
+export const PENDENCIA_PRIORIDADE_LABEL: Record<PendenciaPrioridade, string> = {
+  baixa: 'Baixa',
+  normal: 'Normal',
+  alta: 'Alta',
 };

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, User, FileText, UserCheck, MapPin, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import Modal from '@/components/ui/Modal';
 import {
   Select,
   SelectContent,
@@ -48,15 +49,6 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   const [customAcs, setCustomAcs] = useState(isKwownAcs ? '' : appointment.acs_name);
   
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Fechar com ESC
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -119,29 +111,33 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50">
-      <div className="bg-[#1a2c22] rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 w-full sm:max-w-md max-h-[92vh] sm:max-h-[90vh] overflow-y-auto safe-area-bottom">
-        <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-3 sm:hidden" />
+    <Modal
+      isOpen
+      onClose={onClose}
+      position="bottom"
+      showMobileHandle
+      panelClassName="max-h-[92vh] overflow-y-auto p-5 sm:max-h-[90vh] sm:p-6"
+    >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg sm:text-xl font-bold text-white">Editar Marcação</h3>
+          <h3 className="text-lg sm:text-xl font-bold text-card-foreground">Editar Marcação</h3>
           <button
             onClick={onClose}
-            className="p-2.5 rounded-xl active:bg-[#264532] hover:bg-[#264532] transition-colors touch-manipulation"
+            className="p-2.5 rounded-xl active:bg-secondary hover:bg-secondary transition-colors touch-manipulation"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-card-foreground" />
           </button>
         </div>
 
-        <div className="mb-4 p-3 bg-[#264532] rounded-lg">
-          <p className="text-[#96c5a9] text-sm">
-            Slot <span className="text-white font-bold">{appointment.slot_number}</span> •{' '}
+        <div className="mb-4 p-3 bg-secondary rounded-lg">
+          <p className="text-muted-foreground text-sm">
+            Slot <span className="text-card-foreground font-bold">{appointment.slot_number}</span> •{' '}
             {getSlotTime(appointment.slot_number, dayConfig)}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label className="text-white mb-2 block">Status</Label>
+            <Label className="text-card-foreground mb-2 block">Status</Label>
             <Select
               value={status}
               onValueChange={(value) => setStatus(value as AppointmentStatus)}
@@ -161,7 +157,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
           {/* Nome do Paciente */}
           <div>
-            <Label className="text-white mb-2 block">Nome do Paciente *</Label>
+            <Label className="text-card-foreground mb-2 block">Nome do Paciente *</Label>
             <Input
               type="text"
               value={patientName}
@@ -176,9 +172,9 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
           {/* Tipo de Documento */}
           <div>
-            <Label className="text-white mb-2 block">Tipo de Documento *</Label>
+            <Label className="text-card-foreground mb-2 block">Tipo de Documento *</Label>
             <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-white cursor-pointer">
+              <label className="flex items-center gap-2 text-card-foreground cursor-pointer">
                 <input
                   type="radio"
                   name="documentType"
@@ -192,7 +188,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
                 />
                 CPF
               </label>
-              <label className="flex items-center gap-2 text-white cursor-pointer">
+              <label className="flex items-center gap-2 text-card-foreground cursor-pointer">
                 <input
                   type="radio"
                   name="documentType"
@@ -211,7 +207,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
           {/* Documento */}
           <div>
-            <Label className="text-white mb-2 block">
+            <Label className="text-card-foreground mb-2 block">
               {documentType === 'CPF' ? 'CPF *' : 'Número do Cartão SUS *'}
             </Label>
             <Input
@@ -228,9 +224,9 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
           {/* ACS */}
           <div>
-            <Label className="text-white mb-2 block">ACS Responsável *</Label>
+            <Label className="text-card-foreground mb-2 block">ACS Responsável *</Label>
             <div className="relative mb-2">
-              <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9] z-10" />
+              <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
               <Select
                 value={selectedAcs}
                 onValueChange={setSelectedAcs}
@@ -267,9 +263,9 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
           </div>
 
           {isHomeVisit && (
-            <div className="space-y-4 rounded-2xl border border-[#264532] bg-[#122118]/40 p-4">
+            <div className="space-y-4 rounded-2xl border border-border bg-background/40 p-4">
               <div>
-                <Label className="text-white mb-2 block">Endereço completo *</Label>
+                <Label className="text-card-foreground mb-2 block">Endereço completo *</Label>
                 <Input
                   type="text"
                   value={homeVisitAddress}
@@ -283,7 +279,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
               </div>
 
               <div>
-                <Label className="text-white mb-2 block">Ponto de referência</Label>
+                <Label className="text-card-foreground mb-2 block">Ponto de referência</Label>
                 <Input
                   type="text"
                   value={homeVisitReference}
@@ -294,14 +290,14 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
               </div>
 
               <div>
-                <Label className="text-white mb-2 block">Motivo da visita *</Label>
+                <Label className="text-card-foreground mb-2 block">Motivo da visita *</Label>
                 <div className="relative">
-                  <ClipboardList className="absolute left-4 top-4 w-5 h-5 text-[#96c5a9]" />
+                  <ClipboardList className="absolute left-4 top-4 w-5 h-5 text-muted-foreground" />
                   <textarea
                     value={homeVisitReason}
                     onChange={(e) => setHomeVisitReason(e.target.value)}
                     placeholder="Descreva o motivo da visita domiciliar"
-                    className="w-full min-h-24 rounded-2xl bg-[#264532] border-none pl-12 pr-4 py-4 text-white placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none resize-y"
+                    className="w-full min-h-24 rounded-2xl bg-input border border-input pl-12 pr-4 py-4 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none resize-y"
                   />
                 </div>
                 {errors.homeVisitReason && (
@@ -316,7 +312,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3.5 px-4 rounded-xl bg-[#264532] text-white font-semibold active:bg-[#305a3e] hover:bg-[#305a3e] transition-colors touch-manipulation"
+              className="flex-1 py-3.5 px-4 rounded-xl bg-secondary text-secondary-foreground font-semibold active:bg-secondary/90 hover:bg-secondary/90 transition-colors touch-manipulation"
             >
               Cancelar
             </button>
@@ -325,8 +321,7 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

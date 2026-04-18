@@ -77,24 +77,24 @@ export const SlotCard: React.FC<SlotCardProps> = ({
         role="button"
         tabIndex={0}
         onKeyDown={e => e.key === 'Enter' && onAddClick(slotNumber)}
-        className="group flex items-center gap-3 rounded-xl border-2 border-dashed border-[#264532]
-          bg-[#122118]/40 px-4 py-3.5 cursor-pointer
-          hover:border-primary/60 hover:bg-[#1a3a26] active:scale-[0.99]
+        className="group flex items-center gap-3 rounded-xl border-2 border-dashed border-border
+          bg-background/40 px-4 py-3.5 cursor-pointer
+          hover:border-primary/60 hover:bg-card active:scale-[0.99]
           transition-all duration-150 print:bg-white print:border-gray-300"
       >
         {/* Slot number */}
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-          bg-[#264532] text-[#96c5a9] text-xs font-bold group-hover:bg-primary/20
+          bg-secondary text-muted-foreground text-xs font-bold group-hover:bg-primary/20
           group-hover:text-primary transition-colors print:bg-gray-100 print:text-gray-500">
           {slotNumber}
         </span>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <Clock className="w-3 h-3 text-[#96c5a9]/60 shrink-0 print:hidden" />
-            <p className="text-xs text-[#96c5a9]/80 font-medium">{time || period}</p>
+            <Clock className="w-3 h-3 text-muted-foreground/60 shrink-0 print:hidden" />
+            <p className="text-xs text-muted-foreground font-medium">{time || period}</p>
           </div>
-          <p className="text-sm font-medium text-[#96c5a9] group-hover:text-white transition-colors">
+          <p className="text-sm font-medium text-muted-foreground group-hover:text-card-foreground transition-colors">
             {emptyLabel}
           </p>
         </div>
@@ -155,7 +155,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
   );
 
   return (
-    <div className="rounded-xl border border-[#264532] bg-[#1a3a26] overflow-hidden
+    <div className="rounded-xl border border-border bg-card overflow-hidden
       print:bg-white print:border-gray-300 transition-all">
       
       {/* ── Main row ── */}
@@ -163,7 +163,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
         {/* Slot badge */}
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-          bg-primary text-[#0d1f14] text-xs font-bold mt-0.5 print:bg-gray-200 print:text-black">
+          bg-primary text-primary-foreground text-xs font-bold mt-0.5 print:bg-gray-200 print:text-black">
           {slotNumber}
         </span>
 
@@ -173,8 +173,8 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             {/* Time + tags */}
             <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
               <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3 text-[#96c5a9]/70 shrink-0 print:hidden" />
-                <span className="text-xs text-[#96c5a9] font-medium">{time || period}</span>
+                <Clock className="w-3 h-3 text-muted-foreground/70 shrink-0 print:hidden" />
+                <span className="text-xs text-muted-foreground font-medium">{time || period}</span>
               </div>
               {isHomeVisit && (
                 <span className="text-[11px] font-bold rounded-full px-2 py-0.5
@@ -188,7 +188,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
           <div className="flex items-center gap-2 min-w-0">
             <User className="w-3.5 h-3.5 text-primary/70 shrink-0 print:text-gray-500" />
             <p
-              className="text-sm font-semibold text-white truncate cursor-pointer
+              className="text-sm font-semibold text-card-foreground truncate cursor-pointer
                 hover:text-primary transition-colors print:text-black"
               title="Toque para copiar o nome"
               onClick={() => handleCopy(appointment.patient_name, 'Nome')}
@@ -197,7 +197,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             </p>
             <button
               onClick={() => handleCopy(appointment.patient_name, 'Nome')}
-              className="shrink-0 text-[#96c5a9]/40 hover:text-[#96c5a9] transition-colors print:hidden"
+              className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors print:hidden"
               title="Copiar nome"
             >
               <Copy className="w-3 h-3" />
@@ -206,9 +206,9 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
           {/* Document row */}
           <div className="flex items-center gap-2 mt-1 min-w-0">
-            <FileText className="w-3.5 h-3.5 text-[#96c5a9]/60 shrink-0" />
+            <FileText className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
             <p
-              className="text-xs text-[#96c5a9] truncate cursor-pointer hover:text-white transition-colors"
+              className="text-xs text-muted-foreground truncate cursor-pointer hover:text-card-foreground transition-colors"
               onClick={() =>
                 handleCopy(appointment.document_value.replace(/\D/g, ''), 'Documento')
               }
@@ -219,20 +219,20 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
           {/* ACS row */}
           <div className="flex items-center gap-2 mt-1 min-w-0">
-            <UserCheck className="w-3.5 h-3.5 text-[#96c5a9]/60 shrink-0" />
-            <p className="text-xs text-[#96c5a9] truncate">ACS: {appointment.acs_name}</p>
+            <UserCheck className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
+            <p className="text-xs text-muted-foreground truncate">ACS: {appointment.acs_name}</p>
           </div>
 
             {/* Home visit extras – collapsible on mobile */}
             {hasExtraInfo && (
               <>
                 {isExpanded && (
-                  <div className="mt-2 space-y-1.5 border-t border-[#264532] pt-2">
+                  <div className="mt-2 space-y-1.5 border-t border-border pt-2">
                     {appointment.home_visit_address && (
                       <div className="flex items-start gap-2 min-w-0">
                         <MapPin className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
                         <p
-                          className="text-xs text-[#d6f3df] cursor-pointer hover:text-white transition-colors"
+                          className="text-xs text-foreground/90 cursor-pointer hover:text-card-foreground transition-colors"
                           onClick={() =>
                             handleCopy(appointment.home_visit_address || '', 'Endereço')
                           }
@@ -243,16 +243,16 @@ export const SlotCard: React.FC<SlotCardProps> = ({
                     )}
                     {appointment.home_visit_reference && (
                       <div className="flex items-start gap-2 min-w-0">
-                        <MapPin className="w-3.5 h-3.5 text-[#96c5a9]/60 shrink-0 mt-0.5" />
-                        <p className="text-xs text-[#96c5a9]">
+                        <MapPin className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground">
                           Ref.: {appointment.home_visit_reference}
                         </p>
                       </div>
                     )}
                     {appointment.home_visit_reason && (
                       <div className="flex items-start gap-2 min-w-0">
-                        <ClipboardList className="w-3.5 h-3.5 text-[#96c5a9]/60 shrink-0 mt-0.5" />
-                        <p className="text-xs text-[#96c5a9]">
+                        <ClipboardList className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground">
                           Motivo: {appointment.home_visit_reason}
                         </p>
                       </div>
@@ -290,35 +290,35 @@ export const SlotCard: React.FC<SlotCardProps> = ({
               {hasExtraInfo && (
                 <button
                   onClick={() => setIsExpanded(v => !v)}
-                  className="p-2 rounded-lg hover:bg-[#264532] transition-colors"
+                  className="p-2 rounded-lg hover:bg-secondary transition-colors"
                   title={isExpanded ? 'Recolher' : 'Ver endereço'}
                 >
                   {isExpanded
-                    ? <ChevronUp className="w-4 h-4 text-[#96c5a9]" />
-                    : <ChevronDown className="w-4 h-4 text-[#96c5a9]" />
+                    ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    : <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   }
                 </button>
               )}
               <button
                 onClick={() => onRescheduleClick(appointment)}
-                className="p-2 rounded-lg hover:bg-[#264532] transition-colors"
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
                 title="Remarcar"
               >
-                <CalendarClock className="w-4 h-4 text-[#96c5a9] hover:text-white" />
+                <CalendarClock className="w-4 h-4 text-muted-foreground hover:text-card-foreground" />
               </button>
               <button
                 onClick={() => onEditClick(appointment)}
-                className="p-2 rounded-lg hover:bg-[#264532] transition-colors"
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
                 title="Editar"
               >
-                <Edit className="w-4 h-4 text-[#96c5a9] hover:text-white" />
+                <Edit className="w-4 h-4 text-muted-foreground hover:text-card-foreground" />
               </button>
               <button
                 onClick={() => onDeleteClick(appointment)}
                 className="p-2 rounded-lg hover:bg-amber-900/30 transition-colors"
                 title="Marcar falta"
               >
-                <Trash2 className="w-4 h-4 text-[#96c5a9] hover:text-amber-300" />
+                <Trash2 className="w-4 h-4 text-muted-foreground hover:text-amber-300" />
               </button>
             </div>
           </div>

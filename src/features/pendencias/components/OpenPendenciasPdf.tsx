@@ -3,6 +3,11 @@ import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import { formatCPF, formatCNS } from '@/lib/utils';
 import type { Pendencia } from '../types';
 import { BaseDocument, pdfTheme } from '@/features/documents/components/pdfs/PdfCommon';
+import {
+  getAlertLevel,
+  isDueToday,
+  isOverdue,
+} from '../utils/pendenciasOperationalUtils';
 
 const styles = StyleSheet.create({
   page: {
@@ -140,6 +145,8 @@ const styles = StyleSheet.create({
 
 interface OpenPendenciasPdfProps {
   pendencias: Pendencia[];
+  title?: string;
+  subtitle?: string;
 }
 
 const formatDocument = (doc: string): string => {
@@ -169,14 +176,33 @@ const parseTipoTags = (value: string) =>
     .map((part) => part.trim())
     .filter(Boolean);
 
-export const OpenPendenciasPdf: React.FC<OpenPendenciasPdfProps> = ({ pendencias }) => {
+const formatDueDate = (value: string | null) => {
+  if (!value) return 'Não definido';
+  return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR');
+};
+
+const formatAlert = (pendencia: Pendencia) => {
+  const level = getAlertLevel(pendencia);
+  if (level === 'overdue') return 'Atrasado';
+  if (level === 'due_today') return 'Vence hoje';
+  if (level === 'high_priority') return 'Prioridade alta';
+  return 'Sem alerta';
+};
+
+export const OpenPendenciasPdf: React.FC<OpenPendenciasPdfProps> = ({
+  pendencias,
+  title = 'Relatório Semanal de Pendências',
+  subtitle = 'Semana atual (segunda a domingo) • Pendências não resolvidas',
+}) => {
   const abertoCount = pendencias.filter((item) => item.status === 'aberto').length;
   const andamentoCount = pendencias.filter((item) => item.status === 'em_andamento').length;
+  const overdueCount = pendencias.filter((item) => isOverdue(item)).length;
+  const dueTodayCount = pendencias.filter((item) => isDueToday(item)).length;
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <BaseDocument title="Relatório de Pendências em Aberto" hidePatientInfo={true}>
+        <BaseDocument title={title} hidePatientInfo={true}>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryCard}>
               <Text style={styles.summaryLabel}>Total de registros</Text>
@@ -191,13 +217,21 @@ export const OpenPendenciasPdf: React.FC<OpenPendenciasPdfProps> = ({ pendencias
               <Text style={styles.summaryValue}>{andamentoCount}</Text>
             </View>
             <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Atrasadas</Text>
+              <Text style={styles.summaryValue}>{overdueCount}</Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Vence hoje</Text>
+              <Text style={styles.summaryValue}>{dueTodayCount}</Text>
+            </View>
+            <View style={styles.summaryCard}>
               <Text style={styles.summaryLabel}>Gerado em</Text>
               <Text style={styles.summaryValue}>{new Date().toLocaleDateString('pt-BR')}</Text>
             </View>
           </View>
 
           <View style={styles.listHeader}>
-            <Text style={styles.listHeaderText}>LISTA DETALHADA DE PENDÊNCIAS</Text>
+            <Text style={styles.listHeaderText}>{subtitle.toUpperCase()}</Text>
           </View>
 
           {pendencias.map((pendencia, index) => {
@@ -225,6 +259,36 @@ export const OpenPendenciasPdf: React.FC<OpenPendenciasPdfProps> = ({ pendencias
                     <Text style={styles.label}>CNS / CPF</Text>
                     <View style={styles.valueLine}>
                       <Text style={styles.value}>{formatDocument(pendencia.cns_cpf)}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Responsável</Text>
+                    <View style={styles.valueLine}>
+                      <Text style={styles.value}>{pendencia.responsavel || 'Não definido'}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Prioridade</Text>
+                    <View style={styles.valueLine}>
+                      <Text style={styles.value}>{pendencia.prioridade}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Prazo</Text>
+                    <View style={styles.valueLine}>
+                      <Text style={styles.value}>{formatDueDate(pendencia.prazo)}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.row}>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Alerta operacional</Text>
+                    <View style={styles.valueLine}>
+                      <Text style={styles.value}>{formatAlert(pendencia)}</Text>
                     </View>
                   </View>
                 </View>

@@ -2,7 +2,6 @@ import React from 'react';
 import type { Patient, PatientStatus } from '@/types';
 import FinishServiceButton from './FinishServiceButton';
 import { Megaphone, Play, Edit, Trash2, MapPin, Clock } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Assuming you have a utility for class merging, otherwise I'll use template literals carefully
 
 interface PatientCardProps {
   patient: Patient;
@@ -60,8 +59,8 @@ const PatientCard: React.FC<PatientCardProps> = ({
   return (
     <div
       className={`
-        relative rounded-xl border border-white/5 bg-[#1a2c22]/60 backdrop-blur-sm p-4 
-        transition-all duration-300 hover:bg-[#1a2c22]/80 hover:shadow-lg hover:border-white/10 hover:z-50 group
+        relative rounded-xl border border-border bg-card/70 backdrop-blur-sm p-4 
+        transition-all duration-300 hover:bg-card hover:shadow-lg hover:border-border/90 hover:z-50 group
         ${patient.status === 'Chamado' ? 'ring-2 ring-blue-500/30 ring-offset-2 ring-offset-transparent' : ''}
         ${isFinished ? 'opacity-60 grayscale-[0.5]' : ''}
       `}
@@ -73,26 +72,26 @@ const PatientCard: React.FC<PatientCardProps> = ({
         
         {/* Position Indicator */}
         <div className="hidden sm:flex flex-col items-center justify-center shrink-0 w-8">
-            <span className="text-2xl font-bold text-white/20 font-mono leading-none">
+            <span className="text-2xl font-bold text-muted-foreground/40 font-mono leading-none">
                 {String(position).padStart(2, '0')}
             </span>
         </div>
         {/* Main Info */}
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-bold text-white tracking-tight">{patient.name}</h3>
+            <h3 className="text-xl font-bold text-card-foreground tracking-tight">{patient.name}</h3>
             {patient.callCount > 0 && (
               <span className="flex items-center gap-1.5 bg-blue-500/20 text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                <Megaphone size={10} className="stroke-[3]" />
+                <Megaphone size={10} className="stroke-3" />
                 {patient.callCount}ª chamada
               </span>
             )}
           </div>
           
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <MapPin size={14} className="text-[#96c5a9]" />
-              <span className="text-[#96c5a9] font-medium">{patient.destination}</span>
+              <MapPin size={14} className="text-muted-foreground" />
+              <span className="text-muted-foreground font-medium">{patient.destination}</span>
             </div>
             <div className={`flex items-center gap-1.5 font-medium ${statusStyles.color}`}>
                <StatusIcon size={14} className={patient.status === 'Chamado' ? 'animate-bounce' : ''} />
@@ -105,7 +104,7 @@ const PatientCard: React.FC<PatientCardProps> = ({
         <div className="flex items-center gap-3 self-end sm:self-center">
           
           {/* Primary Actions Group */}
-          <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/5">
+          <div className="flex items-center gap-1 bg-secondary/20 p-1 rounded-lg border border-border">
             <button
               className={`
                 flex items-center justify-center rounded-md h-9 w-9 transition-all active:scale-95
@@ -153,7 +152,7 @@ const PatientCard: React.FC<PatientCardProps> = ({
                 flex items-center justify-center rounded-full h-8 w-8 transition-colors
                 ${isFinished
                   ? 'text-gray-600 cursor-not-allowed'
-                  : 'text-gray-400 hover:bg-yellow-500/10 hover:text-yellow-400'}
+                  : 'text-muted-foreground hover:bg-yellow-500/10 hover:text-yellow-400'}
               `}
               title="Editar"
               onClick={() => onEdit(patient)}
@@ -162,7 +161,7 @@ const PatientCard: React.FC<PatientCardProps> = ({
               <Edit size={16} />
             </button>
             <button
-              className="flex items-center justify-center rounded-full h-8 w-8 text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+              className="flex items-center justify-center rounded-full h-8 w-8 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-colors"
               title="Remover da Fila"
               onClick={() => onRemove(patient.id)}
             >

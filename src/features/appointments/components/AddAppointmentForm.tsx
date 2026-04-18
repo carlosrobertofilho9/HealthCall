@@ -3,6 +3,7 @@ import { X, Copy, Check, Clock, User, FileText, UserCheck, MapPin, ClipboardList
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import Modal from '@/components/ui/Modal';
 import {
   Select,
   SelectContent,
@@ -161,19 +162,23 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
   if (showSuccess) {
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4">
-        <div className="safe-area-bottom animate-slide-up w-full rounded-t-3xl bg-[#1a2c22] p-6 sm:max-w-lg sm:rounded-2xl sm:animate-none">
-          <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
+      <Modal
+        isOpen
+        onClose={handleClose}
+        position="bottom"
+        showMobileHandle
+        panelClassName="safe-area-bottom animate-slide-up p-6 sm:max-w-lg sm:animate-none"
+      >
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-[#1a3a26]" />
+              <Check className="w-8 h-8 text-primary-foreground" />
             </div>
-            <h3 className="text-xl font-bold text-white">Agendamento Realizado!</h3>
-            <p className="text-[#96c5a9]">Copie a mensagem abaixo para enviar ao paciente</p>
+            <h3 className="text-xl font-bold text-card-foreground">Agendamento Realizado!</h3>
+            <p className="text-muted-foreground">Copie a mensagem abaixo para enviar ao paciente</p>
           </div>
 
-          <div className="bg-[#264532] p-4 rounded-xl mb-6 relative group">
-            <pre className="text-white font-mono text-sm whitespace-pre-wrap">
+          <div className="bg-secondary p-4 rounded-xl mb-6 relative group">
+            <pre className="text-secondary-foreground font-mono text-sm whitespace-pre-wrap">
               {createdMessage}
             </pre>
           </div>
@@ -181,7 +186,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
           <div className="flex gap-3">
             <button
               onClick={handleClose}
-              className="flex-1 py-3.5 px-4 rounded-xl border border-[#264532] text-white font-semibold active:bg-[#264532] hover:bg-[#264532] transition-colors touch-manipulation"
+              className="flex-1 py-3.5 px-4 rounded-xl border border-border text-card-foreground font-semibold active:bg-secondary hover:bg-secondary transition-colors touch-manipulation"
             >
               Fechar
             </button>
@@ -202,22 +207,25 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
               )}
             </Button>
           </div>
-        </div>
-      </div>
+      </Modal>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="safe-area-bottom max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-[#1a2c22] p-5 sm:max-h-[90vh] sm:w-[95vw] sm:max-w-3xl sm:rounded-2xl sm:p-8">
-        <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-3 sm:hidden" />
+    <Modal
+      isOpen
+      onClose={onCancel}
+      position="bottom"
+      showMobileHandle
+      panelClassName="safe-area-bottom max-h-[92vh] overflow-y-auto p-5 sm:w-[95vw] sm:max-w-3xl sm:max-h-[90vh] sm:p-8"
+    >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg sm:text-xl font-bold text-white">Nova Marcação</h3>
+          <h3 className="text-lg sm:text-xl font-bold text-card-foreground">Nova Marcação</h3>
           <button
             onClick={onCancel}
-            className="p-2.5 rounded-xl active:bg-[#264532] hover:bg-[#264532] transition-colors touch-manipulation"
+            className="p-2.5 rounded-xl active:bg-secondary hover:bg-secondary transition-colors touch-manipulation"
           >
-            <X className="w-5 h-5 text-white" />
+            <X className="w-5 h-5 text-card-foreground" />
           </button>
         </div>
 
@@ -225,9 +233,9 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
             {/* Slot */}
             <div>
-              <Label className="text-white mb-2 block">Slot *</Label>
+              <Label className="text-card-foreground mb-2 block">Slot *</Label>
               <div className="relative">
-                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9] z-10" />
+                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
                 <Select
                   value={slotNumber.toString()}
                   onValueChange={(value) => setSlotNumber(Number(value))}
@@ -251,7 +259,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
             {/* Nome do Paciente */}
             <div>
-              <Label className="text-white mb-2 block">Nome do Paciente *</Label>
+              <Label className="text-card-foreground mb-2 block">Nome do Paciente *</Label>
               <Input
                 type="text"
                 value={patientName}
@@ -266,9 +274,9 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
             {/* Tipo de Documento */}
             <div>
-              <Label className="text-white mb-2 block">Tipo de Documento *</Label>
+              <Label className="text-card-foreground mb-2 block">Tipo de Documento *</Label>
               <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-white cursor-pointer">
+                <label className="flex items-center gap-2 text-card-foreground cursor-pointer">
                   <input
                     type="radio"
                     name="documentType"
@@ -282,7 +290,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
                   />
                   CPF
                 </label>
-                <label className="flex items-center gap-2 text-white cursor-pointer">
+                <label className="flex items-center gap-2 text-card-foreground cursor-pointer">
                   <input
                     type="radio"
                     name="documentType"
@@ -301,7 +309,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
             {/* Documento */}
             <div>
-              <Label className="text-white mb-2 block">
+              <Label className="text-card-foreground mb-2 block">
                 {documentType === 'CPF' ? 'CPF *' : 'Número do Cartão SUS *'}
               </Label>
               <Input
@@ -318,9 +326,9 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
             {/* ACS */}
             <div className="sm:col-span-2">
-            <Label className="text-white mb-2 block">ACS Responsável *</Label>
+            <Label className="text-card-foreground mb-2 block">ACS Responsável *</Label>
             <div className="relative mb-2">
-              <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9] z-10" />
+              <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
               <Select
                 value={selectedAcs}
                 onValueChange={setSelectedAcs}
@@ -358,9 +366,9 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
           </div>
 
           {isHomeVisit && (
-            <div className="space-y-4 rounded-2xl border border-[#264532] bg-[#122118]/40 p-4">
+            <div className="space-y-4 rounded-2xl border border-border bg-background/40 p-4">
               <div>
-                <Label className="text-white mb-2 block">Endereço completo *</Label>
+                <Label className="text-card-foreground mb-2 block">Endereço completo *</Label>
                 <Input
                   type="text"
                   value={homeVisitAddress}
@@ -374,7 +382,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
               </div>
 
               <div>
-                <Label className="text-white mb-2 block">Ponto de referência</Label>
+                <Label className="text-card-foreground mb-2 block">Ponto de referência</Label>
                 <Input
                   type="text"
                   value={homeVisitReference}
@@ -385,14 +393,14 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
               </div>
 
               <div>
-                <Label className="text-white mb-2 block">Motivo da visita *</Label>
+                <Label className="text-card-foreground mb-2 block">Motivo da visita *</Label>
                 <div className="relative">
-                  <ClipboardList className="absolute left-4 top-4 w-5 h-5 text-[#96c5a9]" />
+                  <ClipboardList className="absolute left-4 top-4 w-5 h-5 text-muted-foreground" />
                   <textarea
                     value={homeVisitReason}
                     onChange={(e) => setHomeVisitReason(e.target.value)}
                     placeholder="Descreva o motivo da visita domiciliar"
-                    className="w-full min-h-24 rounded-2xl bg-[#264532] border-none pl-12 pr-4 py-4 text-white placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none resize-y"
+                    className="w-full min-h-24 rounded-2xl bg-input border border-input pl-12 pr-4 py-4 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none resize-y"
                   />
                 </div>
                 {errors.homeVisitReason && (
@@ -409,7 +417,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 py-3.5 px-4 rounded-xl bg-[#264532] text-white font-semibold active:bg-[#305a3e] hover:bg-[#305a3e] transition-colors touch-manipulation"
+              className="flex-1 py-3.5 px-4 rounded-xl bg-secondary text-secondary-foreground font-semibold active:bg-secondary/90 hover:bg-secondary/90 transition-colors touch-manipulation"
             >
               Cancelar
             </button>
@@ -418,8 +426,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

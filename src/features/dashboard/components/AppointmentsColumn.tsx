@@ -81,17 +81,17 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
 
 
   return (
-    <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-6 shadow-2xl border border-white/5 flex flex-col h-auto lg:h-full lg:max-h-[calc(100vh-2rem)]">
+    <div className="lg:col-span-1 bg-card rounded-2xl p-6 shadow-sm border border-border flex flex-col h-auto lg:h-full lg:max-h-[calc(100vh-2rem)]">
       {/* Header */}
-      <div className="flex flex-col gap-4 mb-6 pb-4 border-b border-white/5">
+      <div className="flex flex-col gap-4 mb-6 pb-4 border-b border-border">
         <div className="space-y-2">
-            <h2 className="text-white text-2xl font-bold tracking-tight flex items-center gap-3">
-              <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
-                 <Calendar className="text-[#96c5a9]" size={20} />
+            <h2 className="text-card-foreground text-2xl font-bold tracking-tight flex items-center gap-3">
+              <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
+                 <Calendar className="text-muted-foreground" size={20} />
               </div>
               {isHomeVisitDay ? 'Visitas domiciliares' : 'Agendamentos'}
             </h2>
-            <p className="text-[#96c5a9]/80 text-sm pl-1">
+            <p className="text-muted-foreground text-sm pl-1">
               {isHomeVisitDay
                 ? `Visitas domiciliares de hoje (${dayConfig.dayName}).`
                 : `Pacientes agendados para hoje (${dayConfig.hasService ? dayConfig.dayName : 'Sem atendimento'}).`}
@@ -99,11 +99,11 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
         </div>
 
         {/* Date Navigation Toolbar */}
-        <div className="flex items-center justify-between bg-[#264532]/50 border border-white/5 rounded-xl p-1.5 h-14 w-full">
+        <div className="flex items-center justify-between bg-secondary/40 border border-border rounded-xl p-1.5 h-14 w-full">
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-10 w-10 text-[#96c5a9] hover:text-white hover:bg-white/5 rounded-lg active:scale-95 transition-all" 
+                className="h-10 w-10 text-muted-foreground hover:text-foreground rounded-lg active:scale-95 transition-all" 
                 onClick={goToPreviousDay}
             >
                 <ChevronLeft size={20} />
@@ -130,7 +130,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-10 w-10 text-[#96c5a9] hover:text-white hover:bg-white/5 rounded-lg active:scale-95 transition-all" 
+              className="h-10 w-10 text-muted-foreground hover:text-foreground rounded-lg active:scale-95 transition-all" 
                 onClick={goToNextDay}
             >
                 <ChevronRight size={20} />
@@ -161,7 +161,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
              {/* Morning Slots */}
              {visibleSlots.filter(s => s.period === 'Manhã').length > 0 && (
                  <div>
-                    <h3 className="text-[#96c5a9] font-medium text-xs uppercase tracking-wider mb-2 flex items-center gap-2 pl-1">
+                    <h3 className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-2 flex items-center gap-2 pl-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
                         {isHomeVisitDay ? 'Visitas da manhã' : 'Manhã'}
                     </h3>
@@ -188,7 +188,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
              {/* Afternoon Slots */}
              {visibleSlots.filter(s => s.period === 'Tarde').length > 0 && (
                  <div>
-                    <h3 className="text-[#96c5a9] font-medium text-xs uppercase tracking-wider mb-2 mt-2 flex items-center gap-2 pl-1">
+                    <h3 className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-2 mt-2 flex items-center gap-2 pl-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                         Tarde
                     </h3>
@@ -216,7 +216,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
       </div>
       
       {/* Footer / Stats */}
-      <div className="pt-4 mt-2 border-t border-white/5 flex justify-between items-center text-xs text-gray-500">
+      <div className="pt-4 mt-2 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Clock size={12} />
             <span>{isHomeVisitDay ? 'Dia' : 'Turno'}: {dayConfig.dayName}</span>
@@ -235,8 +235,8 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
     className={cn(
         "p-3 rounded-xl border transition-all duration-200 group relative overflow-hidden",
         inQueue 
-        ? "bg-[#264532]/20 border-green-500/10 opacity-60 hover:opacity-100" 
-        : "bg-[#1a2c22]/40 border-white/5 hover:bg-[#1a2c22] hover:border-white/10 hover:shadow-lg"
+      ? "bg-secondary/20 border-green-500/20 opacity-60 hover:opacity-100" 
+      : "bg-card/80 border-border hover:bg-card hover:border-border/90 hover:shadow-lg"
     )}
     >
     <div className="flex flex-col gap-3 relative z-10">
@@ -245,19 +245,19 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
         <div className="flex justify-between items-start">
         <div className="min-w-0 w-full">
             <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono font-bold text-[#96c5a9] bg-[#264532] px-2 py-0.5 rounded border border-white/5">
+            <span className="text-xs font-mono font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded border border-border">
                 {String(apt.slot_number).padStart(2, '0')}
             </span>
             <div className="flex-1 min-w-0">
                 <h3 
-                    className="font-semibold text-white truncate text-sm leading-tight cursor-pointer hover:text-green-400 transition-colors" 
+                className="font-semibold text-card-foreground truncate text-sm leading-tight cursor-pointer hover:text-primary transition-colors" 
                     title="Clique para copiar o nome"
                     onClick={() => handleCopyName(apt.patient_name)}
                 >
                     {apt.patient_name}
                 </h3>
                 <p 
-                    className="text-xs text-[#96c5a9]/70 truncate font-mono mt-0.5 cursor-pointer hover:text-green-400 transition-colors"
+                className="text-xs text-muted-foreground truncate font-mono mt-0.5 cursor-pointer hover:text-primary transition-colors"
                     title="Clique para copiar o documento"
                     onClick={() => handleCopyDoc(apt.document_value)}
                 >
@@ -265,7 +265,7 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
                 </p>
                 {isHomeVisitDay && apt.home_visit_address && (
                     <p
-                        className="mt-1 flex items-center gap-1.5 text-xs text-[#96c5a9]/80 truncate cursor-pointer hover:text-green-400 transition-colors"
+                      className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground truncate cursor-pointer hover:text-primary transition-colors"
                         title="Clique para copiar o endereço"
                         onClick={() => {
                             navigator.clipboard.writeText(apt.home_visit_address);
@@ -286,7 +286,7 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
         
         {/* Check-in Button */}
         {isHomeVisitDay ? (
-        <div className="h-8 flex-1 rounded-lg border border-white/5 bg-[#264532]/40 px-3 text-xs font-medium text-[#96c5a9] flex items-center gap-2">
+        <div className="h-8 flex-1 rounded-lg border border-border bg-secondary/40 px-3 text-xs font-medium text-muted-foreground flex items-center gap-2">
             <MapPin size={14} />
             Visita domiciliar
         </div>
@@ -300,7 +300,7 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
             "h-8 flex-1 text-xs gap-2 font-medium transition-all duration-200 rounded-lg",
             inQueue 
                 ? "bg-transparent text-gray-500 border border-transparent cursor-not-allowed justify-start px-0" 
-                : "bg-[#264532] text-[#96c5a9] border border-white/5 hover:bg-green-500 hover:text-white hover:border-green-400 hover:shadow-green-500/20 shadow-sm"
+              : "bg-secondary text-muted-foreground border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-primary/20 shadow-sm"
             )}
         >
             {inQueue ? (

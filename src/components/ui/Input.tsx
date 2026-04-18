@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -21,12 +22,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, icon, ...props }, ref) => {
     return (
       <div className="relative w-full">
-        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
           {icon ?? <Search className="h-4 w-4" />}
         </span>
         <input
           type={type}
-          className={`form-input w-full rounded-full text-white bg-[#264532] border-none h-11 pl-12 pr-4 placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none ${className}`}
+          className={cn(
+            'form-input w-full rounded-full border border-input bg-input text-foreground h-11 pl-12 pr-4 placeholder:text-muted-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none',
+            className,
+          )}
           ref={ref}
           {...props}
         />

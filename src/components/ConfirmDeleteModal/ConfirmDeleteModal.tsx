@@ -1,6 +1,7 @@
 import React from 'react';
-import useAnimation from '@/hooks/useAnimation';
 import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
+import { X } from 'lucide-react';
 
 interface ConfirmDeleteModalProps {
   isOpen: boolean;
@@ -18,30 +19,26 @@ interface ConfirmDeleteModalProps {
  * @param {string} props.patientName - The name of the patient to be displayed in the confirmation message.
  */
 const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ isOpen, onClose, onConfirm, patientName }) => {
-  const { shouldRender, isVisible } = useAnimation(isOpen);
-
-  if (!shouldRender) return null;
+  if (!isOpen) return null;
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`} onClick={onClose}>
-      <div className={`bg-[#1a2c22] rounded-2xl p-8 shadow-2xl w-full max-w-md mx-4 relative transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} onClick={(e) => e.stopPropagation()}>
+    <Modal isOpen={isOpen} onClose={onClose} panelClassName="relative max-w-md p-8 shadow-sm">
         <button
-          className="absolute top-4 right-4 text-[#96c5a9] hover:text-white transition-colors focus:outline-none"
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
           onClick={onClose}
         >
-          <span className="material-symbols-outlined">close</span>
+          <X size={18} />
         </button>
         <div className="text-left mb-8">
-          <h2 className="text-white text-2xl font-bold leading-tight">Confirmar Exclusão</h2>
-          <p className="text-[#96c5a9] mt-1">
-            Tem certeza que deseja remover <span className="font-bold text-white">{patientName}</span> da fila?
+          <h2 className="text-card-foreground text-2xl font-bold leading-tight">Confirmar Exclusão</h2>
+          <p className="text-muted-foreground mt-1">
+            Tem certeza que deseja remover <span className="font-bold text-card-foreground">{patientName}</span> da fila?
           </p>
         </div>
         <div className="flex justify-end space-x-4">
           <Button
             onClick={onClose}
-            variant="default"
-            className="bg-[#264532] text-white hover:bg-[#3a6b4d]"
+            variant="secondary"
           >
             Cancelar
           </Button>
@@ -52,8 +49,7 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ isOpen, onClose
             Confirmar
           </Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 

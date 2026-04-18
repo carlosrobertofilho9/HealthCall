@@ -1,5 +1,6 @@
 import type { AppointmentSlot } from '@/types';
 import { formatCPF, formatCNS } from '@/lib/utils';
+import { PRINT_COLORS } from './printTheme';
 
 type HomeVisitRouteItem = {
   slot: number;
@@ -128,7 +129,7 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
 
           body {
             font-family: Arial, Helvetica, sans-serif;
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
@@ -136,7 +137,7 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
           .header-banner {
             display: flex;
             align-items: center;
-            background-color: #0f766e;
+            background-color: ${PRINT_COLORS.primary};
             border-radius: 8px;
             padding: 10px 14px;
           }
@@ -166,20 +167,20 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
           .header-psf-name {
             font-size: 17px;
             font-weight: 700;
-            color: #ffffff;
+            color: ${PRINT_COLORS.textOnDark};
             letter-spacing: 0.3px;
             margin: 0;
           }
 
           .header-ubs {
             font-size: 10px;
-            color: #99f6e4;
+            color: ${PRINT_COLORS.primarySoft};
             margin-top: 2px;
             letter-spacing: 0.2px;
           }
 
           .header-badge {
-            background-color: #ffffff;
+            background-color: ${PRINT_COLORS.surface};
             border-radius: 4px;
             padding: 4px 8px;
             text-align: center;
@@ -188,13 +189,13 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
           .header-badge-text {
             font-size: 11px;
             font-weight: 800;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
             margin: 0;
           }
 
           .header-badge-sub {
             font-size: 6px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
             margin-top: 1px;
           }
 
@@ -204,17 +205,17 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
             margin: 6px 0 10px;
           }
 
-          .accent-1 { flex: 2; background-color: #0d9488; border-radius: 2px; }
-          .accent-2 { flex: 1; background-color: #14b8a6; border-radius: 2px; margin-left: 2px; }
-          .accent-3 { flex: 1; background-color: #5eead4; border-radius: 2px; margin-left: 2px; }
-          .accent-4 { flex: 3; background-color: #99f6e4; border-radius: 2px; margin-left: 2px; }
+          .accent-1 { flex: 2; background-color: ${PRINT_COLORS.accent1}; border-radius: 2px; }
+          .accent-2 { flex: 1; background-color: ${PRINT_COLORS.accent2}; border-radius: 2px; margin-left: 2px; }
+          .accent-3 { flex: 1; background-color: ${PRINT_COLORS.accent3}; border-radius: 2px; margin-left: 2px; }
+          .accent-4 { flex: 3; background-color: ${PRINT_COLORS.accent4}; border-radius: 2px; margin-left: 2px; }
 
           .info-card {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
             gap: 14px;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
+            background-color: ${PRINT_COLORS.surfaceAlt};
+            border: 1px solid ${PRINT_COLORS.border};
             border-radius: 6px;
             padding: 9px 12px;
             margin-bottom: 10px;
@@ -222,7 +223,7 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
 
           .info-label {
             font-size: 8px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
             text-transform: uppercase;
             font-weight: 700;
             margin-bottom: 3px;
@@ -231,9 +232,9 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
 
           .info-value {
             min-height: 16px;
-            border-bottom: 1px solid #cbd5e1;
+            border-bottom: 1px solid ${PRINT_COLORS.borderStrong};
             font-size: 11px;
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             font-weight: 600;
             text-transform: capitalize;
           }
@@ -249,13 +250,13 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
           .main-title-line {
             flex: 1;
             height: 1px;
-            background-color: #cbd5e1;
+            background-color: ${PRINT_COLORS.borderStrong};
           }
 
           .doc-title {
             font-size: 13px;
             font-weight: 800;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
             text-transform: uppercase;
             letter-spacing: 0.8px;
           }
@@ -264,24 +265,24 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            border: 1px solid #e2e8f0;
+            border: 1px solid ${PRINT_COLORS.border};
             border-radius: 6px;
             overflow: hidden;
           }
 
           thead tr {
-            background-color: #0f766e;
+            background-color: ${PRINT_COLORS.primary};
           }
 
           th {
-            color: #ffffff;
+            color: ${PRINT_COLORS.textOnDark};
             padding: 6px 5px;
             text-align: left;
             font-weight: 700;
             text-transform: uppercase;
             font-size: 7px;
             letter-spacing: 0.03em;
-            border-right: 1px solid #0d9488;
+            border-right: 1px solid ${PRINT_COLORS.primaryStrong};
           }
 
           th:last-child {
@@ -290,20 +291,20 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
 
           tbody tr {
             min-height: 34px;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid ${PRINT_COLORS.border};
           }
 
-          tbody tr.even { background-color: #ffffff; }
-          tbody tr.odd { background-color: #f8fafc; }
-          tbody tr.blocked { background-color: #fef2f2; color: #991b1b; }
+          tbody tr.even { background-color: ${PRINT_COLORS.surface}; }
+          tbody tr.odd { background-color: ${PRINT_COLORS.surfaceAlt}; }
+          tbody tr.blocked { background-color: ${PRINT_COLORS.blockedBg}; color: ${PRINT_COLORS.blockedText}; }
 
           td {
             padding: 5px;
             vertical-align: top;
-            color: #334155;
+            color: ${PRINT_COLORS.textBase};
             font-size: 8px;
             line-height: 1.25;
-            border-right: 1px solid #e2e8f0;
+            border-right: 1px solid ${PRINT_COLORS.border};
             word-break: break-word;
           }
 
@@ -312,7 +313,7 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
           }
 
           .col-slot { width: 6%; text-align: center; }
-          .col-slot span { display: block; font-size: 7px; color: #64748b; margin-top: 2px; }
+          .col-slot span { display: block; font-size: 7px; color: ${PRINT_COLORS.textMuted}; margin-top: 2px; }
           .col-name { width: 16%; font-weight: 700; }
           .col-doc { width: 12%; }
           .col-acs { width: 10%; }
@@ -323,23 +324,23 @@ export const printHomeVisitRoute = (slots: AppointmentSlot[], selectedDate: Date
 
           .footer {
             margin-top: 8px;
-            border-top: 1px solid #e2e8f0;
+            border-top: 1px solid ${PRINT_COLORS.border};
             padding-top: 6px;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 8px;
             font-size: 8px;
-            color: #64748b;
+            color: ${PRINT_COLORS.textMuted};
           }
 
           .footer-brand {
             font-weight: 700;
-            color: #0f766e;
+            color: ${PRINT_COLORS.primary};
           }
 
           .footer-dot {
-            color: #cbd5e1;
+            color: ${PRINT_COLORS.borderStrong};
           }
         </style>
       </head>

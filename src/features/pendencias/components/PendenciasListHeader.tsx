@@ -15,22 +15,28 @@ export type StatusFilter = 'todos' | 'em_aberto' | 'resolvido';
 interface PendenciasListHeaderProps {
   openCount: number;
   totalCount: number;
+  dueTodayCount: number;
   search: string;
   statusFilter: StatusFilter;
+  dueTodayOnly: boolean;
   isGeneratingPdf: boolean;
   onSearchChange: (value: string) => void;
   onStatusFilterChange: (value: StatusFilter) => void;
+  onDueTodayOnlyChange: (value: boolean) => void;
   onGenerateOpenPdf: () => void;
 }
 
 export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
   openCount,
   totalCount,
+  dueTodayCount,
   search,
   statusFilter,
+  dueTodayOnly,
   isGeneratingPdf,
   onSearchChange,
   onStatusFilterChange,
+  onDueTodayOnlyChange,
   onGenerateOpenPdf,
 }) => {
   return (
@@ -39,7 +45,7 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
         <div>
           <h2 className="text-white text-2xl font-bold tracking-tight">Pendências</h2>
           <p className="text-sm text-[#96c5a9]/80 mt-1">
-            {openCount} em aberto • {totalCount} no total
+            {openCount} em aberto • {dueTodayCount} vencem hoje • {totalCount} no total
           </p>
         </div>
 
@@ -51,11 +57,11 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
           className="w-full lg:w-auto rounded-xl h-11 px-5 whitespace-nowrap bg-[#264532] text-[#96c5a9] border border-white/10 hover:bg-green-500 hover:text-white hover:border-green-400"
         >
           {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-          Imprimir abertos
+          Relatório semanal
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px_auto] gap-3">
         <div className="relative w-full">
           <Input
             value={search}
@@ -76,6 +82,19 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
             <SelectItem value="resolvido">Resolvidos</SelectItem>
           </SelectContent>
         </Select>
+
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => onDueTodayOnlyChange(!dueTodayOnly)}
+          className={`h-11 rounded-xl px-5 border transition-colors ${
+            dueTodayOnly
+              ? 'bg-amber-500/20 text-amber-100 border-amber-400/40 hover:bg-amber-500/30'
+              : 'bg-[#264532] text-[#96c5a9] border-white/10 hover:bg-[#315842] hover:text-white'
+          }`}
+        >
+          {dueTodayOnly ? 'Vence hoje: ligado' : 'Vence hoje'}
+        </Button>
       </div>
     </div>
   );

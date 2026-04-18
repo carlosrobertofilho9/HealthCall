@@ -24,6 +24,18 @@ export const ACS_OPTIONS = [
 ] as const;
 
 /**
+ * Lista padronizada de responsáveis para o módulo de pendências.
+ * Mescla opções de ACS já existentes com nomes operacionais definidos para o fluxo.
+ */
+export const PENDENCIA_RESPONSAVEL_OPTIONS = [
+  ...ACS_OPTIONS,
+  'ACS',
+  'Carlos',
+  'Neide',
+  'Karollayne',
+] as const;
+
+/**
  * Um objeto que define chaves consistentes para uso com `localStorage`.
  * Ajuda a evitar erros de digitação e a manter o gerenciamento de armazenamento centralizado.
  */
