@@ -323,7 +323,7 @@ const PendenciasPage: React.FC = () => {
   };
 
   return (
-    <div className="-mt-6 -mb-6 xl:my-0 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen xl:static xl:left-auto xl:right-auto xl:ml-0 xl:mr-0 xl:w-full flex flex-col gap-0 xl:gap-4 h-auto min-h-[calc(100dvh-73px)] xl:h-[calc(100vh-8rem)] pb-[calc(env(safe-area-inset-bottom)+5.5rem)] xl:pb-0">
+    <div className="-mt-6 -mb-6 xl:my-0 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen xl:static xl:left-auto xl:right-auto xl:ml-0 xl:mr-0 xl:w-full flex flex-col gap-0 xl:gap-4 h-auto min-h-[calc(100dvh-73px)] xl:h-full xl:min-h-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] xl:pb-0">
       <div className="grid min-h-0 grid-cols-1 xl:grid-cols-12 gap-0 xl:gap-4 w-full xl:h-full xl:flex-1">
         <div className={`${mobileTab === 'new' ? 'block' : 'hidden'} xl:block xl:col-span-4 min-h-0 xl:h-full`}>
           <PendenciaCreatePanel

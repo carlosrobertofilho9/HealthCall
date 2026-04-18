@@ -14,6 +14,9 @@ import { StandardDocument } from './pdfs/StandardDocument';
 import { PendingItemsDocument } from './pdfs/PendingItemsDocument';
 import { CapaCadernetaDocument } from './pdfs/CapaCadernetaDocument';
 import { HASLifestyleDocument } from './pdfs/HASLifestyleDocument';
+import { DMLifestyleDocument } from './pdfs/DMLifestyleDocument';
+import { DyslipidemiaDocument } from './pdfs/DyslipidemiaDocument';
+import { MentalHealthDocument } from './pdfs/MentalHealthDocument';
 import { DressingRequestDocument } from './pdfs/DressingRequestDocument';
 
 /** Estrutura para itens de pendência */
@@ -142,6 +145,9 @@ const specialDocuments: Record<string, {
   'Folha de Pendências': { component: PendingItemsDocument },
   'Capa de Caderneta': { component: CapaCadernetaDocument as any, landscape: true },
   'Guia de Estilo de Vida (HAS)': { component: HASLifestyleDocument as any },
+  'Guia de Estilo de Vida (Diabetes)': { component: DMLifestyleDocument as any },
+  'Guia de Estilo de Vida (Dislipidemia)': { component: DyslipidemiaDocument as any },
+  'Guia de Higiene do Sono e Saúde Mental': { component: MentalHealthDocument as any },
 };
 
 export const DocumentPdf: React.FC<DocumentPdfProps> = ({ title, templateText, values }) => {

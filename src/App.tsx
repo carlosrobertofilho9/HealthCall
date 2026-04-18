@@ -24,7 +24,7 @@ const App: React.FC = () => {
             isSidebarCollapsed ? "lg:ml-20" : "lg:ml-70"
           )}
         >
-          <div className="mx-auto w-full max-w-400 animate-in fade-in duration-700">
+          <div className="mx-auto h-full min-h-0 w-full max-w-400 animate-in fade-in duration-700">
             <Outlet />
           </div>
         </main>

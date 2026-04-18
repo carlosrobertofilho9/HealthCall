@@ -153,6 +153,36 @@ CNS ou CPF: {{CNS_CPF}}`,
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: Salad
+  },
+  {
+    id: 'dm_lifestyle',
+    title: 'Guia de Estilo de Vida (Diabetes)',
+    category: 'Orientações e Capas',
+    description: 'Orientações sobre controle glicêmico, alimentação e cuidado com os pés.',
+    tags: ['educação', 'diabetes', 'dieta', 'glicemia', 'lifestyle'],
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Activity
+  },
+  {
+    id: 'dlp_lifestyle',
+    title: 'Guia de Estilo de Vida (Dislipidemia)',
+    category: 'Orientações e Capas',
+    description: 'Orientações sobre controle de colesterol, gorduras e alimentação saudável.',
+    tags: ['educação', 'colesterol', 'dieta', 'gordura', 'lifestyle'],
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Salad
+  },
+  {
+    id: 'sleep_lifestyle',
+    title: 'Guia de Higiene do Sono e Saúde Mental',
+    category: 'Orientações e Capas',
+    description: 'Dicas para melhorar a qualidade do sono e reduzir o estresse.',
+    tags: ['educação', 'sono', 'ansiedade', 'estresse', 'lifestyle'],
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Book
   }
 ];
 

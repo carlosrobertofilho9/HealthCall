@@ -59,7 +59,7 @@ const WarningsPage: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full h-[calc(100vh-8rem)]">
+    <div className="grid w-full grid-cols-1 gap-4 lg:h-full lg:grid-cols-4 lg:overflow-hidden">
       <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col h-full overflow-hidden lg:col-span-1">
         <div className="p-6 pb-4 border-b border-border">
           <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
