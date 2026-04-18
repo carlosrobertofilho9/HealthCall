@@ -1,21 +1,22 @@
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
+import { DS_COLOR, DS_RADIUS } from './design-system';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50',
+  `inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${DS_COLOR.focus.visible} disabled:pointer-events-none disabled:opacity-50`,
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary/85 font-bold',
-        destructive: 'bg-destructive text-white hover:brightness-110 font-bold',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold',
-        ghost: 'bg-transparent text-foreground border border-border hover:bg-accent hover:text-accent-foreground',
+        default: `${DS_COLOR.action.primary} font-bold`,
+        destructive: `${DS_COLOR.action.destructive} font-bold`,
+        secondary: `${DS_COLOR.action.secondary} font-semibold`,
+        ghost: DS_COLOR.action.ghost,
       },
       size: {
-        default: 'rounded-full h-14 px-6 text-base',
-        sm: 'rounded-xl h-11 px-4 text-sm',
-        icon: 'h-10 w-10 rounded-lg p-0',
+        default: `${DS_RADIUS.pill} h-14 px-6 text-base`,
+        sm: `${DS_RADIUS.section} h-11 px-4 text-sm`,
+        icon: `h-10 w-10 ${DS_RADIUS.control} p-0`,
       }
     },
     defaultVariants: {

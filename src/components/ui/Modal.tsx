@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { DS_COLOR, DS_RADIUS, DS_RADIUS_VARIANT } from './design-system';
 
 type ModalPosition = 'center' | 'bottom';
 
@@ -47,13 +48,13 @@ export const Modal: React.FC<ModalProps> = ({
 
   const baseOverlayClassName =
     position === 'bottom'
-      ? 'fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4'
-      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm';
+      ? cn('fixed inset-0 z-50 flex items-end justify-center backdrop-blur-sm sm:items-center sm:p-4', DS_COLOR.overlay.strong)
+      : cn('fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm', DS_COLOR.overlay.default);
 
   const basePanelClassName =
     position === 'bottom'
-      ? 'w-full rounded-t-3xl border border-border bg-card safe-area-bottom sm:max-w-md sm:rounded-2xl'
-      : 'w-full rounded-2xl border border-border bg-card';
+      ? cn('w-full border safe-area-bottom sm:max-w-md', DS_COLOR.surface.card, DS_RADIUS.surfaceTop, DS_RADIUS_VARIANT.smSurface)
+      : cn('w-full border', DS_COLOR.surface.card, DS_RADIUS.surface);
 
   return (
     <div
@@ -68,7 +69,7 @@ export const Modal: React.FC<ModalProps> = ({
         className={cn(basePanelClassName, panelClassName)}
         onClick={(event) => event.stopPropagation()}
       >
-        {showMobileHandle && <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-white/20 sm:hidden" />}
+        {showMobileHandle && <div className={cn('mx-auto mb-3 h-1.5 w-12 sm:hidden', DS_COLOR.overlay.handle, DS_RADIUS.pill)} />}
         {children}
       </div>
     </div>

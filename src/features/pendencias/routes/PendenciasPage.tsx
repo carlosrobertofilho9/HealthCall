@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
 import { PENDENCIA_RESPONSAVEL_OPTIONS } from '@/constants';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui';
+import { DS_COLOR, DS_RADIUS_VARIANT, Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { isValidCNS, isValidCPF } from '@/lib/utils';
+import { cn, isValidCNS, isValidCPF } from '@/lib/utils';
 import {
   PendenciaCreatePanel,
   PendenciaListItem,
@@ -309,9 +309,9 @@ const PendenciasPage: React.FC = () => {
   };
 
   const statusBadgeClass = (status: PendenciaStatus) => {
-    if (status === PENDENCIA_STATUS.ABERTO) return 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
-    if (status === PENDENCIA_STATUS.EM_ANDAMENTO) return 'bg-blue-500/10 text-blue-300 border border-blue-500/20';
-    return 'bg-green-500/10 text-green-300 border border-green-500/20';
+    if (status === PENDENCIA_STATUS.ABERTO) return 'border border-warning/20 bg-warning/10 text-warning';
+    if (status === PENDENCIA_STATUS.EM_ANDAMENTO) return 'border border-chart-3/20 bg-chart-3/10 text-chart-3';
+    return 'border border-success/20 bg-success/10 text-success';
   };
 
   const getAlertLabel = (item: Pendencia) => {
@@ -351,7 +351,12 @@ const PendenciasPage: React.FC = () => {
         </div>
 
         <section
-          className={`${mobileTab === 'existing' ? 'flex' : 'hidden'} xl:flex xl:col-span-8 rounded-none xl:rounded-2xl border border-border border-x-0 xl:border-x bg-card overflow-visible xl:overflow-hidden shadow-none xl:shadow-sm flex-col min-h-0 xl:h-full`}
+          className={cn(
+            mobileTab === 'existing' ? 'flex' : 'hidden',
+            'xl:flex xl:col-span-8 rounded-none border border-x-0 xl:border-x bg-card overflow-visible xl:overflow-hidden shadow-none xl:shadow-sm flex-col min-h-0 xl:h-full',
+            DS_COLOR.border.default,
+            DS_RADIUS_VARIANT.xlSurface,
+          )}
         >
           <PendenciasListHeader
             openCount={openPendencias.length}
@@ -369,12 +374,12 @@ const PendenciasPage: React.FC = () => {
 
         <div className="p-5 overflow-visible xl:flex-1 xl:min-h-0 xl:overflow-auto custom-scrollbar">
           {loading ? (
-            <div className="flex min-h-[40vh] xl:h-full items-center justify-center text-gray-400 gap-2">
+            <div className="flex min-h-[40vh] xl:h-full items-center justify-center text-muted-foreground gap-2">
               <Loader2 className="h-5 w-5 animate-spin" />
               <span>Carregando pendências...</span>
             </div>
           ) : filteredPendencias.length === 0 ? (
-            <div className="flex min-h-[40vh] xl:h-full items-center justify-center text-gray-500 text-center px-6">
+            <div className="flex min-h-[40vh] xl:h-full items-center justify-center text-muted-foreground text-center px-6">
               Nenhuma pendência encontrada para os filtros atuais.
             </div>
           ) : (

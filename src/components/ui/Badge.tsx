@@ -1,19 +1,20 @@
 import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
+import { DS_COLOR, DS_RADIUS } from './design-system';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium leading-none',
+  `inline-flex items-center ${DS_RADIUS.pill} border px-2.5 py-1 text-xs font-medium leading-none`,
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary/20 text-primary',
-        secondary: 'border-border bg-secondary text-secondary-foreground',
-        outline: 'border-border bg-transparent text-foreground',
-        success: 'border-green-500/30 bg-green-500/10 text-green-300',
-        warning: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
-        destructive: 'border-destructive/40 bg-destructive/10 text-destructive',
-        muted: 'border-border bg-background text-muted-foreground',
+        default: DS_COLOR.badge.default,
+        secondary: DS_COLOR.badge.secondary,
+        outline: DS_COLOR.badge.outline,
+        success: DS_COLOR.badge.success,
+        warning: DS_COLOR.badge.warning,
+        destructive: DS_COLOR.badge.destructive,
+        muted: DS_COLOR.badge.muted,
       },
     },
     defaultVariants: {

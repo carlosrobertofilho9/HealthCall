@@ -10,6 +10,7 @@ import { DisplayHeader } from '../components/DisplayHeader';
 import { NextPatientsFooter } from '../components/NextPatientsFooter';
 import { PatientCallArea } from '../components/PatientCallArea';
 import { WarningPlayer } from '../components/WarningPlayer';
+import { DISPLAY_CLASS } from '../utils/displayTheme';
 
 const DisplayPage: React.FC = () => {
   usePageTitle('Display');
@@ -31,9 +32,9 @@ const DisplayPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-gray-900 text-white flex flex-col min-h-screen items-center justify-center">
+      <div className={DISPLAY_CLASS.pageCentered}>
         <h1 className="text-4xl mb-8">Carregando...</h1>
-        <p className="mt-4 text-gray-400">Verificando autenticação.</p>
+        <p className={`mt-4 ${DISPLAY_CLASS.textMuted}`}>Verificando autenticação.</p>
       </div>
     );
   }
@@ -51,7 +52,7 @@ const DisplayPage: React.FC = () => {
   const room = calledPatient?.destination || '-';
 
   return (
-    <div className="bg-gray-900 text-white relative overflow-hidden min-h-screen" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
+    <div className={DISPLAY_CLASS.page} style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
       <WarningPlayer enabled={showWarnings} paused={isCalling || !showWarnings} />
 
       <div className="relative z-10 flex flex-col min-h-screen">

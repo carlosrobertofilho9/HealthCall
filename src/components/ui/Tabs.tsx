@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { DS_COLOR, DS_RADIUS } from './design-system';
 
 type TabsContextValue = {
   value: string;
@@ -40,7 +41,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(({ className, .
     <div
       ref={ref}
       role="tablist"
-      className={cn('inline-grid items-center rounded-full border border-border bg-card p-1 shadow-sm', className)}
+      className={cn('inline-grid items-center border p-1 shadow-sm', DS_COLOR.surface.card, DS_RADIUS.pill, className)}
       {...props}
     />
   );
@@ -64,10 +65,11 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
         aria-selected={isActive}
         data-state={isActive ? 'active' : 'inactive'}
         className={cn(
-          'inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors',
+          'inline-flex min-h-11 items-center justify-center gap-2 px-3 text-sm font-semibold transition-colors',
+          DS_RADIUS.pill,
           isActive
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+            ? DS_COLOR.interactive.active
+            : DS_COLOR.interactive.inactive,
           className,
         )}
         onClick={(event) => {

@@ -3,6 +3,7 @@ import { useWarnings } from '@/features/warnings/hooks/useWarnings';
 import type { Warning } from '@/features/warnings/types';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { useResolvedWarningMediaUrl } from '@/features/warnings/hooks/useResolvedWarningMediaUrl';
+import { DISPLAY_CLASS } from '../utils/displayTheme';
 
 type WarningSnapshot = {
   warningId: string;
@@ -355,11 +356,11 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
         enabled ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]" />
+      <div className={`absolute inset-0 ${DISPLAY_CLASS.warningBackdrop}`} />
 
       <div className="relative h-full w-full flex items-center justify-center p-6 md:p-10">
         {current.media_type === 'video' && resolvedContentUrl ? (
-          <div className="w-full h-full max-w-[1800px] rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/70 shadow-2xl">
+          <div className={`w-full h-full max-w-[1800px] ${DISPLAY_CLASS.warningMedia}`}>
             <video
               key={current.id}
               ref={videoRef}
@@ -380,7 +381,7 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
             />
           </div>
         ) : resolvedContentUrl ? (
-          <div className="w-full h-full max-w-[1800px] rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/70 shadow-2xl flex items-center justify-center">
+          <div className={`w-full h-full max-w-[1800px] ${DISPLAY_CLASS.warningMedia} flex items-center justify-center`}>
             <img
               key={current.id}
               src={resolvedContentUrl}
@@ -389,8 +390,8 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
             />
           </div>
         ) : (
-          <div className="max-w-5xl bg-black/40 border border-white/10 rounded-2xl px-10 py-12 text-center">
-            <p className="text-4xl md:text-6xl font-black text-white leading-tight">
+          <div className={`max-w-5xl ${DISPLAY_CLASS.warningMessagePanel}`}>
+            <p className="text-4xl md:text-6xl font-black leading-tight">
               {current.message || current.text || 'Aviso'}
             </p>
           </div>
@@ -399,12 +400,12 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
 
       {(current.text || current.message) && (
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-5 md:p-6">
+          <div className={DISPLAY_CLASS.warningCaption}>
             {current.text && (
-              <p className="text-sm md:text-base uppercase tracking-[0.2em] text-green-300 mb-2">{current.text}</p>
+              <p className={`text-sm md:text-base uppercase tracking-[0.2em] ${DISPLAY_CLASS.iconPrimary} mb-2`}>{current.text}</p>
             )}
             {current.message && (
-              <p className="text-xl md:text-3xl font-bold text-white leading-snug">{current.message}</p>
+              <p className="text-xl md:text-3xl font-bold leading-snug">{current.message}</p>
             )}
           </div>
         </div>

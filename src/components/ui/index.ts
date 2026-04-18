@@ -2,6 +2,7 @@ export * from './ActionBar';
 export * from './Badge';
 export * from './Button';
 export * from './Card';
+export * from './design-system';
 export * from './FormSection';
 export * from './Input';
 export * from './Label';

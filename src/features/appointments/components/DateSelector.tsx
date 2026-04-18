@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, X } from 'lucide-react';
-import { Modal } from '@/components/ui';
+import { DS_RADIUS, Modal } from '@/components/ui';
 import { getDayConfig } from '../services/appointmentService';
 import type { DayScheduleConfig } from '@/types';
 
@@ -111,14 +111,14 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
     : 'Sem atendimento';
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 print:border-gray-300 print:bg-white">
+    <div className={`${DS_RADIUS.surface} border border-border bg-card p-4 sm:p-5 print:border-gray-300 print:bg-white`}>
       <div className="flex flex-col gap-4">
-        <div className="rounded-xl bg-card p-3 sm:p-4">
+        <div className={`${DS_RADIUS.section} bg-card p-3 sm:p-4`}>
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onPreviousDay}
-              className="w-auto shrink-0 rounded-xl bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden"
+              className={`w-auto shrink-0 ${DS_RADIUS.section} bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden`}
               aria-label="Dia anterior"
             >
               <ChevronLeft className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
@@ -127,7 +127,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             <button
               type="button"
               onClick={() => setIsCalendarOpen(true)}
-              className="rounded-xl bg-transparent px-3 py-3 text-center transition-colors hover:bg-secondary/30 print:bg-transparent"
+              className={`${DS_RADIUS.section} bg-transparent px-3 py-3 text-center transition-colors hover:bg-secondary/30 print:bg-transparent`}
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-primary sm:text-sm">
                 {formatWeekday(selectedDate)}
@@ -143,7 +143,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             <button
               type="button"
               onClick={onNextDay}
-              className="w-auto shrink-0 rounded-xl bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden"
+              className={`w-auto shrink-0 ${DS_RADIUS.section} bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden`}
               aria-label="Próximo dia"
             >
               <ChevronRight className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
@@ -151,7 +151,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
           </div>
 
           <div className="mt-3 flex items-center justify-center">
-            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${isToday() ? 'border-primary bg-primary/20 text-primary' : 'border-border bg-secondary/60 text-muted-foreground'}`}>
+            <span className={`${DS_RADIUS.pill} border px-3 py-1 text-xs font-semibold ${isToday() ? 'border-primary bg-primary/20 text-primary' : 'border-border bg-secondary/60 text-muted-foreground'}`}>
               {isToday() ? 'Hoje' : 'Dia selecionado'}
             </span>
           </div>
@@ -161,7 +161,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
           <button
             type="button"
             onClick={() => setIsCalendarOpen(true)}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90"
+            className={`inline-flex h-11 items-center justify-center gap-2 ${DS_RADIUS.section} border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90`}
           >
             <Calendar className="h-4 w-4" />
             <span>Calendário</span>
@@ -171,7 +171,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             type="button"
             onClick={onToday}
             disabled={isToday()}
-            className="h-11 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+            className={`h-11 ${DS_RADIUS.section} bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60`}
           >
             Ir para Hoje
           </button>
@@ -191,7 +191,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
               <button
                 type="button"
                 onClick={goToPreviousMonth}
-                className="rounded-xl p-2 text-card-foreground transition-colors hover:bg-secondary"
+                className={`${DS_RADIUS.section} p-2 text-card-foreground transition-colors hover:bg-secondary`}
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
@@ -203,7 +203,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
               <button
                 type="button"
                 onClick={goToNextMonth}
-                className="rounded-xl p-2 text-card-foreground transition-colors hover:bg-secondary"
+                className={`${DS_RADIUS.section} p-2 text-card-foreground transition-colors hover:bg-secondary`}
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
@@ -234,7 +234,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
                     key={date.toISOString()}
                     onClick={() => handleDateSelect(date)}
                     className={`
-                      aspect-square rounded-xl flex flex-col items-center justify-center
+                      aspect-square ${DS_RADIUS.section} flex flex-col items-center justify-center
                       text-sm font-medium transition-all
                       ${isSelected 
                         ? 'bg-primary text-primary-foreground scale-105' 
@@ -248,7 +248,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
                   >
                     <span className="text-base">{date.getDate()}</span>
                     {hasService && !isSelected && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary mt-0.5" />
+                      <span className={`w-1.5 h-1.5 ${DS_RADIUS.pill} bg-primary mt-0.5`} />
                     )}
                   </button>
                 );
@@ -258,11 +258,11 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             <div className="p-4 pt-2 border-t border-border">
               <div className="mb-4 flex items-center justify-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  <span className={`w-2 h-2 ${DS_RADIUS.pill} bg-primary`} />
                   <span className="text-muted-foreground">Com atendimento</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+                  <span className={`w-2 h-2 ${DS_RADIUS.pill} bg-muted-foreground/50`} />
                   <span className="text-muted-foreground">Sem atendimento</span>
                 </div>
               </div>
@@ -270,7 +270,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
               <button
                 type="button"
                 onClick={() => setIsCalendarOpen(false)}
-                className="w-full rounded-xl bg-secondary py-3 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90"
+                className={`w-full ${DS_RADIUS.section} bg-secondary py-3 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90`}
               >
                 <span className="inline-flex items-center gap-2">
                   <X className="h-4 w-4" />

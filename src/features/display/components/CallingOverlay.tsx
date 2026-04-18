@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { getDestinationPresentation } from '@/features/display/utils/displayPresentation';
+import { DISPLAY_CLASS } from '../utils/displayTheme';
 
 interface CallingOverlayProps {
   visible: boolean;
@@ -31,7 +32,8 @@ export const CallingOverlay: React.FC<CallingOverlayProps> = ({ visible, patient
           data-testid="calling-destination"
           data-destination-kind={presentation.kind}
           className={cn(
-            'inline-flex max-w-full flex-col items-center gap-2 rounded-full px-8 py-4 border shadow-2xl sm:flex-row sm:gap-4',
+            DISPLAY_CLASS.destinationPill,
+            'flex-col gap-2 shadow-2xl sm:flex-row sm:gap-4',
             presentation.accentBgClassName,
             presentation.borderClassName
           )}

@@ -1,6 +1,7 @@
 import { useTheme } from "next-themes"
 import { Toaster as Sonner } from "sonner"
 import React from "react"
+import { DS_COLOR_VARIANT, DS_RADIUS_VARIANT } from "./design-system"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
@@ -28,12 +29,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:!bg-[#122118] group-[.toaster]:!text-white group-[.toaster]:!border-[var(--primary-color)] group-[.toaster]:!border-2 group-[.toaster]:!shadow-xl group-[.toaster]:!rounded-2xl font-sans",
-          description: "group-[.toast]:!text-zinc-400",
+            `group toast group-[.toaster]:!border-2 group-[.toaster]:!shadow-xl ${DS_COLOR_VARIANT.toasterSurface} ${DS_RADIUS_VARIANT.toasterSurface} font-sans`,
+          description: DS_COLOR_VARIANT.toastDescription,
           actionButton:
-            "group-[.toast]:!bg-[var(--primary-color)] group-[.toast]:!text-[#122118] group-[.toast]:!font-bold group-[.toast]:!rounded-xl",
+            `group-[.toast]:!font-bold ${DS_COLOR_VARIANT.toastAction} ${DS_RADIUS_VARIANT.toastSection}`,
           cancelButton:
-            "group-[.toast]:!bg-zinc-800 group-[.toast]:!text-white group-[.toast]:!rounded-xl",
+            `${DS_COLOR_VARIANT.toastCancel} ${DS_RADIUS_VARIANT.toastSection}`,
         },
       }}
       {...props}

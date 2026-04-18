@@ -10,6 +10,8 @@ import {
   FileText
 } from 'lucide-react';
 import {
+  DS_COLOR,
+  DS_RADIUS,
   Input,
   Button,
   Badge,
@@ -21,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import { TipoPendenciaSelector } from './TipoPendenciaSelector';
 import { formatCnsCpfForDisplay, getDocumentLabel, parseTipoTags } from '../utils/pendenciasUiUtils';
 import {
@@ -103,19 +106,19 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
   const documentoFormatado = formatCnsCpfForDisplay(item.cns_cpf);
   const editingTipos = [...editTiposSelecionados, editTipoPersonalizado.trim()].filter(Boolean);
   const alertClassByLevel: Record<PendenciaAlertLevel, string> = {
-    none: 'border-white/10',
-    high_priority: 'border-orange-400/50',
-    due_today: 'border-amber-400/60',
-    overdue: 'border-red-500/60',
+    none: DS_COLOR.border.default,
+    high_priority: 'border-chart-4/50',
+    due_today: 'border-warning/60',
+    overdue: 'border-destructive/60',
   };
   const prioridadeClassByValue: Record<PendenciaPrioridade, string> = {
-    baixa: 'bg-slate-500/10 text-slate-200 border border-slate-400/20',
-    normal: 'bg-blue-500/10 text-blue-200 border border-blue-400/20',
-    alta: 'bg-orange-500/10 text-orange-200 border border-orange-400/30',
+    baixa: 'border border-border bg-secondary/20 text-muted-foreground',
+    normal: 'border border-chart-3/20 bg-chart-3/10 text-chart-3',
+    alta: 'border border-chart-4/30 bg-chart-4/10 text-chart-4',
   };
 
   return (
-    <article className={`rounded-xl border ${alertClassByLevel[alertLevel]} bg-[#264532]/35 p-4 hover:border-[#96c5a9]/30 transition-all`}>
+    <article className={cn(DS_RADIUS.section, 'border bg-secondary/20 p-4 hover:border-primary/30 transition-all', alertClassByLevel[alertLevel])}>
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
         <div className="space-y-3 flex-1">
           {isEditing ? (
@@ -123,14 +126,14 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
               <Input
                 value={editNomePaciente}
                 onChange={(event) => onEditNomePacienteChange(event.target.value)}
-                className="h-10 rounded-xl bg-[#1f3a2b]"
+                className={cn('h-10', DS_RADIUS.section)}
                 placeholder="Nome do paciente"
                 icon={<UserRound className="h-4 w-4" />}
               />
               <Input
                 value={editCnsCpf}
                 onChange={(event) => onEditCnsCpfChange(event.target.value)}
-                className="h-10 rounded-xl bg-[#1f3a2b] font-semibold"
+                className={cn('h-10 font-semibold', DS_RADIUS.section)}
                 placeholder="CNS ou CPF"
                 icon={<IdCard className="h-4 w-4" />}
               />
@@ -146,9 +149,9 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
               <Textarea
                 value={editResumo}
                 onChange={(event) => onEditResumoChange(event.target.value)}
-                className="min-h-24 rounded-xl text-white bg-[#1f3a2b] border-white/10 placeholder:text-[#96c5a9]/60 focus:ring-primary"
+                className={cn('min-h-24', DS_RADIUS.section)}
                 placeholder="Descreva os detalhes da pendência"
-                icon={<FileText className="h-4 w-4 text-[#96c5a9]/80" />}
+                icon={<FileText className="h-4 w-4 text-muted-foreground" />}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -156,7 +159,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                   value={editPrioridade}
                   onValueChange={(value) => onEditPrioridadeChange(value as PendenciaPrioridade)}
                 >
-                  <SelectTrigger className="h-10 rounded-xl pl-4">
+                  <SelectTrigger className={cn('h-10 pl-4', DS_RADIUS.section)}>
                     <SelectValue placeholder="Prioridade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -170,12 +173,12 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                   type="date"
                   value={editPrazo}
                   onChange={(event) => onEditPrazoChange(event.target.value)}
-                  className="h-10 w-full rounded-xl border border-input bg-input px-4 text-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none"
+                  className={cn('h-10 w-full border border-input bg-input px-4 text-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none', DS_RADIUS.section)}
                 />
               </div>
 
               <Select value={editResponsavel} onValueChange={onEditResponsavelChange}>
-                <SelectTrigger className="h-10 rounded-xl pl-4">
+                <SelectTrigger className={cn('h-10 pl-4', DS_RADIUS.section)}>
                   <SelectValue placeholder="Responsável" />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,7 +192,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 {editingTipos.map((tipoTag) => (
                   <Badge
                     key={`${item.id}-editing-tag-${tipoTag}`}
-                    className="bg-[#1f3a2b] border-white/10 text-[#96c5a9]"
+                    variant="muted"
                   >
                     {tipoTag}
                   </Badge>
@@ -199,10 +202,10 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
           ) : (
             <>
               <div>
-                <p className="text-white font-semibold text-lg leading-tight">{item.nome_paciente}</p>
-                <div className="mt-1 inline-flex items-center gap-2 rounded-lg border border-[#96c5a9]/30 bg-[#1f3a2b] px-2.5 py-1">
-                  <span className="text-[11px] uppercase tracking-wide text-[#96c5a9]/80">{getDocumentLabel(item.cns_cpf)}</span>
-                  <span className="text-sm font-semibold text-[#d4f5e1] tracking-wide">{documentoFormatado}</span>
+                <p className="font-semibold text-lg leading-tight">{item.nome_paciente}</p>
+                <div className={cn('mt-1 inline-flex items-center gap-2 border border-primary/30 bg-primary/10 px-2.5 py-1', DS_RADIUS.control)}>
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">{getDocumentLabel(item.cns_cpf)}</span>
+                  <span className="text-sm font-semibold text-primary tracking-wide">{documentoFormatado}</span>
                 </div>
               </div>
 
@@ -210,16 +213,16 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 {tipos.map((tipoTag) => (
                   <Badge
                     key={`${item.id}-${tipoTag}`}
-                    className="bg-[#1f3a2b] border-white/10 text-[#96c5a9]"
+                    variant="muted"
                   >
                     {tipoTag}
                   </Badge>
                 ))}
               </div>
 
-              <div className="rounded-lg border border-white/10 bg-[#1f3a2b] p-3">
-                <p className="text-xs uppercase tracking-wide text-[#96c5a9]/60 mb-1">Pendência</p>
-                <p className="text-gray-100 leading-relaxed">{item.resumo || '-'}</p>
+              <div className={cn(DS_RADIUS.control, 'border border-border bg-background/40 p-3')}>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Pendência</p>
+                <p className="text-foreground leading-relaxed">{item.resumo || '-'}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -227,16 +230,16 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                   Prioridade: {PENDENCIA_PRIORIDADE_LABEL[item.prioridade]}
                 </Badge>
 
-                <Badge className="bg-[#1f3a2b] border-white/10 text-[#96c5a9]">
+                <Badge variant="muted">
                   Prazo: {item.prazo ? new Date(`${item.prazo}T00:00:00`).toLocaleDateString('pt-BR') : 'Não definido'}
                 </Badge>
 
-                <Badge className="bg-[#1f3a2b] border-white/10 text-[#96c5a9]">
+                <Badge variant="muted">
                   Responsável: {item.responsavel || 'Não definido'}
                 </Badge>
 
                 {alertLevel !== 'none' ? (
-                  <Badge className="bg-red-500/10 text-red-200 border-red-400/30">
+                  <Badge variant="destructive">
                     {alertLabel}
                   </Badge>
                 ) : null}
@@ -251,7 +254,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
           </Badge>
 
           <Select value={item.status} onValueChange={(value) => onStatusChange(value as PendenciaStatus)}>
-            <SelectTrigger className="h-10 rounded-xl pl-4">
+            <SelectTrigger className={cn('h-10 pl-4', DS_RADIUS.section)}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -268,7 +271,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 size="sm"
                 onClick={onSaveEditing}
                 disabled={isUpdating}
-                className="rounded-xl h-10 bg-[#264532] text-[#96c5a9] border border-white/10 hover:bg-green-500 hover:text-white hover:border-green-400"
+                className={cn('h-10', DS_RADIUS.section)}
               >
                 {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Salvar edição
@@ -277,7 +280,8 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 type="button"
                 size="sm"
                 onClick={onCancelEditing}
-                className="rounded-xl h-10 bg-transparent text-white border border-white/20 hover:bg-white/10"
+                variant="ghost"
+                className={cn('h-10', DS_RADIUS.section)}
               >
                 <X className="h-4 w-4" />
                 Cancelar
@@ -289,7 +293,8 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 type="button"
                 size="sm"
                 onClick={onStartEditing}
-                className="rounded-xl h-10 bg-transparent text-white border border-white/20 hover:bg-white/10"
+                variant="ghost"
+                className={cn('h-10', DS_RADIUS.section)}
               >
                 <Pencil className="h-4 w-4" />
                 Editar
@@ -299,7 +304,8 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 size="sm"
                 onClick={onDelete}
                 disabled={isDeleting}
-                className="rounded-xl h-10 bg-red-500/10 text-red-200 border border-red-400/30 hover:bg-red-500/20"
+                variant="destructive"
+                className={cn('h-10', DS_RADIUS.section)}
               >
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Excluir

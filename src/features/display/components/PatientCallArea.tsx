@@ -2,6 +2,7 @@ import React from 'react';
 import { Patient } from '@/types';
 import { cn } from '@/lib/utils';
 import { getDestinationPresentation } from '@/features/display/utils/displayPresentation';
+import { DISPLAY_CLASS } from '../utils/displayTheme';
 
 interface PatientCallAreaProps {
   calledPatient: Patient | null;
@@ -18,7 +19,7 @@ export const PatientCallArea: React.FC<PatientCallAreaProps> = ({ calledPatient 
   return (
     <div
       data-destination-kind={presentation.kind}
-      className="md:col-span-2 bg-gray-800 rounded-2xl p-8 text-center flex flex-col justify-center animate-slide-in"
+      className={cn('md:col-span-2 p-8 text-center flex flex-col justify-center animate-slide-in', DISPLAY_CLASS.panel)}
     >
       <h2 className={cn('text-4xl md:text-5xl font-bold mb-4', presentation.accentTextClassName)}>
         {calledPatient ? 'Chamado' : 'Aguardando chamada'}
@@ -26,7 +27,7 @@ export const PatientCallArea: React.FC<PatientCallAreaProps> = ({ calledPatient 
       <p className="text-5xl md:text-6xl font-black mb-6">{patientName}</p>
       <div
         className={cn(
-          'inline-flex max-w-full items-center justify-center gap-4 rounded-full px-8 py-4 border',
+          DISPLAY_CLASS.destinationPill,
           presentation.accentBgClassName,
           presentation.borderClassName
         )}

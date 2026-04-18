@@ -8,6 +8,9 @@ import {
   FileText
 } from 'lucide-react';
 import {
+  DS_COLOR,
+  DS_RADIUS,
+  DS_RADIUS_VARIANT,
   Input,
   Button,
   Textarea,
@@ -19,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import { TipoPendenciaSelector } from './TipoPendenciaSelector';
 import { getDocumentLabel } from '../utils/pendenciasUiUtils';
 import { PENDENCIA_PRIORIDADE_LABEL, type PendenciaPrioridade } from '../types';
@@ -69,26 +73,32 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
   onResponsavelChange,
 }) => {
   return (
-    <section className="rounded-none xl:rounded-2xl border border-white/10 border-x-0 xl:border-x bg-[#1a2c22] overflow-hidden shadow-none xl:shadow-2xl flex flex-col h-full min-h-0">
-      <div className="px-6 py-5 border-b border-white/10 bg-linear-to-r from-[#264532] to-[#1f3a2b]">
-        <h2 className="text-white text-xl font-bold tracking-tight flex items-center gap-3">
-          <div className="p-2 bg-[#1a2c22] rounded-lg border border-white/10">
-            <ListTodo className="text-[#96c5a9]" size={20} />
+    <section
+      className={cn(
+        'rounded-none border border-x-0 bg-card overflow-hidden shadow-none xl:border-x xl:shadow-sm flex flex-col h-full min-h-0',
+        DS_COLOR.border.default,
+        DS_RADIUS_VARIANT.xlSurface,
+      )}
+    >
+      <div className="px-6 py-5 border-b border-border bg-secondary/30">
+        <h2 className="text-xl font-bold tracking-tight flex items-center gap-3">
+          <div className={cn('p-2 bg-card border', DS_COLOR.border.default, DS_RADIUS.control)}>
+            <ListTodo className="text-primary" size={20} />
           </div>
           Nova Pendência
         </h2>
-        <p className="text-[#96c5a9]/80 text-sm mt-1">Registre pendências e acompanhe o fluxo de resolução.</p>
+        <p className="text-muted-foreground text-sm mt-1">Registre pendências e acompanhe o fluxo de resolução.</p>
       </div>
 
       <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-visible xl:flex-1 xl:min-h-0 xl:overflow-y-auto custom-scrollbar">
-        <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-3">
-          <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Identificação</p>
+        <div className={cn(DS_RADIUS.section, 'border border-border bg-secondary/20 p-4 space-y-3')}>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Identificação</p>
           <Input
             value={nomePaciente}
             onChange={(event) => onNomePacienteChange(event.target.value)}
             placeholder="Nome do paciente"
             icon={<UserRound className="h-4 w-4" />}
-            className="h-11 rounded-xl bg-[#1f3a2b]"
+            className={cn('h-11', DS_RADIUS.section)}
           />
 
           <div className="relative">
@@ -97,16 +107,16 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
               onChange={(event) => onCnsCpfChange(event.target.value)}
               placeholder="CNS ou CPF"
               icon={<IdCard className="h-4 w-4" />}
-              className="h-11 rounded-xl pr-20 bg-[#1f3a2b] font-semibold tracking-wide"
+              className={cn('h-11 pr-20 font-semibold tracking-wide', DS_RADIUS.section)}
             />
-            <Badge className="absolute right-3 top-1/2 -translate-y-1/2 border-white/10 bg-[#325a42] px-2 py-1 text-[11px] text-[#96c5a9]">
+            <Badge variant="muted" className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs">
               {getDocumentLabel(cnsCpf)}
             </Badge>
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-3">
-          <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Tipo da pendência</p>
+        <div className={cn(DS_RADIUS.section, 'border border-border bg-secondary/20 p-4 space-y-3')}>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Tipo da pendência</p>
           <TipoPendenciaSelector
             options={tipoOptions}
             selectedTipos={selectedTipos}
@@ -116,27 +126,27 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
           />
         </div>
 
-        <FormSection title="Descrição" className="border-white/10 bg-[#264532]/40" contentClassName="space-y-2">
+        <FormSection title="Descrição" className="bg-secondary/20" contentClassName="space-y-2">
           <Textarea
             value={resumo}
             onChange={(event) => onResumoChange(event.target.value)}
             placeholder="Descreva os detalhes da pendência"
-            icon={<FileText className="h-4 w-4 text-[#96c5a9]/80" />}
-            className="min-h-28 rounded-xl text-white bg-[#1f3a2b] border-white/10 placeholder:text-[#96c5a9]/60 focus:ring-primary"
+            icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+            className={cn('min-h-28', DS_RADIUS.section)}
           />
         </FormSection>
 
-        <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-3">
-          <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Planejamento</p>
+        <div className={cn(DS_RADIUS.section, 'border border-border bg-secondary/20 p-4 space-y-3')}>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Planejamento</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-[#96c5a9]/70 mb-1">Prioridade</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Prioridade</p>
               <Select
                 value={prioridade}
                 onValueChange={(value) => onPrioridadeChange(value as PendenciaPrioridade)}
               >
-                <SelectTrigger className="h-11 rounded-xl">
+                <SelectTrigger className={cn('h-11', DS_RADIUS.section)}>
                   <SelectValue placeholder="Selecione a prioridade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -148,20 +158,20 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
             </div>
 
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-[#96c5a9]/70 mb-1">Prazo</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Prazo</p>
               <input
                 type="date"
                 value={prazo}
                 onChange={(event) => onPrazoChange(event.target.value)}
-                className="h-11 w-full rounded-xl border border-input bg-input px-4 text-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none"
+                className={cn('h-11 w-full border border-input bg-input px-4 text-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none', DS_RADIUS.section)}
               />
             </div>
           </div>
 
           <div>
-            <p className="text-[11px] uppercase tracking-wide text-[#96c5a9]/70 mb-1">Responsável</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Responsável</p>
             <Select value={responsavel} onValueChange={onResponsavelChange}>
-              <SelectTrigger className="h-11 rounded-xl">
+              <SelectTrigger className={cn('h-11', DS_RADIUS.section)}>
                 <SelectValue placeholder="Selecione o responsável" />
               </SelectTrigger>
               <SelectContent>
@@ -177,7 +187,7 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
           type="submit"
           size="sm"
           disabled={isSaving}
-          className="rounded-xl h-11 bg-[#264532] text-[#96c5a9] border border-white/10 hover:bg-green-500 hover:text-white hover:border-green-400"
+          className={cn('h-11', DS_RADIUS.section)}
         >
           {isSaving ? (
             <>

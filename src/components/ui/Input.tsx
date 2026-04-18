@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DS_COLOR, DS_RADIUS } from './design-system';
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -25,14 +26,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="relative w-full">
         {hasIcon ? (
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <span className={cn('pointer-events-none absolute left-4 top-1/2 -translate-y-1/2', DS_COLOR.text.muted)}>
             {icon ?? <Search className="h-4 w-4" />}
           </span>
         ) : null}
         <input
           type={type}
           className={cn(
-            'form-input w-full rounded-full border border-input bg-input text-foreground h-11 pr-4 placeholder:text-muted-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none',
+            'form-input w-full border h-11 pr-4 focus:ring-2 transition-all focus:outline-none',
+            DS_COLOR.field.default,
+            DS_COLOR.focus.field,
+            DS_RADIUS.pill,
             hasIcon ? 'pl-12' : 'pl-4',
             className,
           )}

@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { DS_COLOR, DS_RADIUS } from './design-system';
 
 export interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> {
   wrapperClassName?: string;
@@ -7,7 +8,7 @@ export interface TableProps extends React.TableHTMLAttributes<HTMLTableElement> 
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ({ className, wrapperClassName, ...props }, ref) => (
-    <div className={cn('relative w-full overflow-x-auto rounded-xl border border-border', wrapperClassName)}>
+    <div className={cn('relative w-full overflow-x-auto border', DS_COLOR.border.default, DS_RADIUS.section, wrapperClassName)}>
       <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   ),
@@ -30,7 +31,7 @@ const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttribut
   ({ className, ...props }, ref) => (
     <tfoot
       ref={ref}
-      className={cn('border-t bg-secondary/50 font-medium [&>tr]:last:border-b-0', className)}
+      className={cn('border-t font-medium [&>tr]:last:border-b-0', DS_COLOR.surface.tableFooter, className)}
       {...props}
     />
   ),
@@ -39,7 +40,7 @@ TableFooter.displayName = 'TableFooter';
 
 const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTMLTableRowElement>>(
   ({ className, ...props }, ref) => (
-    <tr ref={ref} className={cn('border-b transition-colors hover:bg-secondary/40', className)} {...props} />
+    <tr ref={ref} className={cn('border-b transition-colors', DS_COLOR.interactive.row, className)} {...props} />
   ),
 );
 TableRow.displayName = 'TableRow';
@@ -48,7 +49,7 @@ const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<
   ({ className, ...props }, ref) => (
     <th
       ref={ref}
-      className={cn('h-11 px-4 text-left align-middle font-semibold text-muted-foreground', className)}
+      className={cn('h-11 px-4 text-left align-middle font-semibold', DS_COLOR.text.muted, className)}
       {...props}
     />
   ),
@@ -62,7 +63,7 @@ TableCell.displayName = 'TableCell';
 
 const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttributes<HTMLTableCaptionElement>>(
   ({ className, ...props }, ref) => (
-    <caption ref={ref} className={cn('mt-4 text-sm text-muted-foreground', className)} {...props} />
+    <caption ref={ref} className={cn('mt-4 text-sm', DS_COLOR.text.muted, className)} {...props} />
   ),
 );
 TableCaption.displayName = 'TableCaption';
