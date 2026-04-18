@@ -92,7 +92,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
 
 
   return (
-    <div className="lg:col-span-1 bg-card rounded-2xl p-6 shadow-sm border border-border flex flex-col h-auto lg:h-full lg:max-h-[calc(100vh-2rem)]">
+    <div className="bg-card rounded-2xl p-6 shadow-sm border border-border flex flex-col h-auto xl:h-full xl:max-h-[calc(100vh-12rem)]">
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6 pb-4 border-b border-border">
         <div className="space-y-2">

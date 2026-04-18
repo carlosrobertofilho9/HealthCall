@@ -13,7 +13,20 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="HealthCall" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#122118" />
+    <script>
+      (() => {
+        try {
+          const validThemes = ['floresta', 'oceano', 'eclipse', 'aurora', 'sakura', 'indigo'];
+          const storedTheme = localStorage.getItem('healthcall-theme');
+          document.documentElement.dataset.theme = validThemes.includes(storedTheme)
+            ? storedTheme
+            : 'floresta';
+        } catch (_) {
+          document.documentElement.dataset.theme = 'floresta';
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -51,10 +64,10 @@
         }
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-CANzBypG.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-D7GQ1eCk.css">
+    <script type="module" crossorigin src="/assets/index-D5CZQX0o.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BegPYuUr.css">
   </head>
-  <body class="dark">
+  <body>
     <div id="root"></div>
   </body>
 </html>

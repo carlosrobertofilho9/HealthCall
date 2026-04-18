@@ -9,6 +9,7 @@ import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import AppointmentsColumn from '@/features/dashboard/components/AppointmentsColumn';
 import { updateAppointmentStatus } from '@/features/appointments/services/appointmentService';
+import { Activity, CheckCircle2, Clock3, Users } from 'lucide-react';
 
 /**
  * A página principal do painel de controle (dashboard).
@@ -24,6 +25,8 @@ const HomePage: React.FC = () => {
 	const { profile } = useUserProfile();
 	const {
 		patients,
+		filteredPatients,
+		isFiltering,
 		searchTerm,
 		setSearchTerm,
 		selectedDestination,
@@ -102,45 +105,88 @@ const HomePage: React.FC = () => {
     };
 
 	return (
-		<div className="grid grid-cols-1 lg:grid-cols-4 gap-4 w-full h-auto lg:h-[calc(100vh-8rem)] pb-4 lg:pb-0">
-			{/* Coluna 1: Ações e Formulário */}
-			<div className="lg:col-span-1 flex flex-col gap-6">
-				<AddPatientForm
-					onAddPatient={addPatientByName}
-					defaultDestination={profile?.default_destination ?? undefined}
-					isAddingPatient={isAddingPatient}
-				/>
-				<QueueActions
-					onClearQueue={handleClearQueue}
-					onAddPatientByNumber={handleAddPatientByNumber}
-					isAddingPatient={isAddingPatient}
-				/>
+		<div className="flex flex-col gap-4 pb-4 lg:pb-0">
+			<header className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+				<div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+					<div>
+						<h1 className="text-2xl font-bold tracking-tight text-foreground lg:text-3xl">Fila de atendimento</h1>
+						<p className="mt-1 text-sm text-muted-foreground">
+							Gestão operacional da triagem com entrada rápida, priorização e acompanhamento em tempo real.
+						</p>
+					</div>
+					<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+						<div className="rounded-xl border border-border bg-background px-3 py-2">
+							<div className="flex items-center gap-2 text-muted-foreground">
+								<Users size={14} />
+								<span className="text-xs">Total</span>
+							</div>
+							<p className="mt-1 text-lg font-semibold text-foreground">{patients.length}</p>
+						</div>
+						<div className="rounded-xl border border-border bg-background px-3 py-2">
+							<div className="flex items-center gap-2 text-muted-foreground">
+								<Clock3 size={14} />
+								<span className="text-xs">Aguardando</span>
+							</div>
+							<p className="mt-1 text-lg font-semibold text-foreground">
+								{patients.filter((patient) => patient.status === 'Aguardando').length}
+							</p>
+						</div>
+						<div className="rounded-xl border border-border bg-background px-3 py-2">
+							<div className="flex items-center gap-2 text-muted-foreground">
+								<Activity size={14} />
+								<span className="text-xs">Em atendimento</span>
+							</div>
+							<p className="mt-1 text-lg font-semibold text-foreground">
+								{patients.filter((patient) => patient.status === 'Em Atendimento').length}
+							</p>
+						</div>
+						<div className="rounded-xl border border-border bg-background px-3 py-2">
+							<div className="flex items-center gap-2 text-muted-foreground">
+								<CheckCircle2 size={14} />
+								<span className="text-xs">Chamados</span>
+							</div>
+							<p className="mt-1 text-lg font-semibold text-foreground">
+								{patients.filter((patient) => patient.status === 'Chamado').length}
+							</p>
+						</div>
+					</div>
+				</div>
+			</header>
+
+			<div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
+				<div className="space-y-4 xl:col-span-3">
+					<AddPatientForm
+						onAddPatient={addPatientByName}
+						defaultDestination={profile?.default_destination ?? undefined}
+						isAddingPatient={isAddingPatient}
+					/>
+					<QueueActions
+						onClearQueue={handleClearQueue}
+						onAddPatientByNumber={handleAddPatientByNumber}
+						isAddingPatient={isAddingPatient}
+					/>
+				</div>
+
+				<div className="min-h-0 xl:col-span-6">
+					<PatientQueue
+						patients={filteredPatients}
+						onEdit={openModal}
+						onCall={callPatient}
+						onUpdateStatus={updatePatientStatus}
+						onUpdateDestination={updatePatientDestination}
+						onRemove={handleRemovePatient}
+						searchTerm={searchTerm}
+						setSearchTerm={setSearchTerm}
+						selectedDestination={selectedDestination}
+						setSelectedDestination={setSelectedDestination}
+						onReorder={isFiltering ? undefined : reorderPatients}
+					/>
+				</div>
+
+				<div className="min-h-0 xl:col-span-3">
+					<AppointmentsColumn onCheckIn={handleCheckIn} queuedPatients={patients} />
+				</div>
 			</div>
-
-			{/* Coluna 2: Fila de Espera */}
-			<div className="lg:col-span-2 flex flex-col h-auto lg:h-full min-h-0">
-                <PatientQueue
-                    patients={patients}
-                    onEdit={openModal}
-                    onCall={callPatient}
-                    onUpdateStatus={updatePatientStatus}
-                    onUpdateDestination={updatePatientDestination}
-                    onRemove={handleRemovePatient}
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                    selectedDestination={selectedDestination}
-                    setSelectedDestination={setSelectedDestination}
-                    onReorder={reorderPatients}
-                />
-            </div>
-
-			{/* Coluna 3: Agendamentos */}
-			<div className="lg:col-span-1 flex flex-col h-auto lg:h-full min-h-0">
-                <AppointmentsColumn 
-                    onCheckIn={handleCheckIn}
-                    queuedPatients={patients}
-                />
-            </div>
 
 			{isModalOpen && editingPatient && (
 				<EditPatientModal patient={editingPatient} onSave={updatePatient} onClose={closeModal} isOpen={isModalOpen} />

@@ -234,6 +234,8 @@ export function usePatientQueue() {
     [patients, debouncedSearchTerm, selectedDestination]
   );
 
+  const isFiltering = debouncedSearchTerm !== '' || selectedDestination !== '';
+
   const reorderPatients = useCallback(async (newOrder: Patient[]) => {
     // Optimistic update
     setPatients(newOrder);
@@ -255,7 +257,9 @@ export function usePatientQueue() {
   }, []);
 
   return {
-    patients: filteredPatients,
+    patients,
+    filteredPatients,
+    isFiltering,
     searchTerm,
     setSearchTerm,
     selectedDestination,
