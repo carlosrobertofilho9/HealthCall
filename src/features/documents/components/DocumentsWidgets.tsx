@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { FileText, Edit, Eye } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 
 interface WidgetProps {
   children: React.ReactNode;
@@ -18,25 +19,20 @@ const BaseWidget: React.FC<WidgetProps> = ({
   contentClassName 
 }) => {
   return (
-    <div className={cn(
-      "bg-[#1a2c22] rounded-2xl shadow-2xl border border-white/5 flex flex-col h-full overflow-hidden",
-      className
-    )}>
-      {/* Header */}
-      <div className="flex flex-col gap-1 p-6 pb-4 border-b border-white/5 shrink-0">
-         <h2 className="text-white text-xl font-bold tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
-               {icon || <FileText className="text-[#96c5a9]" size={20} />}
-            </div>
-            {title}
-         </h2>
-      </div>
-      
-      {/* Content */}
-      <div className={cn("flex-1 min-h-0 overflow-hidden flex flex-col", contentClassName)}>
+    <Card className={cn('flex h-full flex-col overflow-hidden border-border bg-card shadow-xl', className)}>
+      <CardHeader className="shrink-0 border-b border-border p-6 pb-4">
+        <CardTitle className="flex items-center gap-3 text-xl font-bold tracking-tight text-card-foreground">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-secondary text-primary shadow-inner">
+            {icon || <FileText size={20} />}
+          </span>
+          {title}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className={cn('flex min-h-0 flex-1 flex-col overflow-hidden p-0', contentClassName)}>
         {children}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -44,7 +40,7 @@ export const TemplatesWidget: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <BaseWidget 
       title="Modelos" 
-      icon={<FileText className="text-[#96c5a9]" size={20} />}
+      icon={<FileText size={20} />}
       className="lg:col-span-1"
       contentClassName="p-0"
     >
@@ -57,7 +53,7 @@ export const DocumentFormWidget: React.FC<{ children: React.ReactNode; title?: s
   return (
     <BaseWidget 
       title={title || "Preenchimento"} 
-      icon={<Edit className="text-[#96c5a9]" size={20} />}
+      icon={<Edit size={20} />}
       className="lg:col-span-1"
       contentClassName="p-6 overflow-y-auto custom-scrollbar"
     >
@@ -70,9 +66,9 @@ export const PreviewWidget: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <BaseWidget 
       title="Visualização" 
-      icon={<Eye className="text-[#96c5a9]" size={20} />}
+      icon={<Eye size={20} />}
       className="lg:col-span-1" 
-      contentClassName="bg-white/5 relative"
+      contentClassName="relative bg-background/30"
     >
       {children}
     </BaseWidget>

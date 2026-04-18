@@ -1,19 +1,36 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, Clock, User, FileText, UserCheck, MapPin, ClipboardList } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import Modal from '@/components/ui/Modal';
 import {
+  X,
+  Copy,
+  Check,
+  Clock,
+  User,
+  FileText,
+  UserCheck,
+  MapPin,
+  ClipboardList
+} from 'lucide-react';
+import {
+  Button,
+  Input,
+  Label,
+  Textarea,
+  ActionBar,
+  Modal,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from '@/components/ui/Select';
+  SelectValue
+} from '@/components/ui';
 import { ACS_OPTIONS } from '@/constants';
 import type { CreateAppointmentData, DocumentType } from '@/types';
-import { formatDateToISO, getAppointmentMessage, getSlotTime, getDayConfig } from '../services/appointmentService';
+import {
+  formatDateToISO,
+  getAppointmentMessage,
+  getSlotTime,
+  getDayConfig
+} from '../services/appointmentService';
 import { formatCPF, formatCNS, isValidCPF, isValidCNS } from '@/lib/utils';
 
 interface AddAppointmentFormProps {
@@ -183,7 +200,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             </pre>
           </div>
 
-          <div className="flex gap-3">
+          <ActionBar className="gap-3" align="between">
             <button
               onClick={handleClose}
               className="flex-1 py-3.5 px-4 rounded-xl border border-border text-card-foreground font-semibold active:bg-secondary hover:bg-secondary transition-colors touch-manipulation"
@@ -206,7 +223,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
                 </>
               )}
             </Button>
-          </div>
+          </ActionBar>
       </Modal>
     );
   }
@@ -394,15 +411,13 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
               <div>
                 <Label className="text-card-foreground mb-2 block">Motivo da visita *</Label>
-                <div className="relative">
-                  <ClipboardList className="absolute left-4 top-4 w-5 h-5 text-muted-foreground" />
-                  <textarea
-                    value={homeVisitReason}
-                    onChange={(e) => setHomeVisitReason(e.target.value)}
-                    placeholder="Descreva o motivo da visita domiciliar"
-                    className="w-full min-h-24 rounded-2xl bg-input border border-input pl-12 pr-4 py-4 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none resize-y"
-                  />
-                </div>
+                <Textarea
+                  value={homeVisitReason}
+                  onChange={(e) => setHomeVisitReason(e.target.value)}
+                  placeholder="Descreva o motivo da visita domiciliar"
+                  icon={<ClipboardList className="w-5 h-5" />}
+                  className="min-h-24"
+                />
                 {errors.homeVisitReason && (
                   <p className="text-red-400 text-sm mt-1">{errors.homeVisitReason}</p>
                 )}
@@ -413,7 +428,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 {/* Removed Telefone UI block */}
 
           {/* Botões */}
-          <div className="flex gap-3 pt-4 sm:pt-2">
+          <ActionBar className="pt-4 sm:pt-2" align="between">
             <button
               type="button"
               onClick={onCancel}
@@ -424,7 +439,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             <Button type="submit" disabled={isLoading} className="flex-1 py-3.5 touch-manipulation">
               {isLoading ? 'Salvando...' : 'Salvar'}
             </Button>
-          </div>
+          </ActionBar>
         </form>
     </Modal>
   );

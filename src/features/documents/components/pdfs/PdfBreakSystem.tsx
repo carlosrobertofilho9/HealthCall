@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from '@react-pdf/renderer';
+import { pdfTheme } from './PdfCommon';
 
 export type SectionType = 'critical' | 'standard' | 'list' | 'signature' | 'header' | 'alert' | 'info';
 
@@ -44,8 +45,8 @@ export const SmartSection: React.FC<SmartSectionProps> = ({ type, children, styl
 
   const debugStyle = debug ? {
     borderWidth: 1,
-    borderColor: 'red',
-    backgroundColor: '#fffbeb',
+    borderColor: pdfTheme.colors.danger.strong,
+    backgroundColor: pdfTheme.colors.warning.softBg,
     marginBottom: 2
   } : {};
   

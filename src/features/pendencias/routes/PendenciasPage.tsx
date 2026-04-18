@@ -2,21 +2,21 @@ import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
 import { PENDENCIA_RESPONSAVEL_OPTIONS } from '@/constants';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { isValidCNS, isValidCPF } from '@/lib/utils';
 import {
   PendenciaCreatePanel,
   PendenciaListItem,
   PendenciasListHeader,
-  type StatusFilter,
+  type StatusFilter
 } from '../components';
 import { usePendencias } from '../hooks/usePendencias';
 import {
   createPendencia,
   deletePendencia,
   updatePendencia,
-  updatePendenciaStatus,
+  updatePendenciaStatus
 } from '../services/pendenciasService';
 import {
   PENDENCIA_PRIORIDADE,
@@ -25,14 +25,14 @@ import {
   PENDENCIA_STATUS_LABEL,
   type Pendencia,
   type PendenciaPrioridade,
-  type PendenciaStatus,
+  type PendenciaStatus
 } from '../types';
 import {
   composeTipoValue,
   formatCnsCpfForDisplay,
   formatCnsCpfForInput,
   parseTipoTags,
-  TIPO_OPTIONS,
+  TIPO_OPTIONS
 } from '../utils/pendenciasUiUtils';
 import {
   getAlertLevel,
@@ -40,7 +40,7 @@ import {
   isDateInRange,
   isDueToday,
   sortPendenciasByOperationalSeverity,
-  toDateInputValue,
+  toDateInputValue
 } from '../utils/pendenciasOperationalUtils';
 import { printOpenPendenciasPdf } from '../utils/printOpenPendenciasPdf';
 

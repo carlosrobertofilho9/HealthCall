@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { HeaderIcon, BaseDocument, FieldValue, formatDate, type DocumentFormData } from './PdfCommon';
+import { HeaderIcon, BaseDocument, FieldValue, formatDate, pdfTheme, type DocumentFormData } from './PdfCommon';
 import { SmartSection, CriticalSection } from './PdfBreakSystem';
 const s = StyleSheet.create({
   container: { width: '100%' },
@@ -8,7 +8,7 @@ const s = StyleSheet.create({
   sectionBox: {
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     borderRadius: 6,
     overflow: 'hidden',
   },
@@ -22,13 +22,13 @@ const s = StyleSheet.create({
   sectionHeaderText: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionBody: {
     padding: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: pdfTheme.colors.text.white,
   },
   // --- Fields ---
   fieldRow: {
@@ -42,20 +42,20 @@ const s = StyleSheet.create({
   fieldLabel: {
     fontSize: 7,
     fontWeight: 'bold',
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
     marginBottom: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   fieldLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    borderBottomColor: pdfTheme.colors.borderDark,
     height: 18,
     justifyContent: 'center',
   },
   fieldLineText: {
     fontSize: 9,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   // --- Checkboxes ---
   checkRow: {
@@ -68,12 +68,12 @@ const s = StyleSheet.create({
     width: 9,
     height: 9,
     borderWidth: 1,
-    borderColor: '#94a3b8',
+    borderColor: pdfTheme.colors.text.light,
     borderRadius: 2,
   },
   checkLabel: {
     fontSize: 7.5,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   // --- Medication highlight card ---
   medCard: {
@@ -81,12 +81,12 @@ const s = StyleSheet.create({
     marginTop: 4,
     marginBottom: 8,
     borderWidth: 1.5,
-    borderColor: '#0d9488',
+    borderColor: pdfTheme.colors.primaryDark,
     borderRadius: 6,
     overflow: 'hidden',
   },
   medCardLeft: {
-    backgroundColor: '#0d9488',
+    backgroundColor: pdfTheme.colors.primaryDark,
     padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
@@ -95,14 +95,14 @@ const s = StyleSheet.create({
   medCardLeftText: {
     fontSize: 7,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
     textAlign: 'center',
     marginTop: 4,
   },
   medCardBody: {
     flex: 1,
     padding: 10,
-    backgroundColor: '#f0fdfa',
+    backgroundColor: pdfTheme.colors.softBg,
   },
   medFieldRow: {
     flexDirection: 'row',
@@ -112,33 +112,33 @@ const s = StyleSheet.create({
   medFieldLabel: {
     fontSize: 6.5,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
     marginBottom: 1,
     textTransform: 'uppercase',
   },
   medFieldValue: {
     borderBottomWidth: 1,
-    borderBottomColor: '#99f6e4',
+    borderBottomColor: pdfTheme.colors.softBg,
     height: 16,
     justifyContent: 'center',
   },
   medFieldValueText: {
     fontSize: 9,
-    color: '#134e4a',
+    color: pdfTheme.colors.primary,
   },
   // --- Stamp box ---
   stampBox: {
     marginTop: 6,
     padding: 10,
-    backgroundColor: '#f8fafc',
+    backgroundColor: pdfTheme.colors.bgLight,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
   },
   stampTitle: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     marginBottom: 6,
     textAlign: 'center',
     textTransform: 'uppercase',
@@ -156,33 +156,33 @@ const s = StyleSheet.create({
   },
   signatureLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: pdfTheme.colors.text.main,
     width: '100%',
     marginBottom: 4,
   },
   signatureLabel: {
     fontSize: 7,
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
     textAlign: 'center',
   },
   // --- Info box ---
   infoBox: {
     marginTop: 6,
     padding: 8,
-    backgroundColor: '#eff6ff',
+    backgroundColor: pdfTheme.colors.info.bg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#bfdbfe',
+    borderColor: pdfTheme.colors.info.border,
   },
   infoTitle: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: pdfTheme.colors.info.text,
     marginBottom: 3,
   },
   infoText: {
     fontSize: 7,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.4,
     marginBottom: 2,
   },
@@ -190,29 +190,29 @@ const s = StyleSheet.create({
   alertBox: {
     marginTop: 6,
     padding: 8,
-    backgroundColor: '#fef2f2',
+    backgroundColor: pdfTheme.colors.danger.bg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: pdfTheme.colors.danger.border,
   },
   alertTitle: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#991b1b',
+    color: pdfTheme.colors.danger.text,
     marginBottom: 3,
   },
   alertText: {
     fontSize: 7,
-    color: '#7f1d1d',
+    color: pdfTheme.colors.danger.dark,
     lineHeight: 1.4,
     marginBottom: 2,
   },
   // --- Comprovante badge ---
   badge: {
     alignSelf: 'center',
-    backgroundColor: '#dcfce7',
+    backgroundColor: pdfTheme.colors.success.bg,
     borderWidth: 1,
-    borderColor: '#86efac',
+    borderColor: pdfTheme.colors.success.border,
     borderRadius: 6,
     paddingHorizontal: 16,
     paddingVertical: 6,
@@ -224,7 +224,7 @@ const s = StyleSheet.create({
   badgeText: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#166534',
+    color: pdfTheme.colors.success.text,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -240,14 +240,14 @@ export const InjectableMedDocument: React.FC<InjectableMedDocumentProps> = ({ vi
     <View style={s.container}>
       {/* Badge Comprovante */}
       <View style={s.badge}>
-        <HeaderIcon icon="checkCircle" color="#166534" />
+        <HeaderIcon icon="checkCircle" color={pdfTheme.colors.success.text} />
         <Text style={s.badgeText}>Comprovante de Administração</Text>
       </View>
 
       {/* Section 1: Medicação Card */}
       <View style={s.medCard}>
         <View style={s.medCardLeft}>
-          <HeaderIcon icon="syringe" color="#ffffff" />
+          <HeaderIcon icon="syringe" color={pdfTheme.colors.text.white} />
           <Text style={s.medCardLeftText}>Medicação{'\n'}Injetável</Text>
         </View>
         <View style={s.medCardBody}>
@@ -271,8 +271,8 @@ export const InjectableMedDocument: React.FC<InjectableMedDocumentProps> = ({ vi
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
                 {['IM', 'IV', 'SC', 'ID'].map((via) => (
                   <View key={via} style={s.checkRow}>
-                    <View style={[s.checkBox, { borderColor: '#0d9488' }]} />
-                    <Text style={[s.checkLabel, { color: '#0f766e', fontWeight: 'bold' }]}>{via}</Text>
+                    <View style={[s.checkBox, { borderColor: pdfTheme.colors.primaryDark }]} />
+                    <Text style={[s.checkLabel, { color: pdfTheme.colors.primary, fontWeight: 'bold' }]}>{via}</Text>
                   </View>
                 ))}
               </View>
@@ -310,8 +310,8 @@ export const InjectableMedDocument: React.FC<InjectableMedDocumentProps> = ({ vi
 
       {/* Section 2: Dados da Administração */}
       <View style={s.sectionBox}>
-        <View style={[s.sectionHeader, { backgroundColor: '#7c3aed' }]}>
-          <HeaderIcon icon="clock" color="#ffffff" />
+        <View style={[s.sectionHeader, { backgroundColor: pdfTheme.colors.purple.text }]}>
+          <HeaderIcon icon="clock" color={pdfTheme.colors.text.white} />
           <Text style={s.sectionHeaderText}>Dados da Administração</Text>
         </View>
         <View style={s.sectionBody}>
@@ -380,7 +380,7 @@ export const InjectableMedDocument: React.FC<InjectableMedDocumentProps> = ({ vi
       {/* Info box */}
       <View style={s.infoBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-          <HeaderIcon icon="clipboard" color="#1e40af" />
+          <HeaderIcon icon="clipboard" color={pdfTheme.colors.info.text} />
           <Text style={s.infoTitle}>Orientações ao Paciente:</Text>
         </View>
         <Text style={s.infoText}>- Permanecer no local por pelo menos 30 minutos após a aplicação para observação.</Text>
@@ -392,7 +392,7 @@ export const InjectableMedDocument: React.FC<InjectableMedDocumentProps> = ({ vi
       {/* Alert box */}
       <View style={s.alertBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-          <HeaderIcon icon="alertTriangle" color="#991b1b" />
+          <HeaderIcon icon="alertTriangle" color={pdfTheme.colors.danger.text} />
           <Text style={s.alertTitle}>Reações Alérgicas Graves — Procurar Emergência:</Text>
         </View>
         <Text style={s.alertText}>- Dificuldade para respirar ou engolir.</Text>

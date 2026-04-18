@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, CalendarDays, CalendarRange } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui';
 
 const links = [
   { to: '/appointments', label: 'Dia', icon: CalendarDays, end: true },

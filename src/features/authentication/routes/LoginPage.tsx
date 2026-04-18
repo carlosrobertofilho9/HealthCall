@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { useAuthentication } from '@/features/authentication/hooks/useAuthentication';
 import { useNavigate } from 'react-router-dom';
+import { Mail, Lock } from 'lucide-react';
+import {
+  Input,
+  Button,
+  Label,
+  Card,
+  FormSection,
+  ActionBar
+} from '@/components/ui';
 
 /**
  * A página de login da aplicação.
@@ -27,56 +36,58 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="bg-gray-900 text-white" style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
+    <div className="bg-background text-foreground min-h-screen">
       <div className="flex flex-col min-h-screen">
-        <header className="px-6 py-4 flex items-center justify-between border-b border-gray-700">
+        <header className="px-6 py-4 flex items-center justify-between border-b border-border">
           <div className="flex items-center gap-3">
             <img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-8 w-auto" />
             <h1 className="text-xl font-bold">PSF Maria Lucia da Silva</h1>
           </div>
         </header>
         <main className="flex-grow flex flex-col justify-center items-center p-8">
-          <div className="w-full max-w-md">
-            <h2 className="text-4xl font-bold text-center mb-8">Acessar Painel</h2>
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-[#38e07b] focus:border-[#38e07b] transition focus:outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                  Senha
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-[#38e07b] focus:border-[#38e07b] transition focus:outline-none"
-                  required
-                />
-              </div>
-              {error && <p className="text-red-400 text-sm text-center">{error.message}</p>}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#38e07b] text-gray-900 font-bold text-lg py-3 rounded-lg shadow-lg hover:bg-green-400 transition-transform transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed focus:outline-none"
-              >
-                {loading ? 'Entrando...' : 'Entrar'}
-              </button>
+          <Card className="w-full max-w-md rounded-2xl border-border bg-card p-6 sm:p-8 shadow-sm">
+            <h2 className="text-3xl font-bold text-center text-card-foreground mb-6">Acessar Painel</h2>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <FormSection title="Credenciais" className="bg-secondary/20">
+                <div>
+                  <Label htmlFor="email" className="mb-2 block">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    icon={<Mail className="h-4 w-4" />}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password" className="mb-2 block">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Sua senha"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    icon={<Lock className="h-4 w-4" />}
+                    required
+                  />
+                </div>
+              </FormSection>
+
+              {error && <p className="text-destructive text-sm text-center">{error.message}</p>}
+
+              <ActionBar separated className="justify-end">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full"
+                >
+                  {loading ? 'Entrando...' : 'Entrar'}
+                </Button>
+              </ActionBar>
             </form>
-          </div>
+          </Card>
         </main>
       </div>
     </div>

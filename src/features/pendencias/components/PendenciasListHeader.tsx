@@ -1,14 +1,14 @@
 import React from 'react';
 import { FileDown, Loader2, Search } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
 import {
+  Input,
+  Button,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from '@/components/ui/Select';
+  SelectValue
+} from '@/components/ui';
 
 export type StatusFilter = 'todos' | 'em_aberto' | 'resolvido';
 

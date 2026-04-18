@@ -2,12 +2,18 @@ import React from 'react';
 import PatientCard from './PatientCard';
 import type { Patient, PatientStatus } from '@/types';
 import { DESTINATION_ROOMS } from '@/constants';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Input,
+  Button
+} from '@/components/ui';
 import { Filter, Users, ClipboardList, Printer, Search } from 'lucide-react';
 import {
-  DndContext, 
+  DndContext,
   closestCenter,
   KeyboardSensor,
   MouseSensor,

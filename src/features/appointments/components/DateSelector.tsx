@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, X } from 'lucide-react';
-import Modal from '@/components/ui/Modal';
+import { Modal } from '@/components/ui';
 import { getDayConfig } from '../services/appointmentService';
 import type { DayScheduleConfig } from '@/types';
 
@@ -111,9 +111,9 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
     : 'Sem atendimento';
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-4 sm:p-5 print:rounded-2xl print:border-gray-300 print:bg-white">
+    <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 print:border-gray-300 print:bg-white">
       <div className="flex flex-col gap-4">
-        <div className="rounded-2xl bg-card p-3 sm:p-4">
+        <div className="rounded-xl bg-card p-3 sm:p-4">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
             <button
               type="button"

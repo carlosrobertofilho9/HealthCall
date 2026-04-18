@@ -17,6 +17,7 @@ const DisplayPage: React.FC = () => {
   const {
     calledPatient,
     nextPatients,
+    scheduledAppointmentsAwaitingCheckIn,
     callHistory,
     isCalling,
     audioActivated,
@@ -62,7 +63,10 @@ const DisplayPage: React.FC = () => {
             <CallHistorySidebar callHistory={callHistory} calledPatient={calledPatient} />
           </div>
 
-          <NextPatientsFooter nextPatients={nextPatients} />
+          <NextPatientsFooter
+            nextPatients={nextPatients}
+            scheduledAppointmentsAwaitingCheckIn={scheduledAppointmentsAwaitingCheckIn}
+          />
         </main>
       </div>
 

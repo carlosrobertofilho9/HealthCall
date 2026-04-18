@@ -1,7 +1,15 @@
 import React from 'react';
 import type { Patient, PatientStatus } from '@/types';
 import FinishServiceButton from './FinishServiceButton';
-import { Megaphone, Play, Edit, Trash2, MapPin, Clock } from 'lucide-react';
+import {
+  Megaphone,
+  Play,
+  Edit,
+  Trash2,
+  MapPin,
+  Clock
+} from 'lucide-react';
+import { Badge } from '@/components/ui';
 
 interface PatientCardProps {
   patient: Patient;
@@ -81,10 +89,10 @@ const PatientCard: React.FC<PatientCardProps> = ({
           <div className="flex items-center gap-2">
             <h3 className="text-xl font-bold text-card-foreground tracking-tight">{patient.name}</h3>
             {patient.callCount > 0 && (
-              <span className="flex items-center gap-1.5 bg-blue-500/20 text-blue-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+              <Badge className="gap-1.5 bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-300">
                 <Megaphone size={10} className="stroke-3" />
                 {patient.callCount}ª chamada
-              </span>
+              </Badge>
             )}
           </div>
           

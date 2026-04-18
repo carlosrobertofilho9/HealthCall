@@ -1,11 +1,29 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, Loader2, Search, TrendingUp, UserCheck, Users, X, XCircle } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Loader2,
+  Search,
+  TrendingUp,
+  UserCheck,
+  Users,
+  X,
+  XCircle
+} from 'lucide-react';
 import { toast } from 'sonner';
 import type { AppointmentDaySummary, AppointmentStatus } from '@/types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import Modal from '@/components/ui/Modal';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import {
+  Button,
+  Input,
+  Modal,
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui';
 import AppointmentsNav from '../components/AppointmentsNav';
 import {
   addDays,
@@ -14,7 +32,7 @@ import {
   getWeekDates,
   getWeekStart,
   isBlockedAppointment,
-  updateAppointmentStatus,
+  updateAppointmentStatus
 } from '../services/appointmentService';
 
 const formatShortDate = (date: Date) =>
@@ -277,13 +295,13 @@ const WeekDayCard: React.FC<{
             </p>
           )}
         </div>
-        <span
-          className={`rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold ${
+        <Badge
+          className={`py-0.5 font-bold ${
             summary.dayConfig.hasService ? badgeClass : 'text-muted-foreground'
           }`}
         >
           {summary.dayConfig.hasService ? `${rate}%` : 'Sem agenda'}
-        </span>
+        </Badge>
       </div>
 
       <div
@@ -643,7 +661,13 @@ const DayPatientsModal = ({
                             </div>
                           </div>
 
-                          <button
+                          <Badge
+                            asChild
+                            className={`py-1 font-semibold transition-opacity ${
+                              statusBadgeClass[slot.appointment?.status ?? 'Agendado']
+                            } ${updatingAppointmentId !== null ? 'cursor-not-allowed opacity-70' : 'hover:opacity-80'}`}
+                          >
+                            <button
                             type="button"
                             onClick={event => {
                               const appointment = slot.appointment;
@@ -658,13 +682,11 @@ const DayPatientsModal = ({
                               handleOpenContextMenu(event, appointment.id, appointment.status);
                             }}
                             disabled={updatingAppointmentId !== null}
-                            className={`rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold transition-opacity ${
-                              statusBadgeClass[slot.appointment?.status ?? 'Agendado']
-                            } ${updatingAppointmentId !== null ? 'cursor-not-allowed opacity-70' : 'hover:opacity-80'}`}
                             title="Clique para abrir menu de status"
                           >
                             {slot.appointment?.status}
                           </button>
+                          </Badge>
                         </div>
 
                         <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">

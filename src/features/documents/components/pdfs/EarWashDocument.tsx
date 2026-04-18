@@ -1,13 +1,13 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { HeaderIcon, BaseDocument, formatDate, type DocumentFormData } from './PdfCommon';
+import { HeaderIcon, BaseDocument, formatDate, pdfTheme, type DocumentFormData } from './PdfCommon';
 import { SmartSection, CriticalSection } from './PdfBreakSystem';
 const s = StyleSheet.create({
   container: { width: '100%' },
   sectionBox: {
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     borderRadius: 6,
     overflow: 'hidden',
   },
@@ -21,13 +21,13 @@ const s = StyleSheet.create({
   sectionHeaderText: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionBody: {
     padding: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: pdfTheme.colors.text.white,
   },
   fieldRow: {
     flexDirection: 'row',
@@ -40,20 +40,20 @@ const s = StyleSheet.create({
   fieldLabel: {
     fontSize: 7,
     fontWeight: 'bold',
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
     marginBottom: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   fieldLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    borderBottomColor: pdfTheme.colors.borderDark,
     height: 18,
     justifyContent: 'center',
   },
   fieldLineText: {
     fontSize: 9,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   checkRow: {
     flexDirection: 'row',
@@ -65,43 +65,43 @@ const s = StyleSheet.create({
     width: 9,
     height: 9,
     borderWidth: 1,
-    borderColor: '#94a3b8',
+    borderColor: pdfTheme.colors.text.light,
     borderRadius: 2,
   },
   checkLabel: {
     fontSize: 7.5,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   textArea: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: pdfTheme.colors.borderDark,
     borderRadius: 4,
     minHeight: 50,
     padding: 6,
   },
   textAreaLabel: {
     fontSize: 7,
-    color: '#94a3b8',
+    color: pdfTheme.colors.text.light,
   },
   consentBlock: {
     marginTop: 6,
     padding: 10,
-    backgroundColor: '#fefce8',
+    backgroundColor: pdfTheme.colors.warning.bg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#fde68a',
+    borderColor: pdfTheme.colors.warning.border,
   },
   consentTitle: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#92400e',
+    color: pdfTheme.colors.warning.text,
     marginBottom: 6,
     textAlign: 'center',
     textTransform: 'uppercase',
   },
   consentText: {
     fontSize: 7.5,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.6,
     marginBottom: 4,
     textAlign: 'justify',
@@ -118,52 +118,52 @@ const s = StyleSheet.create({
   },
   signatureLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: pdfTheme.colors.text.main,
     width: '100%',
     marginBottom: 4,
   },
   signatureLabel: {
     fontSize: 7,
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
     textAlign: 'center',
   },
   infoBox: {
     marginTop: 8,
     padding: 8,
-    backgroundColor: '#f0fdfa',
+    backgroundColor: pdfTheme.colors.softBg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#99f6e4',
+    borderColor: pdfTheme.colors.softBg,
   },
   infoTitle: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
     marginBottom: 3,
   },
   infoText: {
     fontSize: 7,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.4,
     marginBottom: 2,
   },
   alertBox: {
     marginTop: 6,
     padding: 8,
-    backgroundColor: '#fef2f2',
+    backgroundColor: pdfTheme.colors.danger.bg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: pdfTheme.colors.danger.border,
   },
   alertTitle: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#991b1b',
+    color: pdfTheme.colors.danger.text,
     marginBottom: 3,
   },
   alertText: {
     fontSize: 7,
-    color: '#7f1d1d',
+    color: pdfTheme.colors.danger.dark,
     lineHeight: 1.4,
     marginBottom: 2,
   },
@@ -175,13 +175,13 @@ const s = StyleSheet.create({
   },
   riskBullet: {
     fontSize: 7,
-    color: '#991b1b',
+    color: pdfTheme.colors.danger.text,
     fontWeight: 'bold',
     marginTop: 0.5,
   },
   riskText: {
     fontSize: 7,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.4,
     flex: 1,
   },
@@ -189,7 +189,7 @@ const s = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: '#0d9488',
+    backgroundColor: pdfTheme.colors.primaryDark,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 6,
@@ -197,7 +197,7 @@ const s = StyleSheet.create({
   stepNumberText: {
     fontSize: 7,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
   },
   stepRow: {
     flexDirection: 'row',
@@ -206,7 +206,7 @@ const s = StyleSheet.create({
   },
   stepText: {
     fontSize: 7.5,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.5,
     flex: 1,
     paddingTop: 1,
@@ -214,20 +214,20 @@ const s = StyleSheet.create({
   noteBox: {
     marginTop: 6,
     padding: 8,
-    backgroundColor: '#eff6ff',
+    backgroundColor: pdfTheme.colors.info.bg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#bfdbfe',
+    borderColor: pdfTheme.colors.info.border,
   },
   noteTitle: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: pdfTheme.colors.info.text,
     marginBottom: 3,
   },
   noteText: {
     fontSize: 7,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.4,
     marginBottom: 2,
   },
@@ -243,8 +243,8 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
     <View style={s.container}>
       {/* Section 1: Dados do Procedimento */}
       <View style={s.sectionBox}>
-        <View style={[s.sectionHeader, { backgroundColor: '#0369a1' }]}>
-          <HeaderIcon icon="ear" color="#ffffff" />
+        <View style={[s.sectionHeader, { backgroundColor: pdfTheme.colors.info.strong }]}>
+          <HeaderIcon icon="ear" color={pdfTheme.colors.text.white} />
           <Text style={s.sectionHeaderText}>Dados do Procedimento</Text>
         </View>
         <View style={s.sectionBody}>
@@ -314,12 +314,12 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
 
       {/* Section 2: Contraindicações verificadas */}
       <View style={s.sectionBox}>
-        <View style={[s.sectionHeader, { backgroundColor: '#dc2626' }]}>
-          <HeaderIcon icon="alertTriangle" color="#ffffff" />
+        <View style={[s.sectionHeader, { backgroundColor: pdfTheme.colors.danger.strong }]}>
+          <HeaderIcon icon="alertTriangle" color={pdfTheme.colors.text.white} />
           <Text style={s.sectionHeaderText}>Contraindicações — Verificar antes do procedimento</Text>
         </View>
         <View style={s.sectionBody}>
-          <Text style={{ fontSize: 7, color: '#64748b', marginBottom: 6 }}>Marcar as contraindicações verificadas e AUSENTES (procedimento liberado):</Text>
+          <Text style={{ fontSize: 7, color: pdfTheme.colors.text.secondary, marginBottom: 6 }}>Marcar as contraindicações verificadas e AUSENTES (procedimento liberado):</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {[
               'Perfuração timpânica conhecida',
@@ -348,8 +348,8 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
 
       {/* Section 3: Descrição do Procedimento */}
       <View style={s.sectionBox}>
-        <View style={[s.sectionHeader, { backgroundColor: '#0d9488' }]}>
-          <HeaderIcon icon="clipboard" color="#ffffff" />
+        <View style={[s.sectionHeader, { backgroundColor: pdfTheme.colors.primaryDark }]}>
+          <HeaderIcon icon="clipboard" color={pdfTheme.colors.text.white} />
           <Text style={s.sectionHeaderText}>Descrição Técnica do Procedimento</Text>
         </View>
         <View style={s.sectionBody}>
@@ -407,10 +407,10 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
       {/* Section 4: Riscos e Complicações */}
       <View style={s.alertBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-          <HeaderIcon icon="alertTriangle" color="#991b1b" />
+          <HeaderIcon icon="alertTriangle" color={pdfTheme.colors.danger.text} />
           <Text style={s.alertTitle}>Riscos e Complicações Possíveis</Text>
         </View>
-        <Text style={{ fontSize: 7, color: '#7f1d1d', marginBottom: 4, lineHeight: 1.3 }}>
+        <Text style={{ fontSize: 7, color: pdfTheme.colors.danger.dark, marginBottom: 4, lineHeight: 1.3 }}>
           Todo procedimento de lavagem de ouvido, mesmo quando realizado corretamente, pode apresentar riscos e complicações, incluindo:
         </Text>
         {[
@@ -434,7 +434,7 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
       {/* Section 5: Termo de Consentimento */}
       <View style={s.consentBlock}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
-          <HeaderIcon icon="shield" color="#92400e" />
+          <HeaderIcon icon="shield" color={pdfTheme.colors.warning.text} />
           <Text style={s.consentTitle}>Termo de Consentimento Livre e Esclarecido</Text>
         </View>
 
@@ -469,7 +469,7 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
       {/* Section 6: Orientações Pós-Procedimento */}
       <View style={s.infoBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-          <HeaderIcon icon="clipboard" color="#0f766e" />
+          <HeaderIcon icon="clipboard" color={pdfTheme.colors.primary} />
           <Text style={s.infoTitle}>Orientações Pós-Procedimento:</Text>
         </View>
         <Text style={s.infoText}>- Não introduzir objetos no canal auditivo (cotonetes, grampos, palitos, etc.).</Text>
@@ -483,7 +483,7 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
       {/* Section 7: Sinais de Alerta */}
       <View style={[s.alertBox, { marginTop: 6 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-          <HeaderIcon icon="alertTriangle" color="#991b1b" />
+          <HeaderIcon icon="alertTriangle" color={pdfTheme.colors.danger.text} />
           <Text style={s.alertTitle}>Sinais de Alerta — Procurar Atendimento Imediato:</Text>
         </View>
         <Text style={s.alertText}>- Dor intensa e progressiva no ouvido após o procedimento.</Text>
@@ -497,7 +497,7 @@ export const EarWashDocument: React.FC<EarWashDocumentProps> = ({ visibleParagra
       {/* Nota importante */}
       <View style={s.noteBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-          <HeaderIcon icon="fileText" color="#1e40af" />
+          <HeaderIcon icon="fileText" color={pdfTheme.colors.info.text} />
           <Text style={s.noteTitle}>Informações Importantes:</Text>
         </View>
         <Text style={s.noteText}>• O cerúmen (cera de ouvido) é uma substância protetora natural. Sua remoção só é indicada quando há obstrução sintomática ou necessidade de avaliação otoscópica.</Text>

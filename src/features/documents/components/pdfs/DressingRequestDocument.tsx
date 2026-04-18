@@ -37,9 +37,9 @@ const s = StyleSheet.create({
   },
   badge: {
     alignSelf: 'center',
-    backgroundColor: '#ecfdf5',
+    backgroundColor: pdfTheme.colors.success.softBg,
     borderWidth: 1,
-    borderColor: '#6ee7b7',
+    borderColor: pdfTheme.colors.success.borderStrong,
     borderRadius: 6,
     paddingHorizontal: 16,
     paddingVertical: 6,
@@ -51,7 +51,7 @@ const s = StyleSheet.create({
   badgeText: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#047857',
+    color: pdfTheme.colors.success.dark,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -83,13 +83,13 @@ const s = StyleSheet.create({
   },
   fieldValue: {
     fontSize: 9,
-    color: '#1e293b',
+    color: pdfTheme.colors.text.dark,
     minHeight: 12,
   },
   sectionTitle: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 7,
@@ -118,14 +118,14 @@ const s = StyleSheet.create({
     borderRightColor: pdfTheme.colors.border,
   },
   materialSelected: {
-    backgroundColor: '#ecfdf5',
+    backgroundColor: pdfTheme.colors.success.softBg,
   },
   materialLabel: {
     fontSize: 9,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   materialLabelSelected: {
-    color: '#047857',
+    color: pdfTheme.colors.success.dark,
     fontWeight: 'bold',
   },
   textBox: {
@@ -145,20 +145,20 @@ const s = StyleSheet.create({
   },
   textBoxValue: {
     fontSize: 9,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.4,
   },
   noteBox: {
     marginTop: 'auto',
     padding: 8,
-    backgroundColor: '#fffbeb',
+    backgroundColor: pdfTheme.colors.warning.softBg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#fde68a',
+    borderColor: pdfTheme.colors.warning.border,
   },
   noteText: {
     fontSize: 7,
-    color: '#78350f',
+    color: pdfTheme.colors.warning.dark,
     lineHeight: 1.35,
   },
   signatureRow: {
@@ -173,13 +173,13 @@ const s = StyleSheet.create({
   },
   signatureLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: pdfTheme.colors.text.main,
     width: '100%',
     marginBottom: 4,
   },
   signatureLabel: {
     fontSize: 7,
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
     textAlign: 'center',
   },
 });
@@ -198,14 +198,14 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
       width={10.5}
       height={10.5}
       rx={2}
-      stroke={checked ? '#047857' : '#94a3b8'}
+      stroke={checked ? pdfTheme.colors.success.dark : pdfTheme.colors.text.light}
       strokeWidth={1.5}
-      fill={checked ? '#d1fae5' : 'none'}
+      fill={checked ? pdfTheme.colors.success.bgStrong : 'none'}
     />
     {checked && (
       <Path
         d="M3.1 6.1L5.1 8.1L9 4"
-        stroke="#047857"
+        stroke={pdfTheme.colors.success.dark}
         strokeWidth={1.5}
         fill="none"
         strokeLinecap="round"
@@ -229,7 +229,7 @@ export const DressingRequestDocument: React.FC<DressingRequestDocumentProps> = (
     >
       <View style={s.container}>
         <View style={s.badge}>
-          <HeaderIcon icon="clipboard" color="#047857" />
+          <HeaderIcon icon="clipboard" color={pdfTheme.colors.success.dark} />
           <Text style={s.badgeText}>Solicitação de Materiais para Curativo</Text>
         </View>
 

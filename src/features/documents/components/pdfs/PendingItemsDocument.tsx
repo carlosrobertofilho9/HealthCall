@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: pdfTheme.colors.borderDark,
     borderRadius: 6,
     overflow: 'hidden',
     height: 148,
@@ -25,11 +25,11 @@ const styles = StyleSheet.create({
   cardHeaderNumber: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
   },
   cardHeaderTitle: {
     fontSize: 9,
-    color: '#99f6e4',
+    color: pdfTheme.colors.softBg,
     flex: 1,
   },
   resolvedContainer: {
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   },
   resolvedLabel: {
     fontSize: 7,
-    color: '#99f6e4',
+    color: pdfTheme.colors.softBg,
     textTransform: 'uppercase',
     fontWeight: 'bold',
   },
@@ -67,20 +67,20 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 7,
-    color: '#94a3b8',
+    color: pdfTheme.colors.text.light,
     textTransform: 'uppercase',
     fontWeight: 'bold',
     marginBottom: 2,
   },
   fieldLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    borderBottomColor: pdfTheme.colors.borderDark,
     height: 14,
     justifyContent: 'center',
   },
   fieldValue: {
     fontSize: 9,
-    color: '#1e293b',
+    color: pdfTheme.colors.text.dark,
     fontWeight: 'bold',
   },
   // Type checkboxes row
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
   typeLabel: {
     fontSize: 7,
-    color: '#94a3b8',
+    color: pdfTheme.colors.text.light,
     textTransform: 'uppercase',
     fontWeight: 'bold',
     marginRight: 4,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   typeOptionText: {
     fontSize: 8,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   // Summary section
   summarySection: {
@@ -113,20 +113,20 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 7,
-    color: '#94a3b8',
+    color: pdfTheme.colors.text.light,
     textTransform: 'uppercase',
     fontWeight: 'bold',
     marginBottom: 3,
   },
   summaryLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: pdfTheme.colors.border,
     height: 14,
     justifyContent: 'center',
   },
   summaryText: {
     fontSize: 9,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.4,
   },
 });
@@ -141,7 +141,7 @@ const Checkbox = ({ size = 10 }: { size?: number }) => (
       height={9}
       rx={1.5}
       ry={1.5}
-      stroke="#94a3b8"
+      stroke={pdfTheme.colors.text.light}
       strokeWidth={1}
       fill="none"
     />
@@ -174,7 +174,7 @@ export const PendingItemsDocument: React.FC<PendingItemsDocumentProps> = ({ form
                 <View style={styles.resolvedContainer}>
                   <Text style={styles.resolvedLabel}>Resolvido</Text>
                   <Svg width={10} height={10} viewBox="0 0 10 10">
-                    <Rect x={0.5} y={0.5} width={9} height={9} rx={1.5} ry={1.5} stroke="#99f6e4" strokeWidth={1} fill="none" />
+                    <Rect x={0.5} y={0.5} width={9} height={9} rx={1.5} ry={1.5} stroke={pdfTheme.colors.softBg} strokeWidth={1} fill="none" />
                   </Svg>
                 </View>
               </View>

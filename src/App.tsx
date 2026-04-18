@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from '@/components/Header';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Toaster } from '@/components/ui/sonner';
+import { Toaster } from '@/components/ui';
 
 /**
  * O componente raiz de layout para as seções autenticadas da aplicação.

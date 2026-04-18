@@ -1,11 +1,22 @@
 import React, { useEffect } from 'react';
 import { useAppointments } from '@/features/appointments/hooks/useAppointments';
-import { Calendar, UserPlus, CheckCircle2, Clock, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import {
+  Calendar,
+  UserPlus,
+  CheckCircle2,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  MapPin
+} from 'lucide-react';
+import { Button } from '@/components/ui';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Appointment, Patient } from '@/types';
-import { isBlockedAppointment, isActiveAppointment } from '@/features/appointments/services/appointmentService';
+import {
+  isBlockedAppointment,
+  isActiveAppointment
+} from '@/features/appointments/services/appointmentService';
 
 interface AppointmentsColumnProps {
   onCheckIn: (appointment: Appointment) => Promise<boolean>;

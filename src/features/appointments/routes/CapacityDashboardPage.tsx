@@ -9,7 +9,7 @@ import {
   RefreshCw,
   UserCheck,
   Users,
-  XCircle,
+  XCircle
 } from 'lucide-react';
 import {
   Bar,
@@ -21,31 +21,27 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis,
+  YAxis
 } from 'recharts';
 import { toast } from 'sonner';
 import type { CapacityAnalyticsFilters, CapacityStatusFilter } from '@/types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import {
+  Button,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from '@/components/ui/Select';
+  SelectValue
+} from '@/components/ui';
 import AppointmentsNav from '../components/AppointmentsNav';
-import {
-  addDays,
-  getCapacityAnalyticsForDateRange,
-  getWeekStart,
-} from '../services/appointmentService';
+import { addDays, getCapacityAnalyticsForDateRange, getWeekStart } from '../services/appointmentService';
 import {
   APPOINTMENTS_CHART_COLORS,
   APPOINTMENTS_CHART_LEGEND_WRAPPER_STYLE,
   APPOINTMENTS_CHART_TOOLTIP_CONTENT_STYLE,
   APPOINTMENTS_CHART_TOOLTIP_ITEM_STYLE,
-  APPOINTMENTS_CHART_TOOLTIP_LABEL_STYLE,
+  APPOINTMENTS_CHART_TOOLTIP_LABEL_STYLE
 } from '../constants/chartTheme';
 
 const RANGE_DAYS = 28;

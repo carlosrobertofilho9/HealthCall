@@ -1,20 +1,28 @@
 import React from 'react';
-import { IdCard, Loader2, Pencil, Save, Trash2, UserRound, X, FileText } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
 import {
+  IdCard,
+  Loader2,
+  Pencil,
+  Save,
+  Trash2,
+  UserRound,
+  X,
+  FileText
+} from 'lucide-react';
+import {
+  Input,
+  Button,
+  Badge,
+  Textarea,
+  ActionBar,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from '@/components/ui/Select';
+  SelectValue
+} from '@/components/ui';
 import { TipoPendenciaSelector } from './TipoPendenciaSelector';
-import {
-  formatCnsCpfForDisplay,
-  getDocumentLabel,
-  parseTipoTags,
-} from '../utils/pendenciasUiUtils';
+import { formatCnsCpfForDisplay, getDocumentLabel, parseTipoTags } from '../utils/pendenciasUiUtils';
 import {
   PENDENCIA_PRIORIDADE,
   PENDENCIA_PRIORIDADE_LABEL,
@@ -22,7 +30,7 @@ import {
   PENDENCIA_STATUS_LABEL,
   type Pendencia,
   type PendenciaPrioridade,
-  type PendenciaStatus,
+  type PendenciaStatus
 } from '../types';
 import { type PendenciaAlertLevel } from '../utils/pendenciasOperationalUtils';
 
@@ -135,15 +143,13 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 onChangeTipoPersonalizado={onEditTipoPersonalizadoChange}
               />
 
-              <div className="relative">
-                <FileText className="absolute left-3 top-3.5 h-4 w-4 text-[#96c5a9]/80" />
-                <textarea
-                  value={editResumo}
-                  onChange={(event) => onEditResumoChange(event.target.value)}
-                  className="w-full rounded-xl text-white bg-[#1f3a2b] border border-white/10 min-h-24 p-3 pl-10 placeholder:text-[#96c5a9]/60 focus:ring-2 focus:ring-primary transition-all focus:outline-none"
-                  placeholder="Descreva os detalhes da pendência"
-                />
-              </div>
+              <Textarea
+                value={editResumo}
+                onChange={(event) => onEditResumoChange(event.target.value)}
+                className="min-h-24 rounded-xl text-white bg-[#1f3a2b] border-white/10 placeholder:text-[#96c5a9]/60 focus:ring-primary"
+                placeholder="Descreva os detalhes da pendência"
+                icon={<FileText className="h-4 w-4 text-[#96c5a9]/80" />}
+              />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <Select
@@ -181,12 +187,12 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
 
               <div className="flex flex-wrap gap-2">
                 {editingTipos.map((tipoTag) => (
-                  <span
+                  <Badge
                     key={`${item.id}-editing-tag-${tipoTag}`}
-                    className="text-xs px-2.5 py-1 rounded-full bg-[#1f3a2b] border border-white/10 text-[#96c5a9]"
+                    className="bg-[#1f3a2b] border-white/10 text-[#96c5a9]"
                   >
                     {tipoTag}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -202,12 +208,12 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
 
               <div className="flex flex-wrap gap-2">
                 {tipos.map((tipoTag) => (
-                  <span
+                  <Badge
                     key={`${item.id}-${tipoTag}`}
-                    className="text-xs px-2.5 py-1 rounded-full bg-[#1f3a2b] border border-white/10 text-[#96c5a9]"
+                    className="bg-[#1f3a2b] border-white/10 text-[#96c5a9]"
                   >
                     {tipoTag}
-                  </span>
+                  </Badge>
                 ))}
               </div>
 
@@ -217,22 +223,22 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span className={`text-xs px-2.5 py-1 rounded-full ${prioridadeClassByValue[item.prioridade]}`}>
+                <Badge className={prioridadeClassByValue[item.prioridade]}>
                   Prioridade: {PENDENCIA_PRIORIDADE_LABEL[item.prioridade]}
-                </span>
+                </Badge>
 
-                <span className="text-xs px-2.5 py-1 rounded-full bg-[#1f3a2b] border border-white/10 text-[#96c5a9]">
+                <Badge className="bg-[#1f3a2b] border-white/10 text-[#96c5a9]">
                   Prazo: {item.prazo ? new Date(`${item.prazo}T00:00:00`).toLocaleDateString('pt-BR') : 'Não definido'}
-                </span>
+                </Badge>
 
-                <span className="text-xs px-2.5 py-1 rounded-full bg-[#1f3a2b] border border-white/10 text-[#96c5a9]">
+                <Badge className="bg-[#1f3a2b] border-white/10 text-[#96c5a9]">
                   Responsável: {item.responsavel || 'Não definido'}
-                </span>
+                </Badge>
 
                 {alertLevel !== 'none' ? (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/10 text-red-200 border border-red-400/30">
+                  <Badge className="bg-red-500/10 text-red-200 border-red-400/30">
                     {alertLabel}
-                  </span>
+                  </Badge>
                 ) : null}
               </div>
             </>
@@ -240,9 +246,9 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
         </div>
 
         <div className="w-full xl:w-64 flex flex-col gap-2">
-          <span className={`text-xs px-2.5 py-1 rounded-full w-fit ${statusBadgeClass(item.status)}`}>
+          <Badge className={`w-fit ${statusBadgeClass(item.status)}`}>
             {PENDENCIA_STATUS_LABEL[item.status]}
-          </span>
+          </Badge>
 
           <Select value={item.status} onValueChange={(value) => onStatusChange(value as PendenciaStatus)}>
             <SelectTrigger className="h-10 rounded-xl pl-4">
@@ -256,7 +262,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
           </Select>
 
           {isEditing ? (
-            <>
+            <ActionBar align="start" className="flex-col gap-2">
               <Button
                 type="button"
                 size="sm"
@@ -276,9 +282,9 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 <X className="h-4 w-4" />
                 Cancelar
               </Button>
-            </>
+            </ActionBar>
           ) : (
-            <>
+            <ActionBar align="start" className="flex-col gap-2">
               <Button
                 type="button"
                 size="sm"
@@ -298,7 +304,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Excluir
               </Button>
-            </>
+            </ActionBar>
           )}
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Printer, Plus, RefreshCw, Ban } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui';
 
 interface AppointmentActionsProps {
   hasService: boolean;

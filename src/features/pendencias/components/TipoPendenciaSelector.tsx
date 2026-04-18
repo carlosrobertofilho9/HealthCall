@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tag } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
+import { Input } from '@/components/ui';
 
 interface TipoPendenciaSelectorProps {
   options: string[];

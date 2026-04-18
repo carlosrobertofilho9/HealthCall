@@ -1,7 +1,6 @@
 import React from 'react';
 import { Users, X } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
+import { Button, ActionBar, Modal } from '@/components/ui';
 
 interface ConfirmQueueModalProps {
   patientCount: number;
@@ -55,14 +54,15 @@ export const ConfirmQueueModal: React.FC<ConfirmQueueModalProps> = ({
           </p>
         </div>
 
-        <div className="flex gap-3">
-          <button
+        <ActionBar className="gap-3" align="between">
+          <Button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3.5 px-4 rounded-xl bg-secondary text-secondary-foreground font-semibold active:bg-secondary/90 hover:bg-secondary/90 transition-colors touch-manipulation"
+            variant="secondary"
+            className="flex-1 py-3.5 touch-manipulation"
           >
             Cancelar
-          </button>
+          </Button>
           <Button
             onClick={onConfirm}
             disabled={isLoading}
@@ -70,7 +70,7 @@ export const ConfirmQueueModal: React.FC<ConfirmQueueModalProps> = ({
           >
             {isLoading ? 'Enviando...' : 'Confirmar Envio'}
           </Button>
-        </div>
+        </ActionBar>
     </Modal>
   );
 };

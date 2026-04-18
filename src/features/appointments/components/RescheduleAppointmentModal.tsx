@@ -1,23 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CalendarClock, X } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import Modal from '@/components/ui/Modal';
 import {
+  Button,
+  Input,
+  Label,
+  Modal,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from '@/components/ui/Select';
+  SelectValue
+} from '@/components/ui';
 import type { Appointment } from '@/types';
 import {
   formatDateToISO,
   getAvailableSlots,
   getDayConfig,
   getSlotTime,
-  parseISODate,
+  parseISODate
 } from '../services/appointmentService';
 
 interface RescheduleAppointmentModalProps {

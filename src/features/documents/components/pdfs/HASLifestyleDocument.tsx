@@ -39,10 +39,10 @@ const S = StyleSheet.create({
 
   /* Section card */
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: pdfTheme.colors.text.white,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     padding: 12,
   },
 
@@ -53,13 +53,13 @@ const S = StyleSheet.create({
     gap: 7,
     marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: pdfTheme.colors.bgLight,
     paddingBottom: 6,
   },
   cardTitle: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
     flex: 1,
   },
 
@@ -67,7 +67,7 @@ const S = StyleSheet.create({
   subTitle: {
     fontSize: 7.5,
     fontWeight: 'bold',
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     marginTop: 6,
     marginBottom: 3,
   },
@@ -75,7 +75,7 @@ const S = StyleSheet.create({
   /* Standard body text */
   bodyText: {
     fontSize: 7.5,
-    color: '#475569',
+    color: pdfTheme.colors.text.muted,
     lineHeight: 1.45,
   },
 
@@ -89,7 +89,7 @@ const S = StyleSheet.create({
   bulletText: {
     flex: 1,
     fontSize: 7.5,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.45,
   },
   bulletBold: {
@@ -100,9 +100,9 @@ const S = StyleSheet.create({
   highlightPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef9c3',
+    backgroundColor: pdfTheme.colors.lifestyle.foodBg,
     borderWidth: 1,
-    borderColor: '#fde047',
+    borderColor: pdfTheme.colors.lifestyle.foodBorder,
     borderRadius: 6,
     padding: 6,
     marginVertical: 5,
@@ -110,7 +110,7 @@ const S = StyleSheet.create({
   },
   highlightText: {
     fontSize: 7.5,
-    color: '#713f12',
+    color: pdfTheme.colors.lifestyle.foodText,
     fontWeight: 'bold',
     flex: 1,
     lineHeight: 1.4,
@@ -124,25 +124,25 @@ const S = StyleSheet.create({
     marginTop: 4,
   },
   chip: {
-    backgroundColor: '#f0fdf4',
+    backgroundColor: pdfTheme.colors.lifestyle.positiveBg,
     borderWidth: 1,
-    borderColor: '#bbf7d0',
+    borderColor: pdfTheme.colors.lifestyle.positiveBorder,
     borderRadius: 4,
     paddingHorizontal: 5,
     paddingVertical: 2,
   },
   chipText: {
     fontSize: 6.5,
-    color: '#15803d',
+    color: pdfTheme.colors.lifestyle.positiveText,
     fontWeight: 'bold',
   },
 
   /* No-drink/smoke alert strip */
   alertStrip: {
     flexDirection: 'row',
-    backgroundColor: '#fef2f2',
+    backgroundColor: pdfTheme.colors.danger.bg,
     borderWidth: 1,
-    borderColor: '#fecaca',
+    borderColor: pdfTheme.colors.danger.border,
     borderRadius: 6,
     padding: 6,
     marginTop: 5,
@@ -152,16 +152,16 @@ const S = StyleSheet.create({
   alertText: {
     flex: 1,
     fontSize: 7.5,
-    color: '#991b1b',
+    color: pdfTheme.colors.danger.text,
     lineHeight: 1.45,
   },
 
   /* Positive strip (teal) */
   positiveStrip: {
     flexDirection: 'row',
-    backgroundColor: '#f0fdfa',
+    backgroundColor: pdfTheme.colors.softBg,
     borderWidth: 1,
-    borderColor: '#99f6e4',
+    borderColor: pdfTheme.colors.softBg,
     borderRadius: 6,
     padding: 6,
     marginTop: 5,
@@ -171,14 +171,14 @@ const S = StyleSheet.create({
   positiveText: {
     flex: 1,
     fontSize: 7.5,
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
     lineHeight: 1.45,
   },
 
   /* Footer reminder banner */
   reminderBanner: {
     marginTop: 10,
-    backgroundColor: '#0f766e',
+    backgroundColor: pdfTheme.colors.primary,
     borderRadius: 6,
     padding: 8,
     flexDirection: 'row',
@@ -187,7 +187,7 @@ const S = StyleSheet.create({
   },
   reminderText: {
     fontSize: 7.5,
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
     flex: 1,
     lineHeight: 1.5,
   },
@@ -232,8 +232,8 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
             {/* Card 1 – Peso */}
             <View style={S.card}>
               <View style={S.cardHeader}>
-                <ScaleIcon size={18} color="#0f766e" />
-                <Text style={[S.cardTitle, { color: '#0f766e' }]}>
+                <ScaleIcon size={18} color={pdfTheme.colors.primary} />
+                <Text style={[S.cardTitle, { color: pdfTheme.colors.primary }]}>
                   1. Mantenha um Peso Saudável
                 </Text>
               </View>
@@ -241,7 +241,7 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
                 Estar no peso certo ajuda o seu coração a trabalhar melhor e protege suas articulações.
               </Text>
               <View style={S.positiveStrip}>
-                <TipBulletIcon size={10} color="#0f766e" />
+                <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
                 <Text style={S.positiveText}>
                   A equipe do postinho vai medir seu{' '}
                   <Text style={{ fontWeight: 'bold' }}>peso e altura</Text> nas consultas.
@@ -253,15 +253,15 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
             {/* Card 2 – Alimentação */}
             <View style={S.card}>
               <View style={S.cardHeader}>
-                <FoodIcon size={18} color="#ca8a04" />
-                <Text style={[S.cardTitle, { color: '#ca8a04' }]}>
+                <FoodIcon size={18} color={pdfTheme.colors.warning.strong} />
+                <Text style={[S.cardTitle, { color: pdfTheme.colors.warning.strong }]}>
                   2. Alimentação Saudável (Menos Sal!)
                 </Text>
               </View>
 
               {/* Salt highlight */}
               <View style={S.highlightPill}>
-                <SaltIcon size={14} color="#0891b2" />
+                <SaltIcon size={14} color={pdfTheme.colors.lifestyle.cyanText} />
                 <Text style={S.highlightText}>
                   Limite: <Text style={{ fontSize: 8 }}>1 colherzinha de chá (rasa) de sal por dia</Text> para toda a comida.
                 </Text>
@@ -270,20 +270,20 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
               {/* Tips */}
               <Text style={S.subTitle}>Dicas práticas:</Text>
               <View style={S.bulletRow}>
-                <BulletIcon size={10} color="#059669" />
+                <BulletIcon size={10} color={pdfTheme.colors.success.strong} />
                 <Text style={S.bulletText}>
                   Tire o <Text style={S.bulletBold}>saleiro da mesa</Text>.
                 </Text>
               </View>
               <View style={S.bulletRow}>
-                <BulletIcon size={10} color="#059669" />
+                <BulletIcon size={10} color={pdfTheme.colors.success.strong} />
                 <Text style={S.bulletText}>
                   Use <Text style={S.bulletBold}>alho, cebola, coentro, cebolinha, colorau e cominho</Text> para dar sabor.
                 </Text>
               </View>
               <View style={S.bulletRow}>
-                <AlertBulletIcon size={10} color="#dc2626" />
-                <Text style={[S.bulletText, { color: '#991b1b' }]}>
+                <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
+                <Text style={[S.bulletText, { color: pdfTheme.colors.danger.text }]}>
                   Evite <Text style={S.bulletBold}>temperos prontos em tablete</Text> — são puro sal!
                 </Text>
               </View>
@@ -302,8 +302,8 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
             {/* Card 3 – Atividade */}
             <View style={S.card}>
               <View style={S.cardHeader}>
-                <WalkIcon size={18} color="#1d4ed8" />
-                <Text style={[S.cardTitle, { color: '#1d4ed8' }]}>
+                <WalkIcon size={18} color={pdfTheme.colors.lifestyle.activityText} />
+                <Text style={[S.cardTitle, { color: pdfTheme.colors.lifestyle.activityText }]}>
                   3. Movimente o Seu Corpo
                 </Text>
               </View>
@@ -312,7 +312,7 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
               </Text>
 
               <View style={[S.positiveStrip, { marginTop: 6 }]}>
-                <TipBulletIcon size={10} color="#0f766e" />
+                <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
                 <Text style={S.positiveText}>
                   <Text style={{ fontWeight: 'bold' }}>Meta:</Text> 30 minutos por dia, pelo menos 5 dias na semana.
                 </Text>
@@ -320,21 +320,21 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
 
               <Text style={S.subTitle}>Exemplos de exercícios (Cardio):</Text>
               <View style={S.bulletRow}>
-                <BulletIcon size={10} color="#1d4ed8" />
+                <BulletIcon size={10} color={pdfTheme.colors.lifestyle.activityText} />
                 <Text style={S.bulletText}>Caminhar rápido na rua ou na praça.</Text>
               </View>
               <View style={S.bulletRow}>
-                <BulletIcon size={10} color="#1d4ed8" />
+                <BulletIcon size={10} color={pdfTheme.colors.lifestyle.activityText} />
                 <Text style={S.bulletText}>Andar de bicicleta, capinar o quintal ou varrer a casa com vontade.</Text>
               </View>
 
               <Text style={S.subTitle}>Para fortalecer os músculos (Resistência):</Text>
               <View style={S.bulletRow}>
-                <BulletIcon size={10} color="#1d4ed8" />
+                <BulletIcon size={10} color={pdfTheme.colors.lifestyle.activityText} />
                 <Text style={S.bulletText}>Sentar e levantar da cadeira várias vezes seguidas.</Text>
               </View>
               <View style={S.bulletRow}>
-                <BulletIcon size={10} color="#1d4ed8" />
+                <BulletIcon size={10} color={pdfTheme.colors.lifestyle.activityText} />
                 <Text style={S.bulletText}>
                   Usar <Text style={S.bulletBold}>garrafas PET</Text> cheias de água ou areia para exercícios com os braços.
                 </Text>
@@ -349,19 +349,19 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
             {/* Card 4 – Álcool e Fumo */}
             <View style={S.card}>
               <View style={S.cardHeader}>
-                <NoSmokingIcon size={18} color="#dc2626" />
-                <Text style={[S.cardTitle, { color: '#dc2626' }]}>
+                <NoSmokingIcon size={18} color={pdfTheme.colors.danger.strong} />
+                <Text style={[S.cardTitle, { color: pdfTheme.colors.danger.strong }]}>
                   4. Cuidado com a Bebida e o Fumo
                 </Text>
               </View>
-              <Text style={[S.bodyText, { color: '#7f1d1d', fontWeight: 'bold', marginBottom: 4 }]}>
+              <Text style={[S.bodyText, { color: pdfTheme.colors.danger.dark, fontWeight: 'bold', marginBottom: 4 }]}>
                 Esses dois são os maiores inimigos do seu tratamento.
               </Text>
 
               {/* Alcohol */}
               <Text style={S.subTitle}>Bebida Alcoólica:</Text>
               <View style={S.alertStrip}>
-                <AlertBulletIcon size={10} color="#dc2626" />
+                <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
                 <Text style={S.alertText}>
                   O melhor para a saúde é <Text style={{ fontWeight: 'bold' }}>não beber</Text>. Se beber, o limite máximo
                   por dia é de <Text style={{ fontWeight: 'bold' }}>2 latinhas (homens)</Text> e{' '}
@@ -372,14 +372,14 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
               {/* Smoking */}
               <Text style={S.subTitle}>Fumo:</Text>
               <View style={S.alertStrip}>
-                <AlertBulletIcon size={10} color="#dc2626" />
+                <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
                 <Text style={S.alertText}>
                   <Text style={{ fontWeight: 'bold' }}>Corte totalmente.</Text> Cigarro, vape, fumo de rolo e narguilé{' '}
                   entopem as veias e causam doenças graves.
                 </Text>
               </View>
               <View style={[S.positiveStrip, { marginTop: 6 }]}>
-                <TipBulletIcon size={10} color="#0f766e" />
+                <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
                 <Text style={S.positiveText}>
                   Se precisar de ajuda para parar, <Text style={{ fontWeight: 'bold' }}>fale com a gente no posto!</Text>
                 </Text>
@@ -389,8 +389,8 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
             {/* Card 5 – Saúde Mental */}
             <View style={S.card}>
               <View style={S.cardHeader}>
-                <MindIcon size={18} color="#7c3aed" />
-                <Text style={[S.cardTitle, { color: '#7c3aed' }]}>
+                <MindIcon size={18} color={pdfTheme.colors.purple.text} />
+                <Text style={[S.cardTitle, { color: pdfTheme.colors.purple.text }]}>
                   5. Cuide da Cabeça e da Alma
                 </Text>
               </View>
@@ -401,7 +401,7 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
 
               <Text style={S.subTitle}>Respire:</Text>
               <View style={S.bulletRow}>
-                <BulletIcon size={10} color="#7c3aed" />
+                <BulletIcon size={10} color={pdfTheme.colors.purple.text} />
                 <Text style={S.bulletText}>
                   Tire <Text style={S.bulletBold}>5 minutinhos</Text> do seu dia. Sente em um lugar silencioso, feche os olhos,
                   puxe o ar pelo nariz bem devagar e solte pela boca.
@@ -410,8 +410,8 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
 
               <Text style={S.subTitle}>Fé e Esperança:</Text>
               <View style={[S.positiveStrip]}>
-                <TipBulletIcon size={10} color="#7c3aed" />
-                <Text style={[S.positiveText, { color: '#5b21b6' }]}>
+                <TipBulletIcon size={10} color={pdfTheme.colors.purple.text} />
+                <Text style={[S.positiveText, { color: pdfTheme.colors.purple.textDark }]}>
                   Praticar sua fé, rezar, ir à igreja ou ao templo, ou cuidar das plantas no quintal —
                   essas coisas trazem <Text style={{ fontWeight: 'bold' }}>paz e ajudam a controlar o estresse</Text> do dia a dia.
                 </Text>
@@ -420,7 +420,7 @@ export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
 
             {/* Footer reminder */}
             <View style={S.reminderBanner}>
-              <LeafIcon size={22} color="#ffffff" />
+              <LeafIcon size={22} color={pdfTheme.colors.text.white} />
               <Text style={S.reminderText}>
                 <Text style={S.reminderBold}>Lembre-se: </Text>
                 Essas mudanças no estilo de vida, junto com os seus remédios, são fundamentais para

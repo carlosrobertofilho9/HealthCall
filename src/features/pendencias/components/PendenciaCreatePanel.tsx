@@ -1,14 +1,24 @@
 import React from 'react';
-import { CheckCircle2, ListTodo, Loader2, UserRound, IdCard, FileText } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
 import {
+  CheckCircle2,
+  ListTodo,
+  Loader2,
+  UserRound,
+  IdCard,
+  FileText
+} from 'lucide-react';
+import {
+  Input,
+  Button,
+  Textarea,
+  FormSection,
+  Badge,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from '@/components/ui/Select';
+  SelectValue
+} from '@/components/ui';
 import { TipoPendenciaSelector } from './TipoPendenciaSelector';
 import { getDocumentLabel } from '../utils/pendenciasUiUtils';
 import { PENDENCIA_PRIORIDADE_LABEL, type PendenciaPrioridade } from '../types';
@@ -89,9 +99,9 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
               icon={<IdCard className="h-4 w-4" />}
               className="h-11 rounded-xl pr-20 bg-[#1f3a2b] font-semibold tracking-wide"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-[#325a42] px-2 py-1 text-[11px] text-[#96c5a9]">
+            <Badge className="absolute right-3 top-1/2 -translate-y-1/2 border-white/10 bg-[#325a42] px-2 py-1 text-[11px] text-[#96c5a9]">
               {getDocumentLabel(cnsCpf)}
-            </span>
+            </Badge>
           </div>
         </div>
 
@@ -106,18 +116,15 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
           />
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-2">
-          <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Descrição</p>
-          <div className="relative">
-            <FileText className="absolute left-3 top-3.5 h-4 w-4 text-[#96c5a9]/80" />
-            <textarea
-              value={resumo}
-              onChange={(event) => onResumoChange(event.target.value)}
-              placeholder="Descreva os detalhes da pendência"
-              className="w-full rounded-xl text-white bg-[#1f3a2b] border border-white/10 min-h-28 p-3 pl-10 placeholder:text-[#96c5a9]/60 focus:ring-2 focus:ring-primary transition-all focus:outline-none"
-            />
-          </div>
-        </div>
+        <FormSection title="Descrição" className="border-white/10 bg-[#264532]/40" contentClassName="space-y-2">
+          <Textarea
+            value={resumo}
+            onChange={(event) => onResumoChange(event.target.value)}
+            placeholder="Descreva os detalhes da pendência"
+            icon={<FileText className="h-4 w-4 text-[#96c5a9]/80" />}
+            className="min-h-28 rounded-xl text-white bg-[#1f3a2b] border-white/10 placeholder:text-[#96c5a9]/60 focus:ring-primary"
+          />
+        </FormSection>
 
         <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-3">
           <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Planejamento</p>

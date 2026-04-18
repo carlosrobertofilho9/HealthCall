@@ -6,10 +6,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/Select"
-import { Button } from '@/components/ui/Button';
-import { Label } from '@/components/ui/Label';
-import { Switch } from '@/components/ui/switch';
+  Button,
+  Label,
+  Switch,
+  FormSection,
+  ActionBar
+} from '@/components/ui';
 
 /**
  * A página de configurações da aplicação.
@@ -37,15 +39,14 @@ const SettingsPage: React.FC = () => {
   const loading = loadingDestination || loadingVoiceSetting;
 
   return (
-    <div className="bg-[#1a2c22] rounded-2xl p-8 shadow-2xl max-w-xl mx-auto">
-      <h2 className="text-white text-2xl font-bold leading-tight mb-6">Configurações</h2>
-      <div className="space-y-6">
-        <div>
-          <Label htmlFor="default-destination" className="text-white font-medium mb-2 block">
-            Destino Padrão
-          </Label>
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] z-10">meeting_room</span>
+    <div className="bg-card rounded-2xl border border-border p-6 sm:p-8 shadow-sm max-w-xl mx-auto">
+      <h2 className="text-2xl font-bold text-card-foreground leading-tight mb-6">Configurações</h2>
+      <div className="space-y-4">
+        <FormSection title="Fluxo padrão">
+          <div>
+            <Label htmlFor="default-destination" className="font-medium mb-2 block">
+              Destino Padrão
+            </Label>
             <Select onValueChange={setSelected} value={selected} disabled={loading}>
               <SelectTrigger id="default-destination">
                 <SelectValue placeholder="Nenhum (selecionar ao adicionar)" />
@@ -57,27 +58,31 @@ const SettingsPage: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="browser-voice-switch" className="text-white">
-            Usar chamador de voz do navegador
-          </Label>
-          <Switch
-            id="browser-voice-switch"
-            checked={useBrowserVoice}
-            onCheckedChange={setUseBrowserVoice}
-            disabled={loading}
-          />
-        </div>
-        <div className="pt-2">
+        </FormSection>
+
+        <FormSection title="Áudio">
+          <div className="flex items-center justify-between gap-4">
+            <Label htmlFor="browser-voice-switch">
+              Usar chamador de voz do navegador
+            </Label>
+            <Switch
+              id="browser-voice-switch"
+              checked={useBrowserVoice}
+              onCheckedChange={setUseBrowserVoice}
+              disabled={loading}
+            />
+          </div>
+        </FormSection>
+
+        <ActionBar separated className="justify-end">
           <Button
             onClick={saveDefaultDestination}
             disabled={saving || loading}
-            className="w-full"
+            className="w-full sm:w-auto"
           >
             {saving ? 'Salvando...' : 'Salvar'}
           </Button>
-        </div>
+        </ActionBar>
       </div>
     </div>
   );

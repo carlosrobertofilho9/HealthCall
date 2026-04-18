@@ -18,6 +18,7 @@ interface WarningPlayerProps {
 
 const ONE_MINUTE_MS = 60000;
 const DEFAULT_DURATION_SECONDS = 10;
+const WARNING_CYCLE_COOLDOWN_MS = 15 * 60 * 1000;
 
 function nowHHMM(): string {
   return new Date().toTimeString().slice(0, 5);
@@ -38,9 +39,11 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
 
   const [clock, setClock] = useState(nowHHMM());
   const [index, setIndex] = useState(0);
+  const [inCooldown, setInCooldown] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const cooldownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const deadlineRef = useRef<number | null>(null);
   const snapshotRef = useRef<WarningSnapshot | null>(null);
   const spokenWarningRef = useRef<string | null>(null);
@@ -62,7 +65,7 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
         return (a.priority_order || 0) - (b.priority_order || 0);
       });
   }, [clock, warnings]);
-  const current = activeWarnings[index] || null;
+  const current = inCooldown ? null : activeWarnings[index] || null;
   const resolvedContentUrl = useResolvedWarningMediaUrl(current?.content_url);
 
   const clearTimer = useCallback(() => {
@@ -73,6 +76,40 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
     deadlineRef.current = null;
   }, []);
 
+  const clearCooldownTimer = useCallback(() => {
+    if (cooldownTimerRef.current) {
+      clearTimeout(cooldownTimerRef.current);
+      cooldownTimerRef.current = null;
+    }
+  }, []);
+
+  const startCooldown = useCallback(() => {
+    clearTimer();
+    clearCooldownTimer();
+    cancelTTS();
+
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+
+    snapshotRef.current = null;
+    spokenWarningRef.current = null;
+    suspendedRef.current = true;
+    setIndex(0);
+    setInCooldown(true);
+    onFinish?.();
+
+    cooldownTimerRef.current = setTimeout(() => {
+      cooldownTimerRef.current = null;
+      if (!mountedRef.current) return;
+
+      snapshotRef.current = null;
+      spokenWarningRef.current = null;
+      setIndex(0);
+      setInCooldown(false);
+    }, WARNING_CYCLE_COOLDOWN_MS);
+  }, [cancelTTS, clearCooldownTimer, clearTimer, onFinish]);
+
   const moveNext = useCallback(() => {
     if (!mountedRef.current || activeWarnings.length === 0) return;
 
@@ -80,14 +117,13 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
     spokenWarningRef.current = null;
     suspendedRef.current = false;
 
-    setIndex((previous) => {
-      const next = (previous + 1) % activeWarnings.length;
-      if (next === 0) {
-        onFinish?.();
-      }
-      return next;
-    });
-  }, [activeWarnings.length, onFinish]);
+    if (index >= activeWarnings.length - 1) {
+      startCooldown();
+      return;
+    }
+
+    setIndex((previous) => Math.min(previous + 1, activeWarnings.length - 1));
+  }, [activeWarnings.length, index, startCooldown]);
 
   const captureSnapshot = useCallback(
     (warning: Warning | null) => {
@@ -150,18 +186,26 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
     return () => {
       mountedRef.current = false;
       clearTimer();
+      clearCooldownTimer();
       cancelTTS();
       if (videoRef.current) {
         videoRef.current.pause();
       }
     };
-  }, [cancelTTS, clearTimer]);
+  }, [cancelTTS, clearCooldownTimer, clearTimer]);
 
   useEffect(() => {
+    if (activeWarnings.length === 0) {
+      clearCooldownTimer();
+      setInCooldown(false);
+      setIndex(0);
+      return;
+    }
+
     if (index >= activeWarnings.length) {
       setIndex(0);
     }
-  }, [activeWarnings.length, index]);
+  }, [activeWarnings.length, clearCooldownTimer, index]);
 
   useEffect(() => {
     const onCallStarted = () => {
@@ -176,6 +220,17 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
   }, [pausePlaybackNow]);
 
   useEffect(() => {
+    if (inCooldown) {
+      clearTimer();
+      cancelTTS();
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+      suspendedRef.current = true;
+      spokenWarningRef.current = null;
+      return;
+    }
+
     if (!current) {
       clearTimer();
       suspendedRef.current = true;
@@ -224,14 +279,17 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
     return () => {
       clearTimer();
     };
-  }, [clearTimer, current, enabled, moveNext, pausePlaybackNow, paused, speak]);
+  }, [cancelTTS, clearTimer, current, enabled, inCooldown, moveNext, pausePlaybackNow, paused, speak]);
 
   const requestVideoPlay = useCallback(() => {
     const tryPlay = (attempt: number) => {
       const video = videoRef.current;
       if (!video || !mountedRef.current || !enabledRef.current || pausedRef.current) return;
 
-      video.play().catch(() => {
+      const playResult = video.play();
+      if (!playResult || typeof playResult.catch !== 'function') return;
+
+      playResult.catch(() => {
         if (attempt >= 3 || !mountedRef.current || !enabledRef.current || pausedRef.current) return;
         setTimeout(() => {
           tryPlay(attempt + 1);
@@ -310,7 +368,7 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
               autoPlay
               preload="auto"
               playsInline
-              loop={activeWarnings.length === 1}
+              loop={false}
               onLoadedMetadata={handleVideoLoadedMetadata}
               onCanPlay={resumeVideoPlayback}
               onEnded={moveNext}
@@ -331,7 +389,7 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
             />
           </div>
         ) : (
-          <div className="max-w-5xl bg-black/40 border border-white/10 rounded-3xl px-10 py-12 text-center">
+          <div className="max-w-5xl bg-black/40 border border-white/10 rounded-2xl px-10 py-12 text-center">
             <p className="text-4xl md:text-6xl font-black text-white leading-tight">
               {current.message || current.text || 'Aviso'}
             </p>

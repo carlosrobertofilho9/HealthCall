@@ -12,19 +12,24 @@ import {
   CalendarClock,
   ChevronDown,
   ChevronUp,
-  Copy,
+  Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AppointmentSlot, Appointment, AppointmentStatus } from '@/types';
 import { formatCPF, formatCNS } from '@/lib/utils';
-import { APPOINTMENT_STATUSES, getAppointmentStatus, isHomeVisitDateString } from '../services/appointmentService';
+import {
+  APPOINTMENT_STATUSES,
+  getAppointmentStatus,
+  isHomeVisitDateString
+} from '../services/appointmentService';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/Select';
+  Badge
+} from '@/components/ui';
 
 interface SlotCardProps {
   slot: AppointmentSlot;
@@ -177,10 +182,9 @@ export const SlotCard: React.FC<SlotCardProps> = ({
                 <span className="text-xs text-muted-foreground font-medium">{time || period}</span>
               </div>
               {isHomeVisit && (
-                <span className="text-[11px] font-bold rounded-full px-2 py-0.5
-                  bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                <Badge className="border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-[11px] font-bold text-blue-300">
                   Visita
-                </span>
+                </Badge>
               )}
             </div>
 

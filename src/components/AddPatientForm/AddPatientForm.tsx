@@ -1,9 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { DESTINATION_ROOMS } from '@/constants';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Label } from '@/components/ui/Label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Input,
+  Button,
+  Label
+} from '@/components/ui';
 import { Loader2, UserPlus, User, DoorOpen, Plus } from 'lucide-react';
 
 /**

@@ -13,6 +13,8 @@ export const pdfTheme = {
     softBg: '#99f6e4',
     text: {
       main: '#334155',
+      dark: '#1e293b',
+      muted: '#475569',
       secondary: '#64748b',
       light: '#94a3b8',
       white: '#ffffff',
@@ -21,6 +23,101 @@ export const pdfTheme = {
     border: '#e2e8f0',
     borderDark: '#cbd5e1',
     bgLight: '#f8fafc',
+    info: {
+      bg: '#eff6ff',
+      bgStrong: '#dbeafe',
+      border: '#bfdbfe',
+      borderStrong: '#93c5fd',
+      text: '#1e40af',
+      strong: '#0369a1',
+    },
+    success: {
+      softBg: '#ecfdf5',
+      bg: '#dcfce7',
+      bgStrong: '#d1fae5',
+      border: '#86efac',
+      borderStrong: '#6ee7b7',
+      text: '#166534',
+      strong: '#059669',
+      dark: '#047857',
+    },
+    warning: {
+      softBg: '#fffbeb',
+      bg: '#fefce8',
+      border: '#fde68a',
+      text: '#92400e',
+      strong: '#ca8a04',
+      dark: '#78350f',
+    },
+    danger: {
+      bg: '#fef2f2',
+      border: '#fecaca',
+      text: '#991b1b',
+      strong: '#dc2626',
+      dark: '#7f1d1d',
+    },
+    neutral: {
+      bg: '#fafafa',
+    },
+    purple: {
+      bg: '#f5f3ff',
+      bgSoft: '#faf8ff',
+      border: '#ddd6fe',
+      text: '#7c3aed',
+      textDark: '#5b21b6',
+      icon: '#6d28d9',
+      iconDark: '#4c1d95',
+      strong: '#7c3aed',
+    },
+    period: {
+      morning: '#f59e0b',
+      morningIcon: '#d97706',
+      morningText: '#b45309',
+      morningSoft: '#fffbeb',
+      morningAlt: '#fffef5',
+      afternoon: '#ea580c',
+      afternoonText: '#c2410c',
+      afternoonDark: '#9a3412',
+      afternoonSoft: '#fff7ed',
+      afternoonAlt: '#fffcf5',
+      lunch: '#0ea5e9',
+      lunchText: '#0c4a6e',
+      lunchSoft: '#f0f9ff',
+      lunchAlt: '#f5fbff',
+      night: '#4f46e5',
+      nightText: '#4338ca',
+      nightDark: '#3730a3',
+      nightSoft: '#eef2ff',
+      nightAlt: '#f5f5ff',
+    },
+    exam: {
+      yellowBg: '#fef3c7',
+      yellow: '#fbbf24',
+      orangeBg: '#ffedd5',
+      orange: '#f97316',
+      redBg: '#fee2e2',
+      red: '#ef4444',
+      indigoBg: '#e0e7ff',
+      indigo: '#6366f1',
+      indigoDark: '#4f46e5',
+      green: '#10b981',
+      magentaBg: '#fae8ff',
+      magenta: '#c026d3',
+      tealBg: '#ccfbf1',
+      teal: '#14b8a6',
+      roseBg: '#ffe4e6',
+      rose: '#e11d48',
+    },
+    lifestyle: {
+      foodBg: '#fef9c3',
+      foodBorder: '#fde047',
+      foodText: '#713f12',
+      positiveBg: '#f0fdf4',
+      positiveBorder: '#bbf7d0',
+      positiveText: '#15803d',
+      activityText: '#1d4ed8',
+      cyanText: '#0891b2',
+    },
   },
   spacing: {
     xs: 2,
@@ -139,7 +236,7 @@ export const HeaderIcon = ({ icon, color = pdfTheme.colors.primary }: { icon: ke
 export const HealthLogo = () => (
   <Svg width={36} height={36} viewBox="0 0 40 40">
     <Circle cx="20" cy="20" r="19" fill={pdfTheme.colors.primaryDark} stroke={pdfTheme.colors.primary} strokeWidth={1} />
-    <Path d="M15 12h10v6h6v10h-6v6H15v-6H9V18h6z" fill="#ffffff" />
+    <Path d="M15 12h10v6h6v10h-6v6H15v-6H9V18h6z" fill={pdfTheme.colors.text.white} />
     <Path d="M9 23h4l2-4 3 8 2-4h4" stroke={pdfTheme.colors.primaryDark} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
@@ -262,7 +359,7 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
 export const commonStyles = StyleSheet.create({
   page: {
     flexDirection: 'column',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: pdfTheme.colors.text.white,
     padding: pdfTheme.spacing.xl,
     fontFamily: 'Helvetica',
     flex: 1,

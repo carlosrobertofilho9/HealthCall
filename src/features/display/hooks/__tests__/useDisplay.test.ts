@@ -43,6 +43,7 @@ vi.mock('@/features/display/services/displayService', () => ({
   getLastCall: vi.fn().mockResolvedValue(null),
   getCallHistory: vi.fn().mockResolvedValue([]),
   getNextPatients: vi.fn().mockResolvedValue([]),
+  getScheduledAppointmentsAwaitingCheckIn: vi.fn().mockResolvedValue([]),
   getPatientById: vi.fn().mockResolvedValue(null),
   registerDisplaySession: vi.fn().mockResolvedValue(undefined),
   heartbeatDisplaySession: vi.fn().mockResolvedValue(undefined),

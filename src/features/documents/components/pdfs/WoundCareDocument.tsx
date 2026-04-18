@@ -1,13 +1,13 @@
 import React from 'react';
 import { Text, View, StyleSheet, Image } from '@react-pdf/renderer';
-import { HeaderIcon, tableStyles, BaseDocument, formatDate, type DocumentFormData } from './PdfCommon';
+import { HeaderIcon, tableStyles, BaseDocument, formatDate, pdfTheme, type DocumentFormData } from './PdfCommon';
 import { SmartSection, CriticalSection } from './PdfBreakSystem';
 const s = StyleSheet.create({
   container: { width: '100%' },
   sectionBox: {
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     borderRadius: 6,
     overflow: 'hidden',
   },
@@ -15,20 +15,20 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#0f766e',
+    backgroundColor: pdfTheme.colors.primary,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   sectionHeaderText: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   sectionBody: {
     padding: 10,
-    backgroundColor: '#ffffff',
+    backgroundColor: pdfTheme.colors.text.white,
   },
   fieldRow: {
     flexDirection: 'row',
@@ -41,61 +41,61 @@ const s = StyleSheet.create({
   fieldLabel: {
     fontSize: 7,
     fontWeight: 'bold',
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
     marginBottom: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   fieldLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    borderBottomColor: pdfTheme.colors.borderDark,
     height: 18,
     justifyContent: 'center',
   },
   fieldLineText: {
     fontSize: 9,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   diagramBox: {
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     borderRadius: 4,
     height: 80,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fafafa',
+    backgroundColor: pdfTheme.colors.neutral.bg,
     overflow: 'hidden',
   },
   diagramLabel: {
     fontSize: 7,
-    color: '#94a3b8',
+    color: pdfTheme.colors.text.light,
     textAlign: 'center',
   },
   photoBox: {
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     borderRadius: 4,
     height: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fafafa',
+    backgroundColor: pdfTheme.colors.neutral.bg,
     overflow: 'hidden',
   },
   photoLabel: {
     fontSize: 7,
-    color: '#94a3b8',
+    color: pdfTheme.colors.text.light,
     textAlign: 'center',
   },
   colHeader: {
     fontSize: 6.5,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
     textAlign: 'center',
   },
   colHeaderAlt: {
     fontSize: 6.5,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
     textAlign: 'center',
   },
   checkRow: {
@@ -108,36 +108,36 @@ const s = StyleSheet.create({
     width: 9,
     height: 9,
     borderWidth: 1,
-    borderColor: '#94a3b8',
+    borderColor: pdfTheme.colors.text.light,
     borderRadius: 2,
   },
   checkLabel: {
     fontSize: 7.5,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   infoBox: {
     marginTop: 8,
     padding: 8,
-    backgroundColor: '#eff6ff',
+    backgroundColor: pdfTheme.colors.info.bg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#bfdbfe',
+    borderColor: pdfTheme.colors.info.border,
   },
   infoTitle: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: pdfTheme.colors.info.text,
     marginBottom: 3,
   },
   infoText: {
     fontSize: 7,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.4,
     marginBottom: 2,
   },
   pageBreakLabel: {
     fontSize: 8,
-    color: '#94a3b8',
+    color: pdfTheme.colors.text.light,
     textAlign: 'center',
     marginTop: 10,
     fontStyle: 'italic',
@@ -160,7 +160,7 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
       {/* Section 1: Dados da Lesão */}
       <View style={s.sectionBox}>
         <View style={s.sectionHeader}>
-          <HeaderIcon icon="clipboard" color="#ffffff" />
+          <HeaderIcon icon="clipboard" color={pdfTheme.colors.text.white} />
           <Text style={s.sectionHeaderText}>Dados da Lesão</Text>
         </View>
         <View style={s.sectionBody}>
@@ -215,8 +215,8 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
 
       {/* Section 2: Registro Fotográfico Inicial + Desenho */}
       <View style={s.sectionBox}>
-        <View style={[s.sectionHeader, { backgroundColor: '#7c3aed' }]}>
-          <HeaderIcon icon="activity" color="#ffffff" />
+        <View style={[s.sectionHeader, { backgroundColor: pdfTheme.colors.purple.text }]}>
+          <HeaderIcon icon="activity" color={pdfTheme.colors.text.white} />
           <Text style={s.sectionHeaderText}>Registro Visual Inicial da Lesão</Text>
         </View>
         <View style={s.sectionBody}>
@@ -325,49 +325,49 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
 
       {/* Page 2: Tabela de Evolução — usa break para forçar para próxima página */}
       <View style={[s.sectionBox, { marginTop: 10 }]} break>
-        <View style={[s.sectionHeader, { backgroundColor: '#7c3aed' }]}>
-          <HeaderIcon icon="activity" color="#ffffff" />
+        <View style={[s.sectionHeader, { backgroundColor: pdfTheme.colors.purple.text }]}>
+          <HeaderIcon icon="activity" color={pdfTheme.colors.text.white} />
           <Text style={s.sectionHeaderText}>Evolução dos Curativos</Text>
         </View>
         <View style={{ padding: 0 }}>
           <View style={tableStyles.table}>
             {/* Header */}
-            <View style={[tableStyles.row, { height: 32, backgroundColor: '#f5f3ff' }]}>
+            <View style={[tableStyles.row, { height: 32, backgroundColor: pdfTheme.colors.purple.bg }]}>
               <View style={[tableStyles.col, { width: '8%' }]}>
                 <Text style={s.colHeader}>Data</Text>
               </View>
               <View style={[tableStyles.col, { width: '8%' }]}>
                 <Text style={s.colHeader}>Medida</Text>
-                <Text style={[s.colHeader, { fontSize: 5, color: '#64748b' }]}>C x L x P</Text>
+                <Text style={[s.colHeader, { fontSize: 5, color: pdfTheme.colors.text.secondary }]}>C x L x P</Text>
               </View>
               <View style={[tableStyles.col, { width: '10%' }]}>
                 <Text style={s.colHeader}>Aspecto</Text>
-                <Text style={[s.colHeader, { fontSize: 5, color: '#64748b' }]}>do Leito</Text>
+                <Text style={[s.colHeader, { fontSize: 5, color: pdfTheme.colors.text.secondary }]}>do Leito</Text>
               </View>
               <View style={[tableStyles.col, { width: '10%' }]}>
                 <Text style={s.colHeader}>Bordas</Text>
               </View>
               <View style={[tableStyles.col, { width: '10%' }]}>
                 <Text style={s.colHeader}>Exsudato</Text>
-                <Text style={[s.colHeader, { fontSize: 5, color: '#64748b' }]}>Tipo/Qtd</Text>
+                <Text style={[s.colHeader, { fontSize: 5, color: pdfTheme.colors.text.secondary }]}>Tipo/Qtd</Text>
               </View>
               <View style={[tableStyles.col, { width: '8%' }]}>
                 <Text style={s.colHeader}>Odor</Text>
               </View>
               <View style={[tableStyles.col, { width: '8%' }]}>
                 <Text style={s.colHeader}>Dor</Text>
-                <Text style={[s.colHeader, { fontSize: 5, color: '#64748b' }]}>0-10</Text>
+                <Text style={[s.colHeader, { fontSize: 5, color: pdfTheme.colors.text.secondary }]}>0-10</Text>
               </View>
               <View style={[tableStyles.col, { width: '14%' }]}>
                 <Text style={s.colHeader}>Cobertura</Text>
-                <Text style={[s.colHeader, { fontSize: 5, color: '#64748b' }]}>Utilizada</Text>
+                <Text style={[s.colHeader, { fontSize: 5, color: pdfTheme.colors.text.secondary }]}>Utilizada</Text>
               </View>
               <View style={[tableStyles.col, { width: '12%' }]}>
                 <Text style={s.colHeader}>Observações</Text>
               </View>
               <View style={[tableStyles.col, tableStyles.lastCol, { width: '12%' }]}>
                 <Text style={s.colHeader}>Profissional</Text>
-                <Text style={[s.colHeader, { fontSize: 5, color: '#64748b' }]}>Nome/COREN</Text>
+                <Text style={[s.colHeader, { fontSize: 5, color: pdfTheme.colors.text.secondary }]}>Nome/COREN</Text>
               </View>
             </View>
 
@@ -376,7 +376,7 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
               const isEven = i % 2 === 0;
               const isLast = i === ROWS - 1;
               return (
-                <View style={[tableStyles.row, { height: 28, backgroundColor: isEven ? '#ffffff' : '#faf5ff' }, isLast ? { borderBottomWidth: 0 } : {}]} key={i}>
+                <View style={[tableStyles.row, { height: 28, backgroundColor: isEven ? pdfTheme.colors.text.white : pdfTheme.colors.purple.bg }, isLast ? { borderBottomWidth: 0 } : {}]} key={i}>
                   <View style={[tableStyles.col, { width: '8%' }]}>
                     <Text style={[tableStyles.cellText, { fontSize: 7 }]}>__/__</Text>
                   </View>
@@ -417,7 +417,7 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
       {/* Coberturas de Referência */}
       <View style={s.infoBox}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-          <HeaderIcon icon="heart" color="#1e40af" />
+          <HeaderIcon icon="heart" color={pdfTheme.colors.info.text} />
           <Text style={s.infoTitle}>Coberturas Mais Utilizadas:</Text>
         </View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -426,8 +426,8 @@ export const WoundCareDocument: React.FC<WoundCareDocumentProps> = ({ visiblePar
             'Carvão Ativado c/ Prata', 'Espuma de Poliuretano', 'Colagenase', 'Papaína',
             'Sulfadiazina de Prata', 'Bota de Unna', 'Curativo a Vácuo (VAC)',
           ].map((item) => (
-            <View key={item} style={{ backgroundColor: '#dbeafe', borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2 }}>
-              <Text style={{ fontSize: 6.5, color: '#1e40af' }}>{item}</Text>
+            <View key={item} style={{ backgroundColor: pdfTheme.colors.info.bgStrong, borderRadius: 3, paddingHorizontal: 5, paddingVertical: 2 }}>
+              <Text style={{ fontSize: 6.5, color: pdfTheme.colors.info.text }}>{item}</Text>
             </View>
           ))}
         </View>

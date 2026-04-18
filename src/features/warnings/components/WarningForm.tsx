@@ -1,9 +1,25 @@
 import React, { useState } from 'react';
-import { CloudUpload, ListOrdered, Megaphone, MessageSquare, Star, Timer } from 'lucide-react';
+import {
+  CloudUpload,
+  ListOrdered,
+  Megaphone,
+  MessageSquare,
+  Star,
+  Timer
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import {
+  Button,
+  Input,
+  Textarea,
+  FormSection,
+  ActionBar,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui';
 import { createWarning, deleteWarningMedia, updateWarning, uploadMedia } from '../services/warningsService';
 import type { CreateWarningDTO, MediaType, UpdateWarningDTO, Warning } from '../types';
 import { useResolvedWarningMediaUrl } from '../hooks/useResolvedWarningMediaUrl';
@@ -175,12 +191,12 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Mensagem (TTS/Legenda)</label>
-            <Input
+            <Textarea
               value={formData.message || ''}
               onChange={(event) => setFormData((previous) => ({ ...previous, message: event.target.value }))}
               placeholder="Ex: Procure a sala de vacinação"
               icon={<MessageSquare className="h-4 w-4" />}
-              className="bg-input/70 border-border text-foreground placeholder:text-muted-foreground focus:border-ring/40"
+              className="min-h-24 resize-y bg-input/70 border-border text-foreground placeholder:text-muted-foreground focus:border-ring/40"
             />
           </div>
 
@@ -209,7 +225,7 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
           <p className="text-xs text-muted-foreground mt-1">Números menores aparecem primeiro.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-secondary/20 p-4 rounded-lg border border-border">
+        <FormSection title="Janela de Exibição" contentClassName="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label className="block text-xs text-muted-foreground mb-1">Hora Início</label>
             <input
@@ -229,10 +245,9 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
               className="w-full bg-input/70 text-foreground rounded-lg border border-border p-2 focus:ring-2 focus:ring-ring/40 outline-none"
             />
           </div>
-        </div>
+        </FormSection>
 
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Arquivo ({formData.media_type === 'video' ? 'Vídeo' : 'Imagem'})</label>
+        <FormSection title={`Arquivo (${formData.media_type === 'video' ? 'Vídeo' : 'Imagem'})`}>
           <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-ring/40 transition-colors cursor-pointer relative bg-secondary/10">
             <input
               type="file"
@@ -265,9 +280,9 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
               </div>
             )}
           </div>
-        </div>
+        </FormSection>
 
-        <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-border">
+        <ActionBar separated>
           <Button
             type="button"
             onClick={onCancel}
@@ -285,7 +300,7 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
           >
             {loading ? 'Salvando...' : initialData ? 'Atualizar Aviso' : 'Salvar Aviso'}
           </Button>
-        </div>
+        </ActionBar>
       </form>
     </div>
   );

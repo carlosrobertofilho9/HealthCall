@@ -1,10 +1,33 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Label } from '@/components/ui/Label';
-import { Input } from '@/components/ui/Input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import {
+  Label,
+  Input,
+  Textarea,
+  Button,
+  Badge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui';
 import { extractPlaceholders } from '../utils/templateUtils';
 import { fieldHints, extraFieldsByTemplate, itemListConfigByTemplate } from '../utils/mockData';
-import { AlertCircle, User, CreditCard, Calendar, Hash, Type, AlignLeft, Camera, X, Plus, Trash2, List, CheckSquare } from 'lucide-react';
+import {
+  AlertCircle,
+  User,
+  CreditCard,
+  Calendar,
+  Hash,
+  Type,
+  AlignLeft,
+  Camera,
+  X,
+  Plus,
+  Trash2,
+  List,
+  CheckSquare
+} from 'lucide-react';
 
 interface DynamicFieldsFormProps {
   templateText: string;
@@ -52,8 +75,8 @@ const ItemListField: React.FC<ItemListFieldProps> = ({ fieldKey, label, template
 
   return (
     <div key={fieldKey} className="space-y-3">
-      <Label className="text-sm font-medium text-[#96c5a9] pl-1 flex items-center gap-2">
-        <List size={16} className="text-[#96c5a9]/60" />
+      <Label className="flex items-center gap-2 pl-1 text-sm font-medium text-primary">
+        <List size={16} className="text-primary/70" />
         {config?.label || label}
       </Label>
 
@@ -63,37 +86,41 @@ const ItemListField: React.FC<ItemListFieldProps> = ({ fieldKey, label, template
           {items.map((item, index) => (
             <div
               key={index}
-              className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#264532]/30 border border-white/10 group"
+              className="group flex items-center gap-3 rounded-lg border border-border bg-secondary/30 px-3 py-2"
             >
-              <span className="text-xs font-bold text-[#96c5a9]/60 w-5">{index + 1}.</span>
-              <span className="flex-1 text-sm text-white">{item.name}</span>
-              <span className="text-sm font-semibold text-blue-300">{item.quantity} {config?.qtyUnit || 'un.'}</span>
-              <button
+              <span className="w-5 text-xs font-bold text-primary/70">{index + 1}.</span>
+              <span className="flex-1 text-sm text-foreground">{item.name}</span>
+              <Badge className="border-chart-3/20 bg-chart-3/10 text-chart-3">
+                {item.quantity} {config?.qtyUnit || 'un.'}
+              </Badge>
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => onRemove(index)}
-                className="p-1 rounded text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                className="h-7 w-7 border-0 text-destructive/55 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
                 title="Remover item"
               >
                 <Trash2 size={14} />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
       )}
 
-      {/* Formulário para adicionar novo item */}
       <div className="flex gap-2 items-end">
         <div className="flex-1">
-          <label className="text-xs text-gray-500 pl-1 mb-1 block">{config?.itemLabel || 'Item'}</label>
+          <Label className="mb-1 block pl-1 text-xs text-muted-foreground">{config?.itemLabel || 'Item'}</Label>
           <div className="relative">
-            <input
+            <Input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite ou selecione..."
               list={`${fieldKey}-suggestions`}
-              className="w-full h-10 rounded-lg border border-white/10 bg-[#264532]/30 text-white text-sm px-3 placeholder:text-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all"
+              icon={<List size={16} />}
+              className="h-10 rounded-lg bg-input/70 text-sm"
             />
             {config?.suggestions && (
               <datalist id={`${fieldKey}-suggestions`}>
@@ -105,30 +132,32 @@ const ItemListField: React.FC<ItemListFieldProps> = ({ fieldKey, label, template
           </div>
         </div>
         <div className="w-24">
-          <label className="text-xs text-gray-500 pl-1 mb-1 block">{config?.qtyLabel || 'Qtd'}</label>
-          <input
+          <Label className="mb-1 block pl-1 text-xs text-muted-foreground">{config?.qtyLabel || 'Qtd'}</Label>
+          <Input
             type="number"
             min="1"
             value={newQty}
             onChange={(e) => setNewQty(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="1"
-            className="w-full h-10 rounded-lg border border-white/10 bg-[#264532]/30 text-white text-sm px-3 text-center placeholder:text-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-all"
+            icon={null}
+            className="h-10 rounded-lg bg-input/70 text-center text-sm"
           />
         </div>
-        <button
+        <Button
           type="button"
+          size="sm"
           onClick={handleAdd}
           disabled={!newName.trim()}
-          className="h-10 px-3 rounded-lg bg-green-600/30 text-green-300 border border-green-500/20 hover:bg-green-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+          className="h-10 rounded-lg px-3"
         >
           <Plus size={16} />
           <span className="text-sm">Adicionar</span>
-        </button>
+        </Button>
       </div>
 
       {items.length === 0 && (
-        <p className="text-xs text-gray-500 text-center py-2">Nenhum item adicionado ainda.</p>
+        <p className="py-2 text-center text-xs text-muted-foreground">Nenhum item adicionado ainda.</p>
       )}
     </div>
   );
@@ -231,7 +260,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
 
   if (keys.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 border border-white/5 rounded-xl bg-[#264532]/10 text-[#96c5a9]/60 border-dashed gap-2">
+      <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-secondary/15 p-8 text-primary/70">
         <AlertCircle className="w-8 h-8 opacity-50" />
         <p className="text-sm">Este modelo não possui campos variáveis.</p>
       </div>
@@ -267,15 +296,15 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
           // Renderização especial para campo de checkbox
           if (type === 'checkbox') {
             return (
-              <div key={key} className="flex items-center space-x-3 p-3 rounded-xl border border-white/10 bg-[#264532]/20 hover:bg-[#264532]/30 transition-colors">
+              <div key={key} className="flex items-center space-x-3 rounded-xl border border-border bg-secondary/25 p-3 transition-colors hover:bg-secondary/40">
                 <input
                   type="checkbox"
                   id={key}
                   checked={value === 'true'}
                   onChange={(e) => onChange(key, e.target.checked ? 'true' : '')}
-                  className="w-5 h-5 rounded border-white/20 bg-black/20 text-green-500 focus:ring-green-500/50 focus:ring-offset-0 transition-all"
+                  className="h-5 w-5 rounded border-border bg-input accent-primary transition-all focus:ring-2 focus:ring-ring focus:ring-offset-0"
                 />
-                <Label htmlFor={key} className="text-sm font-medium text-[#96c5a9] cursor-pointer select-none flex-1">
+                <Label htmlFor={key} className="flex-1 cursor-pointer select-none text-sm font-medium text-primary">
                   {label}
                 </Label>
               </div>
@@ -286,33 +315,35 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
           if (type === 'photo') {
             return (
               <div key={key} className="space-y-2">
-                <Label htmlFor={key} className="text-sm font-medium text-[#96c5a9] pl-1">
+                <Label htmlFor={key} className="pl-1 text-sm font-medium text-primary">
                   {label}
                 </Label>
                 <div className="relative">
                   {value ? (
-                    <div className="relative rounded-xl border border-white/10 bg-[#264532]/30 overflow-hidden">
+                    <div className="relative overflow-hidden rounded-xl border border-border bg-secondary/30">
                       <img 
                         src={value} 
                         alt={label}
-                        className="w-full h-40 object-contain bg-black/20"
+                        className="h-40 w-full bg-background/40 object-contain"
                       />
-                      <button
+                      <Button
                         type="button"
+                        variant="destructive"
+                        size="icon"
                         onClick={() => clearPhoto(key)}
-                        className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500/80 text-white hover:bg-red-500 transition-colors"
+                        className="absolute right-2 top-2 h-8 w-8 rounded-lg"
                         title="Remover foto"
                       >
                         <X size={14} />
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <label
                       htmlFor={key}
-                      className="flex flex-col items-center justify-center gap-2 h-32 rounded-xl border-2 border-dashed border-white/10 bg-[#264532]/20 cursor-pointer hover:border-green-500/30 hover:bg-[#264532]/40 transition-all"
+                      className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-secondary/25 transition-all hover:border-primary/35 hover:bg-secondary/40"
                     >
-                      <Camera size={24} className="text-[#96c5a9]/40" />
-                      <span className="text-xs text-[#96c5a9]/50">{placeholder}</span>
+                      <Camera size={24} className="text-primary/45" />
+                      <span className="text-xs text-muted-foreground">{placeholder}</span>
                     </label>
                   )}
                   <input
@@ -333,17 +364,17 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
           if (type === 'select' && hint?.options) {
             return (
               <div key={key} className="space-y-2">
-                <Label htmlFor={key} className="text-sm font-medium text-[#96c5a9] pl-1">
+                <Label htmlFor={key} className="pl-1 text-sm font-medium text-primary">
                   {label}
                 </Label>
                 <div className="relative group">
-                  <div className="absolute z-10 left-3 top-1/2 -translate-y-1/2 text-[#96c5a9]/40 group-focus-within:text-[#96c5a9] transition-colors pointer-events-none">
+                  <div className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary">
                     {icon}
                   </div>
                   <Select value={value} onValueChange={(val) => onChange(key, val)}>
                     <SelectTrigger
                         id={key}
-                        className="w-full rounded-xl border border-white/10 bg-[#264532]/30 text-white h-11 pl-10 focus:ring-1 focus:ring-green-500/50 focus:border-green-500/50 transition-all text-sm"
+                        className="h-11 w-full rounded-xl bg-input/70 pl-10 text-sm transition-all"
                     >
                       <SelectValue placeholder={placeholder} />
                     </SelectTrigger>
@@ -362,24 +393,19 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
 
           return (
             <div key={key} className="space-y-2">
-              <Label htmlFor={key} className="text-sm font-medium text-[#96c5a9] pl-1">
+              <Label htmlFor={key} className="pl-1 text-sm font-medium text-primary">
                 {label}
               </Label>
               
               <div className="relative group">
-                {type === 'textarea' && (
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#96c5a9]/40 group-focus-within:text-[#96c5a9] transition-colors pointer-events-none">
-                    <div className="mt-[-35px]">{icon}</div>
-                  </div>
-                )}
-                
                 {type === 'textarea' ? (
-                  <textarea
+                  <Textarea
                     id={key}
                     value={value}
                     onChange={(e) => onChange(key, e.target.value)}
                     placeholder={placeholder}
-                    className="flex min-h-[100px] w-full rounded-xl border border-white/10 bg-[#264532]/30 pl-10 pr-3 py-2 text-sm text-white placeholder:text-gray-500 focus-visible:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-all"
+                    icon={<span className="text-muted-foreground">{icon}</span>}
+                    className="min-h-24 rounded-xl bg-input/70 text-sm"
                     rows={5}
                   />
                 ) : (
@@ -390,7 +416,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                     onChange={(e) => onChange(key, e.target.value)}
                     placeholder={placeholder}
                     icon={icon}
-                    className="rounded-xl border-white/10 bg-[#264532]/30 text-white placeholder:text-gray-500 focus:border-green-500/50 focus:ring-[#96c5a9]/20 h-11 transition-all"
+                    className="h-11 rounded-xl bg-input/70 transition-all"
                   />
                 )}
               </div>

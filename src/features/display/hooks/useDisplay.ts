@@ -4,7 +4,7 @@ import { useAudioContext } from '@/hooks/useAudioContext';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
-import type { CallRecord, Patient } from '@/types';
+import type { Appointment, CallRecord, Patient } from '@/types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
   ackCall,
@@ -13,6 +13,7 @@ import {
   getNextPatients,
   getPatientById,
   getPendingCalls,
+  getScheduledAppointmentsAwaitingCheckIn,
   heartbeatDisplaySession,
   registerDisplaySession,
   type DisplayCallEvent,
@@ -110,6 +111,7 @@ export function useDisplay() {
 
   const [calledPatient, setCalledPatient] = useState<Patient | null>(null);
   const [nextPatients, setNextPatients] = useState<Patient[]>([]);
+  const [scheduledAppointmentsAwaitingCheckIn, setScheduledAppointmentsAwaitingCheckIn] = useState<Appointment[]>([]);
   const [callHistory, setCallHistory] = useState<CallRecord[]>([]);
   const [isCalling, setIsCalling] = useState(false);
   const [audioActivated, setAudioActivated] = useState(false);
@@ -149,10 +151,11 @@ export function useDisplay() {
   }, [audioActivated, isCalling]);
 
   const refreshSnapshot = useCallback(async () => {
-    const [lastCall, history, waiting] = await Promise.all([
+    const [lastCall, history, waiting, scheduledAwaitingCheckIn] = await Promise.all([
       getLastCall(),
       getCallHistory(10),
       getNextPatients(),
+      getScheduledAppointmentsAwaitingCheckIn().catch(() => []),
     ]);
 
     if (!mountedRef.current) return;
@@ -168,6 +171,7 @@ export function useDisplay() {
     );
     setCallHistory(dedupeCallHistory(history).slice(0, 10));
     setNextPatients(waiting);
+    setScheduledAppointmentsAwaitingCheckIn(scheduledAwaitingCheckIn);
   }, []);
 
   const playBell = useCallback(async () => {
@@ -438,6 +442,9 @@ export function useDisplay() {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, () => {
             void refreshSnapshotRef.current();
           })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, () => {
+            void refreshSnapshotRef.current();
+          })
           .subscribe();
 
         realtimeChannelRef.current = channel;
@@ -495,6 +502,7 @@ export function useDisplay() {
   return {
     calledPatient,
     nextPatients,
+    scheduledAppointmentsAwaitingCheckIn,
     callHistory,
     isCalling,
     audioActivated,

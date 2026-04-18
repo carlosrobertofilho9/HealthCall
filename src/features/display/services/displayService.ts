@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabaseClient';
-import type { CallRecord, Patient } from '@/types';
+import type { Appointment, CallRecord, Patient } from '@/types';
 import type { CallEvent } from '@/features/display/types';
+import { formatDateToISO } from '@/features/appointments/services/appointmentService';
 
 export type DisplayCallEvent = CallEvent;
 
@@ -75,6 +76,19 @@ export async function getNextPatients(): Promise<Patient[]> {
   if (error) throw error;
 
   return (data || []) as Patient[];
+}
+
+export async function getScheduledAppointmentsAwaitingCheckIn(date = new Date()): Promise<Appointment[]> {
+  const { data, error } = await supabase
+    .from('appointments')
+    .select('*')
+    .eq('scheduled_date', formatDateToISO(date))
+    .eq('status', 'Agendado')
+    .order('slot_number', { ascending: true });
+
+  if (error) throw error;
+
+  return (data || []) as Appointment[];
 }
 
 export async function getPatientById(patientId: string): Promise<Patient | null> {

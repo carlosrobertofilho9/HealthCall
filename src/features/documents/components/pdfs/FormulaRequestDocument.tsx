@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet, Svg, Line } from '@react-pdf/renderer';
-import { HeaderIcon, BaseDocument, type DocumentFormData } from './PdfCommon';
+import { HeaderIcon, BaseDocument, pdfTheme, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { 
@@ -9,9 +9,9 @@ const s = StyleSheet.create({
   },
   badge: {
     alignSelf: 'center',
-    backgroundColor: '#eff6ff',
+    backgroundColor: pdfTheme.colors.info.bg,
     borderWidth: 1,
-    borderColor: '#93c5fd',
+    borderColor: pdfTheme.colors.info.borderStrong,
     borderRadius: 6,
     paddingHorizontal: 16,
     paddingVertical: 6,
@@ -23,14 +23,14 @@ const s = StyleSheet.create({
   badgeText: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: pdfTheme.colors.info.text,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   solicitoText: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
     marginBottom: 12,
   },
   itemRow: {
@@ -39,26 +39,26 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: pdfTheme.colors.border,
   },
   itemRowAlt: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: pdfTheme.colors.bgLight,
   },
   itemNumber: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#0f766e',
+    color: pdfTheme.colors.primary,
     width: 24,
   },
   itemName: {
     flex: 1,
     fontSize: 11,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
   itemDots: {
     flex: 2,
     borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    borderBottomColor: pdfTheme.colors.borderDark,
     borderStyle: 'dotted',
     marginHorizontal: 8,
     height: 12,
@@ -66,27 +66,27 @@ const s = StyleSheet.create({
   itemQty: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#1e40af',
+    color: pdfTheme.colors.info.text,
     textAlign: 'right',
     minWidth: 60,
   },
   listBox: {
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     borderRadius: 6,
     overflow: 'hidden',
     marginBottom: 16,
   },
   listHeader: {
     flexDirection: 'row',
-    backgroundColor: '#0f766e',
+    backgroundColor: pdfTheme.colors.primary,
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
   listHeaderText: {
     fontSize: 8,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: pdfTheme.colors.text.white,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -96,12 +96,12 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: pdfTheme.colors.border,
   },
   emptyLine: {
     flex: 1,
     borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    borderBottomColor: pdfTheme.colors.borderDark,
     height: 16,
   },
 
@@ -117,13 +117,13 @@ const s = StyleSheet.create({
   },
   signatureLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#334155',
+    borderBottomColor: pdfTheme.colors.text.main,
     width: '100%',
     marginBottom: 4,
   },
   signatureLabel: {
     fontSize: 7,
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
     textAlign: 'center',
   },
   dateField: {
@@ -134,31 +134,31 @@ const s = StyleSheet.create({
   },
   dateLabel: {
     fontSize: 9,
-    color: '#64748b',
+    color: pdfTheme.colors.text.secondary,
   },
   dateLine: {
     borderBottomWidth: 1,
-    borderBottomColor: '#cbd5e1',
+    borderBottomColor: pdfTheme.colors.borderDark,
     width: 120,
     marginLeft: 6,
   },
   noteBox: {
     marginTop: 12,
     padding: 8,
-    backgroundColor: '#fffbeb',
+    backgroundColor: pdfTheme.colors.warning.softBg,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#fde68a',
+    borderColor: pdfTheme.colors.warning.border,
   },
   noteTitle: {
     fontSize: 7,
     fontWeight: 'bold',
-    color: '#92400e',
+    color: pdfTheme.colors.warning.text,
     marginBottom: 3,
   },
   noteText: {
     fontSize: 7,
-    color: '#78350f',
+    color: pdfTheme.colors.warning.dark,
     lineHeight: 1.4,
   },
 });
@@ -181,18 +181,18 @@ const VoidPattern = () => (
     minHeight: 100,
     marginVertical: 12, 
     borderRadius: 6, 
-    backgroundColor: '#f8fafc',
+    backgroundColor: pdfTheme.colors.bgLight,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: pdfTheme.colors.border,
     position: 'relative',
     overflow: 'hidden'
   }}>
     <Svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-       <Line x1="0" y1="0" x2="100%" y2="100%" stroke="#e2e8f0" strokeWidth={1.5} />
-       <Line x1="100%" y1="0" x2="0" y2="100%" stroke="#e2e8f0" strokeWidth={1.5} />
+       <Line x1="0" y1="0" x2="100%" y2="100%" stroke={pdfTheme.colors.border} strokeWidth={1.5} />
+       <Line x1="100%" y1="0" x2="0" y2="100%" stroke={pdfTheme.colors.border} strokeWidth={1.5} />
     </Svg>
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-       <Text style={{ fontSize: 9, color: '#94a3b8', fontWeight: 'bold', letterSpacing: 3, textTransform: 'uppercase' }}>
+       <Text style={{ fontSize: 9, color: pdfTheme.colors.text.light, fontWeight: 'bold', letterSpacing: 3, textTransform: 'uppercase' }}>
           — Sem Mais Itens —
        </Text>
     </View>
@@ -205,7 +205,7 @@ export const FormulaRequestDocument: React.FC<FormulaRequestDocumentProps> = ({ 
       <View style={s.container}>
         {/* Badge */}
         <View style={s.badge}>
-          <HeaderIcon icon="clipboard" color="#1e40af" />
+          <HeaderIcon icon="clipboard" color={pdfTheme.colors.info.text} />
           <Text style={s.badgeText}>Solicitação de Fórmula Láctea</Text>
         </View>
 

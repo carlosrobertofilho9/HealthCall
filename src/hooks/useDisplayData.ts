@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { CallRecord, Patient } from '@/types';
+import type { Appointment, CallRecord, Patient } from '@/types';
 
 /**
  * Define a forma dos dados fornecidos pelo `DisplayDataContext`.
@@ -9,6 +9,8 @@ export interface DisplayDataContextProps {
   calledPatient: Patient | null;
   /** Uma lista de pacientes que são os próximos a serem chamados. */
   nextPatients: Patient[];
+  /** Marcações de hoje que ainda não fizeram check-in. */
+  scheduledAppointmentsAwaitingCheckIn: Appointment[];
   /** O histórico de chamadas recentes. */
   callHistory: CallRecord[];
   /** Um booleano que indica se uma chamada está em andamento (e o áudio pode estar tocando). */

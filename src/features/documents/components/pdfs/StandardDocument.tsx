@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { BaseDocument } from './PdfCommon';
+import { BaseDocument, pdfTheme } from './PdfCommon';
 
 const styles = StyleSheet.create({
   content: {
@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginBottom: 8,
     lineHeight: 1.5,
-    color: '#334155',
+    color: pdfTheme.colors.text.main,
   },
 });
 

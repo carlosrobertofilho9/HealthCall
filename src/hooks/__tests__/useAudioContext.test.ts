@@ -341,6 +341,21 @@ describe('useAudioContext', () => {
     });
 
     it('deve recuperar de estado closed recriando', async () => {
+      const firstContext = {
+        state: 'running' as AudioContextState,
+        resume: vi.fn().mockResolvedValue(undefined),
+        suspend: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      const recreatedContext = {
+        state: 'running' as AudioContextState,
+        resume: vi.fn().mockResolvedValue(undefined),
+        suspend: vi.fn().mockResolvedValue(undefined),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+
+      vi.mocked(global.AudioContext).mockReturnValueOnce(firstContext).mockReturnValueOnce(recreatedContext);
+
       const { result } = renderHook(() => useAudioContext());
 
       // Inicializa
@@ -348,10 +363,8 @@ describe('useAudioContext', () => {
         await result.current.checkHealth();
       });
 
-      const firstContext = result.current.contextRef.current;
-
       // Simula fechamento
-      mockAudioContext.state = 'closed';
+      firstContext.state = 'closed';
 
       // Verifica novamente - deve recriar
       await act(async () => {

@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import type { Patient } from '@/types';
 import { DESTINATION_ROOMS } from '@/constants';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Button } from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import {
+  Input,
+  Label,
+  Button,
+  Modal,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui';
 import { DoorOpen, User, Save, X } from 'lucide-react';
 
 /**

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Button } from '@/components/ui/Button';
+import { Button, Badge } from '@/components/ui';
 import { WarningForm } from '../components/WarningForm';
 import { useWarnings } from '../hooks/useWarnings';
 import { deleteWarning, updateWarning } from '../services/warningsService';
@@ -19,7 +19,7 @@ import {
   Clock,
   Image,
   Video,
-  RefreshCw,
+  RefreshCw
 } from 'lucide-react';
 
 const WarningsPage: React.FC = () => {
@@ -125,18 +125,24 @@ const WarningsPage: React.FC = () => {
                         <p className={cn('text-sm font-semibold truncate', warning.active ? 'text-card-foreground' : 'text-muted-foreground')}>
                           {warning.text || 'Sem título'}
                         </p>
-                        {warning.priority && <Star size={12} className="text-yellow-500 shrink-0 fill-yellow-500" />}
+                        {warning.priority && (
+                          <Badge className="gap-1 border-yellow-500/30 bg-yellow-500/10 text-yellow-400">
+                            <Star size={12} className="shrink-0 fill-yellow-500 text-yellow-500" />
+                            Alta
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <div
+                        <Badge
                           className={cn(
-                            'w-1.5 h-1.5 rounded-full shrink-0',
-                            warning.active ? 'bg-green-500' : 'bg-muted-foreground/60'
+                            'gap-1',
+                            warning.active
+                              ? 'bg-green-500/10 text-green-300 border-green-500/30'
+                              : 'bg-background text-muted-foreground border-border',
                           )}
-                        />
-                        <span className="text-xs text-muted-foreground">
+                        >
                           {warning.active ? 'Ativo' : 'Inativo'} · {warning.duration || 10}s
-                        </span>
+                        </Badge>
                       </div>
                     </div>
                   </div>
@@ -188,9 +194,9 @@ const WarningsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-secondary/30 rounded-lg p-3 border border-border">
                   <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Status</label>
-                  <span className={cn('text-sm font-medium', activeWarning.active ? 'text-green-400' : 'text-gray-500')}>
+                  <Badge className={cn(activeWarning.active ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'text-muted-foreground')}>
                     {activeWarning.active ? 'Ativo' : 'Inativo'}
-                  </span>
+                  </Badge>
                 </div>
 
                 <div className="bg-secondary/30 rounded-lg p-3 border border-border">
@@ -206,10 +212,10 @@ const WarningsPage: React.FC = () => {
                 {activeWarning.priority && (
                   <div className="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/20">
                     <label className="block text-xs font-medium text-yellow-500/80 uppercase tracking-wider mb-1">Prioridade</label>
-                    <div className="flex items-center gap-1">
-                      <Star size={14} className="text-yellow-500 fill-yellow-500" />
-                      <span className="text-yellow-400 text-sm font-medium">Alta</span>
-                    </div>
+                    <Badge className="gap-1 border-yellow-500/30 bg-yellow-500/10 text-yellow-400">
+                      <Star size={14} className="fill-yellow-500 text-yellow-500" />
+                      Alta
+                    </Badge>
                   </div>
                 )}
               </div>

@@ -10,7 +10,7 @@ import {
   TrendingUp,
   CheckCircle2,
   Circle,
-  BarChart2,
+  BarChart2
 } from 'lucide-react';
 import { useAppointments } from '../hooks/useAppointments';
 import DateSelector from '../components/DateSelector';
@@ -23,6 +23,7 @@ import PrintHeader from '../components/PrintHeader';
 import { printPatientList } from '@/components/PatientQueue/printUtils';
 import { printAppointmentReport, type ReportPeriodFilter } from '@/components/PatientQueue/printReportUtils';
 import { printHomeVisitRoute } from '@/components/PatientQueue/printHomeVisitRouteUtils';
+import { Badge } from '@/components/ui';
 import type { Appointment, AppointmentStatus } from '@/types';
 import { toast } from 'sonner';
 import { blockDay, getAppointmentStatus, isBlockedAppointment } from '../services/appointmentService';
@@ -669,9 +670,9 @@ const ReleasedAppointmentsSection = ({ appointments }: { appointments: Appointme
           <h3 className="font-bold text-card-foreground">Remarcadas</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Mantidas no histórico sem ocupar ficha no dia original.</p>
         </div>
-        <span className="rounded-full bg-secondary px-3 py-1 text-sm font-bold text-muted-foreground">
+        <Badge className="px-3 py-1 text-sm font-bold">
           {appointments.length}
-        </span>
+        </Badge>
       </div>
 
       <div className="divide-y divide-border">
@@ -682,12 +683,12 @@ const ReleasedAppointmentsSection = ({ appointments }: { appointments: Appointme
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-bold text-primary">
+                <Badge className="py-0.5 font-bold text-primary">
                   Ficha {appointment.slot_number}
-                </span>
-                <span className="rounded-full bg-purple-500/15 border border-purple-500/20 px-2.5 py-0.5 text-xs font-bold text-purple-300">
+                </Badge>
+                <Badge className="border-purple-500/20 bg-purple-500/15 py-0.5 font-bold text-purple-300">
                   {getAppointmentStatus(appointment)}
-                </span>
+                </Badge>
               </div>
               <p className="font-semibold text-card-foreground truncate">{appointment.patient_name}</p>
               <p className="text-sm text-muted-foreground">

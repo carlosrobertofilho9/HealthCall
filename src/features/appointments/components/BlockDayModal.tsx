@@ -1,22 +1,22 @@
 import React, { useMemo, useState } from 'react';
-import { 
-  Ban, 
-  X, 
+import {
+  Ban,
+  X,
   AlertTriangle,
   Calendar,
   Plane,
   FileText
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
 import {
+  Button,
+  Modal,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/Select';
-import { Input } from '@/components/ui/Input';
+  Input
+} from '@/components/ui';
 import type { DayScheduleConfig } from '@/types';
 import { getSlotTime } from '../services/appointmentService';
 
