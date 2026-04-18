@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { isValidCNS, isValidCPF } from '@/lib/utils';
 import {
@@ -43,6 +43,7 @@ const PendenciasPage: React.FC = () => {
   const [resumo, setResumo] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('em_aberto');
+  const [mobileTab, setMobileTab] = useState<'new' | 'existing'>('new');
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -247,43 +248,48 @@ const PendenciasPage: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 w-full h-[calc(100vh-8rem)]">
-      <PendenciaCreatePanel
-        nomePaciente={nomePaciente}
-        cnsCpf={cnsCpf}
-        selectedTipos={selectedTipos}
-        tipoPersonalizado={tipoPersonalizado}
-        resumo={resumo}
-        isSaving={isSaving}
-        tipoOptions={TIPO_OPTIONS}
-        onSubmit={handleCreate}
-        onNomePacienteChange={setNomePaciente}
-        onCnsCpfChange={(value) => setCnsCpf(formatCnsCpfForInput(value))}
-        onToggleTipo={toggleTipo}
-        onTipoPersonalizadoChange={setTipoPersonalizado}
-        onResumoChange={setResumo}
-      />
+    <div className="-mt-6 -mb-6 xl:my-0 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen xl:static xl:left-auto xl:right-auto xl:ml-0 xl:mr-0 xl:w-full flex flex-col gap-0 xl:gap-4 h-auto min-h-[calc(100dvh-73px)] xl:h-[calc(100vh-8rem)] pb-[calc(env(safe-area-inset-bottom)+5.5rem)] xl:pb-0">
+      <div className="grid min-h-0 grid-cols-1 xl:grid-cols-12 gap-0 xl:gap-4 w-full xl:h-full xl:flex-1">
+        <div className={`${mobileTab === 'new' ? 'block' : 'hidden'} xl:block xl:col-span-4 min-h-0 xl:h-full`}>
+          <PendenciaCreatePanel
+            nomePaciente={nomePaciente}
+            cnsCpf={cnsCpf}
+            selectedTipos={selectedTipos}
+            tipoPersonalizado={tipoPersonalizado}
+            resumo={resumo}
+            isSaving={isSaving}
+            tipoOptions={TIPO_OPTIONS}
+            onSubmit={handleCreate}
+            onNomePacienteChange={setNomePaciente}
+            onCnsCpfChange={(value) => setCnsCpf(formatCnsCpfForInput(value))}
+            onToggleTipo={toggleTipo}
+            onTipoPersonalizadoChange={setTipoPersonalizado}
+            onResumoChange={setResumo}
+          />
+        </div>
 
-      <section className="xl:col-span-8 rounded-2xl border border-white/10 bg-[#1a2c22] overflow-hidden shadow-2xl flex flex-col">
-        <PendenciasListHeader
-          openCount={openPendencias.length}
-          totalCount={pendencias.length}
-          search={search}
-          statusFilter={statusFilter}
-          isGeneratingPdf={isGeneratingPdf}
-          onSearchChange={setSearch}
-          onStatusFilterChange={setStatusFilter}
-          onGenerateOpenPdf={handleGenerateOpenPdf}
-        />
+        <section
+          className={`${mobileTab === 'existing' ? 'flex' : 'hidden'} xl:flex xl:col-span-8 rounded-none xl:rounded-2xl border border-white/10 border-x-0 xl:border-x bg-[#1a2c22] overflow-visible xl:overflow-hidden shadow-none xl:shadow-2xl flex-col min-h-0 xl:h-full`}
+        >
+          <PendenciasListHeader
+            openCount={openPendencias.length}
+            totalCount={pendencias.length}
+            search={search}
+            statusFilter={statusFilter}
+            isGeneratingPdf={isGeneratingPdf}
+            onSearchChange={setSearch}
+            onStatusFilterChange={setStatusFilter}
+            onGenerateOpenPdf={handleGenerateOpenPdf}
+          />
 
-        <div className="flex-1 min-h-0 overflow-auto custom-scrollbar p-5">
+        <div className="p-5 overflow-visible xl:flex-1 xl:min-h-0 xl:overflow-auto custom-scrollbar">
           {loading ? (
-            <div className="flex h-full items-center justify-center text-gray-400 gap-2">
+            <div className="flex min-h-[40vh] xl:h-full items-center justify-center text-gray-400 gap-2">
               <Loader2 className="h-5 w-5 animate-spin" />
               <span>Carregando pendências...</span>
             </div>
           ) : filteredPendencias.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-gray-500 text-center px-6">
+            <div className="flex min-h-[40vh] xl:h-full items-center justify-center text-gray-500 text-center px-6">
               Nenhuma pendência encontrada para os filtros atuais.
             </div>
           ) : (
@@ -321,7 +327,38 @@ const PendenciasPage: React.FC = () => {
             </div>
           )}
         </div>
-      </section>
+        </section>
+      </div>
+
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] xl:hidden">
+        <nav className="pointer-events-auto grid w-full grid-cols-2 rounded-full border border-[#264532] bg-[#1a3a26] p-1 shadow-2xl">
+          <button
+            type="button"
+            onClick={() => setMobileTab('new')}
+            className={`flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors ${
+              mobileTab === 'new'
+                ? 'bg-primary text-[#122118]'
+                : 'text-[#96c5a9] hover:bg-[#264532] hover:text-white'
+            }`}
+          >
+            <CirclePlus className="h-4 w-4 shrink-0" />
+            Nova
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMobileTab('existing')}
+            className={`flex min-h-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-semibold transition-colors ${
+              mobileTab === 'existing'
+                ? 'bg-primary text-[#122118]'
+                : 'text-[#96c5a9] hover:bg-[#264532] hover:text-white'
+            }`}
+          >
+            <ListTodo className="h-4 w-4 shrink-0" />
+            Pendências
+          </button>
+        </nav>
+      </div>
     </div>
   );
 };

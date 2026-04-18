@@ -37,7 +37,7 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
   onResumoChange,
 }) => {
   return (
-    <section className="xl:col-span-4 rounded-2xl border border-white/10 bg-[#1a2c22] overflow-hidden shadow-2xl flex flex-col">
+    <section className="rounded-none xl:rounded-2xl border border-white/10 border-x-0 xl:border-x bg-[#1a2c22] overflow-hidden shadow-none xl:shadow-2xl flex flex-col h-full min-h-0">
       <div className="px-6 py-5 border-b border-white/10 bg-linear-to-r from-[#264532] to-[#1f3a2b]">
         <h2 className="text-white text-xl font-bold tracking-tight flex items-center gap-3">
           <div className="p-2 bg-[#1a2c22] rounded-lg border border-white/10">
@@ -48,7 +48,7 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
         <p className="text-[#96c5a9]/80 text-sm mt-1">Registre pendências e acompanhe o fluxo de resolução.</p>
       </div>
 
-      <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-y-auto custom-scrollbar">
+      <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-visible xl:flex-1 xl:min-h-0 xl:overflow-y-auto custom-scrollbar">
         <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-3">
           <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Identificação</p>
           <div className="relative">
