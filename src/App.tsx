@@ -17,7 +17,7 @@ const App: React.FC = () => {
   usePageTitle();
 
   return (
-    <div className="relative flex size-full min-h-screen flex-col">
+    <div className="relative flex size-full min-h-screen flex-col bg-background text-foreground">
       <Toaster position="top-center" />
       <Header />
       <main className="flex-1 px-2 py-6 lg:px-4">

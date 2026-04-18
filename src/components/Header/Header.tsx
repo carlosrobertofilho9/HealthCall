@@ -94,17 +94,17 @@ const Header: React.FC = () => {
 		`flex items-center gap-2 text-base leading-normal transition-colors ${
 			isActive
 				? 'text-primary font-bold'
-				: 'text-white font-medium hover:text-primary'
+				: 'text-foreground/80 font-medium hover:text-primary'
 		}`;
 
 	return (
-		<header className="relative flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#264532] px-10 py-4">
-			<div className="flex items-center gap-4 text-white">
+		<header className="relative flex items-center justify-between whitespace-nowrap border-b border-border bg-card/90 px-10 py-4 text-card-foreground shadow-sm backdrop-blur">
+			<div className="flex items-center gap-4 text-card-foreground">
 				<Link to="/" className="h-8 w-auto">
 					<img src="/healthcall-logo-header.png" alt="HealthCall Logo" className="h-full w-auto object-contain" />
 				</Link>
 				<Link to="/">
-					<h1 className="text-white text-xl font-bold leading-tight tracking-[-0.015em]">HealthCall</h1>
+					<h1 className="text-card-foreground text-xl font-bold leading-tight tracking-[-0.015em]">HealthCall</h1>
 				</Link>
 			</div>
 			
@@ -142,7 +142,7 @@ const Header: React.FC = () => {
 			<div className="flex items-center gap-4">
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-white"
+          className="md:hidden text-card-foreground transition-colors hover:text-primary"
           onClick={toggleMobileMenu}
         >
           {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -162,7 +162,7 @@ const Header: React.FC = () => {
 							/>
 						) : (
 							<div
-								className="aspect-square rounded-full size-12 border-2 border-primary bg-[#325a42] text-white flex items-center justify-center font-bold"
+								className="aspect-square rounded-full size-12 border-2 border-primary bg-secondary text-secondary-foreground flex items-center justify-center font-bold"
 								aria-label="Iniciais do usuário"
 								role="img"
 							>
@@ -171,10 +171,10 @@ const Header: React.FC = () => {
 						)}
 					</button>
 					{isMenuOpen && (
-						<div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50">
+						<div className="absolute right-0 mt-2 w-48 rounded-md border border-border bg-popover py-1 shadow-lg z-50">
 							<button
 								onClick={handleLogout}
-								className="flex items-center w-full px-4 py-2 text-sm text-white hover:bg-gray-700"
+								className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 							>
 								<LogOut className="mr-2 w-4 h-4" />
 								Sair
@@ -186,7 +186,7 @@ const Header: React.FC = () => {
 
       {/* Mobile Menu Overlay */}
 			{isMobileMenuOpen && (
-				<div className="fixed inset-0 top-[73px] bg-[#1a3a26] p-6 flex flex-col gap-6 md:hidden z-50 overflow-y-auto">
+				<div className="fixed inset-0 top-[73px] bg-card p-6 flex flex-col gap-6 md:hidden z-50 overflow-y-auto">
 					<NavLink 
             to="/" 
             end 
@@ -237,10 +237,10 @@ const Header: React.FC = () => {
 						<span>Ajustes</span>
 					</NavLink>
           
-          <div className="border-t border-[#264532] pt-6 mt-auto">
+          <div className="border-t border-border pt-6 mt-auto">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 text-white font-medium hover:text-red-400 w-full text-lg py-2"
+              className="flex items-center gap-3 text-card-foreground font-medium hover:text-red-400 w-full text-lg py-2"
             >
               <LogOut className="w-5 h-5" />
               Sair

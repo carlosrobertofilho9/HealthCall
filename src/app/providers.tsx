@@ -2,6 +2,7 @@ import React from 'react';
 import { UserProfileProvider } from '@/contexts/UserProfileContext';
 import { DisplayDataProvider } from '@/contexts/DisplayDataContext';
 import { SettingsProvider } from '@/contexts/SettingsContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 
 /**
  * A component that wraps the entire application with all necessary context providers.
@@ -14,13 +15,15 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
  */
 export const Providers: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <SettingsProvider>
-      <DisplayDataProvider>
-        <UserProfileProvider>
-          {children}
-        </UserProfileProvider>
-      </DisplayDataProvider>
-    </SettingsProvider>
+    <ThemeProvider>
+      <SettingsProvider>
+        <DisplayDataProvider>
+          <UserProfileProvider>
+            {children}
+          </UserProfileProvider>
+        </DisplayDataProvider>
+      </SettingsProvider>
+    </ThemeProvider>
   );
 };
 

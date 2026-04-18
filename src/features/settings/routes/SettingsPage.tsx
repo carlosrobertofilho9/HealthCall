@@ -1,5 +1,7 @@
+import React from 'react';
 import { useSettings as useLocalSettings } from '@/features/settings/hooks/useSettings';
 import { useSettings } from '@/contexts/SettingsContext';
+import { ThemeSelector } from '@/features/settings/components/ThemeSelector';
 import {
   Select,
   SelectContent,
@@ -12,15 +14,12 @@ import {
   FormSection,
   ActionBar
 } from '@/components/ui';
+import { Palette } from 'lucide-react';
 
 /**
  * A página de configurações da aplicação.
  *
- * Este componente permite que os usuários configurem suas preferências, como
- * definir um destino padrão para novos pacientes e escolher se desejam usar
- * a síntese de voz nativa do navegador para os anúncios.
- * Ele utiliza o hook `useSettings` para gerenciar a lógica de carregamento e salvamento
- * do destino padrão.
+ * Permite configurar: destino padrão, síntese de voz e tema visual.
  *
  * @returns {React.ReactElement} O componente da página de configurações.
  */
@@ -72,6 +71,16 @@ const SettingsPage: React.FC = () => {
               disabled={loading}
             />
           </div>
+        </FormSection>
+
+        <FormSection
+          title="Tema Visual"
+          icon={<Palette size={14} className="text-primary" />}
+        >
+          <p className="text-sm text-muted-foreground mb-3">
+            Escolha a paleta de cores que melhor representa seu estilo.
+          </p>
+          <ThemeSelector />
         </FormSection>
 
         <ActionBar separated className="justify-end">
