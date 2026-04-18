@@ -128,7 +128,8 @@ const specialDocuments: Record<string, {
   multiPage?: boolean;
 }> = {
   'Controle Glicêmico': { component: GlycemicDocument, landscape: true },
-  'Controle de Pressão Arterial (MRPA)': { component: PressureDocument, landscape: true },
+  'Controle de Pressão Arterial (MRPA)': { component: PressureDocument, landscape: true, multiPage: true },
+  'Controle de Pressão Arterial (MAPA)': { component: PressureDocument, landscape: true, multiPage: true },
   'Ficha de Evolução de Curativos': { component: WoundCareDocument, landscape: true, multiPage: true },
   'Protocolo de Procedimento': { component: ProcedureDocument, multiPage: true },
   'Protocolo de Lavagem de Ouvido': { component: EarWashDocument, multiPage: true },

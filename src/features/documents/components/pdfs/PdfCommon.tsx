@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Svg, Path, Circle, View, Text } from '@react-pdf/renderer';
 import type { DocumentFormData } from '../DocumentPdf';
+import { formatCPF, formatCNS } from '@/lib/utils';
 
 // --- 1. Design System Theme ---
 export const pdfTheme = {
@@ -171,22 +172,32 @@ export const PageHeader = ({ unitName = "PSF 5 Maria Lucia da Silva" }: { unitNa
   </View>
 );
 
-export const PatientInfoBar = ({ nome, cns }: { nome?: string, cns?: string }) => (
-  <View style={commonStyles.patientInfoCard}>
-    <View style={{ flex: 2, minWidth: 200 }}>
-      <DocLabel>Nome do Paciente</DocLabel>
-      <View style={{ borderBottomWidth: 1, borderBottomColor: pdfTheme.colors.borderDark, height: 18, justifyContent: 'center' }}>
-        <DocValue>{nome || ''}</DocValue>
+export const PatientInfoBar = ({ nome, cns }: { nome?: string, cns?: string }) => {
+  const formatDocument = (doc?: string) => {
+    if (!doc) return '';
+    const digits = doc.replace(/\D/g, '');
+    if (digits.length === 11) return formatCPF(doc);
+    if (digits.length === 15) return formatCNS(doc);
+    return doc;
+  };
+
+  return (
+    <View style={commonStyles.patientInfoCard}>
+      <View style={{ flex: 2, minWidth: 200 }}>
+        <DocLabel>Nome do Paciente</DocLabel>
+        <View style={{ borderBottomWidth: 1, borderBottomColor: pdfTheme.colors.borderDark, height: 18, justifyContent: 'center' }}>
+          <DocValue>{nome || ''}</DocValue>
+        </View>
+      </View>
+      <View style={{ flex: 1, minWidth: 120 }}>
+        <DocLabel>CNS ou CPF</DocLabel>
+        <View style={{ borderBottomWidth: 1, borderBottomColor: pdfTheme.colors.borderDark, height: 18, justifyContent: 'center' }}>
+          <DocValue>{formatDocument(cns)}</DocValue>
+        </View>
       </View>
     </View>
-    <View style={{ flex: 1, minWidth: 120 }}>
-      <DocLabel>CNS ou CPF</DocLabel>
-      <View style={{ borderBottomWidth: 1, borderBottomColor: pdfTheme.colors.borderDark, height: 18, justifyContent: 'center' }}>
-        <DocValue>{cns || ''}</DocValue>
-      </View>
-    </View>
-  </View>
-);
+  );
+};
 
 export const PageFooter = () => (
   <View style={commonStyles.footer}>
@@ -212,6 +223,7 @@ interface BaseDocumentProps {
   nomePaciente?: string;
   cnsCpf?: string;
   hidePatientInfo?: boolean;
+  hideHeader?: boolean;
 }
 
 export const BaseDocument: React.FC<BaseDocumentProps> = ({ 
@@ -222,9 +234,10 @@ export const BaseDocument: React.FC<BaseDocumentProps> = ({
   nomePaciente,
   cnsCpf,
   hidePatientInfo = false,
+  hideHeader = false,
 }) => (
   <View style={[commonStyles.page, { paddingBottom: showFooter ? pdfTheme.spacing.xxl : 0 }]} wrap={wrap}>
-    <PageHeader />
+    {!hideHeader && <PageHeader />}
     
     {!hidePatientInfo && <PatientInfoBar nome={nomePaciente} cns={cnsCpf} />}
 

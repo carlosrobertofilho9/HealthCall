@@ -31,8 +31,8 @@ CNS ou CPF: {{CNS_CPF}}`,
   },
   {
     id: 'controle_pressao',
-    title: 'Controle de Pressão Arterial (MRPA)',
-    description: 'Tabela para monitoramento residencial da pressão arterial (manhã, tarde e noite).',
+    title: 'Controle de Pressão Arterial (MAPA)',
+    description: 'Tabela para monitoramento ambulatorial da pressão arterial (manhã, tarde e noite).',
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: HeartPulse
