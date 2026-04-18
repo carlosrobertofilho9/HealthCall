@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, ListTodo, Loader2 } from 'lucide-react';
+import { CheckCircle2, ListTodo, Loader2, UserRound, IdCard } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { TipoPendenciaSelector } from './TipoPendenciaSelector';
@@ -51,19 +51,23 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
       <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-y-auto custom-scrollbar">
         <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-3">
           <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Identificação</p>
-          <Input
-            value={nomePaciente}
-            onChange={(event) => onNomePacienteChange(event.target.value)}
-            placeholder="Nome do paciente"
-            className="h-11 rounded-xl pl-4 bg-[#1f3a2b]"
-          />
+          <div className="relative">
+            <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#96c5a9]/80" />
+            <Input
+              value={nomePaciente}
+              onChange={(event) => onNomePacienteChange(event.target.value)}
+              placeholder="Nome do paciente"
+              className="h-11 rounded-xl pl-11 bg-[#1f3a2b]"
+            />
+          </div>
 
           <div className="relative">
+            <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#96c5a9]/80" />
             <Input
               value={cnsCpf}
               onChange={(event) => onCnsCpfChange(event.target.value)}
               placeholder="CNS ou CPF"
-              className="h-11 rounded-xl pl-4 pr-20 bg-[#1f3a2b] font-semibold tracking-wide"
+              className="h-11 rounded-xl pl-11 pr-20 bg-[#1f3a2b] font-semibold tracking-wide"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-[#325a42] px-2 py-1 text-[11px] text-[#96c5a9]">
               {getDocumentLabel(cnsCpf)}

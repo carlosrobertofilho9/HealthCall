@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tag } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 
 interface TipoPendenciaSelectorProps {
@@ -44,12 +45,15 @@ export const TipoPendenciaSelector: React.FC<TipoPendenciaSelectorProps> = ({
         })}
       </div>
 
-      <Input
-        value={tipoPersonalizado}
-        onChange={(event) => onChangeTipoPersonalizado(event.target.value)}
-        placeholder={inputPlaceholder}
-        className="h-11 rounded-xl pl-4 bg-[#1f3a2b]"
-      />
+      <div className="relative">
+        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#96c5a9]/80" />
+        <Input
+          value={tipoPersonalizado}
+          onChange={(event) => onChangeTipoPersonalizado(event.target.value)}
+          placeholder={inputPlaceholder}
+          className="h-11 rounded-xl pl-10 bg-[#1f3a2b]"
+        />
+      </div>
     </>
   );
 };

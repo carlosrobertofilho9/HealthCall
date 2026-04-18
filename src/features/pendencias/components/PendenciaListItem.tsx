@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, Pencil, Save, Trash2, X } from 'lucide-react';
+import { IdCard, Loader2, Pencil, Save, Trash2, UserRound, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import {
@@ -74,18 +74,24 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
         <div className="space-y-3 flex-1">
           {isEditing ? (
             <div className="space-y-3">
-              <Input
-                value={editNomePaciente}
-                onChange={(event) => onEditNomePacienteChange(event.target.value)}
-                className="h-10 rounded-xl pl-4 bg-[#1f3a2b]"
-                placeholder="Nome do paciente"
-              />
-              <Input
-                value={editCnsCpf}
-                onChange={(event) => onEditCnsCpfChange(event.target.value)}
-                className="h-10 rounded-xl pl-4 bg-[#1f3a2b] font-semibold"
-                placeholder="CNS ou CPF"
-              />
+              <div className="relative">
+                <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#96c5a9]/80" />
+                <Input
+                  value={editNomePaciente}
+                  onChange={(event) => onEditNomePacienteChange(event.target.value)}
+                  className="h-10 rounded-xl pl-10 bg-[#1f3a2b]"
+                  placeholder="Nome do paciente"
+                />
+              </div>
+              <div className="relative">
+                <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#96c5a9]/80" />
+                <Input
+                  value={editCnsCpf}
+                  onChange={(event) => onEditCnsCpfChange(event.target.value)}
+                  className="h-10 rounded-xl pl-10 bg-[#1f3a2b] font-semibold"
+                  placeholder="CNS ou CPF"
+                />
+              </div>
 
               <TipoPendenciaSelector
                 options={tipoOptions}
