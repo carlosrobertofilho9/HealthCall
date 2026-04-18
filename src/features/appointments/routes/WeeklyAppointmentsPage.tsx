@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Clock, Loader2, Search, TrendingUp, UserCheck, Users, X, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AppointmentDaySummary } from '@/types';
+import type { AppointmentDaySummary, AppointmentStatus } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
@@ -14,6 +14,7 @@ import {
   getWeekDates,
   getWeekStart,
   isBlockedAppointment,
+  updateAppointmentStatus,
 } from '../services/appointmentService';
 
 const formatShortDate = (date: Date) =>
@@ -25,6 +26,49 @@ const formatWeekRange = (dates: Date[]) => {
     .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
     .replace('.', '');
   return `${first} – ${last}`;
+};
+
+const STATUS_CYCLE: AppointmentStatus[] = ['Agendado', 'Compareceu', 'Faltou'];
+
+const statusBadgeClass: Record<AppointmentStatus, string> = {
+  Agendado: 'text-[#96c5a9]',
+  Compareceu: 'text-primary',
+  Faltou: 'text-red-300',
+  Remarcado: 'text-amber-300',
+};
+
+const updateSummaryAppointmentStatus = (
+  summary: AppointmentDaySummary,
+  appointmentId: string,
+  status: AppointmentStatus
+): AppointmentDaySummary => {
+  const statusUpdatedAt = new Date().toISOString();
+
+  return {
+    ...summary,
+    appointments: summary.appointments.map(appointment =>
+      appointment.id === appointmentId
+        ? { ...appointment, status, status_updated_at: statusUpdatedAt }
+        : appointment
+    ),
+    releasedAppointments: summary.releasedAppointments.map(appointment =>
+      appointment.id === appointmentId
+        ? { ...appointment, status, status_updated_at: statusUpdatedAt }
+        : appointment
+    ),
+    slots: summary.slots.map(slot =>
+      slot.appointment?.id === appointmentId
+        ? {
+            ...slot,
+            appointment: {
+              ...slot.appointment,
+              status,
+              status_updated_at: statusUpdatedAt,
+            },
+          }
+        : slot
+    ),
+  };
 };
 
 const WeeklyAppointmentsPage: React.FC = () => {
@@ -78,6 +122,11 @@ const WeeklyAppointmentsPage: React.FC = () => {
   const goToNextWeek = () => setWeekStart(prev => addDays(prev, 7));
   const goToCurrentWeek = () => setWeekStart(getWeekStart(new Date()));
 
+  const handleAppointmentStatusUpdated = useCallback((appointmentId: string, status: AppointmentStatus) => {
+    setSummaries(prev => prev.map(summary => updateSummaryAppointmentStatus(summary, appointmentId, status)));
+    setSelectedSummary(prev => (prev ? updateSummaryAppointmentStatus(prev, appointmentId, status) : prev));
+  }, []);
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <AppointmentsNav />
@@ -86,8 +135,8 @@ const WeeklyAppointmentsPage: React.FC = () => {
       <section className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm font-medium text-primary">Agenda semanal</p>
-            <h2 className="text-2xl font-bold text-white">{formatWeekRange(weekDates)}</h2>
+            <p className="text-base font-medium text-primary">Agenda semanal</p>
+            <h2 className="text-3xl font-bold text-white">{formatWeekRange(weekDates)}</h2>
           </div>
 
           <div className="flex gap-2">
@@ -107,7 +156,7 @@ const WeeklyAppointmentsPage: React.FC = () => {
 
         {/* Overall occupancy bar */}
         <div className="mt-5">
-          <div className="mb-1.5 flex items-center justify-between text-xs text-[#96c5a9]">
+          <div className="mb-1.5 flex items-center justify-between text-sm text-[#96c5a9]">
             <span>Ocupação da semana</span>
             <span className="font-bold text-white">{weekOccupancy}%</span>
           </div>
@@ -150,6 +199,7 @@ const WeeklyAppointmentsPage: React.FC = () => {
         summary={selectedSummary}
         isOpen={Boolean(selectedSummary)}
         onClose={() => setSelectedSummary(null)}
+        onStatusChange={handleAppointmentStatusUpdated}
       />
     </div>
   );
@@ -180,7 +230,7 @@ const StatCard = ({
     <div className="rounded-xl border border-[#264532] bg-[#122118]/50 p-4">
       <div className={`mb-2 ${colors ? colors.icon : 'text-[#96c5a9]'}`}>{icon}</div>
       <p className={`text-2xl font-bold ${colors ? colors.value : 'text-white'}`}>{value}</p>
-      <p className="mt-0.5 text-xs font-semibold uppercase text-[#96c5a9]">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold uppercase text-[#96c5a9]">{label}</p>
     </div>
   );
 };
@@ -217,18 +267,18 @@ const WeekDayCard: React.FC<{
       {/* Day header */}
       <div className="flex items-center justify-between gap-2 border-b border-[#264532] px-4 py-3">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+          <p className="text-xs font-bold uppercase tracking-widest text-primary">
             {formatShortDate(summary.dateObj)}
           </p>
-          <h3 className="mt-0.5 text-sm font-bold text-white">{summary.dayConfig.dayName}</h3>
+          <h3 className="mt-0.5 text-base font-bold text-white">{summary.dayConfig.dayName}</h3>
           {summary.dayConfig.hasService && (
-            <p className="mt-0.5 text-[10px] font-medium text-[#96c5a9]">
+            <p className="mt-0.5 text-xs font-medium text-[#96c5a9]">
               {summary.dayConfig.serviceLabel}
             </p>
           )}
         </div>
         <span
-          className={`rounded-full bg-[#264532] px-2.5 py-0.5 text-[11px] font-bold ${
+          className={`rounded-full bg-[#264532] px-2.5 py-0.5 text-xs font-bold ${
             summary.dayConfig.hasService ? badgeClass : 'text-[#96c5a9]'
           }`}
         >
@@ -275,7 +325,7 @@ const WeekDayCard: React.FC<{
             <div>
               <div className="mb-2 flex items-center gap-1.5">
                 <UserCheck className="h-3.5 w-3.5 text-[#96c5a9]" />
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#96c5a9]">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#96c5a9]">
                   {isHomeVisit ? 'Visitas' : 'Pacientes'}
                 </p>
               </div>
@@ -286,27 +336,27 @@ const WeekDayCard: React.FC<{
                       key={slot.slotNumber}
                       className="flex items-center gap-2 rounded-lg bg-[#122118]/50 px-2.5 py-2"
                     >
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#264532] text-[10px] font-bold text-primary">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#264532] text-xs font-bold text-primary">
                         {slot.slotNumber}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold leading-tight text-white">
+                        <p className="truncate text-sm font-semibold leading-tight text-white">
                           {slot.appointment?.patient_name}
                         </p>
-                        <p className="text-[10px] leading-tight text-[#96c5a9]">{slot.time}</p>
+                        <p className="text-xs leading-tight text-[#96c5a9]">{slot.time}</p>
                       </div>
                     </div>
                   ))}
                   {patientSlots.length > 4 && (
-                    <p className="pl-1 text-[11px] text-[#96c5a9]">
+                    <p className="pl-1 text-xs text-[#96c5a9]">
                       +{patientSlots.length - 4} paciente{patientSlots.length - 4 > 1 ? 's' : ''}
                     </p>
                   )}
-                  <p className="pl-1 text-[11px] font-semibold text-primary">Clique para ver detalhes</p>
+                  <p className="pl-1 text-xs font-semibold text-primary">Clique para ver detalhes</p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-[#264532] py-4 text-center">
-                  <p className="text-xs text-[#96c5a9]">Nenhum paciente marcado</p>
+                  <p className="text-sm text-[#96c5a9]">Nenhum paciente marcado</p>
                 </div>
               )}
             </div>
@@ -314,7 +364,7 @@ const WeekDayCard: React.FC<{
             {/* Next available */}
             <div className="mt-auto flex items-center gap-2 rounded-xl bg-[#122118]/50 px-3 py-2.5">
               <Clock className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <p className="text-[11px] font-medium text-[#96c5a9]">
+              <p className="text-xs font-medium text-[#96c5a9]">
                 {nextAvailable
                   ? `${isHomeVisit ? 'Próxima visita' : 'Próxima'}: ficha ${nextAvailable.slotNumber} · ${nextAvailable.time}`
                   : 'Sem vagas livres'}
@@ -324,7 +374,7 @@ const WeekDayCard: React.FC<{
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#264532] py-6">
             <XCircle className="h-5 w-5 text-[#264532]" />
-            <p className="text-center text-xs text-[#96c5a9]">
+            <p className="text-center text-sm text-[#96c5a9]">
               {formatDateForDisplay(summary.dateObj)} sem atendimento
             </p>
           </div>
@@ -347,7 +397,7 @@ const MiniStat = ({
 }) => (
   <div className="rounded-lg bg-[#122118]/50 py-2 text-center">
     <p className={`text-base font-bold ${valueClass}`}>{value}</p>
-    <p className="text-[10px] text-[#96c5a9]">{label}</p>
+    <p className="text-xs text-[#96c5a9]">{label}</p>
   </div>
 );
 
@@ -357,14 +407,25 @@ const DayPatientsModal = ({
   summary,
   isOpen,
   onClose,
+  onStatusChange,
 }: {
   summary: AppointmentDaySummary | null;
   isOpen: boolean;
   onClose: () => void;
+  onStatusChange: (appointmentId: string, status: AppointmentStatus) => void;
 }) => {
   const { shouldRender, isVisible } = useAnimation(isOpen);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAcs, setSelectedAcs] = useState('ALL');
+  const [updatingAppointmentId, setUpdatingAppointmentId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    appointmentId: string;
+    currentStatus: AppointmentStatus;
+    x: number;
+    y: number;
+  } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
+  const modalPanelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -383,8 +444,38 @@ const DayPatientsModal = ({
     if (!isOpen) {
       setSearchTerm('');
       setSelectedAcs('ALL');
+      setUpdatingAppointmentId(null);
+      setContextMenu(null);
     }
   }, [isOpen, summary?.date]);
+
+  useEffect(() => {
+    if (!contextMenu) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (contextMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+
+      setContextMenu(null);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setContextMenu(null);
+      }
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [contextMenu]);
 
   if (!shouldRender || !summary) {
     return null;
@@ -416,6 +507,69 @@ const DayPatientsModal = ({
     return matchesSearch && matchesAcs;
   });
 
+  const morningSlots = filteredPatientSlots.filter(slot => slot.period === 'Manhã');
+  const afternoonSlots = filteredPatientSlots.filter(slot => slot.period !== 'Manhã');
+
+  const handleChangeStatus = async (appointmentId: string, status: AppointmentStatus) => {
+    if (updatingAppointmentId) {
+      return;
+    }
+
+    setUpdatingAppointmentId(appointmentId);
+
+    try {
+      await updateAppointmentStatus(appointmentId, status);
+      onStatusChange(appointmentId, status);
+      toast.success(`Status atualizado para "${status}"`);
+    } catch (error) {
+      console.error('Erro ao atualizar status no modal semanal:', error);
+      toast.error('Erro ao atualizar status da marcação.');
+    } finally {
+      setUpdatingAppointmentId(null);
+    }
+  };
+
+  const handleOpenContextMenu = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    appointmentId: string,
+    currentStatus: AppointmentStatus
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const panelRect = modalPanelRef.current?.getBoundingClientRect();
+    const badgeRect = event.currentTarget.getBoundingClientRect();
+
+    if (!panelRect) {
+      return;
+    }
+
+    const panelPadding = 8;
+    const menuOffset = 6;
+    const estimatedMenuHeight = 148;
+    const estimatedMenuWidth = 190;
+
+    let x = badgeRect.right - panelRect.left - estimatedMenuWidth;
+    let y = badgeRect.bottom - panelRect.top + menuOffset;
+
+    const maxX = panelRect.width - estimatedMenuWidth - panelPadding;
+    x = Math.max(panelPadding, Math.min(x, maxX));
+
+    if (y + estimatedMenuHeight > panelRect.height - panelPadding) {
+      y = badgeRect.top - panelRect.top - estimatedMenuHeight - menuOffset;
+    }
+
+    const maxY = panelRect.height - estimatedMenuHeight - panelPadding;
+    y = Math.max(panelPadding, Math.min(y, maxY));
+
+    setContextMenu({
+      appointmentId,
+      currentStatus,
+      x,
+      y,
+    });
+  };
+
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-500 ${
@@ -424,18 +578,19 @@ const DayPatientsModal = ({
       onClick={onClose}
     >
       <div
-        className={`mx-4 w-full max-w-3xl rounded-2xl border border-[#264532] bg-[#1a3a26] shadow-2xl transition-all duration-500 ${
+        ref={modalPanelRef}
+        className={`relative mx-4 w-full max-w-3xl rounded-2xl border border-[#264532] bg-[#1a3a26] shadow-2xl transition-all duration-500 ${
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
         onClick={event => event.stopPropagation()}
       >
         <header className="flex items-start justify-between gap-4 border-b border-[#264532] px-5 py-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+            <p className="text-xs font-bold uppercase tracking-widest text-primary">
               {formatShortDate(summary.dateObj)}
             </p>
             <h3 className="mt-1 text-lg font-bold text-white">{summary.dayConfig.dayName}</h3>
-            <p className="text-sm text-[#96c5a9]">
+            <p className="text-base text-[#96c5a9]">
               {summary.dayConfig.serviceLabel} · {summary.occupiedSlots}/{summary.totalSlots} ocupadas
             </p>
           </div>
@@ -475,43 +630,82 @@ const DayPatientsModal = ({
           </Select>
         </div>
 
-        <div className="max-h-[70vh] space-y-3 overflow-y-auto px-5 py-4">
+        <div className="max-h-[70vh] space-y-5 overflow-y-auto px-5 py-4">
           {filteredPatientSlots.length > 0 ? (
-            filteredPatientSlots.map(slot => (
-              <article
-                key={slot.slotNumber}
-                className="rounded-xl border border-[#264532] bg-[#122118]/50 px-4 py-3"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#264532] text-xs font-bold text-primary">
-                      {slot.slotNumber}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-white">
-                        {slot.appointment?.patient_name}
-                      </p>
-                      <p className="text-xs text-[#96c5a9]">
-                        {isHomeVisit ? 'Visita' : 'Consulta'} · {slot.time}
-                      </p>
-                    </div>
+            <>
+              {[
+                { title: 'Manhã', slots: morningSlots },
+                { title: 'Tarde', slots: afternoonSlots },
+              ].map(section => (
+                <section key={section.title} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-primary">{section.title}</h4>
+                    <span className="text-xs text-[#96c5a9]">{section.slots.length} paciente(s)</span>
                   </div>
 
-                  <span className="rounded-full bg-[#264532] px-2.5 py-1 text-[11px] font-semibold text-[#96c5a9]">
-                    {slot.appointment?.status}
-                  </span>
-                </div>
+                  {section.slots.length > 0 ? (
+                    section.slots.map(slot => (
+                      <article
+                        key={slot.slotNumber}
+                        className="rounded-xl border border-[#264532] bg-[#122118]/50 px-4 py-3"
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#264532] text-xs font-bold text-primary">
+                              {slot.slotNumber}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-white">
+                                {slot.appointment?.patient_name}
+                              </p>
+                              <p className="text-xs text-[#96c5a9]">
+                                {isHomeVisit ? 'Visita' : 'Consulta'} · {slot.time}
+                              </p>
+                            </div>
+                          </div>
 
-                <div className="mt-3 grid gap-2 text-xs text-[#96c5a9] sm:grid-cols-2">
-                  <p>
-                    <span className="font-semibold text-white">Documento:</span> {slot.appointment?.document_value}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-white">ACS:</span> {slot.appointment?.acs_name}
-                  </p>
-                </div>
-              </article>
-            ))
+                          <button
+                            type="button"
+                            onClick={event => {
+                              const appointment = slot.appointment;
+                              if (!appointment) return;
+
+                              handleOpenContextMenu(event, appointment.id, appointment.status);
+                            }}
+                            onContextMenu={event => {
+                              const appointment = slot.appointment;
+                              if (!appointment) return;
+
+                              handleOpenContextMenu(event, appointment.id, appointment.status);
+                            }}
+                            disabled={updatingAppointmentId !== null}
+                            className={`rounded-full bg-[#264532] px-2.5 py-1 text-xs font-semibold transition-opacity ${
+                              statusBadgeClass[slot.appointment?.status ?? 'Agendado']
+                            } ${updatingAppointmentId !== null ? 'cursor-not-allowed opacity-70' : 'hover:opacity-80'}`}
+                            title="Clique para abrir menu de status"
+                          >
+                            {slot.appointment?.status}
+                          </button>
+                        </div>
+
+                        <div className="mt-3 grid gap-2 text-sm text-[#96c5a9] sm:grid-cols-2">
+                          <p>
+                            <span className="font-semibold text-white">Documento:</span> {slot.appointment?.document_value}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-white">ACS:</span> {slot.appointment?.acs_name}
+                          </p>
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-[#264532] py-4 text-center">
+                      <p className="text-sm text-[#96c5a9]">Nenhum paciente no turno da {section.title.toLowerCase()}.</p>
+                    </div>
+                  )}
+                </section>
+              ))}
+            </>
           ) : (
             <div className="rounded-xl border border-dashed border-[#264532] py-10 text-center">
               <p className="text-sm text-[#96c5a9]">
@@ -520,6 +714,47 @@ const DayPatientsModal = ({
             </div>
           )}
         </div>
+
+        {contextMenu && (
+          <div
+            ref={contextMenuRef}
+            className="absolute z-60 min-w-45 rounded-xl border border-[#264532] bg-[#1a3a26] p-1.5 shadow-2xl"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            {STATUS_CYCLE.map(status => {
+              const isCurrent = contextMenu.currentStatus === status;
+              const isBusy = updatingAppointmentId !== null;
+
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  disabled={isBusy || isCurrent}
+                  onClick={() => {
+                    const currentStatus = contextMenu.currentStatus;
+                    const appointmentId = contextMenu.appointmentId;
+
+                    if (status === currentStatus) {
+                      setContextMenu(null);
+                      return;
+                    }
+
+                    void handleChangeStatus(appointmentId, status);
+                    setContextMenu(null);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-base transition-colors ${
+                    isCurrent
+                      ? `${statusBadgeClass[status]} bg-[#264532]`
+                      : 'text-[#96c5a9] hover:bg-[#264532] hover:text-white'
+                  } ${isBusy ? 'cursor-not-allowed opacity-70' : ''}`}
+                >
+                  <span>{status}</span>
+                  {isCurrent ? <span className="text-xs font-semibold">Atual</span> : null}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <footer className="flex justify-end border-t border-[#264532] px-5 py-4">
           <Button type="button" variant="ghost" size="sm" onClick={onClose} className="w-auto">
