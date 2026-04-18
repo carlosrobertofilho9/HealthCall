@@ -7,6 +7,7 @@ import SettingsPage from '@/features/settings/routes/SettingsPage';
 import WarningsPage from '@/features/warnings/pages/WarningsPage';
 import { AppointmentsPage, CapacityDashboardPage, WeeklyAppointmentsPage, QuickReceptionPage } from '@/features/appointments';
 import DocumentsPage from '@/features/documents/pages/DocumentsPage';
+import { PendenciasPage } from '@/features/pendencias';
 import LoginPage from '@/features/authentication/routes/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
       { path: 'appointments/week', element: <WeeklyAppointmentsPage /> },
       { path: 'appointments/capacity', element: <CapacityDashboardPage /> },
       { path: 'documents', element: <DocumentsPage /> },
+	{ path: 'pendencias', element: <PendenciasPage /> },
 		],
 	},
 	// Standalone route for the public display screen

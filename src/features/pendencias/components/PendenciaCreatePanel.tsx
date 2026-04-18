@@ -1,0 +1,116 @@
+import React from 'react';
+import { CheckCircle2, ListTodo, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { TipoPendenciaSelector } from './TipoPendenciaSelector';
+import { getDocumentLabel } from '../utils/pendenciasUiUtils';
+
+interface PendenciaCreatePanelProps {
+  nomePaciente: string;
+  cnsCpf: string;
+  selectedTipos: string[];
+  tipoPersonalizado: string;
+  resumo: string;
+  isSaving: boolean;
+  tipoOptions: string[];
+  onSubmit: (event: React.FormEvent) => void;
+  onNomePacienteChange: (value: string) => void;
+  onCnsCpfChange: (value: string) => void;
+  onToggleTipo: (tipo: string) => void;
+  onTipoPersonalizadoChange: (value: string) => void;
+  onResumoChange: (value: string) => void;
+}
+
+export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
+  nomePaciente,
+  cnsCpf,
+  selectedTipos,
+  tipoPersonalizado,
+  resumo,
+  isSaving,
+  tipoOptions,
+  onSubmit,
+  onNomePacienteChange,
+  onCnsCpfChange,
+  onToggleTipo,
+  onTipoPersonalizadoChange,
+  onResumoChange,
+}) => {
+  return (
+    <section className="xl:col-span-4 rounded-2xl border border-white/10 bg-[#1a2c22] overflow-hidden shadow-2xl flex flex-col">
+      <div className="px-6 py-5 border-b border-white/10 bg-linear-to-r from-[#264532] to-[#1f3a2b]">
+        <h2 className="text-white text-xl font-bold tracking-tight flex items-center gap-3">
+          <div className="p-2 bg-[#1a2c22] rounded-lg border border-white/10">
+            <ListTodo className="text-[#96c5a9]" size={20} />
+          </div>
+          Nova Pendência
+        </h2>
+        <p className="text-[#96c5a9]/80 text-sm mt-1">Registre pendências e acompanhe o fluxo de resolução.</p>
+      </div>
+
+      <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-y-auto custom-scrollbar">
+        <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-3">
+          <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Identificação</p>
+          <Input
+            value={nomePaciente}
+            onChange={(event) => onNomePacienteChange(event.target.value)}
+            placeholder="Nome do paciente"
+            className="h-11 rounded-xl pl-4 bg-[#1f3a2b]"
+          />
+
+          <div className="relative">
+            <Input
+              value={cnsCpf}
+              onChange={(event) => onCnsCpfChange(event.target.value)}
+              placeholder="CNS ou CPF"
+              className="h-11 rounded-xl pl-4 pr-20 bg-[#1f3a2b] font-semibold tracking-wide"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-[#325a42] px-2 py-1 text-[11px] text-[#96c5a9]">
+              {getDocumentLabel(cnsCpf)}
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-3">
+          <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Tipo da pendência</p>
+          <TipoPendenciaSelector
+            options={tipoOptions}
+            selectedTipos={selectedTipos}
+            tipoPersonalizado={tipoPersonalizado}
+            onToggleTipo={onToggleTipo}
+            onChangeTipoPersonalizado={onTipoPersonalizadoChange}
+          />
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-2">
+          <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Descrição</p>
+          <textarea
+            value={resumo}
+            onChange={(event) => onResumoChange(event.target.value)}
+            placeholder="Descreva os detalhes da pendência"
+            className="w-full rounded-xl text-white bg-[#1f3a2b] border border-white/10 min-h-28 p-3 placeholder:text-[#96c5a9]/60 focus:ring-2 focus:ring-primary transition-all focus:outline-none"
+          />
+        </div>
+
+        <Button
+          type="submit"
+          size="sm"
+          disabled={isSaving}
+          className="rounded-xl h-11 bg-[#264532] text-[#96c5a9] border border-white/10 hover:bg-green-500 hover:text-white hover:border-green-400"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="h-4 w-4" />
+              Cadastrar pendência
+            </>
+          )}
+        </Button>
+      </form>
+    </section>
+  );
+};
