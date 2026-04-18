@@ -460,7 +460,7 @@ describe('rescheduleAppointment', () => {
 });
 
 // =============================================================================
-// getSuggestedAvailableSlot — Quick Reception logic
+// getSuggestedAvailableSlot — lógica de sugestão de slot
 // =============================================================================
 
 describe('getSuggestedAvailableSlot', () => {
@@ -499,7 +499,7 @@ describe('getSuggestedAvailableSlot', () => {
     expect(suggested).toBeNull();
   });
 
-  it('Remarcado appointment frees the slot for quick reception suggestion', () => {
+  it('Remarcado appointment frees the slot for suggestion', () => {
     const rescheduledSlot1 = makeAppointment({ slot_number: 1, status: 'Remarcado' });
     const slots = generateSlotsForDate(monday, [rescheduledSlot1]);
     const suggested = getSuggestedAvailableSlot(slots);

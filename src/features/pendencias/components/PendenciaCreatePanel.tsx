@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, ListTodo, Loader2, UserRound, IdCard } from 'lucide-react';
+import { CheckCircle2, ListTodo, Loader2, UserRound, IdCard, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { TipoPendenciaSelector } from './TipoPendenciaSelector';
@@ -88,12 +88,15 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
 
         <div className="rounded-xl border border-white/10 bg-[#264532]/40 p-4 space-y-2">
           <p className="text-xs uppercase tracking-wide text-[#96c5a9]/70">Descrição</p>
-          <textarea
-            value={resumo}
-            onChange={(event) => onResumoChange(event.target.value)}
-            placeholder="Descreva os detalhes da pendência"
-            className="w-full rounded-xl text-white bg-[#1f3a2b] border border-white/10 min-h-28 p-3 placeholder:text-[#96c5a9]/60 focus:ring-2 focus:ring-primary transition-all focus:outline-none"
-          />
+          <div className="relative">
+            <FileText className="absolute left-3 top-3.5 h-4 w-4 text-[#96c5a9]/80" />
+            <textarea
+              value={resumo}
+              onChange={(event) => onResumoChange(event.target.value)}
+              placeholder="Descreva os detalhes da pendência"
+              className="w-full rounded-xl text-white bg-[#1f3a2b] border border-white/10 min-h-28 p-3 pl-10 placeholder:text-[#96c5a9]/60 focus:ring-2 focus:ring-primary transition-all focus:outline-none"
+            />
+          </div>
         </div>
 
         <Button

@@ -1,5 +1,5 @@
 import React from 'react';
-import { IdCard, Loader2, Pencil, Save, Trash2, UserRound, X } from 'lucide-react';
+import { IdCard, Loader2, Pencil, Save, Trash2, UserRound, X, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import {
@@ -101,12 +101,15 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 onChangeTipoPersonalizado={onEditTipoPersonalizadoChange}
               />
 
-              <textarea
-                value={editResumo}
-                onChange={(event) => onEditResumoChange(event.target.value)}
-                className="w-full rounded-xl text-white bg-[#1f3a2b] border border-white/10 min-h-24 p-3 placeholder:text-[#96c5a9]/60 focus:ring-2 focus:ring-primary transition-all focus:outline-none"
-                placeholder="Descreva os detalhes da pendência"
-              />
+              <div className="relative">
+                <FileText className="absolute left-3 top-3.5 h-4 w-4 text-[#96c5a9]/80" />
+                <textarea
+                  value={editResumo}
+                  onChange={(event) => onEditResumoChange(event.target.value)}
+                  className="w-full rounded-xl text-white bg-[#1f3a2b] border border-white/10 min-h-24 p-3 pl-10 placeholder:text-[#96c5a9]/60 focus:ring-2 focus:ring-primary transition-all focus:outline-none"
+                  placeholder="Descreva os detalhes da pendência"
+                />
+              </div>
 
               <div className="flex flex-wrap gap-2">
                 {editingTipos.map((tipoTag) => (
