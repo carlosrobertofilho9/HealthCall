@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ListOrdered, Megaphone, MessageSquare, Timer } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -132,7 +133,8 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
             value={formData.text || ''}
             onChange={(event) => setFormData((previous) => ({ ...previous, text: event.target.value }))}
             placeholder="Ex: Campanha de Vacinação"
-            className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
+            icon={<Megaphone className="h-4 w-4" />}
+            className="bg-[#264532]/30 border-white/10 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
           />
         </div>
 
@@ -172,7 +174,8 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
               value={formData.message || ''}
               onChange={(event) => setFormData((previous) => ({ ...previous, message: event.target.value }))}
               placeholder="Ex: Procure a sala de vacinação"
-              className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
+              icon={<MessageSquare className="h-4 w-4" />}
+              className="bg-[#264532]/30 border-white/10 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
             />
           </div>
 
@@ -183,7 +186,8 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
               min={1}
               value={formData.duration || 10}
               onChange={(event) => setFormData((previous) => ({ ...previous, duration: Number(event.target.value) }))}
-              className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
+              icon={<Timer className="h-4 w-4" />}
+              className="bg-[#264532]/30 border-white/10 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
             />
           </div>
         </div>
@@ -194,7 +198,8 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
             type="number"
             value={formData.priority_order || 0}
             onChange={(event) => setFormData((previous) => ({ ...previous, priority_order: Number(event.target.value) }))}
-            className="bg-[#264532]/30 border-white/10 pl-4 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
+            icon={<ListOrdered className="h-4 w-4" />}
+            className="bg-[#264532]/30 border-white/10 text-white placeholder:text-gray-500 focus:border-[#96c5a9]/40"
           />
           <p className="text-xs text-gray-500 mt-1">Números menores aparecem primeiro.</p>
         </div>

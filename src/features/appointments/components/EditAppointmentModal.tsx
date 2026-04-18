@@ -162,16 +162,13 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
           {/* Nome do Paciente */}
           <div>
             <Label className="text-white mb-2 block">Nome do Paciente *</Label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
-              <Input
-                type="text"
-                value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
-                placeholder="Digite o nome completo"
-                className="pl-12"
-              />
-            </div>
+            <Input
+              type="text"
+              value={patientName}
+              onChange={(e) => setPatientName(e.target.value)}
+              placeholder="Digite o nome completo"
+              icon={<User className="w-4 h-4" />}
+            />
             {errors.patientName && (
               <p className="text-red-400 text-sm mt-1">{errors.patientName}</p>
             )}
@@ -217,16 +214,13 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             <Label className="text-white mb-2 block">
               {documentType === 'CPF' ? 'CPF *' : 'Número do Cartão SUS *'}
             </Label>
-            <div className="relative">
-              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
-              <Input
-                type="text"
-                value={documentValue}
-                onChange={handleDocumentChange}
-                placeholder={documentType === 'CPF' ? '000.000.000-00' : 'Número do cartão'}
-                className="pl-12"
-              />
-            </div>
+            <Input
+              type="text"
+              value={documentValue}
+              onChange={handleDocumentChange}
+              placeholder={documentType === 'CPF' ? '000.000.000-00' : 'Número do cartão'}
+              icon={<FileText className="w-4 h-4" />}
+            />
             {errors.documentValue && (
               <p className="text-red-400 text-sm mt-1">{errors.documentValue}</p>
             )}
@@ -256,14 +250,13 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             </div>
 
             {selectedAcs === 'Outro' && (
-              <div className="relative animate-in fade-in zoom-in duration-200">
-                <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+              <div className="animate-in fade-in zoom-in duration-200">
                 <Input
                   type="text"
                   value={customAcs}
                   onChange={(e) => setCustomAcs(e.target.value)}
                   placeholder="Digite o nome do ACS"
-                  className="pl-12"
+                  icon={<UserCheck className="w-4 h-4" />}
                 />
               </div>
             )}
@@ -277,16 +270,13 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
             <div className="space-y-4 rounded-2xl border border-[#264532] bg-[#122118]/40 p-4">
               <div>
                 <Label className="text-white mb-2 block">Endereço completo *</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
-                  <Input
-                    type="text"
-                    value={homeVisitAddress}
-                    onChange={(e) => setHomeVisitAddress(e.target.value)}
-                    placeholder="Rua, número, bairro e complemento"
-                    className="pl-12"
-                  />
-                </div>
+                <Input
+                  type="text"
+                  value={homeVisitAddress}
+                  onChange={(e) => setHomeVisitAddress(e.target.value)}
+                  placeholder="Rua, número, bairro e complemento"
+                  icon={<MapPin className="w-4 h-4" />}
+                />
                 {errors.homeVisitAddress && (
                   <p className="text-red-400 text-sm mt-1">{errors.homeVisitAddress}</p>
                 )}
@@ -294,16 +284,13 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
 
               <div>
                 <Label className="text-white mb-2 block">Ponto de referência</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
-                  <Input
-                    type="text"
-                    value={homeVisitReference}
-                    onChange={(e) => setHomeVisitReference(e.target.value)}
-                    placeholder="Ex.: próximo à escola, portão azul"
-                    className="pl-12"
-                  />
-                </div>
+                <Input
+                  type="text"
+                  value={homeVisitReference}
+                  onChange={(e) => setHomeVisitReference(e.target.value)}
+                  placeholder="Ex.: próximo à escola, portão azul"
+                  icon={<MapPin className="w-4 h-4" />}
+                />
               </div>
 
               <div>

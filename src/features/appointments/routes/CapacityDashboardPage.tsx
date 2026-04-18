@@ -165,24 +165,24 @@ const CapacityDashboardPage: React.FC = () => {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="relative">
-            <CalendarDays className="absolute left-4 top-4 h-5 w-5 text-[#96c5a9]" />
+          <div>
             <Input
               type="date"
               value={formatInputDate(rangeStart)}
               onChange={event => setRangeStart(parseInputDate(event.target.value))}
-              className="h-12 pl-12"
+              className="h-11 pl-12"
+              icon={<CalendarDays className="h-4 w-4" />}
               aria-label="Data inicial"
             />
           </div>
 
-          <div className="relative">
-            <CalendarDays className="absolute left-4 top-4 h-5 w-5 text-[#96c5a9]" />
+          <div>
             <Input
               type="date"
               value={formatInputDate(rangeEnd)}
               onChange={event => setRangeEnd(parseInputDate(event.target.value))}
-              className="h-12 pl-12"
+              className="h-11 pl-12"
+              icon={<CalendarDays className="h-4 w-4" />}
               aria-label="Data final"
             />
           </div>
@@ -193,7 +193,7 @@ const CapacityDashboardPage: React.FC = () => {
               value={filters.acsName}
               onValueChange={value => setFilters(prev => ({ ...prev, acsName: value as CapacityAnalyticsFilters['acsName'] }))}
             >
-              <SelectTrigger className="h-12 pl-12">
+              <SelectTrigger className="h-11 pl-12">
                 <SelectValue placeholder="Filtrar ACS" />
               </SelectTrigger>
               <SelectContent>
@@ -211,7 +211,7 @@ const CapacityDashboardPage: React.FC = () => {
               value={filters.status}
               onValueChange={value => setFilters(prev => ({ ...prev, status: value as CapacityStatusFilter }))}
             >
-              <SelectTrigger className="h-12 pl-12">
+              <SelectTrigger className="h-11 pl-12">
                 <SelectValue placeholder="Filtrar status" />
               </SelectTrigger>
               <SelectContent>

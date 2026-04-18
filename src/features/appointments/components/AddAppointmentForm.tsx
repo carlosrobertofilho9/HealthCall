@@ -161,8 +161,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
   if (showSuccess) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50">
-        <div className="bg-[#1a2c22] rounded-t-3xl sm:rounded-2xl p-6 w-full sm:max-w-md animate-slide-up sm:animate-none safe-area-bottom">
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4">
+        <div className="safe-area-bottom animate-slide-up w-full rounded-t-3xl bg-[#1a2c22] p-6 sm:max-w-lg sm:rounded-2xl sm:animate-none">
           <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-4 sm:hidden" />
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
@@ -208,8 +208,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50">
-      <div className="bg-[#1a2c22] rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 w-full sm:max-w-md max-h-[92vh] sm:max-h-[90vh] overflow-y-auto safe-area-bottom">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4">
+      <div className="safe-area-bottom max-h-[92vh] w-full overflow-y-auto rounded-t-3xl bg-[#1a2c22] p-5 sm:max-h-[90vh] sm:w-[95vw] sm:max-w-3xl sm:rounded-2xl sm:p-8">
         <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-3 sm:hidden" />
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg sm:text-xl font-bold text-white">Nova Marcação</h3>
@@ -221,108 +221,103 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Slot */}
-          <div>
-            <Label className="text-white mb-2 block">Slot *</Label>
-            <div className="relative">
-              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9] z-10" />
-              <Select
-                value={slotNumber.toString()}
-                onValueChange={(value) => setSlotNumber(Number(value))}
-              >
-                <SelectTrigger className="pl-12">
-                  <SelectValue placeholder="Selecione um horário" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSlots.map((slot) => (
-                    <SelectItem key={slot} value={slot.toString()}>
-                      Slot {slot} - {getSlotTime(slot, dayConfig)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
+            {/* Slot */}
+            <div>
+              <Label className="text-white mb-2 block">Slot *</Label>
+              <div className="relative">
+                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9] z-10" />
+                <Select
+                  value={slotNumber.toString()}
+                  onValueChange={(value) => setSlotNumber(Number(value))}
+                >
+                  <SelectTrigger className="pl-12">
+                    <SelectValue placeholder="Selecione um horário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSlots.map((slot) => (
+                      <SelectItem key={slot} value={slot.toString()}>
+                        Slot {slot} - {getSlotTime(slot, dayConfig)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {errors.slotNumber && (
+                <p className="text-red-400 text-sm mt-1">{errors.slotNumber}</p>
+              )}
             </div>
-            {errors.slotNumber && (
-              <p className="text-red-400 text-sm mt-1">{errors.slotNumber}</p>
-            )}
-          </div>
 
-          {/* Nome do Paciente */}
-          <div>
-            <Label className="text-white mb-2 block">Nome do Paciente *</Label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+            {/* Nome do Paciente */}
+            <div>
+              <Label className="text-white mb-2 block">Nome do Paciente *</Label>
               <Input
                 type="text"
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
                 placeholder="Digite o nome completo"
-                className="pl-12"
+                icon={<User className="w-4 h-4" />}
               />
+              {errors.patientName && (
+                <p className="text-red-400 text-sm mt-1">{errors.patientName}</p>
+              )}
             </div>
-            {errors.patientName && (
-              <p className="text-red-400 text-sm mt-1">{errors.patientName}</p>
-            )}
-          </div>
 
-          {/* Tipo de Documento */}
-          <div>
-            <Label className="text-white mb-2 block">Tipo de Documento *</Label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-white cursor-pointer">
-                <input
-                  type="radio"
-                  name="documentType"
-                  value="CPF"
-                  checked={documentType === 'CPF'}
-                  onChange={() => {
-                    setDocumentType('CPF');
-                    setDocumentValue('');
-                  }}
-                  className="accent-primary w-4 h-4"
-                />
-                CPF
-              </label>
-              <label className="flex items-center gap-2 text-white cursor-pointer">
-                <input
-                  type="radio"
-                  name="documentType"
-                  value="CARTAO_SUS"
-                  checked={documentType === 'CARTAO_SUS'}
-                  onChange={() => {
-                    setDocumentType('CARTAO_SUS');
-                    setDocumentValue('');
-                  }}
-                  className="accent-primary w-4 h-4"
-                />
-                Cartão SUS
-              </label>
+            {/* Tipo de Documento */}
+            <div>
+              <Label className="text-white mb-2 block">Tipo de Documento *</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="documentType"
+                    value="CPF"
+                    checked={documentType === 'CPF'}
+                    onChange={() => {
+                      setDocumentType('CPF');
+                      setDocumentValue('');
+                    }}
+                    className="accent-primary w-4 h-4"
+                  />
+                  CPF
+                </label>
+                <label className="flex items-center gap-2 text-white cursor-pointer">
+                  <input
+                    type="radio"
+                    name="documentType"
+                    value="CARTAO_SUS"
+                    checked={documentType === 'CARTAO_SUS'}
+                    onChange={() => {
+                      setDocumentType('CARTAO_SUS');
+                      setDocumentValue('');
+                    }}
+                    className="accent-primary w-4 h-4"
+                  />
+                  Cartão SUS
+                </label>
+              </div>
             </div>
-          </div>
 
-          {/* Documento */}
-          <div>
-            <Label className="text-white mb-2 block">
-              {documentType === 'CPF' ? 'CPF *' : 'Número do Cartão SUS *'}
-            </Label>
-            <div className="relative">
-              <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+            {/* Documento */}
+            <div>
+              <Label className="text-white mb-2 block">
+                {documentType === 'CPF' ? 'CPF *' : 'Número do Cartão SUS *'}
+              </Label>
               <Input
                 type="text"
                 value={documentValue}
                 onChange={handleDocumentChange}
                 placeholder={documentType === 'CPF' ? '000.000.000-00' : 'Número do cartão'}
-                className="pl-12"
+                icon={<FileText className="w-4 h-4" />}
               />
+              {errors.documentValue && (
+                <p className="text-red-400 text-sm mt-1">{errors.documentValue}</p>
+              )}
             </div>
-            {errors.documentValue && (
-              <p className="text-red-400 text-sm mt-1">{errors.documentValue}</p>
-            )}
-          </div>
 
-          {/* ACS */}
-          <div>
+            {/* ACS */}
+            <div className="sm:col-span-2">
             <Label className="text-white mb-2 block">ACS Responsável *</Label>
             <div className="relative mb-2">
               <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9] z-10" />
@@ -345,14 +340,13 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             </div>
             
             {selectedAcs === 'Outro' && (
-              <div className="relative animate-in fade-in zoom-in duration-200">
-                <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+              <div className="animate-in fade-in zoom-in duration-200">
                 <Input
                   type="text"
                   value={customAcs}
                   onChange={(e) => setCustomAcs(e.target.value)}
                   placeholder="Digite o nome do ACS"
-                  className="pl-12"
+                  icon={<UserCheck className="w-4 h-4" />}
                 />
               </div>
             )}
@@ -360,22 +354,20 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             {errors.acsName && (
               <p className="text-red-400 text-sm mt-1">{errors.acsName}</p>
             )}
+            </div>
           </div>
 
           {isHomeVisit && (
             <div className="space-y-4 rounded-2xl border border-[#264532] bg-[#122118]/40 p-4">
               <div>
                 <Label className="text-white mb-2 block">Endereço completo *</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
-                  <Input
-                    type="text"
-                    value={homeVisitAddress}
-                    onChange={(e) => setHomeVisitAddress(e.target.value)}
-                    placeholder="Rua, número, bairro e complemento"
-                    className="pl-12"
-                  />
-                </div>
+                <Input
+                  type="text"
+                  value={homeVisitAddress}
+                  onChange={(e) => setHomeVisitAddress(e.target.value)}
+                  placeholder="Rua, número, bairro e complemento"
+                  icon={<MapPin className="w-4 h-4" />}
+                />
                 {errors.homeVisitAddress && (
                   <p className="text-red-400 text-sm mt-1">{errors.homeVisitAddress}</p>
                 )}
@@ -383,16 +375,13 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 
               <div>
                 <Label className="text-white mb-2 block">Ponto de referência</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
-                  <Input
-                    type="text"
-                    value={homeVisitReference}
-                    onChange={(e) => setHomeVisitReference(e.target.value)}
-                    placeholder="Ex.: próximo à escola, portão azul"
-                    className="pl-12"
-                  />
-                </div>
+                <Input
+                  type="text"
+                  value={homeVisitReference}
+                  onChange={(e) => setHomeVisitReference(e.target.value)}
+                  placeholder="Ex.: próximo à escola, portão azul"
+                  icon={<MapPin className="w-4 h-4" />}
+                />
               </div>
 
               <div>
@@ -416,7 +405,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 {/* Removed Telefone UI block */}
 
           {/* Botões */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 sm:pt-2">
             <button
               type="button"
               onClick={onCancel}

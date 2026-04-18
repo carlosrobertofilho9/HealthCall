@@ -142,10 +142,10 @@ export const TemplateList: React.FC<TemplateListProps> = ({
         </div>
 
         <div className="relative group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-[#96c5a9] transition-colors" />
           <Input
             placeholder="Pressione para buscar por título ou tag..."
-            className="pl-10 pr-9 bg-[#264532]/40 border-white/5 text-white placeholder:text-gray-500 focus:bg-[#264532] focus:border-[#96c5a9]/50 focus:ring-[#96c5a9]/20 transition-all h-10 rounded-xl text-sm"
+            icon={<Search className="h-4 w-4" />}
+            className="pr-9 bg-[#264532]/40 border-white/5 text-white placeholder:text-gray-500 focus:bg-[#264532] focus:border-[#96c5a9]/50 focus:ring-[#96c5a9]/20 transition-all h-10 rounded-xl text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />

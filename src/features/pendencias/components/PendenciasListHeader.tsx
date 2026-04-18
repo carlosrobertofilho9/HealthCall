@@ -57,11 +57,11 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-3">
         <div className="relative w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9] h-4 w-4" />
           <Input
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Buscar por nome, CNS/CPF, tipo ou resumo"
+            icon={<Search className="h-4 w-4" />}
             className="h-11 rounded-xl"
           />
         </div>

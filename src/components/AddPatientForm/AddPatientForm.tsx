@@ -58,21 +58,16 @@ const AddPatientForm: React.FC<{
           <Label htmlFor="patient-name" className="text-white font-medium mb-2 block">
             Nome do Paciente
           </Label>
-          <div className="relative">
-             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#96c5a9]">
-                <User size={20} />
-             </div>
-            <Input
-              ref={nameInputRef}
-              id="patient-name"
-              placeholder="Digite o nome do paciente"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="pl-12"
-            />
-          </div>
+          <Input
+            ref={nameInputRef}
+            id="patient-name"
+            placeholder="Digite o nome do paciente"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            icon={<User className="h-4 w-4" />}
+          />
         </div>
         <div>
           <Label htmlFor="destination-room" className="text-white font-medium mb-2 block">

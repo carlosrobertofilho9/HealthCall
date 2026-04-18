@@ -74,24 +74,20 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
         <div className="space-y-3 flex-1">
           {isEditing ? (
             <div className="space-y-3">
-              <div className="relative">
-                <UserRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#96c5a9]/80" />
-                <Input
-                  value={editNomePaciente}
-                  onChange={(event) => onEditNomePacienteChange(event.target.value)}
-                  className="h-10 rounded-xl pl-10 bg-[#1f3a2b]"
-                  placeholder="Nome do paciente"
-                />
-              </div>
-              <div className="relative">
-                <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#96c5a9]/80" />
-                <Input
-                  value={editCnsCpf}
-                  onChange={(event) => onEditCnsCpfChange(event.target.value)}
-                  className="h-10 rounded-xl pl-10 bg-[#1f3a2b] font-semibold"
-                  placeholder="CNS ou CPF"
-                />
-              </div>
+              <Input
+                value={editNomePaciente}
+                onChange={(event) => onEditNomePacienteChange(event.target.value)}
+                className="h-10 rounded-xl bg-[#1f3a2b]"
+                placeholder="Nome do paciente"
+                icon={<UserRound className="h-4 w-4" />}
+              />
+              <Input
+                value={editCnsCpf}
+                onChange={(event) => onEditCnsCpfChange(event.target.value)}
+                className="h-10 rounded-xl bg-[#1f3a2b] font-semibold"
+                placeholder="CNS ou CPF"
+                icon={<IdCard className="h-4 w-4" />}
+              />
 
               <TipoPendenciaSelector
                 options={tipoOptions}

@@ -4,7 +4,7 @@ import type { Patient, PatientStatus } from '@/types';
 import { DESTINATION_ROOMS } from '@/constants';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Input } from '@/components/ui/Input';
-import { Search, Filter, Users, ClipboardList, Printer } from 'lucide-react';
+import { Filter, Users, ClipboardList, Printer, Search } from 'lucide-react';
 import {
   DndContext, 
   closestCenter,
@@ -163,14 +163,14 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
         
         <div className="flex flex-col sm:flex-row gap-3 w-full items-stretch sm:items-center">
           <div className="relative flex-1 group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#96c5a9] transition-colors group-focus-within:text-white" size={18} />
             <Input
               id="search-patient"
               placeholder="Pesquisar paciente..."
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-[#264532]/50 border-white/5 text-white placeholder:text-[#96c5a9]/50 focus:bg-[#264532] focus:border-[#96c5a9]/50 focus:ring-[#96c5a9]/20 transition-all h-11 rounded-xl w-full"
+              icon={<Search className="h-4 w-4" />}
+              className="bg-[#264532]/50 border-white/5 text-white placeholder:text-[#96c5a9]/50 focus:bg-[#264532] focus:border-[#96c5a9]/50 focus:ring-[#96c5a9]/20 transition-all h-11 rounded-xl w-full"
             />
           </div>
           

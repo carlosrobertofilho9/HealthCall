@@ -237,6 +237,7 @@ export const BlockDayModal: React.FC<BlockDayModalProps> = ({
                     value={customReason}
                     onChange={(e) => setCustomReason(e.target.value)}
                     placeholder="Descreva o motivo..."
+                    icon={<FileText className="h-4 w-4" />}
                     className="bg-[#264532] border border-white/5 text-white placeholder:text-gray-400 h-11 rounded-xl"
                     autoFocus
                   />

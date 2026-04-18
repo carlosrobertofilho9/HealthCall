@@ -144,16 +144,14 @@ export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProp
 
           <div>
             <Label className="mb-2 block text-white">Nova data *</Label>
-            <div className="relative">
-              <CalendarClock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#96c5a9]" />
-              <Input
-                type="date"
-                value={dateValue}
-                onChange={(event) => setDateValue(event.target.value)}
-                min={formatDateToISO(new Date())}
-                className="pl-12"
-              />
-            </div>
+            <Input
+              type="date"
+              value={dateValue}
+              onChange={(event) => setDateValue(event.target.value)}
+              min={formatDateToISO(new Date())}
+              className="pl-12"
+              icon={<CalendarClock className="h-4 w-4" />}
+            />
           </div>
 
           <div>

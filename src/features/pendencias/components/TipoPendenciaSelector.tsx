@@ -45,15 +45,13 @@ export const TipoPendenciaSelector: React.FC<TipoPendenciaSelectorProps> = ({
         })}
       </div>
 
-      <div className="relative">
-        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#96c5a9]/80" />
-        <Input
-          value={tipoPersonalizado}
-          onChange={(event) => onChangeTipoPersonalizado(event.target.value)}
-          placeholder={inputPlaceholder}
-          className="h-11 rounded-xl pl-10 bg-[#1f3a2b]"
-        />
-      </div>
+      <Input
+        value={tipoPersonalizado}
+        onChange={(event) => onChangeTipoPersonalizado(event.target.value)}
+        placeholder={inputPlaceholder}
+        icon={<Tag className="h-4 w-4" />}
+        className="h-11 rounded-xl bg-[#1f3a2b]"
+      />
     </>
   );
 };

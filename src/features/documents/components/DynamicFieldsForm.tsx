@@ -367,9 +367,11 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
               </Label>
               
               <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#96c5a9]/40 group-focus-within:text-[#96c5a9] transition-colors pointer-events-none">
-                  {type === 'textarea' ? <div className="mt-[-35px]">{icon}</div> : icon}
-                </div>
+                {type === 'textarea' && (
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#96c5a9]/40 group-focus-within:text-[#96c5a9] transition-colors pointer-events-none">
+                    <div className="mt-[-35px]">{icon}</div>
+                  </div>
+                )}
                 
                 {type === 'textarea' ? (
                   <textarea
@@ -387,7 +389,8 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                     value={value}
                     onChange={(e) => onChange(key, e.target.value)}
                     placeholder={placeholder}
-                    className="rounded-xl border-white/10 bg-[#264532]/30 text-white placeholder:text-gray-500 focus:border-green-500/50 focus:ring-[#96c5a9]/20 h-11 pl-10 transition-all"
+                    icon={icon}
+                    className="rounded-xl border-white/10 bg-[#264532]/30 text-white placeholder:text-gray-500 focus:border-green-500/50 focus:ring-[#96c5a9]/20 h-11 transition-all"
                   />
                 )}
               </div>

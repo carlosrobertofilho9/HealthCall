@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, Loader2, TrendingUp, UserCheck, Users, X, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Loader2, Search, TrendingUp, UserCheck, Users, X, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AppointmentDaySummary } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import useAnimation from '@/hooks/useAnimation';
 import AppointmentsNav from '../components/AppointmentsNav';
 import {
@@ -54,7 +56,12 @@ const WeeklyAppointmentsPage: React.FC = () => {
     setSelectedSummary(null);
   }, [weekStart]);
 
-  const totals = summaries.reduce(
+  const summariesWithService = useMemo(
+    () => summaries.filter(summary => summary.dayConfig.hasService),
+    [summaries]
+  );
+
+  const totals = summariesWithService.reduce(
     (acc, summary) => {
       acc.total += summary.totalSlots;
       acc.occupied += summary.occupiedSlots;
@@ -128,8 +135,8 @@ const WeeklyAppointmentsPage: React.FC = () => {
           <p className="text-[#96c5a9]">Carregando semana...</p>
         </div>
       ) : (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {summaries.map(summary => (
+        <section className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+          {summariesWithService.map(summary => (
             <WeekDayCard
               key={summary.date}
               summary={summary}
@@ -180,12 +187,12 @@ const StatCard = ({
 
 /* ─── Week Day Card ──────────────────────────────────────────────────────── */
 
-const WeekDayCard = ({
-  summary,
-  onOpenDetails,
-}: {
+const WeekDayCard: React.FC<{
   summary: AppointmentDaySummary;
   onOpenDetails: () => void;
+}> = ({
+  summary,
+  onOpenDetails,
 }) => {
   const isHomeVisit = summary.dayConfig.serviceType === 'HOME_VISIT';
   const patientSlots = summary.slots.filter(
@@ -356,6 +363,8 @@ const DayPatientsModal = ({
   onClose: () => void;
 }) => {
   const { shouldRender, isVisible } = useAnimation(isOpen);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedAcs, setSelectedAcs] = useState('ALL');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -370,6 +379,13 @@ const DayPatientsModal = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm('');
+      setSelectedAcs('ALL');
+    }
+  }, [isOpen, summary?.date]);
+
   if (!shouldRender || !summary) {
     return null;
   }
@@ -378,6 +394,27 @@ const DayPatientsModal = ({
   const patientSlots = summary.slots.filter(
     slot => slot.appointment && !isBlockedAppointment(slot.appointment)
   );
+
+  const acsOptions = Array.from(
+    new Set(patientSlots.map(slot => slot.appointment?.acs_name ?? '').filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+  const filteredPatientSlots = patientSlots.filter(slot => {
+    const patientName = slot.appointment?.patient_name ?? '';
+    const documentValue = slot.appointment?.document_value ?? '';
+    const acsName = slot.appointment?.acs_name ?? '';
+
+    const matchesSearch =
+      !normalizedSearchTerm ||
+      patientName.toLowerCase().includes(normalizedSearchTerm) ||
+      documentValue.toLowerCase().includes(normalizedSearchTerm);
+
+    const matchesAcs = selectedAcs === 'ALL' || acsName === selectedAcs;
+
+    return matchesSearch && matchesAcs;
+  });
 
   return (
     <div
@@ -413,9 +450,34 @@ const DayPatientsModal = ({
           </button>
         </header>
 
+        <div className="grid gap-3 border-b border-[#264532] px-5 py-4 sm:grid-cols-2">
+          <Input
+            type="text"
+            value={searchTerm}
+            onChange={event => setSearchTerm(event.target.value)}
+            placeholder="Buscar por nome, CNS ou CPF"
+            icon={<Search className="h-4 w-4" />}
+            className="h-11 rounded-lg bg-[#122118]/50 pr-4"
+          />
+
+          <Select value={selectedAcs} onValueChange={setSelectedAcs}>
+            <SelectTrigger className="h-11 rounded-lg bg-[#122118]/50 pl-4 pr-4">
+              <SelectValue placeholder="Filtrar por agente de saúde" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todos os agentes</SelectItem>
+              {acsOptions.map(acsName => (
+                <SelectItem key={acsName} value={acsName}>
+                  {acsName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="max-h-[70vh] space-y-3 overflow-y-auto px-5 py-4">
-          {patientSlots.length > 0 ? (
-            patientSlots.map(slot => (
+          {filteredPatientSlots.length > 0 ? (
+            filteredPatientSlots.map(slot => (
               <article
                 key={slot.slotNumber}
                 className="rounded-xl border border-[#264532] bg-[#122118]/50 px-4 py-3"
@@ -453,7 +515,7 @@ const DayPatientsModal = ({
           ) : (
             <div className="rounded-xl border border-dashed border-[#264532] py-10 text-center">
               <p className="text-sm text-[#96c5a9]">
-                Nenhum {isHomeVisit ? 'paciente para visita' : 'paciente agendado'} nesse dia.
+                Nenhum {isHomeVisit ? 'paciente para visita' : 'paciente agendado'} com os filtros selecionados.
               </p>
             </div>
           )}
