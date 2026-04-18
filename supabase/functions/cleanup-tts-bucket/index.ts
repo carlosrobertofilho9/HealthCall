@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const STORAGE_BUCKET = 'tts-audio';
+const MAX_FILE_AGE_DAYS = 90;
 
 const corsHeaders = {
 	'Access-Control-Allow-Origin': '*',
@@ -21,8 +22,11 @@ serve(async (req) => {
 			Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 		);
 
-		// 1. List all files in the bucket
-		const { data: files, error: listError } = await supabaseAdmin.storage.from(STORAGE_BUCKET).list();
+		const { data: files, error: listError } = await supabaseAdmin.storage.from(STORAGE_BUCKET).list('', {
+			limit: 1000,
+			offset: 0,
+			sortBy: { column: 'updated_at', order: 'asc' },
+		});
 
 		if (listError) {
 			throw listError;
@@ -35,10 +39,22 @@ serve(async (req) => {
 			});
 		}
 
-		// 2. Extract file names to be deleted
-		const fileNames = files.map((file) => file.name);
+		const cutoff = Date.now() - MAX_FILE_AGE_DAYS * 24 * 60 * 60 * 1000;
+		const fileNames = files
+			.filter((file) => {
+				if (!file.name || file.name.endsWith('/')) return false;
+				const updatedAt = file.updated_at ? new Date(file.updated_at).getTime() : Date.now();
+				return !Number.isNaN(updatedAt) && updatedAt < cutoff;
+			})
+			.map((file) => file.name);
 
-		// 3. Remove all files from the bucket
+		if (fileNames.length === 0) {
+			console.log(`No TTS files older than ${MAX_FILE_AGE_DAYS} days found.`);
+			return new Response(JSON.stringify({ message: 'No old files to delete' }), {
+				headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+			});
+		}
+
 		const { error: removeError } = await supabaseAdmin.storage.from(STORAGE_BUCKET).remove(fileNames);
 
 		if (removeError) {

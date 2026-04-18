@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useWarnings } from '@/features/warnings/hooks/useWarnings';
 import type { Warning } from '@/features/warnings/types';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import { useResolvedWarningMediaUrl } from '@/features/warnings/hooks/useResolvedWarningMediaUrl';
 
 type WarningSnapshot = {
   warningId: string;
@@ -62,6 +63,7 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
       });
   }, [clock, warnings]);
   const current = activeWarnings[index] || null;
+  const resolvedContentUrl = useResolvedWarningMediaUrl(current?.content_url);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -298,14 +300,17 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
       <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]" />
 
       <div className="relative h-full w-full flex items-center justify-center p-6 md:p-10">
-        {current.media_type === 'video' && current.content_url ? (
+        {current.media_type === 'video' && resolvedContentUrl ? (
           <div className="w-full h-full max-w-[1800px] rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/70 shadow-2xl">
             <video
               key={current.id}
               ref={videoRef}
-              src={current.content_url}
+              src={resolvedContentUrl}
               className="w-full h-full object-contain"
               autoPlay
+              preload="auto"
+              playsInline
+              loop={activeWarnings.length === 1}
               onLoadedMetadata={handleVideoLoadedMetadata}
               onCanPlay={resumeVideoPlayback}
               onEnded={moveNext}
@@ -316,11 +321,11 @@ export const WarningPlayer: React.FC<WarningPlayerProps> = ({ enabled, paused, o
               muted={false}
             />
           </div>
-        ) : current.content_url ? (
+        ) : resolvedContentUrl ? (
           <div className="w-full h-full max-w-[1800px] rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/70 shadow-2xl flex items-center justify-center">
             <img
               key={current.id}
-              src={current.content_url}
+              src={resolvedContentUrl}
               alt={current.text || 'Aviso'}
               className="w-full h-full object-contain"
             />

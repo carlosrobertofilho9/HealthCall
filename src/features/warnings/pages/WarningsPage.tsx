@@ -6,6 +6,7 @@ import { WarningForm } from '../components/WarningForm';
 import { useWarnings } from '../hooks/useWarnings';
 import { deleteWarning, updateWarning } from '../services/warningsService';
 import type { Warning } from '../types';
+import { useResolvedWarningMediaUrl } from '../hooks/useResolvedWarningMediaUrl';
 import {
   Megaphone,
   Plus,
@@ -29,6 +30,7 @@ const WarningsPage: React.FC = () => {
   const [selectedWarning, setSelectedWarning] = useState<Warning | null>(null);
 
   const activeWarning = selectedWarning || (warnings.length > 0 ? warnings[0] : null);
+  const resolvedActiveWarningUrl = useResolvedWarningMediaUrl(activeWarning?.content_url);
 
   const handleDelete = async (id: string, contentUrl: string) => {
     if (!confirm('Tem certeza que deseja excluir este aviso?')) return;
@@ -279,22 +281,28 @@ const WarningsPage: React.FC = () => {
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white/5 relative">
             {activeWarning?.content_url ? (
               <div className="flex-1 flex items-center justify-center p-6">
-                {activeWarning.media_type === 'video' ? (
+                {resolvedActiveWarningUrl && activeWarning.media_type === 'video' ? (
                   <video
                     key={activeWarning.id}
-                    src={activeWarning.content_url}
+                    src={resolvedActiveWarningUrl}
                     className="max-w-full max-h-full rounded-xl shadow-2xl"
                     controls
                     muted
+                    preload="metadata"
                     playsInline
                   />
-                ) : (
+                ) : resolvedActiveWarningUrl ? (
                   <img
                     key={activeWarning.id}
-                    src={activeWarning.content_url}
+                    src={resolvedActiveWarningUrl}
                     alt={activeWarning.text}
                     className="max-w-full max-h-full rounded-xl shadow-2xl object-contain"
                   />
+                ) : (
+                  <div className="text-center text-gray-400 max-w-sm">
+                    <p className="font-medium">Mídia local não encontrada neste navegador.</p>
+                    <p className="text-xs mt-2 opacity-70">Reenvie o arquivo neste computador para exibir o aviso.</p>
+                  </div>
                 )}
               </div>
             ) : (

@@ -7,28 +7,11 @@ import { useRef, useCallback } from 'react';
 interface CacheEntry {
   url: string;
   timestamp: number;
-  verified: boolean; // URL foi verificada recentemente
 }
 
 const ttsCache = new Map<string, CacheEntry>();
-const CACHE_EXPIRATION_MS = 3600000; // 1 hora
+const CACHE_EXPIRATION_MS = 24 * 3600000; // 24 horas
 const MAX_CACHE_SIZE = 100;
-
-/**
- * Verifica se uma URL de cache ainda é válida
- */
-async function verifyCacheUrl(url: string): Promise<boolean> {
-  try {
-    // HEAD request para verificar se URL ainda existe
-    const response = await fetch(url, {
-      method: 'HEAD',
-      mode: 'cors',
-    });
-    return response.ok;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Gerencia o cache com expiração e limite de tamanho
@@ -44,19 +27,6 @@ const cacheHelpers = {
       return null;
     }
 
-    // Verifica integridade periodicamente (a cada 5 minutos)
-    const VERIFY_INTERVAL = 300000; // 5 minutos
-    if (!entry.verified || Date.now() - entry.timestamp > VERIFY_INTERVAL) {
-      const isValid = await verifyCacheUrl(entry.url);
-      if (!isValid) {
-        ttsCache.delete(key);
-        return null;
-      }
-
-      entry.verified = true;
-      entry.timestamp = Date.now(); // Atualiza timestamp após verificação
-    }
-
     return entry.url;
   },
 
@@ -70,7 +40,7 @@ const cacheHelpers = {
       }
     }
 
-    ttsCache.set(key, { url, timestamp: Date.now(), verified: false });
+    ttsCache.set(key, { url, timestamp: Date.now() });
   },
 
   clear() {
@@ -261,7 +231,9 @@ export function useTextToSpeech() {
         speechAudio.onwaiting = null;
 
         speechAudio.src = '';
-        speechAudio.load();
+        if (speechAudio.load) {
+          speechAudio.load();
+        }
 
         if (speechAudio.remove) {
           speechAudio.remove();

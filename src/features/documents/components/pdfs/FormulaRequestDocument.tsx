@@ -4,8 +4,7 @@ import { HeaderIcon, BaseDocument, type DocumentFormData } from './PdfCommon';
 
 const s = StyleSheet.create({
   container: { 
-    height: '100%',
-    display: 'flex',
+    flex: 1,
     flexDirection: 'column',
   },
   badge: {

@@ -1,5 +1,12 @@
 import { supabase } from '@/lib/supabaseClient';
 import { Warning, CreateWarningDTO, UpdateWarningDTO } from '../types';
+import {
+  cacheRemoteWarningMedia,
+  deleteLocalWarningMedia,
+  isLocalWarningMediaUrl,
+} from './localWarningMedia';
+
+const WARNING_MEDIA_CACHE_CONTROL_SECONDS = '31536000';
 
 export const getWarnings = async (): Promise<Warning[]> => {
   const { data, error } = await supabase
@@ -47,16 +54,16 @@ export const updateWarning = async (warning: UpdateWarningDTO): Promise<Warning>
   return data;
 };
 
-export const deleteWarning = async (id: string, contentUrl: string): Promise<void> => {
-  // Delete the record first
-  const { error: dbError } = await supabase
-    .from('warnings')
-    .delete()
-    .eq('id', id);
+export const deleteWarningMedia = async (contentUrl?: string | null): Promise<void> => {
+  if (!contentUrl) return;
+  if (isLocalWarningMediaUrl(contentUrl)) {
+    await deleteLocalWarningMedia(contentUrl);
+    return;
+  }
 
-  if (dbError) throw dbError;
+  await deleteLocalWarningMedia(contentUrl).catch(() => undefined);
 
-  // Attempt to delete the file from storage
+  // Attempt to delete the Supabase Storage file.
   try {
     const fileName = contentUrl.split('/').pop();
     if (fileName) {
@@ -67,6 +74,18 @@ export const deleteWarning = async (id: string, contentUrl: string): Promise<voi
   }
 };
 
+export const deleteWarning = async (id: string, contentUrl: string): Promise<void> => {
+  // Delete the record first
+  const { error: dbError } = await supabase
+    .from('warnings')
+    .delete()
+    .eq('id', id);
+
+  if (dbError) throw dbError;
+
+  await deleteWarningMedia(contentUrl);
+};
+
 export const uploadMedia = async (file: File): Promise<string> => {
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -74,10 +93,15 @@ export const uploadMedia = async (file: File): Promise<string> => {
 
   const { error: uploadError } = await supabase.storage
     .from('warnings')
-    .upload(filePath, file);
+    .upload(filePath, file, {
+      cacheControl: WARNING_MEDIA_CACHE_CONTROL_SECONDS,
+      contentType: file.type || undefined,
+    });
 
   if (uploadError) throw uploadError;
 
   const { data } = supabase.storage.from('warnings').getPublicUrl(filePath);
+  await cacheRemoteWarningMedia(data.publicUrl, file, file.name).catch(() => undefined);
+
   return data.publicUrl;
 };

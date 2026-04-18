@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarDays, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useAppointments } from '../hooks/useAppointments';
 import DateSelector from '../components/DateSelector';
 import SlotsList from '../components/SlotsList';
@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/Input';
 import { blockDay } from '../services/appointmentService';
 import { BlockDayModal } from '../components/BlockDayModal';
+import AppointmentsNav from '../components/AppointmentsNav';
 
 /**
  * Página de Marcações do PSF (Estratégia de Saúde da Família).
@@ -144,10 +145,8 @@ const AppointmentsPage: React.FC = () => {
         slotStats={slotStats}
       />
 
-      {/* Título da página (oculto na impressão) */}
-      <div className="flex items-center gap-3 mb-6 print:hidden">
-        <CalendarDays className="w-8 h-8 text-primary" />
-        <h1 className="text-2xl font-bold text-white">Marcações</h1>
+      <div className="mb-6">
+        <AppointmentsNav />
       </div>
 
       {/* Seletor de data */}

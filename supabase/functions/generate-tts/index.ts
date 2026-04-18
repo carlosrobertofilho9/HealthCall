@@ -3,10 +3,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { crypto } from 'https://deno.land/std@0.159.0/crypto/mod.ts';
 
 const STORAGE_BUCKET = 'tts-audio';
+const AUDIO_CACHE_CONTROL_SECONDS = '31536000';
 
 const corsHeaders = {
 	'Access-Control-Allow-Origin': '*',
 	'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const jsonHeaders = {
+	...corsHeaders,
+	'Content-Type': 'application/json',
+	'Cache-Control': 'public, max-age=300',
 };
 
 // Função que busca o áudio do Google Translate
@@ -56,7 +63,7 @@ serve(async (req) => {
 		if (fileList && fileList.length > 0) {
 			const { data: publicUrlData } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
 			return new Response(JSON.stringify({ speechUrl: publicUrlData.publicUrl }), {
-				headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+				headers: jsonHeaders,
 			});
 		}
 
@@ -66,7 +73,11 @@ serve(async (req) => {
 		// Salva o novo áudio no Supabase Storage
 		const { error: uploadError } = await supabaseAdmin.storage
 			.from(STORAGE_BUCKET)
-			.upload(fileName, audioBuffer, { contentType: 'audio/mpeg', upsert: true });
+			.upload(fileName, audioBuffer, {
+				contentType: 'audio/mpeg',
+				cacheControl: AUDIO_CACHE_CONTROL_SECONDS,
+				upsert: true,
+			});
 
 		if (uploadError) throw uploadError;
 
@@ -74,13 +85,13 @@ serve(async (req) => {
 		const { data: publicUrlData } = supabaseAdmin.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
 
 		return new Response(JSON.stringify({ speechUrl: publicUrlData.publicUrl }), {
-			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+			headers: jsonHeaders,
 		});
 	} catch (error) {
 		console.error('Error in generate-tts function:', error);
 		return new Response(JSON.stringify({ error: error.message }), {
 			status: 500,
-			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+			headers: jsonHeaders,
 		});
 	}
 });

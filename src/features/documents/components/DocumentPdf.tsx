@@ -13,6 +13,8 @@ import { InjectableMedDocument } from './pdfs/InjectableMedDocument';
 import { StandardDocument } from './pdfs/StandardDocument';
 import { PendingItemsDocument } from './pdfs/PendingItemsDocument';
 import { CapaCadernetaDocument } from './pdfs/CapaCadernetaDocument';
+import { HASLifestyleDocument } from './pdfs/HASLifestyleDocument';
+import { DressingRequestDocument } from './pdfs/DressingRequestDocument';
 
 /** Estrutura para itens de pendência */
 export interface PendingItem {
@@ -123,7 +125,7 @@ function extractFormData(values: Record<string, string>): DocumentFormData {
 
 // Mapeamento de títulos para componentes especializados
 const specialDocuments: Record<string, {
-  component: React.FC<{ visibleParagraphs: string[]; photoUrl?: string; formulaItems?: FormulaItem[]; formData?: DocumentFormData }>;
+  component: React.FC<{ visibleParagraphs: string[]; photoUrl?: string; formulaItems?: FormulaItem[]; formData?: DocumentFormData; values?: Record<string, string> }>;
   landscape?: boolean;
   multiPage?: boolean;
 }> = {
@@ -136,8 +138,10 @@ const specialDocuments: Record<string, {
   'Termo de Administração de Medicamento / Vacina': { component: AdverseReactionDocument, multiPage: true },
   'Relatório de Medicação Injetável': { component: InjectableMedDocument, multiPage: true },
   'Solicitação de Fórmula Láctea': { component: FormulaRequestDocument },
+  'Solicitação de Curativo': { component: DressingRequestDocument },
   'Folha de Pendências': { component: PendingItemsDocument },
   'Capa de Caderneta': { component: CapaCadernetaDocument as any, landscape: true },
+  'Guia de Estilo de Vida (HAS)': { component: HASLifestyleDocument as any },
 };
 
 export const DocumentPdf: React.FC<DocumentPdfProps> = ({ title, templateText, values }) => {
@@ -167,13 +171,14 @@ export const DocumentPdf: React.FC<DocumentPdfProps> = ({ title, templateText, v
 
   return (
     <Document>
-      <Page size="A4" orientation={orientation} wrap={specialDoc?.multiPage || false}>
+      <Page size="A4" orientation={orientation}>
         {specialDoc ? (
           <specialDoc.component
             visibleParagraphs={visibleParagraphs}
             photoUrl={photoUrl}
             formulaItems={formulaItems}
             formData={formData}
+            values={values}
           />
         ) : (
           <StandardDocument title={title} visibleParagraphs={visibleParagraphs} />

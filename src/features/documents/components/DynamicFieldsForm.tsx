@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Label } from '@/components/ui/Label';
 import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
@@ -12,6 +12,14 @@ interface DynamicFieldsFormProps {
   onChange: (key: string, value: string) => void;
   templateId?: string;
 }
+
+const getTodayInputDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 // --- Componente para campo de lista de itens (fórmulas, etc.) ---
 interface ItemListFieldProps {
@@ -141,6 +149,16 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
     const extras = templateId ? (extraFieldsByTemplate[templateId] || []) : [];
     return [...templateKeys, ...extras];
   }, [templateText, templateId]);
+
+  useEffect(() => {
+    if (
+      templateId === 'solicitacao_curativo' &&
+      keys.includes('DATA_SOLICITACAO_CURATIVO') &&
+      !values.DATA_SOLICITACAO_CURATIVO
+    ) {
+      onChange('DATA_SOLICITACAO_CURATIVO', getTodayInputDate());
+    }
+  }, [keys, onChange, templateId, values.DATA_SOLICITACAO_CURATIVO]);
 
   // Função para transformar CHAVE_COM_UNDERSCORE em "Chave Com Underscore"
   const humanizeKey = (key: string) => {

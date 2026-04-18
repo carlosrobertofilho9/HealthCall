@@ -66,6 +66,25 @@ export type AppointmentSlot = {
 };
 
 /**
+ * Resumo operacional de um dia de agenda.
+ */
+export type AppointmentDaySummary = {
+	date: string;
+	dateObj: Date;
+	dayConfig: DayScheduleConfig;
+	appointments: Appointment[];
+	slots: AppointmentSlot[];
+	totalSlots: number;
+	occupiedSlots: number;
+	availableSlots: number;
+	blockedSlots: number;
+	reserveSlots: number;
+	reserveOccupiedSlots: number;
+	normalOccupiedSlots: number;
+	occupancyRate: number;
+};
+
+/**
  * Configuração da grade de atendimento por dia da semana
  * 0 = Domingo, 1 = Segunda, 2 = Terça, etc.
  */

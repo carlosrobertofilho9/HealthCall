@@ -94,7 +94,7 @@ describe('useTextToSpeech', () => {
       expect(supabase.functions.invoke).toHaveBeenCalledTimes(3); // 3 tentativas
     });
 
-    it('deve expirar cache após 1 hora', async () => {
+    it('deve expirar cache após 24 horas', async () => {
       const mockUrl = 'https://example.com/audio.mp3';
       vi.mocked(supabase.functions.invoke).mockResolvedValue({
         data: { speechUrl: mockUrl },
@@ -107,15 +107,17 @@ describe('useTextToSpeech', () => {
       await result.current.preloadTTS('teste');
       expect(supabase.functions.invoke).toHaveBeenCalledTimes(1);
 
-      // Avança o tempo em 1 hora + 1ms
-      vi.useFakeTimers();
-      vi.advanceTimersByTime(3600000 + 1);
+      try {
+        // Avança o tempo em 24 horas + 1ms
+        vi.useFakeTimers();
+        vi.advanceTimersByTime(24 * 3600000 + 1);
 
-      // Segunda chamada deve gerar novo áudio (cache expirado)
-      await result.current.preloadTTS('teste');
-      expect(supabase.functions.invoke).toHaveBeenCalledTimes(2);
-
-      vi.useRealTimers();
+        // Segunda chamada deve gerar novo áudio (cache expirado)
+        await result.current.preloadTTS('teste');
+        expect(supabase.functions.invoke).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('deve respeitar limite de 100 itens no cache', async () => {
@@ -369,7 +371,7 @@ describe('useTextToSpeech', () => {
       const { result } = renderHook(() => useTextToSpeech());
 
       // Não deve executar código malicioso
-      await result.current.speak('teste');
+      await expect(result.current.speak('teste')).rejects.toThrow();
     });
   });
 });

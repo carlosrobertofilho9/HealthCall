@@ -267,7 +267,7 @@ describe('useTextToSpeech - Testes Simplificados', () => {
   });
 
   describe('Validação de Cache', () => {
-    it('deve validar URLs de cache periodicamente', async () => {
+    it('deve reutilizar URLs em cache sem requisição HEAD', async () => {
       const mockUrl = 'https://example.com/audio.mp3';
 
       // Primeira chamada - adiciona ao cache
@@ -296,8 +296,8 @@ describe('useTextToSpeech - Testes Simplificados', () => {
       // Apenas 1 chamada ao Supabase
       expect(supabase.functions.invoke).toHaveBeenCalledTimes(1);
 
-      // Fetch pode ter sido chamado para verificação
-      expect(global.fetch).toHaveBeenCalled();
+      // Não faz HEAD/fetch para validar URL pública e estável.
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 });

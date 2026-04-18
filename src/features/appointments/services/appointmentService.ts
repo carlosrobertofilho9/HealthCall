@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
-import type { Appointment, CreateAppointmentData, AppointmentSlot, DayScheduleConfig } from '@/types';
+import type { Appointment, AppointmentDaySummary, CreateAppointmentData, AppointmentSlot, DayScheduleConfig } from '@/types';
 
 // =============================================================================
 // Configuração da Grade de Atendimento
@@ -195,6 +195,36 @@ export async function getAppointmentsByDate(date: string): Promise<Appointment[]
 }
 
 /**
+ * Busca marcações em um intervalo fechado de datas.
+ * @param startDate - Data inicial no formato YYYY-MM-DD
+ * @param endDate - Data final no formato YYYY-MM-DD
+ */
+export async function getAppointmentsByDateRange(
+  startDate: string,
+  endDate: string
+): Promise<Appointment[]> {
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .gte('scheduled_date', startDate)
+      .lte('scheduled_date', endDate)
+      .order('scheduled_date', { ascending: true })
+      .order('slot_number', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao buscar marcações por intervalo:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Exceção em getAppointmentsByDateRange:', error);
+    throw error;
+  }
+}
+
+/**
  * Cria uma nova marcação.
  * @param appointmentData - Os dados da marcação
  * @returns A marcação criada ou null em caso de erro
@@ -376,6 +406,71 @@ export function formatDateForDisplay(date: Date): string {
 export function parseISODate(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number);
   return new Date(year, month - 1, day);
+}
+
+export function isBlockedAppointment(appointment: Appointment | null | undefined): boolean {
+  return appointment?.document_value === 'BLOQUEIO';
+}
+
+export function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+export function getWeekStart(date: Date): Date {
+  const start = new Date(date);
+  const day = start.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  start.setDate(start.getDate() + diff);
+  start.setHours(0, 0, 0, 0);
+  return start;
+}
+
+export function getWeekDates(date: Date): Date[] {
+  const start = getWeekStart(date);
+  return Array.from({ length: 7 }, (_, index) => addDays(start, index));
+}
+
+export function buildDaySummary(date: Date, appointments: Appointment[]): AppointmentDaySummary {
+  const dateStr = formatDateToISO(date);
+  const dayAppointments = appointments.filter(appointment => appointment.scheduled_date === dateStr);
+  const slots = generateSlotsForDate(date, dayAppointments);
+  const occupiedSlots = slots.filter(slot => slot.appointment).length;
+  const blockedSlots = slots.filter(slot => isBlockedAppointment(slot.appointment)).length;
+  const reserveSlots = slots.filter(slot => slot.isReserve).length;
+  const reserveOccupiedSlots = slots.filter(slot => slot.isReserve && slot.appointment && !isBlockedAppointment(slot.appointment)).length;
+  const normalOccupiedSlots = slots.filter(slot => !slot.isReserve && slot.appointment && !isBlockedAppointment(slot.appointment)).length;
+  const totalSlots = slots.length;
+
+  return {
+    date: dateStr,
+    dateObj: date,
+    dayConfig: getDayConfig(date),
+    appointments: dayAppointments,
+    slots,
+    totalSlots,
+    occupiedSlots,
+    availableSlots: totalSlots - occupiedSlots,
+    blockedSlots,
+    reserveSlots,
+    reserveOccupiedSlots,
+    normalOccupiedSlots,
+    occupancyRate: totalSlots > 0 ? Math.round((occupiedSlots / totalSlots) * 100) : 0,
+  };
+}
+
+export async function getAppointmentSummariesForDates(dates: Date[]): Promise<AppointmentDaySummary[]> {
+  if (dates.length === 0) {
+    return [];
+  }
+
+  const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
+  const startDate = formatDateToISO(sortedDates[0]);
+  const endDate = formatDateToISO(sortedDates[sortedDates.length - 1]);
+  const appointments = await getAppointmentsByDateRange(startDate, endDate);
+
+  return dates.map(date => buildDaySummary(date, appointments));
 }
 
 /**

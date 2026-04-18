@@ -9,8 +9,15 @@ import {
   Baby,
   ClipboardList,
   Book,
+  Salad,
   LucideIcon
 } from 'lucide-react';
+
+export type TemplateCategory = 
+  | 'Monitoramento' 
+  | 'Protocolos e Termos' 
+  | 'Administrativo' 
+  | 'Orientações e Capas';
 
 export interface Template {
   id: string;
@@ -18,13 +25,18 @@ export interface Template {
   description?: string;
   templateText: string;
   icon?: LucideIcon;
+  category: TemplateCategory;
+  tags?: string[];
 }
 
 export const mockTemplates: Template[] = [
+  // --- MONITORAMENTO ---
   {
     id: 'controle_glicemico',
     title: 'Controle Glicêmico',
+    category: 'Monitoramento',
     description: 'Tabela para acompanhamento diário das taxas glicêmicas.',
+    tags: ['diabetes', 'hgt', 'glicemia', 'insulina'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: Activity
@@ -32,7 +44,9 @@ CNS ou CPF: {{CNS_CPF}}`,
   {
     id: 'controle_pressao',
     title: 'Controle de Pressão Arterial (MAPA)',
+    category: 'Monitoramento',
     description: 'Tabela para monitoramento ambulatorial da pressão arterial (manhã, tarde e noite).',
+    tags: ['hipertensão', 'has', 'pressão', 'mapa', 'mrpa'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: HeartPulse
@@ -40,15 +54,21 @@ CNS ou CPF: {{CNS_CPF}}`,
   {
     id: 'ficha_curativos',
     title: 'Ficha de Evolução de Curativos',
-    description: 'Ficha para acompanhamento de feridas crônicas com registro fotográfico, medidas da lesão e coberturas.',
+    category: 'Monitoramento',
+    description: 'Ficha para acompanhamento de feridas crônicas com registro fotográfico e medidas.',
+    tags: ['ferida', 'curativo', 'enfermagem', 'lesão'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: Bandage
   },
+
+  // --- PROTOCOLOS E TERMOS ---
   {
     id: 'lavagem_ouvido',
     title: 'Protocolo de Lavagem de Ouvido',
-    description: 'Protocolo completo com contraindicações, descrição técnica, riscos, termo de consentimento e orientações.',
+    category: 'Protocolos e Termos',
+    description: 'Protocolo completo com contraindicações, técnica e termo de consentimento.',
+    tags: ['ouvido', 'cerume', 'limpeza', 'otoscopia'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: Ear
@@ -56,7 +76,9 @@ CNS ou CPF: {{CNS_CPF}}`,
   {
     id: 'protocolo_procedimento',
     title: 'Protocolo de Procedimento',
-    description: 'Termo de consentimento e orientações para sutura, cantoplastia, drenagem de abscesso e outros procedimentos.',
+    category: 'Protocolos e Termos',
+    description: 'Termo de consentimento e orientações para suturas e pequenas cirurgias.',
+    tags: ['sutura', 'cirurgia', 'procedimento', 'biópsia'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: Stethoscope
@@ -64,7 +86,9 @@ CNS ou CPF: {{CNS_CPF}}`,
   {
     id: 'reacao_adversa',
     title: 'Termo de Administração de Medicamento / Vacina',
-    description: 'Termo de administração de medicamento/vacina com registro de possíveis reações adversas.',
+    category: 'Protocolos e Termos',
+    description: 'Termo com registro de possíveis reações adversas pós-administração.',
+    tags: ['vacina', 'reação', 'alergia', 'anafilaxia'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: ShieldAlert
@@ -72,31 +96,63 @@ CNS ou CPF: {{CNS_CPF}}`,
   {
     id: 'medicacao_injetavel',
     title: 'Relatório de Medicação Injetável',
-    description: 'Comprovante de administração de medicação injetável com dados do medicamento e profissional.',
+    category: 'Protocolos e Termos',
+    description: 'Comprovante de administração de medicação injetável.',
+    tags: ['injeção', 'im', 'ev', 'medicação'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
     icon: Syringe
   },
+
+  // --- ADMINISTRATIVO ---
   {
     id: 'formula_lactea',
     title: 'Solicitação de Fórmula Láctea',
-    description: 'Solicitação de fórmulas lácteas (Aptamil e outras) com quantidades.',
+    category: 'Administrativo',
+    description: 'Solicitação de fórmulas infantis especiais com quantidades.',
+    tags: ['leite', 'bebê', 'nutrição', 'puericultura'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}`,
     icon: Baby
   },
   {
+    id: 'solicitacao_curativo',
+    title: 'Solicitação de Curativo',
+    category: 'Administrativo',
+    description: 'Solicitação de materiais para curativo com seleção por checkboxes.',
+    tags: ['curativo', 'materiais', 'ferida', 'enfermagem', 'almoxarifado'],
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Bandage
+  },
+  {
     id: 'folha_pendencias',
     title: 'Folha de Pendências',
-    description: 'Folha para registro de até 4 pendências da semana (encaminhamentos, laudos, etc) de pacientes diferentes.',
+    category: 'Administrativo',
+    description: 'Registro de pendências semanais (encaminhamentos, laudos, etc).',
+    tags: ['organização', 'administrativo', 'secretaria', 'espera'],
     templateText: ``,
     icon: ClipboardList
   },
+
+  // --- ORIENTAÇÕES E CAPAS ---
   {
     id: 'capa_caderneta',
     title: 'Capa de Caderneta',
-    description: 'Capa da caderneta com selos de receita opcionais. Preenchida horizontalmente.',
+    category: 'Orientações e Capas',
+    description: 'Capa da caderneta com selos de receita opcionais.',
+    tags: ['capa', 'identificação', 'receita', 'paciente'],
     templateText: ``,
     icon: Book
+  },
+  {
+    id: 'has_lifestyle',
+    title: 'Guia de Estilo de Vida (HAS)',
+    category: 'Orientações e Capas',
+    description: 'Orientações educativas sobre peso, dieta e exercícios para hipertensos.',
+    tags: ['educação', 'hipertensão', 'dieta', 'exercício', 'lifestyle'],
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: Salad
   }
 ];
 
@@ -150,6 +206,28 @@ export const fieldHints: Record<string, FieldHint> = {
 
   // --- Fórmula Láctea ---
   FORMULA_ITEMS: { label: 'Fórmulas Solicitadas', type: 'item-list' },
+
+  // --- Solicitação de Curativo ---
+  MATERIAL_CURATIVO_GAZE: { label: 'Gaze estéril', type: 'checkbox' },
+  MATERIAL_CURATIVO_MICROPORE: { label: 'Micropore', type: 'checkbox' },
+  MATERIAL_CURATIVO_ALGODAO: { label: 'Algodão', type: 'checkbox' },
+  MATERIAL_CURATIVO_LUVAS: { label: 'Luvas de procedimento', type: 'checkbox' },
+  MATERIAL_CURATIVO_SORO: { label: 'Soro fisiológico 0,9%', type: 'checkbox' },
+  MATERIAL_CURATIVO_ATADURA: { label: 'Atadura de crepe', type: 'checkbox' },
+  MATERIAL_CURATIVO_ESPARADRAPO: { label: 'Esparadrapo', type: 'checkbox' },
+  MATERIAL_CURATIVO_COMPRESSA: { label: 'Compressa estéril', type: 'checkbox' },
+  MATERIAL_CURATIVO_MASCARA: { label: 'Máscara cirúrgica', type: 'checkbox' },
+  MATERIAL_CURATIVO_CLOREXIDINA: { label: 'Clorexidina aquosa', type: 'checkbox' },
+  MATERIAL_CURATIVO_PVPI: { label: 'PVPI tópico', type: 'checkbox' },
+  MATERIAL_CURATIVO_ALCOOL_70: { label: 'Álcool 70%', type: 'checkbox' },
+  MATERIAL_CURATIVO_HIDROGEL: { label: 'Hidrogel', type: 'checkbox' },
+  MATERIAL_CURATIVO_AGE: { label: 'AGE / óleo de girassol', type: 'checkbox' },
+  MATERIAL_CURATIVO_ALGINATO: { label: 'Alginato de cálcio', type: 'checkbox' },
+  MATERIAL_CURATIVO_RAYON: { label: 'Rayon / gaze não aderente', type: 'checkbox' },
+  MATERIAL_CURATIVO_OUTROS: { label: 'Outros materiais', type: 'checkbox' },
+  DATA_SOLICITACAO_CURATIVO: { label: 'Data da Solicitação', type: 'date', placeholder: 'dd/mm/aaaa' },
+  OUTROS_MATERIAIS_CURATIVO: { label: 'Quais outros materiais?', type: 'textarea', placeholder: 'Descreva outros materiais necessários...' },
+  OBSERVACOES_CURATIVO: { label: 'Observações da solicitação', type: 'textarea', placeholder: 'Ex: frequência de troca, quantidade estimada ou justificativa clínica...' },
 
   // --- Folha de Pendências ---
   // Pendência 1
@@ -236,6 +314,17 @@ export const extraFieldsByTemplate: Record<string, string[]> = {
     'MEDICO_PRESCRITOR', 'PROFISSIONAL', 'CRM_COREN',
   ],
   formula_lactea: ['FORMULA_ITEMS'],
+  solicitacao_curativo: [
+    'DATA_SOLICITACAO_CURATIVO',
+    'MATERIAL_CURATIVO_GAZE', 'MATERIAL_CURATIVO_MICROPORE', 'MATERIAL_CURATIVO_ALGODAO',
+    'MATERIAL_CURATIVO_LUVAS', 'MATERIAL_CURATIVO_SORO', 'MATERIAL_CURATIVO_ATADURA',
+    'MATERIAL_CURATIVO_ESPARADRAPO', 'MATERIAL_CURATIVO_COMPRESSA', 'MATERIAL_CURATIVO_MASCARA',
+    'MATERIAL_CURATIVO_CLOREXIDINA', 'MATERIAL_CURATIVO_PVPI', 'MATERIAL_CURATIVO_ALCOOL_70',
+    'MATERIAL_CURATIVO_HIDROGEL', 'MATERIAL_CURATIVO_AGE', 'MATERIAL_CURATIVO_ALGINATO',
+    'MATERIAL_CURATIVO_RAYON', 'MATERIAL_CURATIVO_OUTROS',
+    'OUTROS_MATERIAIS_CURATIVO', 'OBSERVACOES_CURATIVO',
+    'PROFISSIONAL', 'CRM_COREN',
+  ],
   folha_pendencias: [
     'NOME_PACIENTE_1', 'CNS_CPF_1', 'TIPO_PENDENCIA_1', 'RESUMO_PENDENCIA_1',
     'NOME_PACIENTE_2', 'CNS_CPF_2', 'TIPO_PENDENCIA_2', 'RESUMO_PENDENCIA_2',

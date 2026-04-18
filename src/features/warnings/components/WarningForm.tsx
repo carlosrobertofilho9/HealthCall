@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { createWarning, updateWarning, uploadMedia } from '../services/warningsService';
+import { createWarning, deleteWarningMedia, updateWarning, uploadMedia } from '../services/warningsService';
 import type { CreateWarningDTO, MediaType, UpdateWarningDTO, Warning } from '../types';
+import { useResolvedWarningMediaUrl } from '../hooks/useResolvedWarningMediaUrl';
 
 interface WarningFormProps {
   onSuccess: () => void;
   onCancel: () => void;
   initialData?: Warning;
 }
+
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_SIZE_BYTES = 50 * 1024 * 1024;
 
 function formatTimeForInput(timeValue?: string | null): string {
   return timeValue ? timeValue.slice(0, 5) : '';
@@ -19,6 +23,7 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(initialData?.content_url || null);
+  const resolvedPreview = useResolvedWarningMediaUrl(preview);
   const [formData, setFormData] = useState<Partial<CreateWarningDTO>>({
     text: initialData?.text || '',
     media_type: initialData?.media_type || 'image',
@@ -35,10 +40,18 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
     const selectedFile = event.target.files?.[0];
     if (!selectedFile) return;
 
+    const isVideo = selectedFile.type.startsWith('video/');
+    const sizeLimit = isVideo ? MAX_VIDEO_SIZE_BYTES : MAX_IMAGE_SIZE_BYTES;
+    if (selectedFile.size > sizeLimit) {
+      toast.error(`O arquivo deve ter no máximo ${isVideo ? '50MB' : '5MB'}.`);
+      event.target.value = '';
+      return;
+    }
+
     setFile(selectedFile);
     setFormData((previous) => ({
       ...previous,
-      media_type: selectedFile.type.startsWith('video/') ? 'video' : 'image',
+      media_type: isVideo ? 'video' : 'image',
     }));
     setPreview(URL.createObjectURL(selectedFile));
   };
@@ -80,6 +93,9 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
         };
 
         await updateWarning(payload);
+        if (file && initialData.content_url && initialData.content_url !== contentUrl) {
+          await deleteWarningMedia(initialData.content_url).catch(() => undefined);
+        }
         toast.success('Aviso atualizado com sucesso!');
       } else {
         const payload: CreateWarningDTO = {
@@ -210,17 +226,21 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
           <div className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center hover:border-[#96c5a9]/40 transition-colors cursor-pointer relative bg-[#264532]/10">
             <input
               type="file"
-              accept={formData.media_type === 'video' ? 'video/*' : 'image/*'}
+              accept={formData.media_type === 'video' ? '.mp4,.webm,.ogg,.mov' : '.jpg,.jpeg,.png,.webp,.gif'}
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
 
             {preview ? (
               <div className="relative">
-                {formData.media_type === 'video' ? (
-                  <video src={preview} className="max-h-48 mx-auto rounded shadow-lg" controls />
+                {resolvedPreview ? (
+                  formData.media_type === 'video' ? (
+                    <video src={resolvedPreview} className="max-h-48 mx-auto rounded shadow-lg" controls preload="metadata" />
+                  ) : (
+                    <img src={resolvedPreview} alt="Preview" className="max-h-48 mx-auto rounded shadow-lg" />
+                  )
                 ) : (
-                  <img src={preview} alt="Preview" className="max-h-48 mx-auto rounded shadow-lg" />
+                  <p className="text-sm text-gray-400">Mídia local não encontrada neste navegador.</p>
                 )}
                 {file && <p className="mt-2 text-sm text-green-400 font-semibold">{file.name}</p>}
                 <p className="text-xs text-gray-500 mt-1">Clique para alterar</p>
@@ -229,7 +249,9 @@ export const WarningForm: React.FC<WarningFormProps> = ({ onSuccess, onCancel, i
               <div className="flex flex-col items-center text-gray-400">
                 <span className="material-symbols-outlined text-4xl mb-2">cloud_upload</span>
                 <p>Clique ou arraste para fazer upload</p>
-                <p className="text-xs mt-1 text-gray-500">Suporta arquivos de imagem e vídeo</p>
+                <p className="text-xs mt-1 text-gray-500">
+                  {formData.media_type === 'video' ? 'Vídeos até 50MB' : 'Imagens até 5MB'}
+                </p>
               </div>
             )}
           </div>
