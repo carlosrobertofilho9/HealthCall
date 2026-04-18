@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, Loader2, UserCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Loader2, TrendingUp, UserCheck, Users, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AppointmentDaySummary } from '@/types';
 import { Button } from '@/components/ui/Button';
@@ -18,8 +18,10 @@ const formatShortDate = (date: Date) =>
 
 const formatWeekRange = (dates: Date[]) => {
   const first = dates[0].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
-  const last = dates[dates.length - 1].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '');
-  return `${first} a ${last}`;
+  const last = dates[dates.length - 1]
+    .toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+    .replace('.', '');
+  return `${first} – ${last}`;
 };
 
 const WeeklyAppointmentsPage: React.FC = () => {
@@ -57,6 +59,8 @@ const WeeklyAppointmentsPage: React.FC = () => {
     { total: 0, occupied: 0, available: 0, blocked: 0 }
   );
 
+  const weekOccupancy = totals.total > 0 ? Math.round((totals.occupied / totals.total) * 100) : 0;
+
   const goToPreviousWeek = () => setWeekStart(prev => addDays(prev, -7));
   const goToNextWeek = () => setWeekStart(prev => addDays(prev, 7));
   const goToCurrentWeek = () => setWeekStart(getWeekStart(new Date()));
@@ -65,6 +69,7 @@ const WeeklyAppointmentsPage: React.FC = () => {
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <AppointmentsNav />
 
+      {/* Week Header */}
       <section className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -87,21 +92,37 @@ const WeeklyAppointmentsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Stat label="Vagas" value={totals.total} />
-          <Stat label="Ocupadas" value={totals.occupied} highlight />
-          <Stat label="Disponíveis" value={totals.available} tone="blue" />
-          <Stat label="Bloqueios" value={totals.blocked} tone="red" />
+        {/* Overall occupancy bar */}
+        <div className="mt-5">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-[#96c5a9]">
+            <span>Ocupação da semana</span>
+            <span className="font-bold text-white">{weekOccupancy}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-[#264532]">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${weekOccupancy}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Summary stats */}
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard icon={<Users className="h-4 w-4" />} label="Total de vagas" value={totals.total} />
+          <StatCard icon={<UserCheck className="h-4 w-4" />} label="Ocupadas" value={totals.occupied} accent="green" />
+          <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Disponíveis" value={totals.available} accent="blue" />
+          <StatCard icon={<XCircle className="h-4 w-4" />} label="Bloqueadas" value={totals.blocked} accent="red" />
         </div>
       </section>
 
+      {/* Day cards */}
       {isLoading ? (
         <div className="rounded-2xl bg-[#1a3a26] p-12 text-center">
           <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-primary" />
           <p className="text-[#96c5a9]">Carregando semana...</p>
         </div>
       ) : (
-        <section className="grid gap-4 lg:grid-cols-5">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {summaries.map(summary => (
             <WeekDayCard key={summary.date} summary={summary} />
           ))}
@@ -111,96 +132,166 @@ const WeeklyAppointmentsPage: React.FC = () => {
   );
 };
 
-const Stat = ({
+/* ─── Stat Card ─────────────────────────────────────────────────────────── */
+
+const accentColors = {
+  green: { value: 'text-primary', icon: 'text-primary' },
+  blue: { value: 'text-blue-300', icon: 'text-blue-300' },
+  red: { value: 'text-red-300', icon: 'text-red-300' },
+};
+
+const StatCard = ({
+  icon,
   label,
   value,
-  highlight,
-  tone,
+  accent,
 }: {
+  icon: React.ReactNode;
   label: string;
   value: number;
-  highlight?: boolean;
-  tone?: 'blue' | 'red';
+  accent?: 'green' | 'blue' | 'red';
 }) => {
-  const valueClass = tone === 'blue' ? 'text-blue-300' : tone === 'red' ? 'text-red-300' : highlight ? 'text-primary' : 'text-white';
+  const colors = accent ? accentColors[accent] : null;
 
   return (
     <div className="rounded-xl border border-[#264532] bg-[#122118]/50 p-4">
-      <p className="text-xs font-semibold uppercase text-[#96c5a9]">{label}</p>
-      <p className={`mt-1 text-2xl font-bold ${valueClass}`}>{value}</p>
+      <div className={`mb-2 ${colors ? colors.icon : 'text-[#96c5a9]'}`}>{icon}</div>
+      <p className={`text-2xl font-bold ${colors ? colors.value : 'text-white'}`}>{value}</p>
+      <p className="mt-0.5 text-xs font-semibold uppercase text-[#96c5a9]">{label}</p>
     </div>
   );
 };
 
+/* ─── Week Day Card ──────────────────────────────────────────────────────── */
+
 const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
-  const patientSlots = summary.slots.filter(slot => slot.appointment && !isBlockedAppointment(slot.appointment));
+  const patientSlots = summary.slots.filter(
+    slot => slot.appointment && !isBlockedAppointment(slot.appointment)
+  );
   const nextAvailable = summary.slots.find(slot => !slot.appointment);
-  const rateWidth = `${summary.occupancyRate}%`;
+  const rate = summary.occupancyRate;
+
+  const barColor =
+    rate >= 90 ? 'bg-red-400' : rate >= 60 ? 'bg-amber-400' : 'bg-primary';
+
+  const badgeClass =
+    rate >= 90
+      ? 'text-red-300'
+      : rate >= 60
+      ? 'text-amber-300'
+      : 'text-primary';
 
   return (
-    <article className="rounded-2xl border border-[#264532] bg-[#1a3a26] p-4">
-      <div className="flex items-start justify-between gap-3 lg:block">
+    <article className="flex flex-col rounded-2xl border border-[#264532] bg-[#1a3a26]">
+      {/* Day header */}
+      <div className="flex items-center justify-between gap-2 border-b border-[#264532] px-4 py-3">
         <div>
-          <p className="text-sm font-semibold capitalize text-primary">{formatShortDate(summary.dateObj)}</p>
-          <h3 className="mt-1 text-base font-bold text-white">{summary.dayConfig.dayName}</h3>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+            {formatShortDate(summary.dateObj)}
+          </p>
+          <h3 className="mt-0.5 text-sm font-bold text-white">{summary.dayConfig.dayName}</h3>
         </div>
-        <span className="rounded-full bg-[#264532] px-3 py-1 text-xs font-bold text-[#96c5a9]">
-          {summary.dayConfig.hasService ? `${summary.occupancyRate}%` : 'Sem agenda'}
+        <span
+          className={`rounded-full bg-[#264532] px-2.5 py-0.5 text-[11px] font-bold ${
+            summary.dayConfig.hasService ? badgeClass : 'text-[#96c5a9]'
+          }`}
+        >
+          {summary.dayConfig.hasService ? `${rate}%` : 'Sem agenda'}
         </span>
       </div>
 
-      {summary.dayConfig.hasService ? (
-        <>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#264532]">
-            <div className="h-full rounded-full bg-primary" style={{ width: rateWidth }} />
-          </div>
-
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-            <MiniStat label="Ocup." value={summary.occupiedSlots} />
-            <MiniStat label="Livres" value={summary.availableSlots} />
-            <MiniStat label="Bloq." value={summary.blockedSlots} />
-          </div>
-
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase text-[#96c5a9]">
-              <UserCheck className="h-3.5 w-3.5" />
-              Pacientes
+      <div className="flex flex-1 flex-col gap-4 p-4">
+        {summary.dayConfig.hasService ? (
+          <>
+            {/* Occupancy bar */}
+            <div className="h-2 overflow-hidden rounded-full bg-[#264532]">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                style={{ width: `${rate}%` }}
+              />
             </div>
-            {patientSlots.length > 0 ? (
-              <div className="space-y-2">
-                {patientSlots.slice(0, 4).map(slot => (
-                  <div key={slot.slotNumber} className="rounded-lg bg-[#122118]/50 p-2">
-                    <p className="truncate text-sm font-semibold text-white">{slot.appointment?.patient_name}</p>
-                    <p className="text-xs text-[#96c5a9]">
-                      Ficha {slot.slotNumber} · {slot.time}
-                    </p>
-                  </div>
-                ))}
-                {patientSlots.length > 4 && (
-                  <p className="text-xs text-[#96c5a9]">+{patientSlots.length - 4} pacientes</p>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-[#96c5a9]">Nenhum paciente marcado.</p>
-            )}
-          </div>
 
-          <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#122118]/50 p-3 text-sm text-[#96c5a9]">
-            <Clock className="h-4 w-4 text-primary" />
-            {nextAvailable ? `Próxima vaga: ficha ${nextAvailable.slotNumber} (${nextAvailable.time})` : 'Sem vagas livres'}
+            {/* Mini stats */}
+            <div className="grid grid-cols-3 gap-1.5">
+              <MiniStat label="Ocup." value={summary.occupiedSlots} valueClass="text-primary" />
+              <MiniStat label="Livres" value={summary.availableSlots} valueClass="text-blue-300" />
+              <MiniStat label="Bloq." value={summary.blockedSlots} valueClass="text-red-300" />
+            </div>
+
+            {/* Patient list */}
+            <div>
+              <div className="mb-2 flex items-center gap-1.5">
+                <UserCheck className="h-3.5 w-3.5 text-[#96c5a9]" />
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#96c5a9]">Pacientes</p>
+              </div>
+              {patientSlots.length > 0 ? (
+                <div className="space-y-1.5">
+                  {patientSlots.slice(0, 4).map(slot => (
+                    <div
+                      key={slot.slotNumber}
+                      className="flex items-center gap-2 rounded-lg bg-[#122118]/50 px-2.5 py-2"
+                    >
+                      <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#264532] text-[10px] font-bold text-primary">
+                        {slot.slotNumber}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold leading-tight text-white">
+                          {slot.appointment?.patient_name}
+                        </p>
+                        <p className="text-[10px] leading-tight text-[#96c5a9]">{slot.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {patientSlots.length > 4 && (
+                    <p className="pl-1 text-[11px] text-[#96c5a9]">
+                      +{patientSlots.length - 4} paciente{patientSlots.length - 4 > 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-[#264532] py-4 text-center">
+                  <p className="text-xs text-[#96c5a9]">Nenhum paciente marcado</p>
+                </div>
+              )}
+            </div>
+
+            {/* Next available */}
+            <div className="mt-auto flex items-center gap-2 rounded-xl bg-[#122118]/50 px-3 py-2.5">
+              <Clock className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+              <p className="text-[11px] font-medium text-[#96c5a9]">
+                {nextAvailable
+                  ? `Próxima: ficha ${nextAvailable.slotNumber} · ${nextAvailable.time}`
+                  : 'Sem vagas livres'}
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#264532] py-6">
+            <XCircle className="h-5 w-5 text-[#264532]" />
+            <p className="text-center text-xs text-[#96c5a9]">
+              {formatDateForDisplay(summary.dateObj)} sem atendimento
+            </p>
           </div>
-        </>
-      ) : (
-        <p className="mt-5 text-sm text-[#96c5a9]">{formatDateForDisplay(summary.dateObj)} não possui atendimento configurado.</p>
-      )}
+        )}
+      </div>
     </article>
   );
 };
 
-const MiniStat = ({ label, value }: { label: string; value: number }) => (
-  <div className="rounded-lg bg-[#122118]/50 p-2">
-    <p className="text-lg font-bold text-white">{value}</p>
-    <p className="text-[11px] text-[#96c5a9]">{label}</p>
+/* ─── Mini Stat ──────────────────────────────────────────────────────────── */
+
+const MiniStat = ({
+  label,
+  value,
+  valueClass,
+}: {
+  label: string;
+  value: number;
+  valueClass: string;
+}) => (
+  <div className="rounded-lg bg-[#122118]/50 py-2 text-center">
+    <p className={`text-base font-bold ${valueClass}`}>{value}</p>
+    <p className="text-[10px] text-[#96c5a9]">{label}</p>
   </div>
 );
 
