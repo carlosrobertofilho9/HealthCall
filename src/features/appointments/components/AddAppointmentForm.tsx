@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X, Phone, Copy, Check, Clock, User, FileText, UserCheck } from 'lucide-react';
+import { X, Copy, Check, Clock, User, FileText, UserCheck, MapPin, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -41,12 +41,17 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
   const [selectedAcs, setSelectedAcs] = useState<string>('');
   const [customAcs, setCustomAcs] = useState('');
   const [slotNumber, setSlotNumber] = useState<number>(initialSlot || availableSlots[0] || 1);
+  const [homeVisitAddress, setHomeVisitAddress] = useState('');
+  const [homeVisitReference, setHomeVisitReference] = useState('');
+  const [homeVisitReason, setHomeVisitReason] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Estados de sucesso
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdMessage, setCreatedMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const dayConfig = getDayConfig(selectedDate);
+  const isHomeVisit = dayConfig.serviceType === 'HOME_VISIT';
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -72,6 +77,14 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       newErrors.slotNumber = 'Selecione um slot disponível';
     }
 
+    if (isHomeVisit && !homeVisitAddress.trim()) {
+      newErrors.homeVisitAddress = 'Endereço completo é obrigatório';
+    }
+
+    if (isHomeVisit && !homeVisitReason.trim()) {
+      newErrors.homeVisitReason = 'Motivo da visita é obrigatório';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,6 +103,9 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       document_type: documentType,
       document_value: documentValue.trim(),
       acs_name: finalAcsName.trim(),
+      home_visit_address: isHomeVisit ? homeVisitAddress.trim() : null,
+      home_visit_reference: isHomeVisit ? homeVisitReference.trim() || null : null,
+      home_visit_reason: isHomeVisit ? homeVisitReason.trim() : null,
     };
     const success = await onAdd(data);
     if (success) {
@@ -97,7 +113,8 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       const message = getAppointmentMessage(
         patientName.trim(),
         formatDateToISO(selectedDate),
-        slotNumber
+        slotNumber,
+        data
       );
       setCreatedMessage(message);
       setShowSuccess(true);
@@ -107,6 +124,9 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
       setDocumentValue('');
       setSelectedAcs('');
       setCustomAcs('');
+      setHomeVisitAddress('');
+      setHomeVisitReference('');
+      setHomeVisitReason('');
       setSlotNumber(availableSlots[0] || 1);
     }
   };
@@ -217,7 +237,7 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
                 <SelectContent>
                   {availableSlots.map((slot) => (
                     <SelectItem key={slot} value={slot.toString()}>
-                      Slot {slot} - {getSlotTime(slot, getDayConfig(selectedDate))}
+                      Slot {slot} - {getSlotTime(slot, dayConfig)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -342,6 +362,57 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
             )}
           </div>
 
+          {isHomeVisit && (
+            <div className="space-y-4 rounded-2xl border border-[#264532] bg-[#122118]/40 p-4">
+              <div>
+                <Label className="text-white mb-2 block">Endereço completo *</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+                  <Input
+                    type="text"
+                    value={homeVisitAddress}
+                    onChange={(e) => setHomeVisitAddress(e.target.value)}
+                    placeholder="Rua, número, bairro e complemento"
+                    className="pl-12"
+                  />
+                </div>
+                {errors.homeVisitAddress && (
+                  <p className="text-red-400 text-sm mt-1">{errors.homeVisitAddress}</p>
+                )}
+              </div>
+
+              <div>
+                <Label className="text-white mb-2 block">Ponto de referência</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+                  <Input
+                    type="text"
+                    value={homeVisitReference}
+                    onChange={(e) => setHomeVisitReference(e.target.value)}
+                    placeholder="Ex.: próximo à escola, portão azul"
+                    className="pl-12"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white mb-2 block">Motivo da visita *</Label>
+                <div className="relative">
+                  <ClipboardList className="absolute left-4 top-4 w-5 h-5 text-[#96c5a9]" />
+                  <textarea
+                    value={homeVisitReason}
+                    onChange={(e) => setHomeVisitReason(e.target.value)}
+                    placeholder="Descreva o motivo da visita domiciliar"
+                    className="w-full min-h-24 rounded-2xl bg-[#264532] border-none pl-12 pr-4 py-4 text-white placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none resize-y"
+                  />
+                </div>
+                {errors.homeVisitReason && (
+                  <p className="text-red-400 text-sm mt-1">{errors.homeVisitReason}</p>
+                )}
+              </div>
+            </div>
+          )}
+
 {/* Removed Telefone UI block */}
 
           {/* Botões */}
@@ -364,4 +435,3 @@ export const AddAppointmentForm: React.FC<AddAppointmentFormProps> = ({
 };
 
 export default AddAppointmentForm;
-

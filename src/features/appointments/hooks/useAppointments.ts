@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Appointment, AppointmentSlot, CreateAppointmentData, DayScheduleConfig } from '@/types';
+import type { Appointment, AppointmentSlot, AppointmentStatus, CreateAppointmentData, DayScheduleConfig } from '@/types';
 import {
   getAppointmentsByDate,
   createAppointment,
   updateAppointment,
+  updateAppointmentStatus,
+  rescheduleAppointment,
   deleteAppointment,
   generateSlotsForDate,
   getDayConfig,
   formatDateToISO,
+  isActiveAppointment,
+  isReleasedAppointment,
 } from '../services/appointmentService';
 import { toast } from 'sonner';
 
@@ -24,6 +28,9 @@ export function useAppointments() {
   
   // Lista de marcações do dia
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+
+  // Histórico do dia que não ocupa slot
+  const [releasedAppointments, setReleasedAppointments] = useState<Appointment[]>([]);
   
   // Slots gerados para o dia
   const [slots, setSlots] = useState<AppointmentSlot[]>([]);
@@ -48,14 +55,18 @@ export function useAppointments() {
 
       if (!config.hasService) {
         setAppointments([]);
+        setReleasedAppointments([]);
         setSlots([]);
         return;
       }
 
       const data = await getAppointmentsByDate(dateStr);
-      setAppointments(data);
+      const activeAppointments = data.filter(isActiveAppointment);
+      const releasedData = data.filter(isReleasedAppointment);
+      setAppointments(activeAppointments);
+      setReleasedAppointments(releasedData);
       
-      const generatedSlots = generateSlotsForDate(selectedDate, data);
+      const generatedSlots = generateSlotsForDate(selectedDate, activeAppointments);
       setSlots(generatedSlots);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao carregar marcações';
@@ -135,6 +146,42 @@ export function useAppointments() {
     }
   };
 
+  const updateStatus = async (id: string, status: AppointmentStatus): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      await updateAppointmentStatus(id, status);
+      toast.success(`Status atualizado para "${status}"`);
+      await loadAppointments();
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao atualizar status';
+      toast.error(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const reschedule = async (
+    id: string,
+    scheduledDate: string,
+    slotNumber: number
+  ): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      await rescheduleAppointment(id, scheduledDate, slotNumber);
+      toast.success('Marcação remarcada com sucesso!');
+      await loadAppointments();
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao remarcar marcação';
+      toast.error(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   /**
    * Muda a data selecionada.
    * @param date - A nova data
@@ -184,6 +231,7 @@ export function useAppointments() {
     selectedDate,
     dayConfig,
     appointments,
+    releasedAppointments,
     slots,
     isLoading,
     error,
@@ -193,6 +241,8 @@ export function useAppointments() {
     addAppointment,
     editAppointment,
     removeAppointment,
+    updateStatus,
+    reschedule,
     changeDate,
     goToPreviousDay,
     goToNextDay,

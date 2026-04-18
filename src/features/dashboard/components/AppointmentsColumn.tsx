@@ -1,28 +1,28 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAppointments } from '@/features/appointments/hooks/useAppointments';
-import { Calendar, UserPlus, Copy, Clipboard, CheckCircle2, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, UserPlus, CheckCircle2, Clock, ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import type { Patient } from '@/types';
+import type { Appointment, Patient } from '@/types';
+import { isBlockedAppointment, isActiveAppointment } from '@/features/appointments/services/appointmentService';
 
 interface AppointmentsColumnProps {
-  onCheckIn: (name: string) => void;
+  onCheckIn: (appointment: Appointment) => Promise<boolean>;
   queuedPatients: Patient[];
 }
 
 const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queuedPatients }) => {
   // Use the hook to fetch appointments
   const { 
-    appointments, 
     slots,
     dayConfig, 
     isLoading, 
     goToToday,
     goToPreviousDay, 
     goToNextDay,
-    selectedDate 
+    selectedDate,
+    refresh,
   } = useAppointments();
 
   // Ensuring we are looking at today when the component mounts
@@ -62,11 +62,26 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
   }).format(selectedDate);
   
   const isToday = new Date().toDateString() === selectedDate.toDateString();
+  const isHomeVisitDay = dayConfig.serviceType === 'HOME_VISIT';
+  const visibleSlots = slots.filter(
+    slot => slot.appointment && !isBlockedAppointment(slot.appointment) && isActiveAppointment(slot.appointment)
+  );
+
+  const handleCheckIn = async (appointment: Appointment) => {
+    try {
+      const success = await onCheckIn(appointment);
+      if (success) {
+        await refresh();
+      }
+    } catch (error) {
+      console.error('Erro ao fazer check-in da marcação:', error);
+      toast.error('Paciente entrou na fila, mas o status da marcação não foi atualizado.');
+    }
+  };
 
 
   return (
     <div className="lg:col-span-1 bg-[#1a2c22] rounded-2xl p-6 shadow-2xl border border-white/5 flex flex-col h-auto lg:h-full lg:max-h-[calc(100vh-2rem)]">
-      {/* Header */}
       {/* Header */}
       <div className="flex flex-col gap-4 mb-6 pb-4 border-b border-white/5">
         <div className="space-y-2">
@@ -74,10 +89,12 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
               <div className="p-2 bg-[#264532] rounded-lg border border-white/5 shadow-inner">
                  <Calendar className="text-[#96c5a9]" size={20} />
               </div>
-              Agendamentos
+              {isHomeVisitDay ? 'Visitas domiciliares' : 'Agendamentos'}
             </h2>
             <p className="text-[#96c5a9]/80 text-sm pl-1">
-              Pacientes agendados para hoje ({dayConfig.hasService ? dayConfig.dayName : 'Sem atendimento'}).
+              {isHomeVisitDay
+                ? `Visitas domiciliares de hoje (${dayConfig.dayName}).`
+                : `Pacientes agendados para hoje (${dayConfig.hasService ? dayConfig.dayName : 'Sem atendimento'}).`}
             </p>
         </div>
 
@@ -130,23 +147,26 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
         ) : (
           <>
              {/* Empty State */}
-             {slots.filter(s => s.appointment).length === 0 && (
+             {visibleSlots.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-10 text-gray-400">
                     <Calendar className="w-12 h-12 mb-2 opacity-20" />
-                    <p className="text-center">Nenhum agendamento para <br/> {dayConfig.dayName}.</p>
+                    <p className="text-center">
+                        {isHomeVisitDay ? 'Nenhuma visita domiciliar para' : 'Nenhum agendamento para'} <br/> {dayConfig.dayName}.
+                    </p>
                     {!dayConfig.hasService && <p className="text-xs opacity-50 mt-1">(Dia sem expediente)</p>}
+                    {isHomeVisitDay && <p className="text-xs opacity-50 mt-1">(Sem visitas domiciliares marcadas)</p>}
                 </div>
              )}
 
              {/* Morning Slots */}
-             {slots.filter(s => s.period === 'Manhã' && s.appointment).length > 0 && (
+             {visibleSlots.filter(s => s.period === 'Manhã').length > 0 && (
                  <div>
                     <h3 className="text-[#96c5a9] font-medium text-xs uppercase tracking-wider mb-2 flex items-center gap-2 pl-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
-                        Manhã
+                        {isHomeVisitDay ? 'Visitas da manhã' : 'Manhã'}
                     </h3>
                     <div className="space-y-3">
-                        {slots.filter(s => s.period === 'Manhã' && s.appointment).map(slot => {
+                        {visibleSlots.filter(s => s.period === 'Manhã').map(slot => {
                             const apt = slot.appointment!;
                             const inQueue = isPatientInQueue(apt.patient_name);
                             return (
@@ -157,6 +177,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
                                     onCheckIn={onCheckIn} 
                                     handleCopyName={handleCopyName} 
                                     handleCopyDoc={handleCopyDoc} 
+                                    isHomeVisitDay={isHomeVisitDay}
                                 />
                             );
                         })}
@@ -165,14 +186,14 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
              )}
 
              {/* Afternoon Slots */}
-             {slots.filter(s => s.period === 'Tarde' && s.appointment).length > 0 && (
+             {visibleSlots.filter(s => s.period === 'Tarde').length > 0 && (
                  <div>
                     <h3 className="text-[#96c5a9] font-medium text-xs uppercase tracking-wider mb-2 mt-2 flex items-center gap-2 pl-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                         Tarde
                     </h3>
                     <div className="space-y-3">
-                        {slots.filter(s => s.period === 'Tarde' && s.appointment).map(slot => {
+                        {visibleSlots.filter(s => s.period === 'Tarde').map(slot => {
                             const apt = slot.appointment!;
                             const inQueue = isPatientInQueue(apt.patient_name);
                             return (
@@ -183,6 +204,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
                                     onCheckIn={onCheckIn} 
                                     handleCopyName={handleCopyName} 
                                     handleCopyDoc={handleCopyDoc} 
+                                    isHomeVisitDay={isHomeVisitDay}
                                 />
                             );
                         })}
@@ -197,10 +219,10 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
       <div className="pt-4 mt-2 border-t border-white/5 flex justify-between items-center text-xs text-gray-500">
           <div className="flex items-center gap-1.5">
             <Clock size={12} />
-            <span>Turno: {dayConfig.dayName}</span>
+            <span>{isHomeVisitDay ? 'Dia' : 'Turno'}: {dayConfig.dayName}</span>
           </div>
           <div>
-            Total: {slots.filter(s => s.appointment).length}
+            Total: {visibleSlots.length}
           </div>
       </div>
     </div>
@@ -208,7 +230,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
 };
 
 // Extracted Component for cleaner render
-const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDoc }: any) => (
+const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDoc, isHomeVisitDay }: any) => (
     <div 
     className={cn(
         "p-3 rounded-xl border transition-all duration-200 group relative overflow-hidden",
@@ -241,6 +263,19 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
                 >
                     {apt.document_value}
                 </p>
+                {isHomeVisitDay && apt.home_visit_address && (
+                    <p
+                        className="mt-1 flex items-center gap-1.5 text-xs text-[#96c5a9]/80 truncate cursor-pointer hover:text-green-400 transition-colors"
+                        title="Clique para copiar o endereço"
+                        onClick={() => {
+                            navigator.clipboard.writeText(apt.home_visit_address);
+                            toast.success('Endereço copiado!');
+                        }}
+                    >
+                        <MapPin size={12} className="shrink-0" />
+                        <span className="truncate">{apt.home_visit_address}</span>
+                    </p>
+                )}
             </div>
             </div>
         </div>
@@ -250,11 +285,17 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
         <div className="flex items-center gap-2">
         
         {/* Check-in Button */}
+        {isHomeVisitDay ? (
+        <div className="h-8 flex-1 rounded-lg border border-white/5 bg-[#264532]/40 px-3 text-xs font-medium text-[#96c5a9] flex items-center gap-2">
+            <MapPin size={14} />
+            Visita domiciliar
+        </div>
+        ) : (
         <Button
             size="sm"
             variant="ghost"
             disabled={inQueue}
-            onClick={() => onCheckIn(apt.patient_name)}
+            onClick={() => onCheckIn(apt)}
             className={cn(
             "h-8 flex-1 text-xs gap-2 font-medium transition-all duration-200 rounded-lg",
             inQueue 
@@ -274,6 +315,7 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
                 </>
             )}
         </Button>
+        )}
         </div>
     </div>
     </div>

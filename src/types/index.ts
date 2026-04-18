@@ -27,6 +27,14 @@ export type CallRecord = {
  */
 export type DocumentType = 'CPF' | 'CARTAO_SUS';
 
+export type AppointmentStatus =
+	| 'Agendado'
+	| 'Confirmado'
+	| 'Compareceu'
+	| 'Faltou'
+	| 'Cancelado'
+	| 'Remarcado';
+
 /**
  * Representa uma marcação de consulta no PSF
  */
@@ -38,6 +46,13 @@ export type Appointment = {
 	document_type: DocumentType;
 	document_value: string;
 	acs_name: string;
+	home_visit_address?: string | null;
+	home_visit_reference?: string | null;
+	home_visit_reason?: string | null;
+	status: AppointmentStatus;
+	status_updated_at: string;
+	rescheduled_from_id?: string | null;
+	rescheduled_to_id?: string | null;
 	created_at: string;
 	updated_at: string;
 };
@@ -52,6 +67,10 @@ export type CreateAppointmentData = {
 	document_type: DocumentType;
 	document_value: string;
 	acs_name: string;
+	home_visit_address?: string | null;
+	home_visit_reference?: string | null;
+	home_visit_reason?: string | null;
+	status?: AppointmentStatus;
 };
 
 /**
@@ -73,6 +92,7 @@ export type AppointmentDaySummary = {
 	dateObj: Date;
 	dayConfig: DayScheduleConfig;
 	appointments: Appointment[];
+	releasedAppointments: Appointment[];
 	slots: AppointmentSlot[];
 	totalSlots: number;
 	occupiedSlots: number;
@@ -92,6 +112,8 @@ export type DayScheduleConfig = {
 	dayOfWeek: number;
 	dayName: string;
 	hasService: boolean;
+	serviceType: 'UBS' | 'HOME_VISIT';
+	serviceLabel: string;
 	morningSlots: number;
     morningReserveSlots?: number;
 	afternoonSlots: number;

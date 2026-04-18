@@ -20,7 +20,7 @@ import { toast } from 'sonner';
  *   setSearchTerm: (term: string) => void,
  *   selectedDestination: string,
  *   setSelectedDestination: (destination: string) => void,
- *   addPatientByName: (name: string, destination: string) => Promise<void>,
+ *   addPatientByName: (name: string, destination: string) => Promise<Patient | null>,
  *   addPatientByNumber: (destination: string) => Promise<void>,
  *   updatePatientStatus: (id: string, status: PatientStatus) => Promise<void>,
  *   updatePatientDestination: (id: string, destination: string) => Promise<void>,
@@ -72,10 +72,10 @@ export function usePatientQueue() {
     };
   }, []);
 
-  const addPatientByName = useCallback(async (name: string, destination: string) => {
+  const addPatientByName = useCallback(async (name: string, destination: string): Promise<Patient | null> => {
     if (!name || !destination) {
       toast.error('Nome e destino são obrigatórios!');
-      return;
+      return null;
     }
     setIsAddingPatient(true);
     try {
@@ -83,9 +83,12 @@ export function usePatientQueue() {
       if (newPatient) {
         setPatients((current) => [newPatient, ...current]);
         toast.success('Paciente adicionado com sucesso!');
+        return newPatient;
       }
+      return null;
     } catch (error: any) {
       toast.error(error.message);
+      return null;
     } finally {
       setIsAddingPatient(false);
     }

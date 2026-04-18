@@ -4,10 +4,11 @@ import PatientQueue from '@/components/PatientQueue';
 import EditPatientModal from '@/components/EditPatientModal';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import QueueActions from '@/components/QueueActions';
-import type { Patient } from '@/types';
+import type { Appointment, Patient } from '@/types';
 import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import AppointmentsColumn from '@/features/dashboard/components/AppointmentsColumn';
+import { updateAppointmentStatus } from '@/features/appointments/services/appointmentService';
 
 /**
  * A página principal do painel de controle (dashboard).
@@ -88,9 +89,16 @@ const HomePage: React.FC = () => {
 		setEditingPatient(null);
 	};
 
-    const handleCheckIn = async (name: string) => {
+    const handleCheckIn = async (appointment: Appointment): Promise<boolean> => {
        const destination = profile?.default_destination ?? 'Consultório';
-       await addPatientByName(name, destination);
+       const patient = await addPatientByName(appointment.patient_name, destination);
+
+       if (!patient) {
+        return false;
+       }
+
+       await updateAppointmentStatus(appointment.id, 'Compareceu');
+       return true;
     };
 
 	return (

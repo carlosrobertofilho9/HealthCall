@@ -1,14 +1,29 @@
 import React from 'react';
-import { User, FileText, UserCheck, Trash2, Edit, Clock, Ban } from 'lucide-react';
+import { User, FileText, UserCheck, Trash2, Edit, Clock, Ban, MapPin, ClipboardList, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AppointmentSlot, Appointment } from '@/types';
+import type { AppointmentSlot, Appointment, AppointmentStatus } from '@/types';
 import { formatCPF, formatCNS } from '@/lib/utils';
+import {
+  APPOINTMENT_STATUSES,
+  getAppointmentStatus,
+  isHomeVisitDateString,
+} from '../services/appointmentService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select';
 
 interface SlotCardProps {
   slot: AppointmentSlot;
+  serviceType?: 'UBS' | 'HOME_VISIT';
   onAddClick: (slotNumber: number) => void;
   onEditClick: (appointment: Appointment) => void;
   onDeleteClick: (appointment: Appointment) => void;
+  onStatusChange: (appointment: Appointment, status: AppointmentStatus) => void;
+  onRescheduleClick: (appointment: Appointment) => void;
 }
 
 /**
@@ -17,9 +32,12 @@ interface SlotCardProps {
  */
 export const SlotCard: React.FC<SlotCardProps> = ({
   slot,
+  serviceType = 'UBS',
   onAddClick,
   onEditClick,
   onDeleteClick,
+  onStatusChange,
+  onRescheduleClick,
 }) => {
   const { slotNumber, period, time, isReserve, appointment } = slot;
 
@@ -30,10 +48,11 @@ export const SlotCard: React.FC<SlotCardProps> = ({
     return `Cartão SUS: ${formatCNS(value)}`;
   };
 
-  const handleCopy = async (text: string, type: 'nome' | 'documento') => {
+  const handleCopy = async (text: string, type: 'nome' | 'documento' | 'endereço') => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`${type === 'nome' ? 'Nome' : 'Documento'} copiado!`);
+      const label = type === 'nome' ? 'Nome' : type === 'documento' ? 'Documento' : 'Endereço';
+      toast.success(`${label} copiado!`);
     } catch (err) {
       console.error('Falha ao copiar:', err);
       toast.error('Erro ao copiar');
@@ -42,6 +61,9 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
   // Slot vazio - disponível para marcação
   if (!appointment) {
+    const emptyLabel = serviceType === 'HOME_VISIT' ? 'Visita disponível' : 'Vaga disponível';
+    const emptyHint = serviceType === 'HOME_VISIT' ? 'Clique para agendar visita' : 'Clique para agendar';
+
     return (
       <div
         onClick={() => onAddClick(slotNumber)}
@@ -60,12 +82,12 @@ export const SlotCard: React.FC<SlotCardProps> = ({
                 </p>
               </div>
               <p className="text-white font-medium group-hover:text-primary transition-colors print:text-gray-800">
-                Vaga disponível
+                {emptyLabel}
               </p>
             </div>
           </div>
           <span className="text-[#96c5a9] text-sm opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
-            Clique para agendar
+            {emptyHint}
           </span>
         </div>
       </div>
@@ -74,6 +96,12 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
   // Verifica se é um bloqueio
   const isBlocked = appointment.document_value === 'BLOQUEIO';
+  const isHomeVisit = isHomeVisitDateString(appointment.scheduled_date);
+  const status = getAppointmentStatus(appointment);
+  const editableStatuses = APPOINTMENT_STATUSES.filter(
+    item => item !== 'Remarcado'
+  );
+  const statusClass = getStatusClass(status);
 
   if (isBlocked) {
     return (
@@ -129,6 +157,9 @@ export const SlotCard: React.FC<SlotCardProps> = ({
               <p className="text-[#96c5a9] text-sm font-medium print:text-gray-500 truncate">
                 {time || period}
               </p>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold print:border print:border-gray-300 ${statusClass}`}>
+                {status}
+              </span>
             </div>
             
             {/* Nome do paciente */}
@@ -162,11 +193,66 @@ export const SlotCard: React.FC<SlotCardProps> = ({
                 ACS: {appointment.acs_name}
               </p>
             </div>
+
+            {isHomeVisit && appointment.home_visit_address && (
+              <div className="flex items-center gap-2 mt-2 min-w-0">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <p
+                  className="text-[#d6f3df] text-sm truncate print:text-gray-700 cursor-pointer hover:text-white transition-colors"
+                  title="Clique para copiar o endereço"
+                  onClick={() => handleCopy(appointment.home_visit_address || '', 'endereço')}
+                >
+                  {appointment.home_visit_address}
+                </p>
+              </div>
+            )}
+
+            {isHomeVisit && appointment.home_visit_reference && (
+              <div className="flex items-center gap-2 mt-1 min-w-0">
+                <MapPin className="w-4 h-4 text-[#96c5a9] shrink-0" />
+                <p className="text-[#96c5a9] text-sm truncate print:text-gray-600">
+                  Ref.: {appointment.home_visit_reference}
+                </p>
+              </div>
+            )}
+
+            {isHomeVisit && appointment.home_visit_reason && (
+              <div className="flex items-start gap-2 mt-1 min-w-0">
+                <ClipboardList className="w-4 h-4 text-[#96c5a9] shrink-0 mt-0.5" />
+                <p className="text-[#96c5a9] text-sm line-clamp-2 print:text-gray-600">
+                  Motivo: {appointment.home_visit_reason}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Ações */}
-        <div className="flex items-center gap-1 shrink-0 print:hidden">
+        <div className="flex flex-col items-end gap-2 shrink-0 print:hidden">
+          <Select
+            value={status}
+            onValueChange={(value) => onStatusChange(appointment, value as AppointmentStatus)}
+          >
+            <SelectTrigger className="h-9 w-36 rounded-xl bg-[#264532] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {editableStatuses.map(item => (
+                <SelectItem key={item} value={item}>
+                  {item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center gap-1">
+          <button
+            onClick={() => onRescheduleClick(appointment)}
+            className="p-3 md:p-2 rounded-full hover:bg-[#264532] transition-colors"
+            title="Remarcar"
+          >
+            <CalendarClock className="w-5 h-5 md:w-4 md:h-4 text-[#96c5a9] hover:text-white" />
+          </button>
           <button
             onClick={() => onEditClick(appointment)}
             className="p-3 md:p-2 rounded-full hover:bg-[#264532] transition-colors"
@@ -175,16 +261,30 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             <Edit className="w-5 h-5 md:w-4 md:h-4 text-[#96c5a9] hover:text-white" />
           </button>
           <button
-            onClick={() => onDeleteClick(appointment)}
+            onClick={() => onStatusChange(appointment, 'Cancelado')}
             className="p-3 md:p-2 rounded-full hover:bg-red-900/30 transition-colors"
-            title="Remover"
+            title="Cancelar"
           >
             <Trash2 className="w-5 h-5 md:w-4 md:h-4 text-[#96c5a9] hover:text-red-400" />
           </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+function getStatusClass(status: AppointmentStatus): string {
+  const classes: Record<AppointmentStatus, string> = {
+    Agendado: 'bg-blue-500/15 text-blue-200',
+    Confirmado: 'bg-primary/15 text-primary',
+    Compareceu: 'bg-emerald-500/15 text-emerald-200',
+    Faltou: 'bg-amber-500/15 text-amber-200',
+    Cancelado: 'bg-red-500/15 text-red-200',
+    Remarcado: 'bg-purple-500/15 text-purple-200',
+  };
+
+  return classes[status];
+}
 
 export default SlotCard;

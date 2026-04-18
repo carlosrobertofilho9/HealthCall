@@ -1,5 +1,6 @@
 import { AppointmentSlot } from '@/types';
 import { formatCPF, formatCNS } from '@/lib/utils';
+import { getAppointmentStatus } from '@/features/appointments/services/appointmentService';
 
 type ReportItem = {
   slot: number;
@@ -7,6 +8,7 @@ type ReportItem = {
   name: string;
   document: string;
   acs: string;
+  status: string;
 };
 
 export const printAppointmentReport = (slots: AppointmentSlot[]) => {
@@ -19,7 +21,8 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
         period: s.period,
         name: app ? app.patient_name : '-',
         document: app ? `${app.document_type === 'CPF' ? 'CPF' : 'CNS'}: ${app.document_type === 'CPF' ? formatCPF(app.document_value) : formatCNS(app.document_value)}` : '-',
-        acs: app ? app.acs_name : '-'
+        acs: app ? app.acs_name : '-',
+        status: app ? getAppointmentStatus(app) : '-',
       };
     });
 
@@ -50,6 +53,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
         <td class="col-name">${item.name}</td>
         <td class="col-doc">${item.document}</td>
         <td class="col-acs">${item.acs}</td>
+        <td class="col-status">${item.status}</td>
       </tr>
     `).join('');
   };
@@ -281,9 +285,10 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
 
           .col-slot { width: 6%; text-align: center; font-weight: 700; }
           .col-period { width: 6%; text-align: center; } 
-          .col-name { width: 44%; font-weight: 600; font-size: 12px; }
-          .col-doc { width: 29%; }
-          .col-acs { width: 15%; font-size: 10px; }
+          .col-name { width: 36%; font-weight: 600; font-size: 12px; }
+          .col-doc { width: 26%; }
+          .col-acs { width: 14%; font-size: 10px; }
+          .col-status { width: 12%; font-size: 10px; }
 
           /* Footer */
           .footer {
@@ -362,6 +367,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
                 <th class="col-name">Paciente</th>
                 <th class="col-doc">Documento</th>
                 <th class="col-acs">ACS</th>
+                <th class="col-status">Status</th>
               </tr>
             </thead>
             <tbody>

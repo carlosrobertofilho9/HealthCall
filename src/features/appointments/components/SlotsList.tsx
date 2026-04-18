@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sun, Moon, AlertTriangle, AlertCircle } from 'lucide-react';
-import type { AppointmentSlot, Appointment, DayScheduleConfig } from '@/types';
+import type { AppointmentSlot, Appointment, AppointmentStatus, DayScheduleConfig } from '@/types';
 import SlotCard from './SlotCard';
 
 interface SlotsListProps {
@@ -9,6 +9,8 @@ interface SlotsListProps {
   onAddClick: (slotNumber: number) => void;
   onEditClick: (appointment: Appointment) => void;
   onDeleteClick: (appointment: Appointment) => void;
+  onStatusChange: (appointment: Appointment, status: AppointmentStatus) => void;
+  onRescheduleClick: (appointment: Appointment) => void;
   isLoading: boolean;
 }
 
@@ -21,20 +23,25 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   onAddClick,
   onEditClick,
   onDeleteClick,
+  onStatusChange,
+  onRescheduleClick,
   isLoading,
 }) => {
+  const isHomeVisit = dayConfig.serviceType === 'HOME_VISIT';
+  const occupancyLabel = isHomeVisit ? 'visitas ocupadas' : 'vagas ocupadas';
+
   // Se não há atendimento no dia
   if (!dayConfig.hasService) {
     return (
       <div className="bg-[#1a3a26] rounded-2xl p-12 text-center print:bg-white print:border print:border-gray-300">
         <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
         <h3 className="text-2xl font-bold text-white mb-2 print:text-black">
-          Sem atendimento médico neste dia
+          Sem agenda neste dia
         </h3>
         <p className="text-[#96c5a9] print:text-gray-600">
           {dayConfig.dayName} não possui atendimento agendado.
           <br />
-          Selecione uma Segunda-feira ou Terça-feira para ver as marcações.
+          Selecione uma Segunda, Terça ou Quarta-feira para ver as marcações.
         </p>
       </div>
     );
@@ -63,10 +70,10 @@ export const SlotsList: React.FC<SlotsListProps> = ({
           <div className="flex items-center gap-3 mb-4">
             <Sun className="w-6 h-6 text-yellow-400" />
             <h3 className="text-lg font-bold text-white print:text-black">
-              Manhã
+              {isHomeVisit ? 'Visitas domiciliares - manhã' : 'Manhã'}
             </h3>
             <span className="text-[#96c5a9] text-sm print:text-gray-600">
-              ({morningSlots.filter(s => s.appointment).length}/{morningSlots.length} vagas ocupadas)
+              ({morningSlots.filter(s => s.appointment).length}/{morningSlots.length} {occupancyLabel})
             </span>
           </div>
           <div className="grid gap-3">
@@ -74,9 +81,12 @@ export const SlotsList: React.FC<SlotsListProps> = ({
               <SlotCard
                 key={slot.slotNumber}
                 slot={slot}
+                serviceType={dayConfig.serviceType}
                 onAddClick={onAddClick}
                 onEditClick={onEditClick}
                 onDeleteClick={onDeleteClick}
+                onStatusChange={onStatusChange}
+                onRescheduleClick={onRescheduleClick}
               />
             ))}
           </div>
@@ -92,7 +102,7 @@ export const SlotsList: React.FC<SlotsListProps> = ({
               Tarde
             </h3>
             <span className="text-[#96c5a9] text-sm print:text-gray-600">
-              ({afternoonSlots.filter(s => s.appointment).length}/{afternoonSlots.length} vagas ocupadas)
+              ({afternoonSlots.filter(s => s.appointment).length}/{afternoonSlots.length} {occupancyLabel})
             </span>
           </div>
           <div className="grid gap-3">
@@ -100,9 +110,12 @@ export const SlotsList: React.FC<SlotsListProps> = ({
               <SlotCard
                 key={slot.slotNumber}
                 slot={slot}
+                serviceType={dayConfig.serviceType}
                 onAddClick={onAddClick}
                 onEditClick={onEditClick}
                 onDeleteClick={onDeleteClick}
+                onStatusChange={onStatusChange}
+                onRescheduleClick={onRescheduleClick}
               />
             ))}
           </div>
@@ -117,7 +130,7 @@ export const SlotsList: React.FC<SlotsListProps> = ({
               Reservas / Emergência
             </h3>
             <span className="text-[#96c5a9] text-sm print:text-gray-600">
-              ({reserveSlots.filter(s => s.appointment).length}/{reserveSlots.length} vagas ocupadas)
+              ({reserveSlots.filter(s => s.appointment).length}/{reserveSlots.length} {occupancyLabel})
             </span>
           </div>
           <div className="grid gap-3">
@@ -125,9 +138,12 @@ export const SlotsList: React.FC<SlotsListProps> = ({
               <SlotCard
                 key={slot.slotNumber}
                 slot={slot}
+                serviceType={dayConfig.serviceType}
                 onAddClick={onAddClick}
                 onEditClick={onEditClick}
                 onDeleteClick={onDeleteClick}
+                onStatusChange={onStatusChange}
+                onRescheduleClick={onRescheduleClick}
               />
             ))}
           </div>

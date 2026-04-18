@@ -1,7 +1,8 @@
 import { Patient, AppointmentSlot } from '@/types';
 import { formatCPF, formatCNS } from '@/lib/utils';
+import { getAppointmentStatus } from '@/features/appointments/services/appointmentService';
 
-type SimplifiedPatient = { name: string, document: string, acs: string, period?: string };
+type SimplifiedPatient = { name: string, document: string, acs: string, status?: string, period?: string };
 
 export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
   const isAppointment = data.length > 0 && 'slotNumber' in data[0];
@@ -21,7 +22,8 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
         patients: morningSlots.filter(s => s.appointment).map(s => ({
           name: s.appointment!.patient_name,
           document: s.appointment!.document_type === 'CPF' ? formatCPF(s.appointment!.document_value) : formatCNS(s.appointment!.document_value),
-          acs: s.appointment!.acs_name
+          acs: s.appointment!.acs_name,
+          status: getAppointmentStatus(s.appointment!)
         }))
       });
     }
@@ -34,7 +36,8 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
         patients: afternoonSlots.filter(s => s.appointment).map(s => ({
           name: s.appointment!.patient_name,
           document: s.appointment!.document_type === 'CPF' ? formatCPF(s.appointment!.document_value) : formatCNS(s.appointment!.document_value),
-          acs: s.appointment!.acs_name
+          acs: s.appointment!.acs_name,
+          status: getAppointmentStatus(s.appointment!)
         }))
       });
     }
@@ -48,7 +51,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
       title: 'Lista de Atendimento',
       subtitle: 'Controle de Fila e Triagem',
       period: new Date().getHours() < 12 ? 'Manhã' : 'Tarde',
-      patients: patients.map(p => ({ name: p.name, document: '', acs: '' }))
+      patients: patients.map(p => ({ name: p.name, document: '', acs: '', status: p.status }))
     });
   }
 
@@ -303,10 +306,11 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
             text-align: center;
           }
 
-          .col-name { width: 45%; font-weight: 600; }
-          .col-doc { width: 25%; }
-          .col-acs { width: 15%; font-size: 11px; }
-          .col-check { width: 15%; text-align: center; }
+          .col-name { width: 38%; font-weight: 600; }
+          .col-doc { width: 23%; }
+          .col-acs { width: 14%; font-size: 11px; }
+          .col-status { width: 12%; font-size: 10px; }
+          .col-check { width: 13%; text-align: center; }
 
           .checkbox { 
             width: 14px; 
@@ -415,6 +419,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
                     <th class="col-name">Nome do Paciente</th>
                     <th class="col-doc">CNS / CPF</th>
                     <th class="col-acs">ACS</th>
+                    <th class="col-status">Status</th>
                     <th class="col-check">Presença</th>
                   </tr>
                 </thead>
@@ -450,7 +455,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
   printWindow.document.close();
 };
 
-const generateRows = (patients: { name: string, document: string, acs: string }[]) => {
+const generateRows = (patients: SimplifiedPatient[]) => {
   const totalRows = 15;
   const rows = [];
 
@@ -462,6 +467,7 @@ const generateRows = (patients: { name: string, document: string, acs: string }[
           <td class="col-name">${patient.name}</td>
           <td class="col-doc">${patient.document || ''}</td>
           <td class="col-acs">${patient.acs || ''}</td>
+          <td class="col-status">${patient.status || ''}</td>
           <td class="col-check"><div class="checkbox"></div></td>
         </tr>
       `);
@@ -471,6 +477,7 @@ const generateRows = (patients: { name: string, document: string, acs: string }[
           <td class="col-name">&nbsp;</td>
           <td class="col-doc"></td>
           <td class="col-acs"></td>
+          <td class="col-status"></td>
           <td class="col-check"><div class="checkbox" style="border-color: #cbd5e1"></div></td>
         </tr>
       `);

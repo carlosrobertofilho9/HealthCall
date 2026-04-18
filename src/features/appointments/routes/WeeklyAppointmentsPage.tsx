@@ -165,6 +165,7 @@ const StatCard = ({
 /* ─── Week Day Card ──────────────────────────────────────────────────────── */
 
 const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
+  const isHomeVisit = summary.dayConfig.serviceType === 'HOME_VISIT';
   const patientSlots = summary.slots.filter(
     slot => slot.appointment && !isBlockedAppointment(slot.appointment)
   );
@@ -190,6 +191,11 @@ const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
             {formatShortDate(summary.dateObj)}
           </p>
           <h3 className="mt-0.5 text-sm font-bold text-white">{summary.dayConfig.dayName}</h3>
+          {summary.dayConfig.hasService && (
+            <p className="mt-0.5 text-[10px] font-medium text-[#96c5a9]">
+              {summary.dayConfig.serviceLabel}
+            </p>
+          )}
         </div>
         <span
           className={`rounded-full bg-[#264532] px-2.5 py-0.5 text-[11px] font-bold ${
@@ -222,7 +228,9 @@ const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
             <div>
               <div className="mb-2 flex items-center gap-1.5">
                 <UserCheck className="h-3.5 w-3.5 text-[#96c5a9]" />
-                <p className="text-[11px] font-bold uppercase tracking-wider text-[#96c5a9]">Pacientes</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#96c5a9]">
+                  {isHomeVisit ? 'Visitas' : 'Pacientes'}
+                </p>
               </div>
               {patientSlots.length > 0 ? (
                 <div className="space-y-1.5">
@@ -260,7 +268,7 @@ const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
               <Clock className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
               <p className="text-[11px] font-medium text-[#96c5a9]">
                 {nextAvailable
-                  ? `Próxima: ficha ${nextAvailable.slotNumber} · ${nextAvailable.time}`
+                  ? `${isHomeVisit ? 'Próxima visita' : 'Próxima'}: ficha ${nextAvailable.slotNumber} · ${nextAvailable.time}`
                   : 'Sem vagas livres'}
               </p>
             </div>

@@ -183,7 +183,7 @@ const CapacityDashboardPage: React.FC = () => {
               <div className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6">
                 <div className="mb-5 flex items-center gap-3">
                   <Users className="h-6 w-6 text-primary" />
-                  <h3 className="text-lg font-bold text-white">Pacientes por ACS</h3>
+                  <h3 className="text-lg font-bold text-white">Pacientes e visitas por ACS</h3>
                 </div>
 
                 {acsRanking.length > 0 ? (
@@ -232,7 +232,7 @@ const CapacityDashboardPage: React.FC = () => {
           </section>
 
           <section className="grid gap-4 md:grid-cols-3">
-            <CapacityStat label="Pacientes marcados" value={realPatientCount} detail="Sem contar bloqueios" />
+            <CapacityStat label="Marcações reais" value={realPatientCount} detail="Pacientes e visitas, sem contar bloqueios" />
             <CapacityStat label="Reservas ocupadas" value={totals.reserveOccupied} detail={`${totals.reserve} fichas de reserva no período`} tone="red" />
             <CapacityStat label="Consultas normais" value={totals.normalOccupied} detail="Fichas comuns ocupadas por pacientes" tone="blue" />
           </section>

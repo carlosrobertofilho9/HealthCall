@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/Button';
 
 interface AppointmentActionsProps {
   hasService: boolean;
+  serviceType: 'UBS' | 'HOME_VISIT';
   availableSlotsCount: number;
   onAddClick: () => void;
   onPrintClick: () => void;
   onPrintReportClick: () => void;
+  onPrintHomeVisitRouteClick: () => void;
   onRefreshClick: () => void;
   onBlockDayClick: () => void;
   isLoading: boolean;
@@ -18,10 +20,12 @@ interface AppointmentActionsProps {
  */
 export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
   hasService,
+  serviceType,
   availableSlotsCount,
   onAddClick,
   onPrintClick,
   onPrintReportClick,
+  onPrintHomeVisitRouteClick,
   onRefreshClick,
   onBlockDayClick,
   isLoading,
@@ -29,6 +33,8 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
   if (!hasService) {
     return null;
   }
+
+  const isHomeVisit = serviceType === 'HOME_VISIT';
 
   return (
     <>
@@ -68,15 +74,26 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
         </div>
 
         {/* Linha 2: Ações Secundárias (Impressão) */}
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => onPrintReportClick()}
-            className="flex items-center justify-center gap-2 h-12 rounded-lg bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] active:bg-[#1a3a26] transition-colors text-white font-semibold text-sm"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Relatório</span>
-          </button>
+        <div className={isHomeVisit ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-2 gap-2'}>
+          {isHomeVisit ? (
+            <button
+              onClick={() => onPrintHomeVisitRouteClick()}
+              className="flex items-center justify-center gap-2 h-12 rounded-lg bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] active:bg-[#1a3a26] transition-colors text-white font-semibold text-sm"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Roteiro</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => onPrintReportClick()}
+              className="flex items-center justify-center gap-2 h-12 rounded-lg bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] active:bg-[#1a3a26] transition-colors text-white font-semibold text-sm"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Relatório</span>
+            </button>
+          )}
 
+          {!isHomeVisit && (
           <button
             onClick={() => onPrintClick()}
             className="flex items-center justify-center gap-2 h-12 rounded-lg bg-[#264532] hover:bg-[#305a3e] active:bg-[#264532] transition-colors text-white font-semibold text-sm"
@@ -84,6 +101,7 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
             <Printer className="w-4 h-4" />
             <span>Ficha</span>
           </button>
+          )}
         </div>
       </div>
 
@@ -131,14 +149,25 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
 
          {/* Grupo 2: Ações de Impressão */}
          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onPrintReportClick()}
-              className="h-14 px-6 rounded-full bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] transition-colors text-white font-bold flex items-center gap-2 whitespace-nowrap"
-            >
-              <Printer className="w-5 h-5" />
-              <span>Relatório</span>
-            </button>
+            {isHomeVisit ? (
+              <button
+                onClick={() => onPrintHomeVisitRouteClick()}
+                className="h-14 px-6 rounded-full bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] transition-colors text-white font-bold flex items-center gap-2 whitespace-nowrap"
+              >
+                <Printer className="w-5 h-5" />
+                <span>Roteiro</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onPrintReportClick()}
+                className="h-14 px-6 rounded-full bg-[#1a3a26] border border-[#264532] hover:bg-[#264532] transition-colors text-white font-bold flex items-center gap-2 whitespace-nowrap"
+              >
+                <Printer className="w-5 h-5" />
+                <span>Relatório</span>
+              </button>
+            )}
 
+            {!isHomeVisit && (
             <button
               onClick={() => onPrintClick()}
               className="h-14 px-6 rounded-full bg-[#264532] hover:bg-[#305a3e] transition-colors text-white font-bold flex items-center gap-2 whitespace-nowrap"
@@ -146,6 +175,7 @@ export const AppointmentActions: React.FC<AppointmentActionsProps> = ({
               <Printer className="w-5 h-5" />
               <span>Ficha</span>
             </button>
+            )}
          </div>
       </div>
     </>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, FileText, UserCheck } from 'lucide-react';
+import { X, User, FileText, UserCheck, MapPin, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -11,13 +11,13 @@ import {
   SelectValue,
 } from '@/components/ui/Select';
 import { ACS_OPTIONS } from '@/constants';
-import type { Appointment, DocumentType } from '@/types';
-import { getSlotTime, getDayConfig, parseISODate } from '../services/appointmentService';
+import type { Appointment, AppointmentStatus, CreateAppointmentData, DocumentType } from '@/types';
+import { APPOINTMENT_STATUSES, getAppointmentStatus, getSlotTime, getDayConfig, parseISODate } from '../services/appointmentService';
 import { formatCPF, formatCNS } from '@/lib/utils';
 
 interface EditAppointmentModalProps {
   appointment: Appointment;
-  onSave: (id: string, updates: Partial<Appointment>) => Promise<boolean>;
+  onSave: (id: string, updates: Partial<CreateAppointmentData>) => Promise<boolean>;
   onClose: () => void;
   isLoading: boolean;
 }
@@ -34,6 +34,13 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
   const [patientName, setPatientName] = useState(appointment.patient_name);
   const [documentType, setDocumentType] = useState<DocumentType>(appointment.document_type);
   const [documentValue, setDocumentValue] = useState(appointment.document_value);
+  const [status, setStatus] = useState<AppointmentStatus>(getAppointmentStatus(appointment));
+  const [homeVisitAddress, setHomeVisitAddress] = useState(appointment.home_visit_address || '');
+  const [homeVisitReference, setHomeVisitReference] = useState(appointment.home_visit_reference || '');
+  const [homeVisitReason, setHomeVisitReason] = useState(appointment.home_visit_reason || '');
+  const appointmentDate = parseISODate(appointment.scheduled_date);
+  const dayConfig = getDayConfig(appointmentDate);
+  const isHomeVisit = dayConfig.serviceType === 'HOME_VISIT';
   
   // Inicializar estado do ACS
   const isKwownAcs = (ACS_OPTIONS as readonly string[]).includes(appointment.acs_name);
@@ -67,6 +74,14 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
       newErrors.acsName = 'ACS é obrigatório';
     }
 
+    if (isHomeVisit && !homeVisitAddress.trim()) {
+      newErrors.homeVisitAddress = 'Endereço completo é obrigatório';
+    }
+
+    if (isHomeVisit && !homeVisitReason.trim()) {
+      newErrors.homeVisitReason = 'Motivo da visita é obrigatório';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -83,6 +98,10 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
       document_type: documentType,
       document_value: documentValue.trim(),
       acs_name: finalAcsName.trim(),
+      status,
+      home_visit_address: isHomeVisit ? homeVisitAddress.trim() : null,
+      home_visit_reference: isHomeVisit ? homeVisitReference.trim() || null : null,
+      home_visit_reason: isHomeVisit ? homeVisitReason.trim() : null,
     });
 
     if (success) {
@@ -116,11 +135,30 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
         <div className="mb-4 p-3 bg-[#264532] rounded-lg">
           <p className="text-[#96c5a9] text-sm">
             Slot <span className="text-white font-bold">{appointment.slot_number}</span> •{' '}
-            {getSlotTime(appointment.slot_number, getDayConfig(parseISODate(appointment.scheduled_date)))}
+            {getSlotTime(appointment.slot_number, dayConfig)}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label className="text-white mb-2 block">Status</Label>
+            <Select
+              value={status}
+              onValueChange={(value) => setStatus(value as AppointmentStatus)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {APPOINTMENT_STATUSES.filter(item => item !== 'Remarcado').map(item => (
+                  <SelectItem key={item} value={item}>
+                    {item}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Nome do Paciente */}
           <div>
             <Label className="text-white mb-2 block">Nome do Paciente *</Label>
@@ -234,6 +272,57 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
               <p className="text-red-400 text-sm mt-1">{errors.acsName}</p>
             )}
           </div>
+
+          {isHomeVisit && (
+            <div className="space-y-4 rounded-2xl border border-[#264532] bg-[#122118]/40 p-4">
+              <div>
+                <Label className="text-white mb-2 block">Endereço completo *</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+                  <Input
+                    type="text"
+                    value={homeVisitAddress}
+                    onChange={(e) => setHomeVisitAddress(e.target.value)}
+                    placeholder="Rua, número, bairro e complemento"
+                    className="pl-12"
+                  />
+                </div>
+                {errors.homeVisitAddress && (
+                  <p className="text-red-400 text-sm mt-1">{errors.homeVisitAddress}</p>
+                )}
+              </div>
+
+              <div>
+                <Label className="text-white mb-2 block">Ponto de referência</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#96c5a9]" />
+                  <Input
+                    type="text"
+                    value={homeVisitReference}
+                    onChange={(e) => setHomeVisitReference(e.target.value)}
+                    placeholder="Ex.: próximo à escola, portão azul"
+                    className="pl-12"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white mb-2 block">Motivo da visita *</Label>
+                <div className="relative">
+                  <ClipboardList className="absolute left-4 top-4 w-5 h-5 text-[#96c5a9]" />
+                  <textarea
+                    value={homeVisitReason}
+                    onChange={(e) => setHomeVisitReason(e.target.value)}
+                    placeholder="Descreva o motivo da visita domiciliar"
+                    className="w-full min-h-24 rounded-2xl bg-[#264532] border-none pl-12 pr-4 py-4 text-white placeholder:text-[#96c5a9] focus:ring-2 focus:ring-primary transition-all focus:outline-none resize-y"
+                  />
+                </div>
+                {errors.homeVisitReason && (
+                  <p className="text-red-400 text-sm mt-1">{errors.homeVisitReason}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Botões */}
           <div className="flex gap-3 pt-4">

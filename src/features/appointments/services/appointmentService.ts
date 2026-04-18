@@ -1,5 +1,12 @@
 import { supabase } from '@/lib/supabaseClient';
-import type { Appointment, AppointmentDaySummary, CreateAppointmentData, AppointmentSlot, DayScheduleConfig } from '@/types';
+import type {
+  Appointment,
+  AppointmentDaySummary,
+  AppointmentStatus,
+  CreateAppointmentData,
+  AppointmentSlot,
+  DayScheduleConfig,
+} from '@/types';
 
 // =============================================================================
 // Configuração da Grade de Atendimento
@@ -9,14 +16,17 @@ import type { Appointment, AppointmentDaySummary, CreateAppointmentData, Appoint
  * Configuração fixa da grade de atendimento por dia da semana.
  * Segunda: 30 slots (15 manhã + 15 tarde)
  * Terça: 15 slots (15 manhã)
- * Quarta a Domingo: Sem atendimento
+ * Quarta: 15 visitas domiciliares (15 manhã)
+ * Quinta a Domingo: Sem atendimento
  */
 export const SCHEDULE_CONFIG: Record<number, DayScheduleConfig> = {
-  0: { dayOfWeek: 0, dayName: 'Domingo', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
+  0: { dayOfWeek: 0, dayName: 'Domingo', hasService: false, serviceType: 'UBS', serviceLabel: 'Sem atendimento', morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
   1: { 
     dayOfWeek: 1, 
     dayName: 'Segunda-feira', 
     hasService: true, 
+    serviceType: 'UBS',
+    serviceLabel: 'Atendimento na UBS',
     morningSlots: 11, 
     morningReserveSlots: 4,
     afternoonSlots: 9, 
@@ -27,17 +37,51 @@ export const SCHEDULE_CONFIG: Record<number, DayScheduleConfig> = {
     dayOfWeek: 2, 
     dayName: 'Terça-feira', 
     hasService: true, 
+    serviceType: 'UBS',
+    serviceLabel: 'Atendimento na UBS',
     morningSlots: 11, 
     morningReserveSlots: 4,
     afternoonSlots: 0, 
     afternoonReserveSlots: 0,
     totalSlots: 15 
   },
-  3: { dayOfWeek: 3, dayName: 'Quarta-feira', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
-  4: { dayOfWeek: 4, dayName: 'Quinta-feira', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
-  5: { dayOfWeek: 5, dayName: 'Sexta-feira', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
-  6: { dayOfWeek: 6, dayName: 'Sábado', hasService: false, morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
+  3: {
+    dayOfWeek: 3,
+    dayName: 'Quarta-feira',
+    hasService: true,
+    serviceType: 'HOME_VISIT',
+    serviceLabel: 'Visitas domiciliares',
+    morningSlots: 11,
+    morningReserveSlots: 4,
+    afternoonSlots: 0,
+    afternoonReserveSlots: 0,
+    totalSlots: 15
+  },
+  4: { dayOfWeek: 4, dayName: 'Quinta-feira', hasService: false, serviceType: 'UBS', serviceLabel: 'Sem atendimento', morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
+  5: { dayOfWeek: 5, dayName: 'Sexta-feira', hasService: false, serviceType: 'UBS', serviceLabel: 'Sem atendimento', morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
+  6: { dayOfWeek: 6, dayName: 'Sábado', hasService: false, serviceType: 'UBS', serviceLabel: 'Sem atendimento', morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
 };
+
+export const APPOINTMENT_STATUSES: AppointmentStatus[] = [
+  'Agendado',
+  'Confirmado',
+  'Compareceu',
+  'Faltou',
+  'Cancelado',
+  'Remarcado',
+];
+
+export const ACTIVE_APPOINTMENT_STATUSES: AppointmentStatus[] = [
+  'Agendado',
+  'Confirmado',
+  'Compareceu',
+  'Faltou',
+];
+
+export const RELEASED_APPOINTMENT_STATUSES: AppointmentStatus[] = [
+  'Cancelado',
+  'Remarcado',
+];
 
 /**
  * Obtém a configuração de atendimento para uma data específica.
@@ -47,6 +91,18 @@ export const SCHEDULE_CONFIG: Record<number, DayScheduleConfig> = {
 export function getDayConfig(date: Date): DayScheduleConfig {
   const dayOfWeek = date.getDay();
   return SCHEDULE_CONFIG[dayOfWeek];
+}
+
+export function isHomeVisitDay(date: Date): boolean {
+  return getDayConfig(date).serviceType === 'HOME_VISIT';
+}
+
+export function isHomeVisitDateString(date: string): boolean {
+  return isHomeVisitDay(parseISODate(date));
+}
+
+export function requiresHomeVisitFields(date: Date | string): boolean {
+  return typeof date === 'string' ? isHomeVisitDateString(date) : isHomeVisitDay(date);
 }
 
 /**
@@ -107,7 +163,7 @@ export function generateSlotsForDate(date: Date, appointments: Appointment[]): A
   const appointmentsBySlot = new Map<number, Appointment>();
   
   // Indexar marcações por número de slot
-  appointments.forEach(apt => {
+  appointments.filter(isActiveAppointment).forEach(apt => {
     appointmentsBySlot.set(apt.slot_number, apt);
   });
 
@@ -241,10 +297,16 @@ export async function createAppointment(appointmentData: CreateAppointmentData):
     if (!appointmentData.acs_name.trim()) {
       throw new Error('ACS é obrigatório');
     }
+    validateHomeVisitFields(appointmentData);
+
+    const payload: CreateAppointmentData = {
+      ...appointmentData,
+      status: appointmentData.status ?? 'Agendado',
+    };
 
     const { data, error } = await supabase
       .from('appointments')
-      .insert([appointmentData])
+      .insert([payload])
       .select()
       .single();
 
@@ -275,9 +337,31 @@ export async function updateAppointment(
   updates: Partial<CreateAppointmentData>
 ): Promise<Appointment | null> {
   try {
+    const { data: existing, error: fetchError } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      console.error('Erro ao buscar marcação para atualização:', fetchError);
+      throw fetchError;
+    }
+
+    const mergedAppointment = {
+      ...existing,
+      ...updates,
+    } as CreateAppointmentData;
+
+    validateHomeVisitFields(mergedAppointment);
+
+    const payload = updates.status
+      ? { ...updates, status_updated_at: new Date().toISOString() }
+      : updates;
+
     const { data, error } = await supabase
       .from('appointments')
-      .update(updates)
+      .update(payload)
       .eq('id', id)
       .select()
       .single();
@@ -292,6 +376,54 @@ export async function updateAppointment(
     console.error('Exceção em updateAppointment:', error);
     throw error;
   }
+}
+
+export async function updateAppointmentStatus(
+  id: string,
+  status: AppointmentStatus
+): Promise<Appointment | null> {
+  if (!APPOINTMENT_STATUSES.includes(status)) {
+    throw new Error('Status de marcação inválido');
+  }
+
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({
+      status,
+      status_updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Erro ao atualizar status da marcação:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function rescheduleAppointment(
+  originalId: string,
+  scheduledDate: string,
+  slotNumber: number
+): Promise<Appointment | null> {
+  const { data, error } = await supabase.rpc('reschedule_appointment', {
+    p_original_id: originalId,
+    p_scheduled_date: scheduledDate,
+    p_slot_number: slotNumber,
+  });
+
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error('Este slot já está ocupado para esta data');
+    }
+    console.error('Erro ao remarcar marcação:', error);
+    throw error;
+  }
+
+  return data;
 }
 
 /**
@@ -325,17 +457,17 @@ export async function isSlotAvailable(date: string, slotNumber: number): Promise
   try {
     const { data, error } = await supabase
       .from('appointments')
-      .select('id')
+      .select('id, status')
       .eq('scheduled_date', date)
       .eq('slot_number', slotNumber)
-      .maybeSingle();
+      .in('status', ACTIVE_APPOINTMENT_STATUSES);
 
     if (error) {
       console.error('Erro ao verificar disponibilidade do slot:', error);
       throw error;
     }
 
-    return data === null;
+    return (data || []).length === 0;
   } catch (error) {
     console.error('Exceção em isSlotAvailable:', error);
     throw error;
@@ -356,7 +488,9 @@ export async function getAvailableSlots(date: Date): Promise<number[]> {
 
   const dateStr = formatDateToISO(date);
   const appointments = await getAppointmentsByDate(dateStr);
-  const occupiedSlots = new Set(appointments.map(a => a.slot_number));
+  const occupiedSlots = new Set(
+    appointments.filter(isActiveAppointment).map(a => a.slot_number)
+  );
   
   const availableSlots: number[] = [];
   for (let i = 1; i <= config.totalSlots; i++) {
@@ -408,8 +542,56 @@ export function parseISODate(dateStr: string): Date {
   return new Date(year, month - 1, day);
 }
 
+function validateHomeVisitFields(appointmentData: Partial<CreateAppointmentData>): void {
+  if (!appointmentData.scheduled_date || appointmentData.document_value === 'BLOQUEIO') {
+    return;
+  }
+
+  if (!requiresHomeVisitFields(appointmentData.scheduled_date)) {
+    return;
+  }
+
+  if (!appointmentData.home_visit_address?.trim()) {
+    throw new Error('Endereço da visita domiciliar é obrigatório');
+  }
+
+  if (!appointmentData.home_visit_reason?.trim()) {
+    throw new Error('Motivo da visita domiciliar é obrigatório');
+  }
+}
+
 export function isBlockedAppointment(appointment: Appointment | null | undefined): boolean {
   return appointment?.document_value === 'BLOQUEIO';
+}
+
+export function getAppointmentStatus(
+  appointment: Pick<Appointment, 'status'> | null | undefined
+): AppointmentStatus {
+  return appointment?.status ?? 'Agendado';
+}
+
+export function isActiveAppointment(appointment: Appointment | null | undefined): boolean {
+  if (!appointment) {
+    return false;
+  }
+
+  return ACTIVE_APPOINTMENT_STATUSES.includes(getAppointmentStatus(appointment));
+}
+
+export function isReleasedAppointment(appointment: Appointment | null | undefined): boolean {
+  if (!appointment) {
+    return false;
+  }
+
+  return RELEASED_APPOINTMENT_STATUSES.includes(getAppointmentStatus(appointment));
+}
+
+export function getSuggestedAvailableSlot(slots: AppointmentSlot[]): AppointmentSlot | null {
+  return (
+    slots.find(slot => !slot.appointment && !slot.isReserve) ||
+    slots.find(slot => !slot.appointment) ||
+    null
+  );
 }
 
 export function addDays(date: Date, days: number): Date {
@@ -435,7 +617,9 @@ export function getWeekDates(date: Date): Date[] {
 export function buildDaySummary(date: Date, appointments: Appointment[]): AppointmentDaySummary {
   const dateStr = formatDateToISO(date);
   const dayAppointments = appointments.filter(appointment => appointment.scheduled_date === dateStr);
-  const slots = generateSlotsForDate(date, dayAppointments);
+  const activeAppointments = dayAppointments.filter(isActiveAppointment);
+  const releasedAppointments = dayAppointments.filter(isReleasedAppointment);
+  const slots = generateSlotsForDate(date, activeAppointments);
   const occupiedSlots = slots.filter(slot => slot.appointment).length;
   const blockedSlots = slots.filter(slot => isBlockedAppointment(slot.appointment)).length;
   const reserveSlots = slots.filter(slot => slot.isReserve).length;
@@ -447,7 +631,8 @@ export function buildDaySummary(date: Date, appointments: Appointment[]): Appoin
     date: dateStr,
     dateObj: date,
     dayConfig: getDayConfig(date),
-    appointments: dayAppointments,
+    appointments: activeAppointments,
+    releasedAppointments,
     slots,
     totalSlots,
     occupiedSlots,
@@ -479,13 +664,39 @@ export async function getAppointmentSummariesForDates(dates: Date[]): Promise<Ap
 export function getAppointmentMessage(
   patientName: string, 
   date: string, 
-  slotNumber: number
+  slotNumber: number,
+  appointmentData?: Pick<CreateAppointmentData, 'home_visit_address' | 'home_visit_reference' | 'home_visit_reason'>
 ): string {
   // Obter data e configuração
   const dateObj = parseISODate(date);
   const config = getDayConfig(dateObj);
   
   const timeStr = getSlotTime(slotNumber, config);
+
+  if (config.serviceType === 'HOME_VISIT') {
+    const dateFormatted = dateObj.toLocaleDateString('pt-BR');
+    const address = appointmentData?.home_visit_address?.trim();
+    const reference = appointmentData?.home_visit_reference?.trim();
+    const reason = appointmentData?.home_visit_reason?.trim();
+
+    return `Olá *${patientName}*,
+
+Sua visita domiciliar está agendada para:
+📅 *${dateFormatted}*
+🔢 *Ficha:* ${slotNumber}${timeStr && timeStr !== 'Reserva' ? `
+⏰ *Horário previsto:* ${timeStr}` : ''}
+${address ? `📍 *Endereço:* ${address}
+` : ''}${reference ? `📌 *Referência:* ${reference}
+` : ''}${reason ? `📝 *Motivo:* ${reason}
+` : ''}
+⚠️ *Importante:*
+- Aguarde a equipe no endereço informado.
+- Caso precise cancelar ou alterar o endereço, avise com antecedência.
+
+Obrigado,
+*Equipe PSF 5 Maria Lucia da Silva*`;
+  }
+
   if (timeStr === 'Reserva') {
     return `Olá *${patientName}*,
 
@@ -538,7 +749,9 @@ export async function blockDay(
 
   const dateStr = formatDateToISO(date);
   const existingAppointments = await getAppointmentsByDate(dateStr);
-  const occupiedSlots = new Set(existingAppointments.map(a => a.slot_number));
+  const occupiedSlots = new Set(
+    existingAppointments.filter(isActiveAppointment).map(a => a.slot_number)
+  );
 
   const newAppointments: CreateAppointmentData[] = [];
   
@@ -554,6 +767,7 @@ export async function blockDay(
         document_type: 'CPF',
         document_value: 'BLOQUEIO',
         acs_name: 'Administração',
+        status: 'Agendado',
       });
     }
   }

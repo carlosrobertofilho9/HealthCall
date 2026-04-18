@@ -150,7 +150,9 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             </h2>
             <p className={`text-xs sm:text-sm ${dayConfig.hasService ? 'text-[#96c5a9]' : 'text-red-400'} print:text-gray-500`}>
               {dayConfig.hasService 
-                ? `${dayConfig.totalSlots} vagas`
+                ? dayConfig.serviceType === 'HOME_VISIT'
+                  ? `${dayConfig.totalSlots} visitas domiciliares`
+                  : `${dayConfig.totalSlots} vagas`
                 : 'Sem atendimento'
               }
             </p>
