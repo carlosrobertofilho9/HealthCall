@@ -8,12 +8,19 @@ export type ThemeId =
   | 'eclipse'
   | 'aurora'
   | 'sakura'
-  | 'indigo';
+  | 'indigo'
+  | 'neve'
+  | 'sol'
+  | 'menta'
+  | 'lavanda'
+  | 'coral'
+  | 'safira';
 
 export interface ThemeDefinition {
   id: ThemeId;
   name: string;
   description: string;
+  type: 'light' | 'dark';
   /** Cor de preview (primary) */
   previewPrimary: string;
   /** Cor de preview (background) */
@@ -23,10 +30,12 @@ export interface ThemeDefinition {
 }
 
 export const THEMES: ThemeDefinition[] = [
+  // --- Escuros ---
   {
     id: 'floresta',
     name: 'Floresta',
     description: 'Verde profundo e natural',
+    type: 'dark',
     previewPrimary: '#38e07b',
     previewBackground: '#122118',
     previewAccent: '#264532',
@@ -35,6 +44,7 @@ export const THEMES: ThemeDefinition[] = [
     id: 'oceano',
     name: 'Oceano',
     description: 'Azul sereno e profundo',
+    type: 'dark',
     previewPrimary: '#38bdf8',
     previewBackground: '#0c1a2e',
     previewAccent: '#1e3a5f',
@@ -43,6 +53,7 @@ export const THEMES: ThemeDefinition[] = [
     id: 'eclipse',
     name: 'Eclipse',
     description: 'Roxo noturno e sofisticado',
+    type: 'dark',
     previewPrimary: '#a78bfa',
     previewBackground: '#0f0e17',
     previewAccent: '#2d2645',
@@ -51,6 +62,7 @@ export const THEMES: ThemeDefinition[] = [
     id: 'aurora',
     name: 'Aurora',
     description: 'Teal vibrante com toques quentes',
+    type: 'dark',
     previewPrimary: '#2dd4bf',
     previewBackground: '#0d1f1c',
     previewAccent: '#1a3d38',
@@ -59,6 +71,7 @@ export const THEMES: ThemeDefinition[] = [
     id: 'sakura',
     name: 'Sakura',
     description: 'Rosa elegante e delicado',
+    type: 'dark',
     previewPrimary: '#f472b6',
     previewBackground: '#1a0d14',
     previewAccent: '#3d1a2d',
@@ -67,9 +80,65 @@ export const THEMES: ThemeDefinition[] = [
     id: 'indigo',
     name: 'Índigo',
     description: 'Azul índigo moderno',
+    type: 'dark',
     previewPrimary: '#818cf8',
     previewBackground: '#0e0f1c',
     previewAccent: '#1e2040',
+  },
+  // --- Claros ---
+  {
+    id: 'neve',
+    name: 'Neve',
+    description: 'Limpo, moderno e profissional',
+    type: 'light',
+    previewPrimary: '#0ea5e9',
+    previewBackground: '#f8fafc',
+    previewAccent: '#e2e8f0',
+  },
+  {
+    id: 'sol',
+    name: 'Sol',
+    description: 'Quente, acolhedor e vibrante',
+    type: 'light',
+    previewPrimary: '#d97706',
+    previewBackground: '#fffdf5',
+    previewAccent: '#fde68a',
+  },
+  {
+    id: 'menta',
+    name: 'Menta',
+    description: 'Fresco, natural e calmo',
+    type: 'light',
+    previewPrimary: '#059669',
+    previewBackground: '#f7fee7',
+    previewAccent: '#bbf7d0',
+  },
+  {
+    id: 'lavanda',
+    name: 'Lavanda',
+    description: 'Suave, elegante e relaxante',
+    type: 'light',
+    previewPrimary: '#7c3aed',
+    previewBackground: '#faf5ff',
+    previewAccent: '#ddd6fe',
+  },
+  {
+    id: 'coral',
+    name: 'Coral',
+    description: 'Energético, amigável e moderno',
+    type: 'light',
+    previewPrimary: '#ea580c',
+    previewBackground: '#fffaf0',
+    previewAccent: '#fed7aa',
+  },
+  {
+    id: 'safira',
+    name: 'Safira',
+    description: 'Sóbrio, confiável e sereno',
+    type: 'light',
+    previewPrimary: '#0284c7',
+    previewBackground: '#f0f9ff',
+    previewAccent: '#7dd3fc',
   },
 ];
 
@@ -97,8 +166,13 @@ function applyTheme(themeId: ThemeId) {
   const themeDef = THEMES.find(t => t.id === themeId) ?? THEMES[0];
 
   root.dataset.theme = themeDef.id;
-  root.style.colorScheme = 'dark';
-  document.body?.classList.remove('dark');
+  root.style.colorScheme = themeDef.type;
+  
+  if (themeDef.type === 'dark') {
+    document.body?.classList.add('dark');
+  } else {
+    document.body?.classList.remove('dark');
+  }
 
   const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (themeColor) {

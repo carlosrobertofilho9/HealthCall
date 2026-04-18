@@ -8,6 +8,7 @@ function ThemePreview({ theme, active, onClick }: {
   theme: ThemeDefinition;
   active: boolean;
   onClick: () => void;
+  key?: string | number;
 }) {
   return (
     <button
@@ -76,16 +77,44 @@ function ThemePreview({ theme, active, onClick }: {
 export function ThemeSelector() {
   const { theme, setTheme } = useTheme();
 
+  const darkThemes = THEMES.filter(t => t.type === 'dark');
+  const lightThemes = THEMES.filter(t => t.type === 'light');
+
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      {THEMES.map(t => (
-        <ThemePreview
-          key={t.id}
-          theme={t}
-          active={theme === t.id}
-          onClick={() => setTheme(t.id)}
-        />
-      ))}
+    <div className="space-y-8">
+      {/* Temas Claros */}
+      <section>
+        <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
+          Temas Claros
+        </h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {lightThemes.map(t => (
+            <ThemePreview
+              key={t.id}
+              theme={t}
+              active={theme === t.id}
+              onClick={() => setTheme(t.id)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Temas Escuros */}
+      <section>
+        <h3 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
+          Temas Escuros
+        </h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {darkThemes.map(t => (
+            <ThemePreview
+              key={t.id}
+              theme={t}
+              active={theme === t.id}
+              onClick={() => setTheme(t.id)}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

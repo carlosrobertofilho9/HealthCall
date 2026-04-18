@@ -41,7 +41,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(({ className, .
     <div
       ref={ref}
       role="tablist"
-      className={cn('inline-grid items-center border p-1 shadow-sm', DS_COLOR.surface.card, DS_RADIUS.pill, className)}
+      className={cn('inline-flex items-center border p-1 shadow-sm gap-1', DS_COLOR.surface.card, DS_RADIUS.pill, className)}
       {...props}
     />
   );
