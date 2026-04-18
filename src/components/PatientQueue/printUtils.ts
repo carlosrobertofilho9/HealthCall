@@ -3,27 +3,32 @@ import { formatCPF, formatCNS } from '@/lib/utils';
 import { getAppointmentStatus } from '@/features/appointments/services/appointmentService';
 
 type SimplifiedPatient = { name: string, document: string, acs: string, status?: string, period?: string };
+export type PatientListPeriodFilter = 'Manhã' | 'Tarde';
 
-export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
+export const printPatientList = (data: Patient[] | AppointmentSlot[], periodFilter?: PatientListPeriodFilter) => {
   const isAppointment = data.length > 0 && 'slotNumber' in data[0];
   
-  let pages: { title: string, subtitle: string, period: string, patients: SimplifiedPatient[] }[] = [];
+  let pages: { title: string, subtitle: string, period: string, patients: SimplifiedPatient[], showStatus: boolean }[] = [];
 
   if (isAppointment) {
     const slots = data as AppointmentSlot[];
-    const morningSlots = slots.filter(s => s.period === 'Manhã');
-    const afternoonSlots = slots.filter(s => s.period === 'Tarde');
+    const filteredSlots = periodFilter
+      ? slots.filter(slot => slot.period === periodFilter)
+      : slots;
+
+    const morningSlots = filteredSlots.filter(s => s.period === 'Manhã');
+    const afternoonSlots = filteredSlots.filter(s => s.period === 'Tarde');
 
     if (morningSlots.length > 0) {
       pages.push({
         title: 'Ficha de Agendamento',
         subtitle: 'Marcações de Consultas',
         period: 'Manhã',
+        showStatus: false,
         patients: morningSlots.filter(s => s.appointment).map(s => ({
           name: s.appointment!.patient_name,
           document: s.appointment!.document_type === 'CPF' ? formatCPF(s.appointment!.document_value) : formatCNS(s.appointment!.document_value),
-          acs: s.appointment!.acs_name,
-          status: getAppointmentStatus(s.appointment!)
+          acs: s.appointment!.acs_name
         }))
       });
     }
@@ -33,13 +38,22 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
         title: 'Ficha de Agendamento',
         subtitle: 'Marcações de Consultas',
         period: 'Tarde',
+        showStatus: false,
         patients: afternoonSlots.filter(s => s.appointment).map(s => ({
           name: s.appointment!.patient_name,
           document: s.appointment!.document_type === 'CPF' ? formatCPF(s.appointment!.document_value) : formatCNS(s.appointment!.document_value),
-          acs: s.appointment!.acs_name,
-          status: getAppointmentStatus(s.appointment!)
+          acs: s.appointment!.acs_name
         }))
       });
+    }
+
+    if (pages.length === 0) {
+      alert(
+        periodFilter
+          ? `Não há pacientes no turno da ${periodFilter.toLowerCase()} para imprimir a ficha.`
+          : 'Não há pacientes para imprimir a ficha.'
+      );
+      return;
     }
   } else {
     const patients = (data as Patient[]);
@@ -51,6 +65,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
       title: 'Lista de Atendimento',
       subtitle: 'Controle de Fila e Triagem',
       period: new Date().getHours() < 12 ? 'Manhã' : 'Tarde',
+      showStatus: true,
       patients: patients.map(p => ({ name: p.name, document: '', acs: '', status: p.status }))
     });
   }
@@ -306,11 +321,22 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
             text-align: center;
           }
 
-          .col-name { width: 38%; font-weight: 600; }
-          .col-doc { width: 23%; }
-          .col-acs { width: 14%; font-size: 11px; }
-          .col-status { width: 12%; font-size: 10px; }
-          .col-check { width: 13%; text-align: center; }
+          .col-name { font-weight: 600; }
+          .col-doc { }
+          .col-acs { font-size: 11px; }
+          .col-status { font-size: 10px; }
+          .col-check { text-align: center; }
+
+          .with-status .col-name { width: 38%; }
+          .with-status .col-doc { width: 23%; }
+          .with-status .col-acs { width: 14%; }
+          .with-status .col-status { width: 12%; }
+          .with-status .col-check { width: 13%; }
+
+          .without-status .col-name { width: 44%; }
+          .without-status .col-doc { width: 27%; }
+          .without-status .col-acs { width: 16%; }
+          .without-status .col-check { width: 13%; }
 
           .checkbox { 
             width: 14px; 
@@ -413,18 +439,18 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
             </div>
 
             <div class="table-container">
-              <table>
+              <table class="${page.showStatus ? 'with-status' : 'without-status'}">
                 <thead>
                   <tr>
                     <th class="col-name">Nome do Paciente</th>
                     <th class="col-doc">CNS / CPF</th>
                     <th class="col-acs">ACS</th>
-                    <th class="col-status">Status</th>
+                    ${page.showStatus ? '<th class="col-status">Status</th>' : ''}
                     <th class="col-check">Presença</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${generateRows(page.patients)}
+                  ${generateRows(page.patients, page.showStatus)}
                 </tbody>
               </table>
             </div>
@@ -455,7 +481,7 @@ export const printPatientList = (data: Patient[] | AppointmentSlot[]) => {
   printWindow.document.close();
 };
 
-const generateRows = (patients: SimplifiedPatient[]) => {
+const generateRows = (patients: SimplifiedPatient[], showStatus: boolean) => {
   const totalRows = 15;
   const rows = [];
 
@@ -467,7 +493,7 @@ const generateRows = (patients: SimplifiedPatient[]) => {
           <td class="col-name">${patient.name}</td>
           <td class="col-doc">${patient.document || ''}</td>
           <td class="col-acs">${patient.acs || ''}</td>
-          <td class="col-status">${patient.status || ''}</td>
+          ${showStatus ? `<td class="col-status">${patient.status || ''}</td>` : ''}
           <td class="col-check"><div class="checkbox"></div></td>
         </tr>
       `);
@@ -477,7 +503,7 @@ const generateRows = (patients: SimplifiedPatient[]) => {
           <td class="col-name">&nbsp;</td>
           <td class="col-doc"></td>
           <td class="col-acs"></td>
-          <td class="col-status"></td>
+          ${showStatus ? '<td class="col-status"></td>' : ''}
           <td class="col-check"><div class="checkbox" style="border-color: #cbd5e1"></div></td>
         </tr>
       `);

@@ -38,10 +38,8 @@ interface SlotCardProps {
 
 const STATUS_STYLES: Record<AppointmentStatus, { bg: string; text: string; border: string }> = {
   Agendado:   { bg: 'bg-blue-500/10',    text: 'text-blue-300',    border: 'border-blue-500/20' },
-  Confirmado: { bg: 'bg-primary/10',     text: 'text-primary',     border: 'border-primary/20' },
   Compareceu: { bg: 'bg-emerald-500/10', text: 'text-emerald-300', border: 'border-emerald-500/20' },
   Faltou:     { bg: 'bg-amber-500/10',   text: 'text-amber-300',   border: 'border-amber-500/20' },
-  Cancelado:  { bg: 'bg-red-500/10',     text: 'text-red-300',     border: 'border-red-500/20' },
   Remarcado:  { bg: 'bg-purple-500/10',  text: 'text-purple-300',  border: 'border-purple-500/20' },
 };
 
@@ -317,10 +315,10 @@ export const SlotCard: React.FC<SlotCardProps> = ({
               </button>
               <button
                 onClick={() => onDeleteClick(appointment)}
-                className="p-2 rounded-lg hover:bg-red-900/30 transition-colors"
-                title="Cancelar"
+                className="p-2 rounded-lg hover:bg-amber-900/30 transition-colors"
+                title="Marcar falta"
               >
-                <Trash2 className="w-4 h-4 text-[#96c5a9] hover:text-red-400" />
+                <Trash2 className="w-4 h-4 text-[#96c5a9] hover:text-amber-300" />
               </button>
             </div>
           </div>

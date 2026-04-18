@@ -1,6 +1,14 @@
 import { supabase } from '@/lib/supabaseClient';
 import type {
   Appointment,
+  CapacityAcsRankingItem,
+  CapacityAnalyticsFilters,
+  CapacityAnalyticsResult,
+  CapacityKpiSnapshot,
+  CapacityPeriod,
+  CapacityStatusDistribution,
+  CapacityTurnDistribution,
+  CapacityTrendPoint,
   AppointmentDaySummary,
   AppointmentStatus,
   CreateAppointmentData,
@@ -64,22 +72,18 @@ export const SCHEDULE_CONFIG: Record<number, DayScheduleConfig> = {
 
 export const APPOINTMENT_STATUSES: AppointmentStatus[] = [
   'Agendado',
-  'Confirmado',
   'Compareceu',
   'Faltou',
-  'Cancelado',
   'Remarcado',
 ];
 
 export const ACTIVE_APPOINTMENT_STATUSES: AppointmentStatus[] = [
   'Agendado',
-  'Confirmado',
   'Compareceu',
   'Faltou',
 ];
 
 export const RELEASED_APPOINTMENT_STATUSES: AppointmentStatus[] = [
-  'Cancelado',
   'Remarcado',
 ];
 
@@ -567,7 +571,21 @@ export function isBlockedAppointment(appointment: Appointment | null | undefined
 export function getAppointmentStatus(
   appointment: Pick<Appointment, 'status'> | null | undefined
 ): AppointmentStatus {
-  return appointment?.status ?? 'Agendado';
+  const status = (appointment as { status?: string } | null | undefined)?.status;
+
+  if (status === 'Confirmado') {
+    return 'Agendado';
+  }
+
+  if (status === 'Cancelado') {
+    return 'Faltou';
+  }
+
+  if (status === 'Agendado' || status === 'Compareceu' || status === 'Faltou' || status === 'Remarcado') {
+    return status;
+  }
+
+  return 'Agendado';
 }
 
 export function isActiveAppointment(appointment: Appointment | null | undefined): boolean {
@@ -656,6 +674,293 @@ export async function getAppointmentSummariesForDates(dates: Date[]): Promise<Ap
   const appointments = await getAppointmentsByDateRange(startDate, endDate);
 
   return dates.map(date => buildDaySummary(date, appointments));
+}
+
+const CAPACITY_PERIODS: CapacityPeriod[] = ['Manhã', 'Tarde', 'Reserva'];
+
+function getPeriodBySlot(slotNumber: number, config: DayScheduleConfig): CapacityPeriod {
+  const morningReserveSlots = config.morningReserveSlots || 0;
+  const afternoonReserveSlots = config.afternoonReserveSlots || 0;
+  const morningNormalEnd = config.morningSlots;
+  const morningReserveEnd = morningNormalEnd + morningReserveSlots;
+  const afternoonNormalEnd = morningReserveEnd + config.afternoonSlots;
+  const afternoonReserveEnd = afternoonNormalEnd + afternoonReserveSlots;
+
+  if (slotNumber <= morningNormalEnd) {
+    return 'Manhã';
+  }
+
+  if (slotNumber <= morningReserveEnd) {
+    return 'Reserva';
+  }
+
+  if (slotNumber <= afternoonNormalEnd) {
+    return 'Tarde';
+  }
+
+  if (slotNumber <= afternoonReserveEnd) {
+    return 'Reserva';
+  }
+
+  return 'Reserva';
+}
+
+function buildCapacityKpiSnapshot(partial?: Partial<CapacityKpiSnapshot>): CapacityKpiSnapshot {
+  return {
+    totalSlots: partial?.totalSlots || 0,
+    occupiedSlots: partial?.occupiedSlots || 0,
+    blockedSlots: partial?.blockedSlots || 0,
+    availableSlots: partial?.availableSlots || 0,
+    showCount: partial?.showCount || 0,
+    noShowCount: partial?.noShowCount || 0,
+    rescheduledCount: partial?.rescheduledCount || 0,
+    occupancyRate: partial?.occupancyRate || 0,
+    showRate: partial?.showRate || 0,
+  };
+}
+
+function buildDelta(current: number, previous: number): number {
+  if (previous === 0) {
+    return current === 0 ? 0 : 100;
+  }
+
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+function matchesCapacityFilters(appointment: Appointment, filters: CapacityAnalyticsFilters): boolean {
+  const acsMatches = filters.acsName === 'ALL' || appointment.acs_name === filters.acsName;
+  const statusMatches = filters.status === 'ALL' || getAppointmentStatus(appointment) === filters.status;
+  return acsMatches && statusMatches;
+}
+
+function summarizeCapacityKpis(
+  summaries: AppointmentDaySummary[],
+  filters: CapacityAnalyticsFilters,
+): {
+  kpis: CapacityKpiSnapshot;
+  trend: CapacityTrendPoint[];
+  statusDistribution: CapacityStatusDistribution[];
+  turnDistribution: CapacityTurnDistribution[];
+  acsRanking: CapacityAcsRankingItem[];
+  uniqueAcs: string[];
+} {
+  const statusMap = new Map<AppointmentStatus, number>();
+  const turnMap = new Map<CapacityPeriod, CapacityTurnDistribution>();
+  const acsMap = new Map<string, CapacityAcsRankingItem>();
+  const uniqueAcsSet = new Set<string>();
+  const trend: CapacityTrendPoint[] = [];
+  const totalKpis = buildCapacityKpiSnapshot();
+
+  CAPACITY_PERIODS.forEach(period => {
+    turnMap.set(period, {
+      period,
+      total: 0,
+      occupied: 0,
+      showCount: 0,
+      noShowCount: 0,
+      rescheduledCount: 0,
+    });
+  });
+
+  summaries.forEach(summary => {
+    if (!summary.dayConfig.hasService) {
+      return;
+    }
+
+    const allAppointments = [...summary.appointments, ...summary.releasedAppointments]
+      .filter(appointment => !isBlockedAppointment(appointment))
+      .filter(appointment => matchesCapacityFilters(appointment, filters));
+
+    allAppointments.forEach(appointment => {
+      const status = getAppointmentStatus(appointment);
+      uniqueAcsSet.add(appointment.acs_name);
+
+      statusMap.set(status, (statusMap.get(status) || 0) + 1);
+
+      const period = getPeriodBySlot(appointment.slot_number, summary.dayConfig);
+      const turnStats = turnMap.get(period);
+      if (turnStats) {
+        turnStats.total += 1;
+
+        if (isActiveAppointment(appointment)) {
+          turnStats.occupied += 1;
+        }
+        if (status === 'Compareceu') {
+          turnStats.showCount += 1;
+        }
+        if (status === 'Faltou') {
+          turnStats.noShowCount += 1;
+        }
+        if (status === 'Remarcado') {
+          turnStats.rescheduledCount += 1;
+        }
+      }
+
+      const acs = acsMap.get(appointment.acs_name) || {
+        acsName: appointment.acs_name,
+        total: 0,
+        showCount: 0,
+        noShowCount: 0,
+        rescheduledCount: 0,
+        showRate: 0,
+      };
+
+      acs.total += 1;
+      if (status === 'Compareceu') {
+        acs.showCount += 1;
+      }
+      if (status === 'Faltou') {
+        acs.noShowCount += 1;
+      }
+      if (status === 'Remarcado') {
+        acs.rescheduledCount += 1;
+      }
+
+      acsMap.set(appointment.acs_name, acs);
+    });
+
+    const activeCount = allAppointments.filter(isActiveAppointment).length;
+    const blockedCount = summary.slots.filter(
+      slot =>
+        Boolean(slot.appointment) &&
+        isBlockedAppointment(slot.appointment) &&
+        matchesCapacityFilters(slot.appointment!, filters)
+    ).length;
+    const totalSlots = summary.totalSlots;
+    const occupiedCapacity = activeCount + blockedCount;
+    const availableSlots = Math.max(totalSlots - occupiedCapacity, 0);
+    const showCount = allAppointments.filter(appointment => getAppointmentStatus(appointment) === 'Compareceu').length;
+    const noShowCount = allAppointments.filter(appointment => getAppointmentStatus(appointment) === 'Faltou').length;
+    const rescheduledCount = allAppointments.filter(appointment => getAppointmentStatus(appointment) === 'Remarcado').length;
+    const showBase = showCount + noShowCount;
+
+    const dayPoint: CapacityTrendPoint = {
+      date: summary.date,
+      label: summary.dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+      totalSlots,
+      occupiedSlots: activeCount,
+      blockedSlots: blockedCount,
+      occupancyRate: totalSlots > 0 ? Math.round((occupiedCapacity / totalSlots) * 100) : 0,
+      showCount,
+      noShowCount,
+      rescheduledCount,
+      showRate: showBase > 0 ? Math.round((showCount / showBase) * 100) : 0,
+    };
+
+    trend.push(dayPoint);
+
+    totalKpis.totalSlots += totalSlots;
+    totalKpis.occupiedSlots += activeCount;
+    totalKpis.blockedSlots += blockedCount;
+    totalKpis.availableSlots += availableSlots;
+    totalKpis.showCount += showCount;
+    totalKpis.noShowCount += noShowCount;
+    totalKpis.rescheduledCount += rescheduledCount;
+  });
+
+  const occupiedCapacity = totalKpis.occupiedSlots + totalKpis.blockedSlots;
+  totalKpis.occupancyRate = totalKpis.totalSlots > 0
+    ? Math.round((occupiedCapacity / totalKpis.totalSlots) * 100)
+    : 0;
+
+  const showBase = totalKpis.showCount + totalKpis.noShowCount;
+  totalKpis.showRate = showBase > 0 ? Math.round((totalKpis.showCount / showBase) * 100) : 0;
+
+  const statusDistribution = Array.from(statusMap.entries())
+    .map(([status, count]) => ({ status, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const turnDistribution = Array.from(turnMap.values());
+
+  const acsRanking = Array.from(acsMap.values())
+    .map(item => {
+      const showBaseByAcs = item.showCount + item.noShowCount;
+      return {
+        ...item,
+        showRate: showBaseByAcs > 0 ? Math.round((item.showCount / showBaseByAcs) * 100) : 0,
+      };
+    })
+    .sort((a, b) => b.total - a.total || b.showRate - a.showRate);
+
+  const uniqueAcs = Array.from(uniqueAcsSet).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+  return {
+    kpis: totalKpis,
+    trend,
+    statusDistribution,
+    turnDistribution,
+    acsRanking,
+    uniqueAcs,
+  };
+}
+
+export function buildCapacityAnalyticsFromSummaries(
+  currentSummaries: AppointmentDaySummary[],
+  previousSummaries: AppointmentDaySummary[],
+  filters: CapacityAnalyticsFilters,
+): CapacityAnalyticsResult {
+  const current = summarizeCapacityKpis(currentSummaries, filters);
+  const previous = summarizeCapacityKpis(previousSummaries, filters);
+
+  const busiestDays = [...current.trend]
+    .sort((a, b) => b.occupancyRate - a.occupancyRate || b.occupiedSlots - a.occupiedSlots)
+    .slice(0, 5);
+
+  return {
+    current: current.kpis,
+    previous: previous.kpis,
+    deltas: {
+      occupancyRate: buildDelta(current.kpis.occupancyRate, previous.kpis.occupancyRate),
+      showRate: buildDelta(current.kpis.showRate, previous.kpis.showRate),
+      noShowCount: buildDelta(current.kpis.noShowCount, previous.kpis.noShowCount),
+      rescheduledCount: buildDelta(current.kpis.rescheduledCount, previous.kpis.rescheduledCount),
+      occupiedSlots: buildDelta(current.kpis.occupiedSlots, previous.kpis.occupiedSlots),
+    },
+    trend: current.trend,
+    statusDistribution: current.statusDistribution,
+    turnDistribution: current.turnDistribution,
+    acsRanking: current.acsRanking,
+    busiestDays,
+    uniqueAcs: current.uniqueAcs,
+  };
+}
+
+function createDateRange(startDate: Date, endDate: Date): Date[] {
+  const dates: Date[] = [];
+  const current = new Date(startDate);
+  current.setHours(0, 0, 0, 0);
+  const final = new Date(endDate);
+  final.setHours(0, 0, 0, 0);
+
+  while (current <= final) {
+    dates.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+}
+
+export async function getCapacityAnalyticsForDateRange(
+  startDate: Date,
+  endDate: Date,
+  filters: CapacityAnalyticsFilters,
+): Promise<CapacityAnalyticsResult> {
+  const currentDates = createDateRange(startDate, endDate);
+
+  if (currentDates.length === 0) {
+    return buildCapacityAnalyticsFromSummaries([], [], filters);
+  }
+
+  const previousEnd = addDays(currentDates[0], -1);
+  const previousStart = addDays(previousEnd, -(currentDates.length - 1));
+  const previousDates = createDateRange(previousStart, previousEnd);
+
+  const [currentSummaries, previousSummaries] = await Promise.all([
+    getAppointmentSummariesForDates(currentDates),
+    getAppointmentSummariesForDates(previousDates),
+  ]);
+
+  return buildCapacityAnalyticsFromSummaries(currentSummaries, previousSummaries, filters);
 }
 
 /**

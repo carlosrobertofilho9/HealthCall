@@ -1,17 +1,55 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BarChart3, ChevronLeft, ChevronRight, Loader2, Users } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  RefreshCw,
+  UserCheck,
+  Users,
+  XCircle,
+} from 'lucide-react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { toast } from 'sonner';
-import type { AppointmentDaySummary } from '@/types';
+import type { CapacityAnalyticsFilters, CapacityStatusFilter } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/Select';
 import AppointmentsNav from '../components/AppointmentsNav';
 import {
   addDays,
-  getAppointmentSummariesForDates,
+  getCapacityAnalyticsForDateRange,
   getWeekStart,
-  isBlockedAppointment,
 } from '../services/appointmentService';
 
 const RANGE_DAYS = 28;
+
+const statusOptions: { value: CapacityStatusFilter; label: string }[] = [
+  { value: 'ALL', label: 'Todos os status' },
+  { value: 'Agendado', label: 'Agendado' },
+  { value: 'Compareceu', label: 'Compareceu' },
+  { value: 'Faltou', label: 'Faltou' },
+  { value: 'Remarcado', label: 'Remarcado' },
+];
 
 const formatRangeLabel = (start: Date, end: Date) => {
   const first = start.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
@@ -19,103 +57,96 @@ const formatRangeLabel = (start: Date, end: Date) => {
   return `${first} a ${last}`;
 };
 
+const formatInputDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseInputDate = (value: string): Date => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatDelta = (value: number) => {
+  if (value > 0) {
+    return `+${value}%`;
+  }
+
+  return `${value}%`;
+};
+
 const CapacityDashboardPage: React.FC = () => {
   const [rangeStart, setRangeStart] = useState(() => getWeekStart(new Date()));
-  const [summaries, setSummaries] = useState<AppointmentDaySummary[]>([]);
+  const [rangeEnd, setRangeEnd] = useState(() => addDays(getWeekStart(new Date()), RANGE_DAYS - 1));
+  const [filters, setFilters] = useState<CapacityAnalyticsFilters>({
+    acsName: 'ALL',
+    status: 'ALL',
+  });
+  const [analytics, setAnalytics] = useState<Awaited<ReturnType<typeof getCapacityAnalyticsForDateRange>> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const rangeDates = useMemo(
-    () => Array.from({ length: RANGE_DAYS }, (_, index) => addDays(rangeStart, index)),
-    [rangeStart]
-  );
-
-  const rangeEnd = rangeDates[rangeDates.length - 1];
+  const isInvalidRange = rangeStart > rangeEnd;
 
   const loadCapacity = useCallback(async () => {
+    if (isInvalidRange) {
+      return;
+    }
+
     setIsLoading(true);
+
     try {
-      const data = await getAppointmentSummariesForDates(rangeDates);
-      setSummaries(data);
+      const data = await getCapacityAnalyticsForDateRange(rangeStart, rangeEnd, filters);
+      setAnalytics(data);
     } catch (error) {
       console.error('Erro ao carregar dashboard de capacidade:', error);
       toast.error('Erro ao carregar dashboard de capacidade.');
     } finally {
       setIsLoading(false);
     }
-  }, [rangeDates]);
+  }, [filters, isInvalidRange, rangeEnd, rangeStart]);
 
   useEffect(() => {
-    loadCapacity();
+    void loadCapacity();
   }, [loadCapacity]);
 
-  const serviceDays = summaries.filter(summary => summary.dayConfig.hasService);
-  const totals = serviceDays.reduce(
-    (acc, summary) => {
-      acc.total += summary.totalSlots;
-      acc.occupied += summary.occupiedSlots;
-      acc.available += summary.availableSlots;
-      acc.blocked += summary.blockedSlots;
-      acc.reserve += summary.reserveSlots;
-      acc.reserveOccupied += summary.reserveOccupiedSlots;
-      acc.normalOccupied += summary.normalOccupiedSlots;
-      return acc;
-    },
-    { total: 0, occupied: 0, available: 0, blocked: 0, reserve: 0, reserveOccupied: 0, normalOccupied: 0 }
-  );
+  const goBack = () => {
+    setRangeStart(prev => addDays(prev, -RANGE_DAYS));
+    setRangeEnd(prev => addDays(prev, -RANGE_DAYS));
+  };
 
-  const occupancyRate = totals.total > 0 ? Math.round((totals.occupied / totals.total) * 100) : 0;
-  const realPatientCount = totals.normalOccupied + totals.reserveOccupied;
-  const weeklyGroups = useMemo(() => {
-    return Array.from({ length: 4 }, (_, index) => {
-      const weekSummaries = summaries.slice(index * 7, index * 7 + 7);
-      const total = weekSummaries.reduce((sum, summary) => sum + summary.totalSlots, 0);
-      const occupied = weekSummaries.reduce((sum, summary) => sum + summary.occupiedSlots, 0);
-      const available = weekSummaries.reduce((sum, summary) => sum + summary.availableSlots, 0);
-      const blocked = weekSummaries.reduce((sum, summary) => sum + summary.blockedSlots, 0);
-      return {
-        label: `Semana ${index + 1}`,
-        range: weekSummaries.length > 0 ? formatRangeLabel(weekSummaries[0].dateObj, weekSummaries[weekSummaries.length - 1].dateObj) : '',
-        total,
-        occupied,
-        available,
-        blocked,
-        rate: total > 0 ? Math.round((occupied / total) * 100) : 0,
-      };
-    });
-  }, [summaries]);
+  const goForward = () => {
+    setRangeStart(prev => addDays(prev, RANGE_DAYS));
+    setRangeEnd(prev => addDays(prev, RANGE_DAYS));
+  };
 
-  const acsRanking = useMemo(() => {
-    const counts = new Map<string, number>();
-    summaries.forEach(summary => {
-      summary.appointments.forEach(appointment => {
-        if (isBlockedAppointment(appointment)) return;
-        counts.set(appointment.acs_name, (counts.get(appointment.acs_name) || 0) + 1);
-      });
-    });
+  const goCurrent = () => {
+    const start = getWeekStart(new Date());
+    setRangeStart(start);
+    setRangeEnd(addDays(start, RANGE_DAYS - 1));
+  };
 
-    return Array.from(counts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [summaries]);
+  const occupancyDeltaClass = useMemo(() => {
+    if (!analytics) return 'text-[#96c5a9]';
+    return analytics.deltas.occupancyRate >= 0 ? 'text-primary' : 'text-red-300';
+  }, [analytics]);
 
-  const busiestDays = [...serviceDays]
-    .sort((a, b) => b.occupancyRate - a.occupancyRate || b.occupiedSlots - a.occupiedSlots)
-    .slice(0, 5);
-
-  const goBack = () => setRangeStart(prev => addDays(prev, -RANGE_DAYS));
-  const goForward = () => setRangeStart(prev => addDays(prev, RANGE_DAYS));
-  const goCurrent = () => setRangeStart(getWeekStart(new Date()));
+  const showRateDeltaClass = useMemo(() => {
+    if (!analytics) return 'text-[#96c5a9]';
+    return analytics.deltas.showRate >= 0 ? 'text-primary' : 'text-red-300';
+  }, [analytics]);
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <AppointmentsNav />
 
-      <section className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6 space-y-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-sm font-medium text-primary">Dashboard de capacidade</p>
+            <p className="text-sm font-medium text-primary">Dashboard de capacidade analítica</p>
             <h2 className="text-2xl font-bold text-white">{formatRangeLabel(rangeStart, rangeEnd)}</h2>
-            <p className="text-sm text-[#96c5a9]">Visão dos próximos 28 dias a partir da semana selecionada</p>
+            <p className="text-sm text-[#96c5a9]">Comparação automática com o período imediatamente anterior</p>
           </div>
 
           <div className="flex gap-2">
@@ -132,145 +163,250 @@ const CapacityDashboardPage: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="relative">
+            <CalendarDays className="absolute left-4 top-4 h-5 w-5 text-[#96c5a9]" />
+            <Input
+              type="date"
+              value={formatInputDate(rangeStart)}
+              onChange={event => setRangeStart(parseInputDate(event.target.value))}
+              className="h-12 pl-12"
+              aria-label="Data inicial"
+            />
+          </div>
+
+          <div className="relative">
+            <CalendarDays className="absolute left-4 top-4 h-5 w-5 text-[#96c5a9]" />
+            <Input
+              type="date"
+              value={formatInputDate(rangeEnd)}
+              onChange={event => setRangeEnd(parseInputDate(event.target.value))}
+              className="h-12 pl-12"
+              aria-label="Data final"
+            />
+          </div>
+
+          <div className="relative">
+            <Users className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-[#96c5a9]" />
+            <Select
+              value={filters.acsName}
+              onValueChange={value => setFilters(prev => ({ ...prev, acsName: value as CapacityAnalyticsFilters['acsName'] }))}
+            >
+              <SelectTrigger className="h-12 pl-12">
+                <SelectValue placeholder="Filtrar ACS" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todos os ACS</SelectItem>
+                {(analytics?.uniqueAcs || []).map(name => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="relative">
+            <Activity className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-[#96c5a9]" />
+            <Select
+              value={filters.status}
+              onValueChange={value => setFilters(prev => ({ ...prev, status: value as CapacityStatusFilter }))}
+            >
+              <SelectTrigger className="h-12 pl-12">
+                <SelectValue placeholder="Filtrar status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {isInvalidRange && (
+          <p className="text-sm text-red-300">A data final deve ser igual ou posterior à data inicial.</p>
+        )}
       </section>
 
       {isLoading ? (
         <div className="rounded-2xl bg-[#1a3a26] p-12 text-center">
           <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-primary" />
-          <p className="text-[#96c5a9]">Carregando capacidade...</p>
+          <p className="text-[#96c5a9]">Carregando capacidade analítica...</p>
         </div>
-      ) : (
+      ) : analytics ? (
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <CapacityStat label="Capacidade total" value={totals.total} detail={`${serviceDays.length} dias com atendimento`} />
-            <CapacityStat label="Ocupação" value={`${occupancyRate}%`} detail={`${totals.occupied} de ${totals.total} fichas`} accent />
-            <CapacityStat label="Vagas livres" value={totals.available} detail="Fichas ainda disponíveis" tone="blue" />
-            <CapacityStat label="Bloqueios" value={totals.blocked} detail="Fichas indisponíveis no período" tone="red" />
+            <KpiCard
+              icon={<BarChart3 className="h-5 w-5 text-primary" />}
+              label="Taxa de ocupação"
+              value={`${analytics.current.occupancyRate}%`}
+              helper={`${analytics.current.occupiedSlots + analytics.current.blockedSlots} de ${analytics.current.totalSlots} fichas`}
+              delta={formatDelta(analytics.deltas.occupancyRate)}
+              deltaClass={occupancyDeltaClass}
+            />
+            <KpiCard
+              icon={<UserCheck className="h-5 w-5 text-primary" />}
+              label="Taxa de comparecimento"
+              value={`${analytics.current.showRate}%`}
+              helper={`${analytics.current.showCount} compareceu / ${analytics.current.noShowCount} faltou`}
+              delta={formatDelta(analytics.deltas.showRate)}
+              deltaClass={showRateDeltaClass}
+            />
+            <KpiCard
+              icon={<XCircle className="h-5 w-5 text-red-300" />}
+              label="Faltas"
+              value={analytics.current.noShowCount}
+              helper="No período filtrado"
+              delta={formatDelta(analytics.deltas.noShowCount)}
+              deltaClass={analytics.deltas.noShowCount <= 0 ? 'text-primary' : 'text-red-300'}
+            />
+            <KpiCard
+              icon={<RefreshCw className="h-5 w-5 text-amber-300" />}
+              label="Remarcações"
+              value={analytics.current.rescheduledCount}
+              helper="No período filtrado"
+              delta={formatDelta(analytics.deltas.rescheduledCount)}
+              deltaClass={analytics.deltas.rescheduledCount <= 0 ? 'text-primary' : 'text-red-300'}
+            />
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-            <div className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6">
-              <div className="mb-5 flex items-center gap-3">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                <h3 className="text-lg font-bold text-white">Ocupação por semana</h3>
-              </div>
+          <section className="grid gap-6 xl:grid-cols-2">
+            <ChartCard title="Evolução diária (ocupação x comparecimento)">
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={analytics.trend}>
+                  <CartesianGrid stroke="#264532" strokeDasharray="3 3" />
+                  <XAxis dataKey="label" stroke="#96c5a9" />
+                  <YAxis stroke="#96c5a9" domain={[0, 100]} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="occupancyRate" name="Ocupação (%)" stroke="#7ed957" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="showRate" name="Comparecimento (%)" stroke="#38bdf8" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
 
-              <div className="space-y-4">
-                {weeklyGroups.map(week => (
-                  <div key={week.label} className="rounded-xl border border-[#264532] bg-[#122118]/40 p-4">
-                    <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="font-bold text-white">{week.label}</p>
-                        <p className="text-xs text-[#96c5a9]">{week.range}</p>
-                      </div>
-                      <p className="text-sm font-bold text-primary">{week.rate}% ocupado</p>
-                    </div>
-                    <div className="h-3 overflow-hidden rounded-full bg-[#264532]">
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${week.rate}%` }} />
-                    </div>
-                    <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs">
-                      <BarDetail label="Total" value={week.total} />
-                      <BarDetail label="Ocup." value={week.occupied} />
-                      <BarDetail label="Livres" value={week.available} />
-                      <BarDetail label="Bloq." value={week.blocked} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <ChartCard title="Distribuição por status">
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={analytics.statusDistribution}>
+                  <CartesianGrid stroke="#264532" strokeDasharray="3 3" />
+                  <XAxis dataKey="status" stroke="#96c5a9" />
+                  <YAxis stroke="#96c5a9" />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="count" name="Quantidade" fill="#7ed957" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </section>
+
+          <section className="grid items-start gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+            <div className="space-y-6">
+              <ChartCard title="Distribuição por turno">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={analytics.turnDistribution}>
+                    <CartesianGrid stroke="#264532" strokeDasharray="3 3" />
+                    <XAxis dataKey="period" stroke="#96c5a9" />
+                    <YAxis stroke="#96c5a9" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="occupied" name="Ocupadas" fill="#7ed957" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="showCount" name="Compareceu" fill="#38bdf8" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="noShowCount" name="Faltou" fill="#f97316" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="rescheduledCount" name="Remarcado" fill="#a78bfa" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard title="Movimentações por dia (faltou x remarcado)">
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={analytics.trend}>
+                    <CartesianGrid stroke="#264532" strokeDasharray="3 3" />
+                    <XAxis dataKey="label" stroke="#96c5a9" />
+                    <YAxis stroke="#96c5a9" />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="noShowCount" name="Faltou" stroke="#f97316" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="rescheduledCount" name="Remarcado" stroke="#f59e0b" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6">
-                <div className="mb-5 flex items-center gap-3">
-                  <Users className="h-6 w-6 text-primary" />
-                  <h3 className="text-lg font-bold text-white">Pacientes e visitas por ACS</h3>
-                </div>
-
-                {acsRanking.length > 0 ? (
-                  <div className="space-y-3">
-                    {acsRanking.map(item => {
-                      const width = realPatientCount > 0 ? `${Math.round((item.count / realPatientCount) * 100)}%` : '0%';
-                      return (
-                        <div key={item.name}>
-                          <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                            <span className="truncate font-semibold text-white">{item.name}</span>
-                            <span className="font-bold text-primary">{item.count}</span>
-                          </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-[#264532]">
-                            <div className="h-full rounded-full bg-primary" style={{ width }} />
-                          </div>
+              <ChartCard title="Ranking ACS">
+                {analytics.acsRanking.length > 0 ? (
+                  <div className="space-y-2">
+                    {analytics.acsRanking.slice(0, 7).map(item => (
+                      <div key={item.acsName} className="rounded-xl border border-[#264532] bg-[#122118]/40 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate font-semibold text-white">{item.acsName}</p>
+                          <p className="font-bold text-primary">{item.total}</p>
                         </div>
-                      );
-                    })}
+                        <p className="mt-1 text-xs text-[#96c5a9]">
+                          Comparecimento: {item.showRate}% · Faltas: {item.noShowCount}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-[#96c5a9]">Nenhuma marcação no período.</p>
+                  <p className="text-sm text-[#96c5a9]">Sem registros para os filtros atuais.</p>
                 )}
-              </div>
+              </ChartCard>
 
-              <div className="rounded-2xl bg-[#1a3a26] p-4 sm:p-6">
-                <h3 className="mb-4 text-lg font-bold text-white">Dias mais cheios</h3>
-                <div className="space-y-3">
-                  {busiestDays.map(summary => (
-                    <div key={summary.date} className="rounded-xl bg-[#122118]/40 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="font-semibold capitalize text-white">
-                            {summary.dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })}
-                          </p>
-                          <p className="text-xs text-[#96c5a9]">
-                            {summary.occupiedSlots}/{summary.totalSlots} fichas ocupadas
-                          </p>
-                        </div>
-                        <span className="font-bold text-primary">{summary.occupancyRate}%</span>
-                      </div>
+              <ChartCard title="Dias mais cheios">
+                <div className="space-y-2.5">
+                  {analytics.busiestDays.map(day => (
+                    <div key={day.date} className="rounded-xl border border-[#264532] bg-[#122118]/40 p-3">
+                      <p className="text-sm font-semibold text-white">{day.label}</p>
+                      <p className="text-xs text-[#96c5a9]">{day.occupiedSlots + day.blockedSlots}/{day.totalSlots} fichas</p>
+                      <p className="mt-1 text-sm font-bold text-primary">{day.occupancyRate}% ocupado</p>
                     </div>
                   ))}
                 </div>
-              </div>
+              </ChartCard>
             </div>
           </section>
-
-          <section className="grid gap-4 md:grid-cols-3">
-            <CapacityStat label="Marcações reais" value={realPatientCount} detail="Pacientes e visitas, sem contar bloqueios" />
-            <CapacityStat label="Reservas ocupadas" value={totals.reserveOccupied} detail={`${totals.reserve} fichas de reserva no período`} tone="red" />
-            <CapacityStat label="Consultas normais" value={totals.normalOccupied} detail="Fichas comuns ocupadas por pacientes" tone="blue" />
-          </section>
         </>
+      ) : (
+        <div className="rounded-2xl bg-[#1a3a26] p-10 text-center text-sm text-[#96c5a9]">
+          Não há dados para o período informado.
+        </div>
       )}
     </div>
   );
 };
 
-const CapacityStat = ({
+const KpiCard = ({
+  icon,
   label,
   value,
-  detail,
-  accent,
-  tone,
+  helper,
+  delta,
+  deltaClass,
 }: {
+  icon: React.ReactNode;
   label: string;
-  value: number | string;
-  detail: string;
-  accent?: boolean;
-  tone?: 'blue' | 'red';
-}) => {
-  const valueClass = tone === 'blue' ? 'text-blue-300' : tone === 'red' ? 'text-red-300' : accent ? 'text-primary' : 'text-white';
-
-  return (
-    <article className="rounded-2xl border border-[#264532] bg-[#1a3a26] p-5">
+  value: string | number;
+  helper: string;
+  delta: string;
+  deltaClass: string;
+}) => (
+  <article className="rounded-2xl border border-[#264532] bg-[#1a3a26] p-5">
+    <div className="flex items-center justify-between gap-3">
       <p className="text-sm font-semibold text-[#96c5a9]">{label}</p>
-      <p className={`mt-2 text-3xl font-bold ${valueClass}`}>{value}</p>
-      <p className="mt-2 text-sm text-[#96c5a9]">{detail}</p>
-    </article>
-  );
-};
+      {icon}
+    </div>
+    <p className="mt-3 text-3xl font-bold text-white">{value}</p>
+    <p className="mt-2 text-sm text-[#96c5a9]">{helper}</p>
+    <p className={`mt-2 text-xs font-bold ${deltaClass}`}>vs. período anterior: {delta}</p>
+  </article>
+);
 
-const BarDetail = ({ label, value }: { label: string; value: number }) => (
-  <div className="rounded-lg bg-[#1a3a26] p-2">
-    <p className="font-bold text-white">{value}</p>
-    <p className="text-[#96c5a9]">{label}</p>
-  </div>
+const ChartCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <article className="rounded-2xl border border-[#264532] bg-[#1a3a26] p-4 sm:p-5">
+    <h3 className="mb-4 text-base font-bold text-white">{title}</h3>
+    {children}
+  </article>
 );
 
 export default CapacityDashboardPage;

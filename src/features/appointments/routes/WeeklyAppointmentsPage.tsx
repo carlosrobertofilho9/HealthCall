@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Clock, Loader2, TrendingUp, UserCheck, Users, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Loader2, TrendingUp, UserCheck, Users, X, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AppointmentDaySummary } from '@/types';
 import { Button } from '@/components/ui/Button';
+import useAnimation from '@/hooks/useAnimation';
 import AppointmentsNav from '../components/AppointmentsNav';
 import {
   addDays,
@@ -28,6 +29,7 @@ const WeeklyAppointmentsPage: React.FC = () => {
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
   const [summaries, setSummaries] = useState<AppointmentDaySummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedSummary, setSelectedSummary] = useState<AppointmentDaySummary | null>(null);
 
   const weekDates = useMemo(() => getWeekDates(weekStart).slice(0, 5), [weekStart]);
 
@@ -47,6 +49,10 @@ const WeeklyAppointmentsPage: React.FC = () => {
   useEffect(() => {
     loadWeek();
   }, [loadWeek]);
+
+  useEffect(() => {
+    setSelectedSummary(null);
+  }, [weekStart]);
 
   const totals = summaries.reduce(
     (acc, summary) => {
@@ -124,10 +130,20 @@ const WeeklyAppointmentsPage: React.FC = () => {
       ) : (
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {summaries.map(summary => (
-            <WeekDayCard key={summary.date} summary={summary} />
+            <WeekDayCard
+              key={summary.date}
+              summary={summary}
+              onOpenDetails={() => setSelectedSummary(summary)}
+            />
           ))}
         </section>
       )}
+
+      <DayPatientsModal
+        summary={selectedSummary}
+        isOpen={Boolean(selectedSummary)}
+        onClose={() => setSelectedSummary(null)}
+      />
     </div>
   );
 };
@@ -164,11 +180,18 @@ const StatCard = ({
 
 /* ─── Week Day Card ──────────────────────────────────────────────────────── */
 
-const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
+const WeekDayCard = ({
+  summary,
+  onOpenDetails,
+}: {
+  summary: AppointmentDaySummary;
+  onOpenDetails: () => void;
+}) => {
   const isHomeVisit = summary.dayConfig.serviceType === 'HOME_VISIT';
   const patientSlots = summary.slots.filter(
     slot => slot.appointment && !isBlockedAppointment(slot.appointment)
   );
+  const visiblePatientSlots = patientSlots.slice(0, 4);
   const nextAvailable = summary.slots.find(slot => !slot.appointment);
   const rate = summary.occupancyRate;
 
@@ -206,7 +229,24 @@ const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 p-4">
+      <div
+        className={`flex flex-1 flex-col gap-4 p-4 ${
+          summary.dayConfig.hasService ? 'cursor-pointer' : ''
+        }`}
+        onClick={summary.dayConfig.hasService ? onOpenDetails : undefined}
+        role={summary.dayConfig.hasService ? 'button' : undefined}
+        tabIndex={summary.dayConfig.hasService ? 0 : undefined}
+        onKeyDown={
+          summary.dayConfig.hasService
+            ? event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onOpenDetails();
+                }
+              }
+            : undefined
+        }
+      >
         {summary.dayConfig.hasService ? (
           <>
             {/* Occupancy bar */}
@@ -234,12 +274,12 @@ const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
               </div>
               {patientSlots.length > 0 ? (
                 <div className="space-y-1.5">
-                  {patientSlots.slice(0, 4).map(slot => (
+                  {visiblePatientSlots.map(slot => (
                     <div
                       key={slot.slotNumber}
                       className="flex items-center gap-2 rounded-lg bg-[#122118]/50 px-2.5 py-2"
                     >
-                      <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#264532] text-[10px] font-bold text-primary">
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#264532] text-[10px] font-bold text-primary">
                         {slot.slotNumber}
                       </div>
                       <div className="min-w-0">
@@ -255,6 +295,7 @@ const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
                       +{patientSlots.length - 4} paciente{patientSlots.length - 4 > 1 ? 's' : ''}
                     </p>
                   )}
+                  <p className="pl-1 text-[11px] font-semibold text-primary">Clique para ver detalhes</p>
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-[#264532] py-4 text-center">
@@ -265,7 +306,7 @@ const WeekDayCard = ({ summary }: { summary: AppointmentDaySummary }) => {
 
             {/* Next available */}
             <div className="mt-auto flex items-center gap-2 rounded-xl bg-[#122118]/50 px-3 py-2.5">
-              <Clock className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+              <Clock className="h-3.5 w-3.5 shrink-0 text-primary" />
               <p className="text-[11px] font-medium text-[#96c5a9]">
                 {nextAvailable
                   ? `${isHomeVisit ? 'Próxima visita' : 'Próxima'}: ficha ${nextAvailable.slotNumber} · ${nextAvailable.time}`
@@ -302,5 +343,130 @@ const MiniStat = ({
     <p className="text-[10px] text-[#96c5a9]">{label}</p>
   </div>
 );
+
+/* ─── Day Patients Modal ─────────────────────────────────────────────────── */
+
+const DayPatientsModal = ({
+  summary,
+  isOpen,
+  onClose,
+}: {
+  summary: AppointmentDaySummary | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  const { shouldRender, isVisible } = useAnimation(isOpen);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!shouldRender || !summary) {
+    return null;
+  }
+
+  const isHomeVisit = summary.dayConfig.serviceType === 'HOME_VISIT';
+  const patientSlots = summary.slots.filter(
+    slot => slot.appointment && !isBlockedAppointment(slot.appointment)
+  );
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-500 ${
+        isVisible ? 'opacity-100' : 'opacity-0'
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className={`mx-4 w-full max-w-3xl rounded-2xl border border-[#264532] bg-[#1a3a26] shadow-2xl transition-all duration-500 ${
+          isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
+        onClick={event => event.stopPropagation()}
+      >
+        <header className="flex items-start justify-between gap-4 border-b border-[#264532] px-5 py-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+              {formatShortDate(summary.dateObj)}
+            </p>
+            <h3 className="mt-1 text-lg font-bold text-white">{summary.dayConfig.dayName}</h3>
+            <p className="text-sm text-[#96c5a9]">
+              {summary.dayConfig.serviceLabel} · {summary.occupiedSlots}/{summary.totalSlots} ocupadas
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-[#96c5a9] transition-colors hover:bg-[#264532] hover:text-white"
+            aria-label="Fechar modal"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+
+        <div className="max-h-[70vh] space-y-3 overflow-y-auto px-5 py-4">
+          {patientSlots.length > 0 ? (
+            patientSlots.map(slot => (
+              <article
+                key={slot.slotNumber}
+                className="rounded-xl border border-[#264532] bg-[#122118]/50 px-4 py-3"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#264532] text-xs font-bold text-primary">
+                      {slot.slotNumber}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-white">
+                        {slot.appointment?.patient_name}
+                      </p>
+                      <p className="text-xs text-[#96c5a9]">
+                        {isHomeVisit ? 'Visita' : 'Consulta'} · {slot.time}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="rounded-full bg-[#264532] px-2.5 py-1 text-[11px] font-semibold text-[#96c5a9]">
+                    {slot.appointment?.status}
+                  </span>
+                </div>
+
+                <div className="mt-3 grid gap-2 text-xs text-[#96c5a9] sm:grid-cols-2">
+                  <p>
+                    <span className="font-semibold text-white">Documento:</span> {slot.appointment?.document_value}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-white">ACS:</span> {slot.appointment?.acs_name}
+                  </p>
+                </div>
+              </article>
+            ))
+          ) : (
+            <div className="rounded-xl border border-dashed border-[#264532] py-10 text-center">
+              <p className="text-sm text-[#96c5a9]">
+                Nenhum {isHomeVisit ? 'paciente para visita' : 'paciente agendado'} nesse dia.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <footer className="flex justify-end border-t border-[#264532] px-5 py-4">
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} className="w-auto">
+            Fechar
+          </Button>
+        </footer>
+      </div>
+    </div>
+  );
+};
 
 export default WeeklyAppointmentsPage;

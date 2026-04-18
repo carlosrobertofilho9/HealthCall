@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
+  buildCapacityAnalyticsFromSummaries,
   blockDay,
   createAppointment,
   generateSlotsForDate,
@@ -152,21 +153,12 @@ describe('isActiveAppointment / isReleasedAppointment', () => {
     expect(isReleasedAppointment(makeAppointment({ status: 'Agendado' }))).toBe(false);
   });
 
-  it('should identify Confirmado as active', () => {
-    expect(isActiveAppointment(makeAppointment({ status: 'Confirmado' }))).toBe(true);
-  });
-
   it('should identify Compareceu as active (occupies slot historically)', () => {
     expect(isActiveAppointment(makeAppointment({ status: 'Compareceu' }))).toBe(true);
   });
 
   it('should identify Faltou as active (occupies slot historically)', () => {
     expect(isActiveAppointment(makeAppointment({ status: 'Faltou' }))).toBe(true);
-  });
-
-  it('should identify Cancelado as released (frees the slot)', () => {
-    expect(isReleasedAppointment(makeAppointment({ status: 'Cancelado' }))).toBe(true);
-    expect(isActiveAppointment(makeAppointment({ status: 'Cancelado' }))).toBe(false);
   });
 
   it('should identify Remarcado as released (frees the slot)', () => {
@@ -180,18 +172,18 @@ describe('isActiveAppointment / isReleasedAppointment', () => {
     expect(isReleasedAppointment(null)).toBe(false);
   });
 
-  it('ACTIVE_APPOINTMENT_STATUSES should contain exactly 4 statuses', () => {
+  it('ACTIVE_APPOINTMENT_STATUSES should contain exactly 3 statuses', () => {
     expect(ACTIVE_APPOINTMENT_STATUSES).toEqual(
-      expect.arrayContaining(['Agendado', 'Confirmado', 'Compareceu', 'Faltou'])
+      expect.arrayContaining(['Agendado', 'Compareceu', 'Faltou'])
     );
-    expect(ACTIVE_APPOINTMENT_STATUSES).toHaveLength(4);
+    expect(ACTIVE_APPOINTMENT_STATUSES).toHaveLength(3);
   });
 
-  it('RELEASED_APPOINTMENT_STATUSES should contain exactly Cancelado and Remarcado', () => {
+  it('RELEASED_APPOINTMENT_STATUSES should contain apenas Remarcado', () => {
     expect(RELEASED_APPOINTMENT_STATUSES).toEqual(
-      expect.arrayContaining(['Cancelado', 'Remarcado'])
+      expect.arrayContaining(['Remarcado'])
     );
-    expect(RELEASED_APPOINTMENT_STATUSES).toHaveLength(2);
+    expect(RELEASED_APPOINTMENT_STATUSES).toHaveLength(1);
   });
 });
 
@@ -201,13 +193,6 @@ describe('isActiveAppointment / isReleasedAppointment', () => {
 
 describe('generateSlotsForDate slot occupancy', () => {
   const monday = new Date(2026, 1, 2); // Monday = 30 slots
-
-  it('Cancelado appointment does NOT occupy its slot', () => {
-    const cancelled = makeAppointment({ slot_number: 3, status: 'Cancelado' });
-    const slots = generateSlotsForDate(monday, [cancelled]);
-    const slot3 = slots.find(s => s.slotNumber === 3)!;
-    expect(slot3.appointment).toBeNull();
-  });
 
   it('Remarcado appointment does NOT occupy its slot', () => {
     const rescheduled = makeAppointment({ slot_number: 5, status: 'Remarcado' });
@@ -222,13 +207,6 @@ describe('generateSlotsForDate slot occupancy', () => {
     const slot1 = slots.find(s => s.slotNumber === 1)!;
     expect(slot1.appointment).not.toBeNull();
     expect(slot1.appointment!.status).toBe('Agendado');
-  });
-
-  it('Confirmado appointment OCCUPIES its slot', () => {
-    const confirmado = makeAppointment({ slot_number: 2, status: 'Confirmado' });
-    const slots = generateSlotsForDate(monday, [confirmado]);
-    const slot2 = slots.find(s => s.slotNumber === 2)!;
-    expect(slot2.appointment).not.toBeNull();
   });
 
   it('Compareceu appointment OCCUPIES its slot', () => {
@@ -256,25 +234,22 @@ describe('buildDaySummary', () => {
   it('should separate active and released appointments', () => {
     const appointments: Appointment[] = [
       makeAppointment({ slot_number: 1, status: 'Agendado' }),
-      makeAppointment({ slot_number: 2, status: 'Cancelado', id: 'cancelled-id' }),
       makeAppointment({ slot_number: 3, status: 'Remarcado', id: 'rescheduled-id' }),
       makeAppointment({ slot_number: 4, status: 'Compareceu', id: 'attended-id' }),
     ];
 
     const summary = buildDaySummary(monday, appointments);
     expect(summary.appointments).toHaveLength(2); // Agendado + Compareceu
-    expect(summary.releasedAppointments).toHaveLength(2); // Cancelado + Remarcado
+    expect(summary.releasedAppointments).toHaveLength(1); // Remarcado
   });
 
-  it('should not count Cancelado/Remarcado in occupiedSlots', () => {
+  it('should not count Remarcado in occupiedSlots', () => {
     const appointments: Appointment[] = [
       makeAppointment({ slot_number: 1, status: 'Agendado' }),
-      makeAppointment({ slot_number: 1, status: 'Cancelado', id: 'old-cancelled' }),
+      makeAppointment({ slot_number: 1, status: 'Remarcado', id: 'old-rescheduled' }),
     ];
 
     const summary = buildDaySummary(monday, appointments);
-    // Cancelado frees the slot, so slot 1 can be re-used
-    // But in this test only one appointment is active
     expect(summary.appointments).toHaveLength(1);
     expect(summary.occupiedSlots).toBe(1);
   });
@@ -309,11 +284,11 @@ describe('createAppointment', () => {
       document_type: 'CPF',
       document_value: '98765432100',
       acs_name: 'ACS Teste',
-      status: 'Confirmado',
+      status: 'Faltou',
     });
 
     const payload = mocks.mockInsert.mock.calls[0][0][0];
-    expect(payload.status).toBe('Confirmado');
+    expect(payload.status).toBe('Faltou');
   });
 
   it('should reject Wednesday appointments without an address', async () => {
@@ -440,17 +415,15 @@ describe('blockDay', () => {
     expect(inserted[0]).not.toHaveProperty('home_visit_reason');
   });
 
-  it('Cancelado/Remarcado appointments free their slots (no blockDay conflict)', async () => {
+  it('Remarcado appointments free their slots (no blockDay conflict)', async () => {
     const monday = new Date(2026, 1, 2);
-    // All slots appear occupied but with released statuses — blockDay only filters active
     const releasedSlots = Array.from({ length: 30 }, (_, i) => ({
       slot_number: i + 1,
-      status: i % 2 === 0 ? 'Cancelado' : 'Remarcado',
+      status: 'Remarcado',
     }));
     mocks.mockOrder.mockResolvedValue({ data: releasedSlots, error: null });
 
     const count = await blockDay(monday, 'Reunião');
-    // All 30 slots should be available since they are all released
     expect(count).toBe(30);
   });
 });
@@ -526,13 +499,81 @@ describe('getSuggestedAvailableSlot', () => {
     expect(suggested).toBeNull();
   });
 
-  it('Cancelado appointment frees the slot for quick reception suggestion', () => {
-    // Slot 1 has a cancelled appointment = it is free
-    const cancelledSlot1 = makeAppointment({ slot_number: 1, status: 'Cancelado' });
-    const slots = generateSlotsForDate(monday, [cancelledSlot1]);
+  it('Remarcado appointment frees the slot for quick reception suggestion', () => {
+    const rescheduledSlot1 = makeAppointment({ slot_number: 1, status: 'Remarcado' });
+    const slots = generateSlotsForDate(monday, [rescheduledSlot1]);
     const suggested = getSuggestedAvailableSlot(slots);
     expect(suggested).not.toBeNull();
     expect(suggested!.slotNumber).toBe(1);
-    expect(suggested!.appointment).toBeNull(); // Cancelled = slot is empty
+    expect(suggested!.appointment).toBeNull();
+  });
+});
+
+// =============================================================================
+// buildCapacityAnalyticsFromSummaries — analytics da dashboard de capacidade
+// =============================================================================
+
+describe('buildCapacityAnalyticsFromSummaries', () => {
+  const filtersAll = { acsName: 'ALL', status: 'ALL' } as const;
+
+  it('should aggregate KPIs and distributions from summaries', () => {
+    const dateA = new Date(2026, 1, 2); // segunda
+    const dateB = new Date(2026, 1, 3); // terça
+
+    const current = [
+      buildDaySummary(dateA, [
+        makeAppointment({ id: 'a1', scheduled_date: '2026-02-02', slot_number: 1, acs_name: 'ACS Ana', status: 'Compareceu' }),
+        makeAppointment({ id: 'a2', scheduled_date: '2026-02-02', slot_number: 2, acs_name: 'ACS Ana', status: 'Faltou' }),
+        makeAppointment({ id: 'a3', scheduled_date: '2026-02-02', slot_number: 3, acs_name: 'ACS Bia', status: 'Remarcado' }),
+      ]),
+      buildDaySummary(dateB, [
+        makeAppointment({ id: 'b1', scheduled_date: '2026-02-03', slot_number: 1, acs_name: 'ACS Bia', status: 'Agendado' }),
+        makeAppointment({ id: 'b2', scheduled_date: '2026-02-03', slot_number: 2, acs_name: 'ACS Ana', status: 'Remarcado' }),
+      ]),
+    ];
+
+    const previous = [
+      buildDaySummary(new Date(2026, 0, 31), [
+        makeAppointment({ id: 'p1', scheduled_date: '2026-01-31', slot_number: 1, acs_name: 'ACS Ana', status: 'Compareceu' }),
+      ]),
+    ];
+
+    const analytics = buildCapacityAnalyticsFromSummaries(current, previous, filtersAll);
+
+    expect(analytics.current.totalSlots).toBe(45); // 30 (seg) + 15 (ter)
+    expect(analytics.current.showCount).toBe(1);
+    expect(analytics.current.noShowCount).toBe(1);
+    expect(analytics.current.rescheduledCount).toBe(2);
+    expect(analytics.current.occupiedSlots).toBe(3); // Compareceu + Faltou + Agendado
+    expect(analytics.current.showRate).toBe(50);
+    expect(analytics.statusDistribution.find(item => item.status === 'Remarcado')?.count).toBe(2);
+    expect(analytics.acsRanking[0].acsName).toBe('ACS Ana');
+    expect(analytics.trend).toHaveLength(2);
+    expect(analytics.busiestDays.length).toBeGreaterThan(0);
+  });
+
+  it('should apply ACS and status filters globally', () => {
+    const day = new Date(2026, 1, 2);
+
+    const current = [
+      buildDaySummary(day, [
+        makeAppointment({ id: 'x1', scheduled_date: '2026-02-02', slot_number: 1, acs_name: 'ACS Ana', status: 'Faltou' }),
+        makeAppointment({ id: 'x2', scheduled_date: '2026-02-02', slot_number: 2, acs_name: 'ACS Bia', status: 'Faltou' }),
+        makeAppointment({ id: 'x3', scheduled_date: '2026-02-02', slot_number: 3, acs_name: 'ACS Ana', status: 'Agendado' }),
+      ]),
+    ];
+
+    const previous: ReturnType<typeof buildDaySummary>[] = [];
+
+    const analytics = buildCapacityAnalyticsFromSummaries(current, previous, {
+      acsName: 'ACS Ana',
+      status: 'Faltou',
+    });
+
+    expect(analytics.current.noShowCount).toBe(1);
+    expect(analytics.current.occupiedSlots).toBe(1);
+    expect(analytics.statusDistribution).toEqual([{ status: 'Faltou', count: 1 }]);
+    expect(analytics.acsRanking).toHaveLength(1);
+    expect(analytics.acsRanking[0].acsName).toBe('ACS Ana');
   });
 });

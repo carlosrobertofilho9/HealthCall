@@ -29,10 +29,8 @@ export type DocumentType = 'CPF' | 'CARTAO_SUS';
 
 export type AppointmentStatus =
 	| 'Agendado'
-	| 'Confirmado'
 	| 'Compareceu'
 	| 'Faltou'
-	| 'Cancelado'
 	| 'Remarcado';
 
 /**
@@ -119,4 +117,80 @@ export type DayScheduleConfig = {
 	afternoonSlots: number;
     afternoonReserveSlots?: number;
 	totalSlots: number;
+};
+
+export type CapacityStatusFilter = AppointmentStatus | 'ALL';
+export type CapacityPeriod = 'Manhã' | 'Tarde' | 'Reserva';
+
+export type CapacityAnalyticsFilters = {
+	acsName: string | 'ALL';
+	status: CapacityStatusFilter;
+};
+
+export type CapacityKpiSnapshot = {
+	totalSlots: number;
+	occupiedSlots: number;
+	blockedSlots: number;
+	availableSlots: number;
+	showCount: number;
+	noShowCount: number;
+	rescheduledCount: number;
+	occupancyRate: number;
+	showRate: number;
+};
+
+export type CapacityTrendPoint = {
+	date: string;
+	label: string;
+	totalSlots: number;
+	occupiedSlots: number;
+	blockedSlots: number;
+	occupancyRate: number;
+	showCount: number;
+	noShowCount: number;
+	rescheduledCount: number;
+	showRate: number;
+};
+
+export type CapacityStatusDistribution = {
+	status: AppointmentStatus;
+	count: number;
+};
+
+export type CapacityTurnDistribution = {
+	period: CapacityPeriod;
+	total: number;
+	occupied: number;
+	showCount: number;
+	noShowCount: number;
+	rescheduledCount: number;
+};
+
+export type CapacityAcsRankingItem = {
+	acsName: string;
+	total: number;
+	showCount: number;
+	noShowCount: number;
+	rescheduledCount: number;
+	showRate: number;
+};
+
+export type CapacityKpiDeltas = {
+	occupancyRate: number;
+	showRate: number;
+	noShowCount: number;
+	rescheduledCount: number;
+	occupiedSlots: number;
+};
+
+export type CapacityAnalyticsResult = {
+	current: CapacityKpiSnapshot;
+	previous: CapacityKpiSnapshot;
+	deltas: CapacityKpiDeltas;
+	trend: CapacityTrendPoint[];
+	statusDistribution: CapacityStatusDistribution[];
+	turnDistribution: CapacityTurnDistribution[];
+	acsRanking: CapacityAcsRankingItem[];
+	busiestDays: CapacityTrendPoint[];
+	uniqueAcs: string[];
 };

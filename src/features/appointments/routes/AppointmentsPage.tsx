@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Search,
   Plus,
@@ -21,7 +21,7 @@ import RescheduleAppointmentModal from '../components/RescheduleAppointmentModal
 import ConfirmDeleteAppointmentModal from '../components/ConfirmDeleteAppointmentModal';
 import PrintHeader from '../components/PrintHeader';
 import { printPatientList } from '@/components/PatientQueue/printUtils';
-import { printAppointmentReport } from '@/components/PatientQueue/printReportUtils';
+import { printAppointmentReport, type ReportPeriodFilter } from '@/components/PatientQueue/printReportUtils';
 import { printHomeVisitRoute } from '@/components/PatientQueue/printHomeVisitRouteUtils';
 import type { Appointment, AppointmentStatus } from '@/types';
 import { toast } from 'sonner';
@@ -61,6 +61,10 @@ const AppointmentsPage: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBlockDayModalOpen, setIsBlockDayModalOpen] = useState(false);
   const [isBlockingDay, setIsBlockingDay] = useState(false);
+  const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
+  const [isPatientListMenuOpen, setIsPatientListMenuOpen] = useState(false);
+  const reportMenuRef = useRef<HTMLDivElement | null>(null);
+  const patientListMenuRef = useRef<HTMLDivElement | null>(null);
 
   const availableSlots = slots.filter(s => s.appointment === null).map(s => s.slotNumber);
 
@@ -106,7 +110,7 @@ const AppointmentsPage: React.FC = () => {
       setDeletingAppointment(appointment);
       return;
     }
-    void handleStatusChange(appointment, 'Cancelado');
+    void handleStatusChange(appointment, 'Faltou');
   };
 
   const handleStatusChange = async (appointment: Appointment, status: AppointmentStatus) => {
@@ -146,6 +150,82 @@ const AppointmentsPage: React.FC = () => {
     ? Math.round((slotStats.occupied / slotStats.total) * 100)
     : 0;
   const isHomeVisit = dayConfig.serviceType === 'HOME_VISIT';
+
+  const reportPeriods = useMemo(() => {
+    const periods = new Set<ReportPeriodFilter>();
+    slots.forEach(slot => {
+      if (slot.period === 'Manhã' || slot.period === 'Tarde') {
+        periods.add(slot.period);
+      }
+    });
+    return Array.from(periods);
+  }, [slots]);
+
+  const shouldShowReportMenu = reportPeriods.length > 1;
+
+  const handleReportPrint = (period?: ReportPeriodFilter) => {
+    printAppointmentReport(slots, period);
+    setIsReportMenuOpen(false);
+    setIsPatientListMenuOpen(false);
+  };
+
+  const handleReportButtonClick = () => {
+    if (shouldShowReportMenu) {
+      setIsReportMenuOpen(prev => !prev);
+      setIsPatientListMenuOpen(false);
+      return;
+    }
+
+    const singlePeriod = reportPeriods[0];
+    handleReportPrint(singlePeriod);
+  };
+
+  const handlePatientListPrint = (period?: ReportPeriodFilter) => {
+    printPatientList(slots, period);
+    setIsPatientListMenuOpen(false);
+    setIsReportMenuOpen(false);
+  };
+
+  const handlePatientListButtonClick = () => {
+    if (shouldShowReportMenu) {
+      setIsPatientListMenuOpen(prev => !prev);
+      setIsReportMenuOpen(false);
+      return;
+    }
+
+    const singlePeriod = reportPeriods[0];
+    handlePatientListPrint(singlePeriod);
+  };
+
+  useEffect(() => {
+    if (!isReportMenuOpen && !isPatientListMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const targetNode = event.target as Node;
+      const clickedOutsideReport = !reportMenuRef.current || !reportMenuRef.current.contains(targetNode);
+      const clickedOutsidePatientList = !patientListMenuRef.current || !patientListMenuRef.current.contains(targetNode);
+
+      if (clickedOutsideReport && clickedOutsidePatientList) {
+        setIsReportMenuOpen(false);
+        setIsPatientListMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsReportMenuOpen(false);
+        setIsPatientListMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isReportMenuOpen, isPatientListMenuOpen]);
 
   return (
     <div className="w-full max-w-7xl mx-auto print:max-w-none">
@@ -279,16 +359,54 @@ const AppointmentsPage: React.FC = () => {
                   />
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
-                    <DesktopActionButton
-                      icon={<Printer className="w-4 h-4" />}
-                      label="Relatório"
-                      onClick={() => printAppointmentReport(slots)}
-                    />
-                    <DesktopActionButton
-                      icon={<Printer className="w-4 h-4" />}
-                      label="Ficha"
-                      onClick={() => printPatientList(slots)}
-                    />
+                    <div className="relative" ref={reportMenuRef}>
+                      <DesktopActionButton
+                        icon={<Printer className="w-4 h-4" />}
+                        label="Relatório"
+                        onClick={handleReportButtonClick}
+                      />
+
+                      {shouldShowReportMenu && isReportMenuOpen && (
+                        <div className="absolute right-0 z-50 mt-2 w-40 rounded-xl border border-[#264532] bg-[#1a3a26] p-1 shadow-lg">
+                          <button
+                            onClick={() => handleReportPrint('Manhã')}
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-[#264532] transition-colors"
+                          >
+                            Imprimir manhã
+                          </button>
+                          <button
+                            onClick={() => handleReportPrint('Tarde')}
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-[#264532] transition-colors"
+                          >
+                            Imprimir tarde
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative" ref={patientListMenuRef}>
+                      <DesktopActionButton
+                        icon={<Printer className="w-4 h-4" />}
+                        label="Ficha"
+                        onClick={handlePatientListButtonClick}
+                      />
+
+                      {shouldShowReportMenu && isPatientListMenuOpen && (
+                        <div className="absolute right-0 z-50 mt-2 w-40 rounded-xl border border-[#264532] bg-[#1a3a26] p-1 shadow-lg">
+                          <button
+                            onClick={() => handlePatientListPrint('Manhã')}
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-[#264532] transition-colors"
+                          >
+                            Imprimir manhã
+                          </button>
+                          <button
+                            onClick={() => handlePatientListPrint('Tarde')}
+                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-white hover:bg-[#264532] transition-colors"
+                          >
+                            Imprimir tarde
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -548,8 +666,8 @@ const ReleasedAppointmentsSection = ({ appointments }: { appointments: Appointme
     <section className="mt-6 rounded-2xl border border-[#264532] bg-[#1a3a26] overflow-hidden print:hidden">
       <div className="flex items-center justify-between p-4 border-b border-[#264532]">
         <div>
-          <h3 className="font-bold text-white">Canceladas e remarcadas</h3>
-          <p className="text-xs text-[#96c5a9] mt-0.5">Mantidas no histórico sem ocupar ficha.</p>
+          <h3 className="font-bold text-white">Remarcadas</h3>
+          <p className="text-xs text-[#96c5a9] mt-0.5">Mantidas no histórico sem ocupar ficha no dia original.</p>
         </div>
         <span className="rounded-full bg-[#264532] px-3 py-1 text-sm font-bold text-[#96c5a9]">
           {appointments.length}
@@ -567,7 +685,7 @@ const ReleasedAppointmentsSection = ({ appointments }: { appointments: Appointme
                 <span className="rounded-full bg-[#264532] px-2.5 py-0.5 text-xs font-bold text-primary">
                   Ficha {appointment.slot_number}
                 </span>
-                <span className="rounded-full bg-red-500/15 border border-red-500/20 px-2.5 py-0.5 text-xs font-bold text-red-300">
+                <span className="rounded-full bg-purple-500/15 border border-purple-500/20 px-2.5 py-0.5 text-xs font-bold text-purple-300">
                   {getAppointmentStatus(appointment)}
                 </span>
               </div>

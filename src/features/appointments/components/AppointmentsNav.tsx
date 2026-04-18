@@ -24,17 +24,18 @@ export const AppointmentsNav: React.FC = () => {
             key={to}
             to={to}
             end={end}
+            aria-label={label}
             className={({ isActive }) =>
               cn(
-                'flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors',
+                'flex min-h-11 items-center justify-center gap-1 rounded-xl px-2 text-sm font-semibold transition-colors sm:gap-2 sm:px-3',
                 isActive
                   ? 'bg-primary text-[#122118]'
                   : 'text-[#96c5a9] hover:bg-[#264532] hover:text-white'
               )
             }
           >
-            <Icon className="h-4 w-4" />
-            <span>{label}</span>
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">{label}</span>
           </NavLink>
         ))}
       </nav>

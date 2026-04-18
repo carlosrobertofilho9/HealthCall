@@ -11,9 +11,15 @@ type ReportItem = {
   status: string;
 };
 
-export const printAppointmentReport = (slots: AppointmentSlot[]) => {
+export type ReportPeriodFilter = 'Manhã' | 'Tarde';
+
+export const printAppointmentReport = (slots: AppointmentSlot[], periodFilter?: ReportPeriodFilter) => {
+  const filteredSlots = periodFilter
+    ? slots.filter(slot => slot.period === periodFilter)
+    : slots;
+
   // Mapeia todos os slots, inclusive os vazios
-  const items: ReportItem[] = slots
+  const items: ReportItem[] = filteredSlots
     .map(s => {
       const app = s.appointment;
       return {
@@ -27,7 +33,11 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
     });
 
   if (items.length === 0) {
-    alert('Não há slots configurados para este dia.');
+    alert(
+      periodFilter
+        ? `Não há slots configurados para o turno da ${periodFilter.toLowerCase()}.`
+        : 'Não há slots configurados para este dia.'
+    );
     return;
   }
 
@@ -62,7 +72,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Relatório de Marcações</title>
+        <title>${periodFilter ? `Relatório de Marcações - ${periodFilter}` : 'Relatório de Marcações'}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
           
@@ -354,7 +364,7 @@ export const printAppointmentReport = (slots: AppointmentSlot[]) => {
         <!-- Document Title -->
         <div class="main-title-container">
           <div class="main-title-line"></div>
-          <div class="doc-title">Relatório Diário de Marcações</div>
+          <div class="doc-title">${periodFilter ? `Relatório de Marcações - ${periodFilter}` : 'Relatório Diário de Marcações'}</div>
           <div class="main-title-line"></div>
         </div>
 
