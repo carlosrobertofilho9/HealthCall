@@ -152,8 +152,8 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
   const isFiltered = searchTerm !== '' || (selectedDestination !== '' && selectedDestination !== 'all');
 
   return (
-    <div className="bg-card rounded-2xl p-4 shadow-sm border border-border xl:h-full">
-      <div className="flex flex-col gap-6 mb-8 pb-6 border-b border-border">
+    <div className="bg-card rounded-2xl p-4 shadow-sm border border-border xl:h-full xl:rounded-none xl:border-0 xl:shadow-none xl:bg-transparent">
+      <div className="flex flex-col gap-6 mb-8 pb-6 border-b border-border xl:px-4 xl:pt-4">
         <div className="space-y-2 text-left">
           <h2 className="text-card-foreground text-3xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -177,7 +177,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               icon={<Search className="h-4 w-4" />}
-              className="bg-input/80 border-border text-foreground placeholder:text-muted-foreground focus:bg-input focus:border-ring/50 focus:ring-ring/20 transition-all h-11 rounded-xl w-full"
+              className="bg-background/80 border-border text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-ring/50 focus:ring-ring/20 transition-all h-11 rounded-lg w-full xl:rounded-md xl:bg-muted/10 xl:border-muted-foreground/20"
             />
           </div>
           
@@ -186,7 +186,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
                 <Filter className="text-muted-foreground" size={18} />
              </div>
             <Select onValueChange={(value) => setSelectedDestination(value === 'all' ? '' : value)} value={selectedDestination || 'all'}>
-              <SelectTrigger id="filter-destination-room" className="pl-10 h-11 rounded-xl w-full bg-input/80 border-border focus:bg-input focus:ring-ring/20 focus:border-ring/50">
+              <SelectTrigger id="filter-destination-room" className="pl-10 h-11 rounded-lg w-full bg-background/80 border-border focus:bg-background focus:ring-ring/20 focus:border-ring/50 xl:rounded-md xl:bg-muted/10 xl:border-muted-foreground/20">
                 <SelectValue placeholder="Todas as Salas" />
               </SelectTrigger>
               <SelectContent>
@@ -203,7 +203,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
             type="button"
             variant="ghost"
             size="icon"
-            className="h-11 w-11 rounded-xl bg-input/80 border-border text-muted-foreground hover:text-foreground"
+            className="h-11 w-11 rounded-lg bg-background/80 border-border text-muted-foreground hover:text-foreground xl:rounded-md xl:bg-muted/10 xl:border-muted-foreground/20"
             title="Imprimir lista"
             aria-label="Imprimir lista"
           >
@@ -212,7 +212,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
         </div>
       </div>
 
-      <div className={`space-y-0 pr-1 ${patients.length > 4 ? 'xl:max-h-[calc(100vh-18rem)] xl:overflow-y-auto custom-scrollbar' : ''}`}>
+      <div className={`space-y-0 pr-1 ${patients.length > 4 ? 'xl:max-h-[calc(100%-12rem)] xl:overflow-y-auto custom-scrollbar xl:px-4' : 'xl:px-4'}`}>
         {patients.length > 0 ? (
            <DndContext 
             sensors={sensors} 

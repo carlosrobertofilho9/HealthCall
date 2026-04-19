@@ -59,8 +59,8 @@ const WarningsPage: React.FC = () => {
   };
 
   return (
-    <div className="grid w-full grid-cols-1 gap-4 lg:h-full lg:grid-cols-4 lg:overflow-hidden">
-      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:col-span-1 lg:h-full lg:overflow-hidden">
+    <div className="flex w-full flex-col gap-4 lg:flex-row lg:gap-0 lg:h-full lg:overflow-hidden lg:bg-background">
+      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:w-[320px] xl:w-[360px] lg:shrink-0 lg:rounded-none lg:border-0 lg:border-r lg:shadow-none lg:bg-transparent lg:h-full lg:overflow-hidden">
         <div className="p-6 pb-4 border-b border-border">
           <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -153,7 +153,7 @@ const WarningsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:col-span-1 lg:h-full lg:overflow-hidden">
+      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:w-[320px] xl:w-[360px] lg:shrink-0 lg:rounded-none lg:border-0 lg:border-r lg:shadow-none lg:bg-transparent lg:h-full lg:overflow-hidden">
         <div className="p-6 pb-4 border-b border-border">
           <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -275,8 +275,8 @@ const WarningsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="lg:col-span-2 flex flex-col min-h-0 lg:h-full">
-        <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:h-full lg:overflow-hidden">
+      <div className="flex flex-col min-h-0 lg:h-full lg:flex-1 lg:overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:h-full lg:rounded-none lg:border-0 lg:shadow-none lg:bg-transparent lg:overflow-hidden">
           <div className="p-6 pb-4 border-b border-border">
             <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
               <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">

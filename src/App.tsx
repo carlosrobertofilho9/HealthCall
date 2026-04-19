@@ -22,11 +22,11 @@ const App: React.FC = () => {
       <div className="flex flex-1 flex-col transition-all duration-300 lg:overflow-hidden">
         <main 
           className={cn(
-            "flex-1 px-2 py-6 pt-20 transition-all duration-300 ease-in-out lg:overflow-y-auto lg:px-4 lg:pt-6",
+            "flex-1 pt-16 transition-all duration-300 ease-in-out lg:overflow-y-auto lg:pt-0",
             isSidebarCollapsed ? "lg:ml-20" : "lg:ml-70"
           )}
         >
-          <div className="mx-auto min-h-0 w-full max-w-400 animate-in fade-in duration-700 lg:h-full">
+          <div className="mx-auto min-h-0 w-full animate-in fade-in duration-700 lg:h-full">
             <Outlet />
           </div>
         </main>

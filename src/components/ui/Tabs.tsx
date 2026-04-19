@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { DS_COLOR, DS_RADIUS } from './design-system';
 
@@ -41,7 +42,12 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(({ className, .
     <div
       ref={ref}
       role="tablist"
-      className={cn('inline-flex items-center border p-1 shadow-sm gap-1', DS_COLOR.surface.card, DS_RADIUS.pill, className)}
+      className={cn(
+        'relative inline-flex items-center border p-1 shadow-sm gap-1',
+        DS_COLOR.surface.card,
+        DS_RADIUS.pill,
+        className
+      )}
       {...props}
     />
   );
@@ -53,23 +59,24 @@ export interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonE
 }
 
 const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
-  ({ value, className, onClick, type, ...props }, ref) => {
+  ({ value, className, onClick, type, children, ...props }, ref) => {
     const { value: currentValue, onValueChange } = useTabsContext();
     const isActive = currentValue === value;
 
     return (
-      <button
+      <motion.button
         ref={ref}
         type={type ?? 'button'}
         role="tab"
         aria-selected={isActive}
         data-state={isActive ? 'active' : 'inactive'}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         className={cn(
-          'inline-flex min-h-11 items-center justify-center gap-2 px-3 text-sm font-semibold transition-colors',
+          'relative inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm font-semibold transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/50 cursor-pointer',
           DS_RADIUS.pill,
-          isActive
-            ? DS_COLOR.interactive.active
-            : DS_COLOR.interactive.inactive,
+          !isActive && 'text-muted-foreground hover:text-foreground hover:bg-secondary/40',
+          isActive && 'text-primary-foreground',
           className,
         )}
         onClick={(event) => {
@@ -77,7 +84,16 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
           onClick?.(event);
         }}
         {...props}
-      />
+      >
+        <span className="relative z-10 flex items-center gap-2">{children}</span>
+        {isActive && (
+          <motion.div
+            layoutId="activeTab"
+            className={cn('absolute inset-0 z-0 bg-primary shadow-md', DS_RADIUS.pill)}
+            transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+          />
+        )}
+      </motion.button>
     );
   },
 );
@@ -92,21 +108,28 @@ const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
     const { value: currentValue } = useTabsContext();
     const isActive = currentValue === value;
 
-    if (!isActive) return null;
-
     return (
-      <div
-        ref={ref}
-        role="tabpanel"
-        data-state="active"
-        className={cn('outline-none', className)}
-        {...props}
-      >
-        {children}
-      </div>
+      <AnimatePresence mode="wait">
+        {isActive && (
+          <motion.div
+            key={value}
+            ref={ref}
+            role="tabpanel"
+            initial={{ opacity: 0, y: 8, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -8, filter: 'blur(4px)' }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className={cn('outline-none py-4', className)}
+            {...props}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
     );
   },
 );
 TabsContent.displayName = 'TabsContent';
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };
+

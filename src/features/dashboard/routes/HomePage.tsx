@@ -105,8 +105,8 @@ const HomePage: React.FC = () => {
     };
 
 	return (
-		<div className="flex flex-col gap-4 pb-4 lg:pb-0">
-			<header className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+		<div className="flex flex-col gap-4 pb-4 lg:pb-0 lg:h-full lg:overflow-hidden lg:gap-0 lg:bg-background">
+			<header className="rounded-2xl border border-border bg-card p-4 shadow-sm lg:rounded-none lg:border-0 lg:border-b lg:shadow-none lg:bg-transparent lg:shrink-0">
 				<div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
 					<div>
 						<h1 className="text-2xl font-bold tracking-tight text-foreground lg:text-3xl">Fila de atendimento</h1>
@@ -153,21 +153,25 @@ const HomePage: React.FC = () => {
 				</div>
 			</header>
 
-			<div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-				<div className="space-y-4 xl:col-span-3">
-					<AddPatientForm
-						onAddPatient={addPatientByName}
-						defaultDestination={profile?.default_destination ?? undefined}
-						isAddingPatient={isAddingPatient}
-					/>
-					<QueueActions
-						onClearQueue={handleClearQueue}
-						onAddPatientByNumber={handleAddPatientByNumber}
-						isAddingPatient={isAddingPatient}
-					/>
+			<div className="grid grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-0 xl:h-full xl:overflow-hidden">
+				<div className="space-y-4 xl:col-span-3 xl:space-y-0 xl:flex xl:flex-col xl:border-r xl:border-border xl:bg-transparent">
+					<div className="xl:border-b xl:border-border">
+						<AddPatientForm
+							onAddPatient={addPatientByName}
+							defaultDestination={profile?.default_destination ?? undefined}
+							isAddingPatient={isAddingPatient}
+						/>
+					</div>
+					<div>
+						<QueueActions
+							onClearQueue={handleClearQueue}
+							onAddPatientByNumber={handleAddPatientByNumber}
+							isAddingPatient={isAddingPatient}
+						/>
+					</div>
 				</div>
 
-				<div className="min-h-0 xl:col-span-6">
+				<div className="min-h-0 xl:col-span-6 xl:border-r xl:border-border xl:bg-transparent">
 					<PatientQueue
 						patients={filteredPatients}
 						onEdit={openModal}
@@ -183,7 +187,7 @@ const HomePage: React.FC = () => {
 					/>
 				</div>
 
-				<div className="min-h-0 xl:col-span-3">
+				<div className="min-h-0 xl:col-span-3 xl:bg-transparent">
 					<AppointmentsColumn onCheckIn={handleCheckIn} queuedPatients={patients} />
 				</div>
 			</div>

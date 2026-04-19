@@ -75,24 +75,30 @@ const DocumentsPage: React.FC = () => {
         </Tabs>
       </div>
 
-      <div className="hidden min-h-0 gap-4 xl:grid xl:h-full xl:grid-cols-[320px_minmax(320px,420px)_1fr] xl:overflow-hidden">
-        <TemplatesPanel
-          templates={mockTemplates}
-          selectedTemplateId={selectedTemplate?.id}
-          onSelectTemplate={handleSelectTemplate}
-        />
+      <div className="hidden min-h-0 xl:flex xl:h-full xl:flex-1 xl:overflow-hidden">
+        <div className="flex w-[320px] flex-col border-r border-border bg-background">
+          <TemplatesPanel
+            templates={mockTemplates}
+            selectedTemplateId={selectedTemplate?.id}
+            onSelectTemplate={handleSelectTemplate}
+          />
+        </div>
 
-        <FormPanel
-          selectedTemplate={selectedTemplate}
-          values={fieldValues}
-          missingKeys={missingKeys}
-          isGenerating={isGenerating}
-          onFieldChange={setFieldValue}
-          onClearForm={clearForm}
-          onGenerateDocument={handleGenerateDocument}
-        />
+        <div className="flex w-[420px] flex-col border-r border-border bg-background">
+          <FormPanel
+            selectedTemplate={selectedTemplate}
+            values={fieldValues}
+            missingKeys={missingKeys}
+            isGenerating={isGenerating}
+            onFieldChange={setFieldValue}
+            onClearForm={clearForm}
+            onGenerateDocument={handleGenerateDocument}
+          />
+        </div>
 
-        <PreviewPanel selectedTemplate={selectedTemplate} previewValues={previewValues} />
+        <div className="flex min-w-0 flex-1 flex-col bg-background">
+          <PreviewPanel selectedTemplate={selectedTemplate} previewValues={previewValues} />
+        </div>
       </div>
     </div>
   );

@@ -49,7 +49,7 @@ const AddPatientForm: React.FC<{
   }, [defaultDestination]);
 
   return (
-    <div className="lg:col-span-1 bg-card rounded-2xl p-6 shadow-sm border border-border h-fit">
+    <div className="lg:col-span-1 bg-card rounded-2xl p-6 shadow-sm border border-border h-fit xl:rounded-none xl:border-0 xl:shadow-none xl:bg-transparent">
       <div className="flex flex-col gap-2 mb-6">
       <h2 className="text-card-foreground text-2xl font-bold leading-tight flex items-center gap-3">
         <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
