@@ -146,11 +146,17 @@ const WeeklyAppointmentsPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
-      <AppointmentsNav />
+    <div className="w-full mx-auto space-y-6 lg:flex lg:flex-col lg:h-full lg:overflow-hidden lg:space-y-0 lg:bg-background">
+      {/* ══════════════ TOP NAV ══════════════ */}
+      <div className="lg:-mx-2 lg:px-6 lg:py-4 lg:bg-card lg:border-b lg:border-border lg:shrink-0">
+        <div className="lg:w-full lg:mx-auto">
+          <AppointmentsNav />
+        </div>
+      </div>
 
+      <div className="lg:flex-1 lg:overflow-y-auto custom-scrollbar lg:pt-6 lg:px-6">
       {/* Week Header */}
-      <section className="rounded-2xl bg-card border border-border p-4 sm:p-6">
+      <section className="rounded-2xl bg-card border border-border p-4 sm:p-6 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:p-0 lg:mb-6 lg:max-w-7xl lg:mx-auto">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-base font-medium text-primary">Agenda semanal</p>
@@ -197,12 +203,12 @@ const WeeklyAppointmentsPage: React.FC = () => {
 
       {/* Day cards */}
       {isLoading ? (
-        <div className="rounded-2xl bg-card border border-border p-12 text-center">
+        <div className="rounded-2xl bg-card border border-border p-12 text-center lg:max-w-7xl lg:mx-auto">
           <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Carregando semana...</p>
         </div>
       ) : (
-        <section className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+        <section className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4 lg:max-w-7xl lg:mx-auto lg:pb-6">
           {summariesWithService.map(summary => (
             <WeekDayCard
               key={summary.date}
@@ -212,6 +218,8 @@ const WeeklyAppointmentsPage: React.FC = () => {
           ))}
         </section>
       )}
+
+      </div>
 
       <DayPatientsModal
         summary={selectedSummary}

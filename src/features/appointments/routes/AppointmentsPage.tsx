@@ -229,21 +229,23 @@ const AppointmentsPage: React.FC = () => {
   }, [isReportMenuOpen, isPatientListMenuOpen]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto print:max-w-none">
+    <div className="w-full mx-auto print:max-w-none lg:flex lg:flex-col lg:h-full lg:overflow-hidden lg:bg-background">
       {/* Print header */}
       <PrintHeader selectedDate={selectedDate} dayConfig={dayConfig} slotStats={slotStats} />
 
       {/* ══════════════ TOP NAV ══════════════ */}
-      <div className="mb-4 print:hidden">
-        <AppointmentsNav />
+      <div className="mb-4 print:hidden lg:mb-0 lg:-mx-2 lg:px-6 lg:py-4 lg:bg-card lg:border-b lg:border-border lg:shrink-0">
+        <div className="lg:w-full lg:mx-auto">
+          <AppointmentsNav />
+        </div>
       </div>
 
       {/* ══════════════ MAIN LAYOUT ══════════════ */}
-      <div className="flex flex-col lg:flex-row gap-4 print:block">
+      <div className="flex flex-col lg:flex-row gap-4 print:block lg:flex-1 lg:overflow-hidden lg:gap-0 lg:w-full">
 
         {/* ── LEFT PANEL (sticky on desktop) ── */}
-        <aside className="w-full lg:w-80 xl:w-96 shrink-0 print:hidden">
-          <div className="lg:sticky lg:top-4 flex flex-col gap-4">
+        <aside className="w-full lg:w-[320px] xl:w-[360px] shrink-0 print:hidden lg:flex lg:flex-col lg:h-full lg:border-r lg:border-border lg:bg-transparent">
+          <div className="lg:sticky lg:top-4 flex flex-col gap-4 lg:p-6 lg:h-full lg:overflow-y-auto custom-scrollbar lg:static">
 
             {/* Date selector */}
             <DateSelector
@@ -257,7 +259,7 @@ const AppointmentsPage: React.FC = () => {
 
             {/* Stats card – only when service */}
             {dayConfig.hasService && (
-              <div className="rounded-2xl bg-card border border-border p-5 space-y-4">
+              <div className="rounded-2xl bg-card border border-border p-5 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:p-0">
                 {/* Occupancy header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -416,10 +418,10 @@ const AppointmentsPage: React.FC = () => {
         </aside>
 
         {/* ── RIGHT PANEL: slots ── */}
-        <main className="flex-1 min-w-0 pb-28 lg:pb-0">
+        <main className="flex-1 min-w-0 pb-28 lg:pb-0 lg:h-full lg:overflow-y-auto custom-scrollbar lg:pt-6 lg:px-6">
           {/* Search bar */}
           {dayConfig.hasService && (
-            <div className="mb-4 print:hidden">
+            <div className="mb-4 print:hidden lg:mb-6">
               {/* Mobile: collapsible search */}
               <div className="lg:hidden">
                 {isSearchOpen ? (

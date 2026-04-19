@@ -10,7 +10,6 @@ import {
 import {
   DS_COLOR,
   DS_RADIUS,
-  DS_RADIUS_VARIANT,
   Input,
   Button,
   Textarea,
@@ -75,12 +74,11 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
   return (
     <section
       className={cn(
-        'rounded-none border border-x-0 bg-card overflow-hidden shadow-none xl:border-x xl:shadow-sm flex flex-col h-full min-h-0',
+        'flex h-full min-h-0 flex-col overflow-hidden rounded-none border border-x-0 bg-card shadow-none lg:border-x-0 lg:bg-transparent lg:shadow-none',
         DS_COLOR.border.default,
-        DS_RADIUS_VARIANT.xlSurface,
       )}
     >
-      <div className="px-6 py-5 border-b border-border bg-secondary/30">
+      <div className="shrink-0 px-6 py-5 border-b border-border bg-secondary/30 lg:bg-transparent">
         <h2 className="text-xl font-bold tracking-tight flex items-center gap-3">
           <div className={cn('p-2 bg-card border', DS_COLOR.border.default, DS_RADIUS.control)}>
             <ListTodo className="text-primary" size={20} />
@@ -90,7 +88,7 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
         <p className="text-muted-foreground text-sm mt-1">Registre pendências e acompanhe o fluxo de resolução.</p>
       </div>
 
-      <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-visible xl:flex-1 xl:min-h-0 xl:overflow-y-auto custom-scrollbar">
+      <form onSubmit={onSubmit} className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
         <div className={cn(DS_RADIUS.section, 'border border-border bg-secondary/20 p-4 space-y-3')}>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Identificação</p>
           <Input

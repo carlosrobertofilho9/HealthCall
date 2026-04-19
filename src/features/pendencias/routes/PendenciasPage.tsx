@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
 import { PENDENCIA_RESPONSAVEL_OPTIONS } from '@/constants';
-import { DS_COLOR, DS_RADIUS_VARIANT, Tabs, TabsList, TabsTrigger } from '@/components/ui';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { cn, isValidCNS, isValidCPF } from '@/lib/utils';
 import {
@@ -323,9 +323,14 @@ const PendenciasPage: React.FC = () => {
   };
 
   return (
-    <div className="-mt-6 -mb-6 xl:my-0 relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen xl:static xl:left-auto xl:right-auto xl:ml-0 xl:mr-0 xl:w-full flex flex-col gap-0 xl:gap-4 h-auto min-h-[calc(100dvh-73px)] xl:h-full xl:min-h-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] xl:pb-0">
-      <div className="grid min-h-0 grid-cols-1 xl:grid-cols-12 gap-0 xl:gap-4 w-full xl:h-full xl:flex-1">
-        <div className={`${mobileTab === 'new' ? 'block' : 'hidden'} xl:block xl:col-span-4 min-h-0 xl:h-full`}>
+    <div className="flex h-[calc(var(--app-visual-viewport-height,100dvh)-4rem)] min-h-0 w-full flex-col overflow-hidden bg-background lg:h-full">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+        <aside
+          className={cn(
+            'min-h-0 w-full flex-col overflow-hidden bg-background lg:flex lg:w-[380px] lg:shrink-0 lg:border-r lg:border-border 2xl:w-[420px]',
+            mobileTab === 'new' ? 'flex' : 'hidden',
+          )}
+        >
           <PendenciaCreatePanel
             nomePaciente={nomePaciente}
             cnsCpf={cnsCpf}
@@ -348,14 +353,12 @@ const PendenciasPage: React.FC = () => {
             onPrazoChange={setPrazo}
             onResponsavelChange={setResponsavel}
           />
-        </div>
+        </aside>
 
         <section
           className={cn(
+            'min-w-0 min-h-0 flex-1 flex-col overflow-hidden bg-background lg:flex',
             mobileTab === 'existing' ? 'flex' : 'hidden',
-            'xl:flex xl:col-span-8 rounded-none border border-x-0 xl:border-x bg-card overflow-visible xl:overflow-hidden shadow-none xl:shadow-sm flex-col min-h-0 xl:h-full',
-            DS_COLOR.border.default,
-            DS_RADIUS_VARIANT.xlSurface,
           )}
         >
           <PendenciasListHeader
@@ -372,82 +375,80 @@ const PendenciasPage: React.FC = () => {
             onGenerateOpenPdf={handleGenerateOpenPdf}
           />
 
-        <div className="p-5 overflow-visible xl:flex-1 xl:min-h-0 xl:overflow-auto custom-scrollbar">
-          {loading ? (
-            <div className="flex min-h-[40vh] xl:h-full items-center justify-center text-muted-foreground gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Carregando pendências...</span>
-            </div>
-          ) : filteredPendencias.length === 0 ? (
-            <div className="flex min-h-[40vh] xl:h-full items-center justify-center text-muted-foreground text-center px-6">
-              Nenhuma pendência encontrada para os filtros atuais.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredPendencias.map((item) => {
-                const isEditing = editingId === item.id;
+          <div className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-5">
+            {loading ? (
+              <div className="flex h-full min-h-[16rem] items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Carregando pendências...</span>
+              </div>
+            ) : filteredPendencias.length === 0 ? (
+              <div className="flex h-full min-h-[16rem] items-center justify-center px-6 text-center text-muted-foreground">
+                Nenhuma pendência encontrada para os filtros atuais.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredPendencias.map((item) => {
+                  const isEditing = editingId === item.id;
 
-                return (
-                  <PendenciaListItem
-                    key={item.id}
-                    item={item}
-                    tipoOptions={TIPO_OPTIONS}
-                    isEditing={isEditing}
-                    isUpdating={isUpdating}
-                    isDeleting={isDeletingId === item.id}
-                    editNomePaciente={editNomePaciente}
-                    editCnsCpf={editCnsCpf}
-                    editTiposSelecionados={editTiposSelecionados}
-                    editTipoPersonalizado={editTipoPersonalizado}
-                    editResumo={editResumo}
-                    editPrioridade={editPrioridade}
-                    editPrazo={editPrazo}
-                    editResponsavel={editResponsavel}
-                    responsavelOptions={PENDENCIA_RESPONSAVEL_OPTIONS}
-                    onEditNomePacienteChange={setEditNomePaciente}
-                    onEditCnsCpfChange={(value) => setEditCnsCpf(formatCnsCpfForInput(value))}
-                    onToggleEditTipo={toggleEditTipo}
-                    onEditTipoPersonalizadoChange={setEditTipoPersonalizado}
-                    onEditResumoChange={setEditResumo}
-                    onEditPrioridadeChange={setEditPrioridade}
-                    onEditPrazoChange={setEditPrazo}
-                    onEditResponsavelChange={setEditResponsavel}
-                    onStatusChange={(status) => handleStatusChange(item, status)}
-                    onStartEditing={() => startEditing(item)}
-                    onCancelEditing={cancelEditing}
-                    onSaveEditing={handleUpdate}
-                    onDelete={() => handleDelete(item.id)}
-                    statusBadgeClass={statusBadgeClass}
-                    alertLevel={getAlertLevel(item)}
-                    alertLabel={getAlertLabel(item)}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  return (
+                    <PendenciaListItem
+                      key={item.id}
+                      item={item}
+                      tipoOptions={TIPO_OPTIONS}
+                      isEditing={isEditing}
+                      isUpdating={isUpdating}
+                      isDeleting={isDeletingId === item.id}
+                      editNomePaciente={editNomePaciente}
+                      editCnsCpf={editCnsCpf}
+                      editTiposSelecionados={editTiposSelecionados}
+                      editTipoPersonalizado={editTipoPersonalizado}
+                      editResumo={editResumo}
+                      editPrioridade={editPrioridade}
+                      editPrazo={editPrazo}
+                      editResponsavel={editResponsavel}
+                      responsavelOptions={PENDENCIA_RESPONSAVEL_OPTIONS}
+                      onEditNomePacienteChange={setEditNomePaciente}
+                      onEditCnsCpfChange={(value) => setEditCnsCpf(formatCnsCpfForInput(value))}
+                      onToggleEditTipo={toggleEditTipo}
+                      onEditTipoPersonalizadoChange={setEditTipoPersonalizado}
+                      onEditResumoChange={setEditResumo}
+                      onEditPrioridadeChange={setEditPrioridade}
+                      onEditPrazoChange={setEditPrazo}
+                      onEditResponsavelChange={setEditResponsavel}
+                      onStatusChange={(status) => handleStatusChange(item, status)}
+                      onStartEditing={() => startEditing(item)}
+                      onCancelEditing={cancelEditing}
+                      onSaveEditing={handleUpdate}
+                      onDelete={() => handleDelete(item.id)}
+                      statusBadgeClass={statusBadgeClass}
+                      alertLevel={getAlertLevel(item)}
+                      alertLabel={getAlertLabel(item)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </section>
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] xl:hidden">
-        <div className="pointer-events-auto">
-          <Tabs
-            value={mobileTab}
-            onValueChange={(value) => setMobileTab(value as 'new' | 'existing')}
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="new">
-                <CirclePlus className="h-4 w-4 shrink-0" />
-                Nova
-              </TabsTrigger>
+      <div className="shrink-0 border-t border-border bg-card px-2 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] lg:hidden">
+        <Tabs
+          value={mobileTab}
+          onValueChange={(value) => setMobileTab(value as 'new' | 'existing')}
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="new">
+              <CirclePlus className="h-4 w-4 shrink-0" />
+              Nova
+            </TabsTrigger>
 
-              <TabsTrigger value="existing">
-                <ListTodo className="h-4 w-4 shrink-0" />
-                Pendências
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+            <TabsTrigger value="existing">
+              <ListTodo className="h-4 w-4 shrink-0" />
+              Pendências
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
     </div>
   );

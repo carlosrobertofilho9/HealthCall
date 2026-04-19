@@ -118,9 +118,9 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
   };
 
   return (
-    <article className={cn(DS_RADIUS.section, 'border bg-secondary/20 p-4 hover:border-primary/30 transition-all', alertClassByLevel[alertLevel])}>
-      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
-        <div className="space-y-3 flex-1">
+    <article className={cn(DS_RADIUS.section, 'min-w-0 border bg-secondary/20 p-4 hover:border-primary/30 transition-all', alertClassByLevel[alertLevel])}>
+      <div className="flex min-w-0 flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+        <div className="min-w-0 space-y-3 flex-1">
           {isEditing ? (
             <div className="space-y-3">
               <Input
@@ -202,7 +202,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
           ) : (
             <>
               <div>
-                <p className="font-semibold text-lg leading-tight">{item.nome_paciente}</p>
+                <p className="font-semibold text-lg leading-tight break-words">{item.nome_paciente}</p>
                 <div className={cn('mt-1 inline-flex items-center gap-2 border border-primary/30 bg-primary/10 px-2.5 py-1', DS_RADIUS.control)}>
                   <span className="text-xs uppercase tracking-wide text-muted-foreground">{getDocumentLabel(item.cns_cpf)}</span>
                   <span className="text-sm font-semibold text-primary tracking-wide">{documentoFormatado}</span>
@@ -222,7 +222,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
 
               <div className={cn(DS_RADIUS.control, 'border border-border bg-background/40 p-3')}>
                 <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Pendência</p>
-                <p className="text-foreground leading-relaxed">{item.resumo || '-'}</p>
+                <p className="text-foreground leading-relaxed break-words">{item.resumo || '-'}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">

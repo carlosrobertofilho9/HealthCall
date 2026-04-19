@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, AlertTriangle, Siren, CalendarX } from 'lucide-react';
 import type { AppointmentSlot, Appointment, AppointmentStatus, DayScheduleConfig } from '@/types';
 import SlotCard from './SlotCard';
@@ -29,7 +30,11 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   /* ── Sem atendimento ── */
   if (!dayConfig.hasService) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-10 text-center print:bg-white print:border-gray-300">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl border border-border bg-card p-10 text-center print:bg-white print:border-gray-300"
+      >
         <CalendarX className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-bold text-card-foreground mb-1 print:text-black">Sem agenda neste dia</h3>
         <p className="text-sm text-muted-foreground print:text-gray-600">
@@ -37,7 +42,7 @@ export const SlotsList: React.FC<SlotsListProps> = ({
           <br className="hidden sm:block" />
           Selecione uma Segunda, Terça ou Quarta-feira.
         </p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -45,7 +50,11 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-border bg-card p-10 text-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" 
+        />
         <p className="text-muted-foreground">Carregando marcações...</p>
       </div>
     );
@@ -60,87 +69,96 @@ export const SlotsList: React.FC<SlotsListProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Manhã */}
-      {morningSlots.length > 0 && (
-        <PeriodSection
-          icon={<Sun className="w-4 h-4 text-yellow-400" />}
-          title={isHomeVisit ? 'Visitas – Manhã' : 'Manhã'}
-          occupied={morningSlots.filter(s => s.appointment !== null).length}
-          total={morningSlots.length}
-          label={occupancyLabel}
-          accentClass="border-yellow-400/20 bg-yellow-400/5"
-        >
-          {morningSlots.map(slot => (
-            <SlotCard
-              key={slot.slotNumber}
-              slot={slot}
-              serviceType={dayConfig.serviceType}
-              onAddClick={onAddClick}
-              onEditClick={onEditClick}
-              onDeleteClick={onDeleteClick}
-              onStatusChange={onStatusChange}
-              onRescheduleClick={onRescheduleClick}
-            />
-          ))}
-        </PeriodSection>
-      )}
+      <AnimatePresence mode="popLayout">
+        {/* Manhã */}
+        {morningSlots.length > 0 && (
+          <PeriodSection
+            key="morning"
+            icon={<Sun className="w-4 h-4 text-yellow-400" />}
+            title={isHomeVisit ? 'Visitas – Manhã' : 'Manhã'}
+            occupied={morningSlots.filter(s => s.appointment !== null).length}
+            total={morningSlots.length}
+            label={occupancyLabel}
+            accentClass="border-yellow-400/20 bg-yellow-400/5"
+          >
+            {morningSlots.map((slot, index) => (
+              <SlotCard
+                key={slot.slotNumber}
+                slot={slot}
+                serviceType={dayConfig.serviceType}
+                onAddClick={onAddClick}
+                onEditClick={onEditClick}
+                onDeleteClick={onDeleteClick}
+                onStatusChange={onStatusChange}
+                onRescheduleClick={onRescheduleClick}
+              />
+            ))}
+          </PeriodSection>
+        )}
 
-      {/* Tarde */}
-      {afternoonSlots.length > 0 && (
-        <PeriodSection
-          icon={<Moon className="w-4 h-4 text-indigo-400" />}
-          title="Tarde"
-          occupied={afternoonSlots.filter(s => s.appointment !== null).length}
-          total={afternoonSlots.length}
-          label={occupancyLabel}
-          accentClass="border-indigo-400/20 bg-indigo-400/5"
-        >
-          {afternoonSlots.map(slot => (
-            <SlotCard
-              key={slot.slotNumber}
-              slot={slot}
-              serviceType={dayConfig.serviceType}
-              onAddClick={onAddClick}
-              onEditClick={onEditClick}
-              onDeleteClick={onDeleteClick}
-              onStatusChange={onStatusChange}
-              onRescheduleClick={onRescheduleClick}
-            />
-          ))}
-        </PeriodSection>
-      )}
+        {/* Tarde */}
+        {afternoonSlots.length > 0 && (
+          <PeriodSection
+            key="afternoon"
+            icon={<Moon className="w-4 h-4 text-indigo-400" />}
+            title="Tarde"
+            occupied={afternoonSlots.filter(s => s.appointment !== null).length}
+            total={afternoonSlots.length}
+            label={occupancyLabel}
+            accentClass="border-indigo-400/20 bg-indigo-400/5"
+          >
+            {afternoonSlots.map((slot, index) => (
+              <SlotCard
+                key={slot.slotNumber}
+                slot={slot}
+                serviceType={dayConfig.serviceType}
+                onAddClick={onAddClick}
+                onEditClick={onEditClick}
+                onDeleteClick={onDeleteClick}
+                onStatusChange={onStatusChange}
+                onRescheduleClick={onRescheduleClick}
+              />
+            ))}
+          </PeriodSection>
+        )}
 
-      {/* Reserva / Emergência */}
-      {reserveSlots.length > 0 && (
-        <PeriodSection
-          icon={<Siren className="w-4 h-4 text-red-400" />}
-          title="Reserva / Emergência"
-          occupied={reserveSlots.filter(s => s.appointment !== null).length}
-          total={reserveSlots.length}
-          label={occupancyLabel}
-          accentClass="border-red-400/20 bg-red-400/5"
-        >
-          {reserveSlots.map(slot => (
-            <SlotCard
-              key={slot.slotNumber}
-              slot={slot}
-              serviceType={dayConfig.serviceType}
-              onAddClick={onAddClick}
-              onEditClick={onEditClick}
-              onDeleteClick={onDeleteClick}
-              onStatusChange={onStatusChange}
-              onRescheduleClick={onRescheduleClick}
-            />
-          ))}
-        </PeriodSection>
-      )}
+        {/* Reserva / Emergência */}
+        {reserveSlots.length > 0 && (
+          <PeriodSection
+            key="reserve"
+            icon={<Siren className="w-4 h-4 text-red-400" />}
+            title="Reserva / Emergência"
+            occupied={reserveSlots.filter(s => s.appointment !== null).length}
+            total={reserveSlots.length}
+            label={occupancyLabel}
+            accentClass="border-red-400/20 bg-red-400/5"
+          >
+            {reserveSlots.map((slot, index) => (
+              <SlotCard
+                key={slot.slotNumber}
+                slot={slot}
+                serviceType={dayConfig.serviceType}
+                onAddClick={onAddClick}
+                onEditClick={onEditClick}
+                onDeleteClick={onDeleteClick}
+                onStatusChange={onStatusChange}
+                onRescheduleClick={onRescheduleClick}
+              />
+            ))}
+          </PeriodSection>
+        )}
+      </AnimatePresence>
 
       {/* Resultado vazio da busca */}
       {slots.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-10 text-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-2xl border border-dashed border-border p-10 text-center"
+        >
           <AlertTriangle className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">Nenhum resultado encontrado para esta busca.</p>
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -170,7 +188,13 @@ const PeriodSection: React.FC<PeriodSectionProps> = ({
   const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
 
   return (
-    <section>
+    <motion.section
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.4 }}
+    >
       {/* Section header */}
       <div className={`flex items-center gap-3 mb-3 rounded-xl border px-4 py-2.5 ${accentClass} print:hidden`}>
         {icon}
@@ -180,9 +204,11 @@ const PeriodSection: React.FC<PeriodSectionProps> = ({
         <div className="flex items-center gap-2 print:hidden">
           <div className="hidden sm:flex items-center gap-1.5">
             <div className="w-14 h-1.5 rounded-full bg-secondary overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary/60 transition-all"
-                style={{ width: `${pct}%` }}
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className="h-full rounded-full bg-primary/60"
               />
             </div>
           </div>
@@ -199,11 +225,15 @@ const PeriodSection: React.FC<PeriodSectionProps> = ({
       </div>
 
       {/* Slots */}
-      <div className="space-y-2">
+      <motion.div 
+        layout
+        className="space-y-2"
+      >
         {children}
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   );
 };
 
 export default SlotsList;
+

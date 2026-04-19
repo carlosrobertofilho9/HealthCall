@@ -43,9 +43,9 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
   onGenerateOpenPdf,
 }) => {
   return (
-    <div className="px-6 py-5 border-b border-border bg-secondary/30 space-y-4">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-        <div>
+    <div className="min-w-0 shrink-0 px-6 py-5 border-b border-border bg-secondary/30 space-y-4">
+      <div className="flex min-w-0 flex-col xl:flex-row xl:items-center xl:justify-between gap-2">
+        <div className="min-w-0">
           <h2 className="text-2xl font-bold tracking-tight">Pendências</h2>
           <p className="text-sm text-muted-foreground mt-1">
             {openCount} em aberto • {dueTodayCount} vencem hoje • {totalCount} no total
@@ -58,15 +58,15 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
           onClick={onGenerateOpenPdf}
           disabled={isGeneratingPdf}
           variant="secondary"
-          className={cn('w-full lg:w-auto h-11 px-5 whitespace-nowrap', DS_RADIUS.section)}
+          className={cn('w-full xl:w-auto h-11 px-5 whitespace-nowrap', DS_RADIUS.section)}
         >
           {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
           Relatório semanal
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px_auto] gap-3">
-        <div className="relative w-full">
+      <div className="grid min-w-0 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_220px_auto] gap-3">
+        <div className="relative min-w-0 w-full">
           <Input
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
