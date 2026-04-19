@@ -152,7 +152,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
   const isFiltered = searchTerm !== '' || (selectedDestination !== '' && selectedDestination !== 'all');
 
   return (
-    <div className="h-full bg-card rounded-2xl p-4 shadow-sm border border-border">
+    <div className="bg-card rounded-2xl p-4 shadow-sm border border-border xl:h-full">
       <div className="flex flex-col gap-6 mb-8 pb-6 border-b border-border">
         <div className="space-y-2 text-left">
           <h2 className="text-card-foreground text-3xl font-bold tracking-tight flex items-center gap-3">
@@ -212,7 +212,7 @@ const PatientQueue: React.FC<PatientQueueProps> = ({
         </div>
       </div>
 
-      <div className={`space-y-0 pr-1 ${patients.length > 4 ? 'max-h-[58vh] xl:max-h-[calc(100vh-18rem)] overflow-y-auto custom-scrollbar' : ''}`}>
+      <div className={`space-y-0 pr-1 ${patients.length > 4 ? 'xl:max-h-[calc(100vh-18rem)] xl:overflow-y-auto custom-scrollbar' : ''}`}>
         {patients.length > 0 ? (
            <DndContext 
             sensors={sensors} 

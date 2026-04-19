@@ -60,7 +60,7 @@ const WarningsPage: React.FC = () => {
 
   return (
     <div className="grid w-full grid-cols-1 gap-4 lg:h-full lg:grid-cols-4 lg:overflow-hidden">
-      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col h-full overflow-hidden lg:col-span-1">
+      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:col-span-1 lg:h-full lg:overflow-hidden">
         <div className="p-6 pb-4 border-b border-border">
           <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -84,7 +84,7 @@ const WarningsPage: React.FC = () => {
           </Button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 min-h-0 lg:overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
               <RefreshCw className="h-8 w-8 animate-spin opacity-40 mb-3" />
@@ -153,7 +153,7 @@ const WarningsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col h-full overflow-hidden lg:col-span-1">
+      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:col-span-1 lg:h-full lg:overflow-hidden">
         <div className="p-6 pb-4 border-b border-border">
           <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -163,7 +163,7 @@ const WarningsPage: React.FC = () => {
           </h2>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-6">
+        <div className="flex-1 min-h-0 lg:overflow-y-auto custom-scrollbar p-6">
           {showForm ? (
             <WarningForm
               initialData={editingWarning}
@@ -275,8 +275,8 @@ const WarningsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="lg:col-span-2 flex flex-col h-full min-h-0">
-        <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col h-full overflow-hidden">
+      <div className="lg:col-span-2 flex flex-col min-h-0 lg:h-full">
+        <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:h-full lg:overflow-hidden">
           <div className="p-6 pb-4 border-b border-border">
             <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
               <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -286,7 +286,7 @@ const WarningsPage: React.FC = () => {
             </h2>
           </div>
 
-          <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-background/40 relative">
+          <div className="min-h-[18rem] lg:flex-1 lg:min-h-0 overflow-visible lg:overflow-hidden flex flex-col bg-background/40 relative">
             {activeWarning?.content_url ? (
               <div className="flex-1 flex items-center justify-center p-6">
                 {resolvedActiveWarningUrl && activeWarning.media_type === 'video' ? (

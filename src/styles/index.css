@@ -538,6 +538,17 @@ html[data-theme="safira"] {
   #root {
     min-height: 100vh;
   }
+
+  html[data-scroll-mode="document"],
+  html[data-scroll-mode="document"] body,
+  html[data-scroll-mode="document"] #root {
+    min-height: 100%;
+  }
+
+  html[data-scroll-mode="document"] body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 }
 
 /* =============================================================================

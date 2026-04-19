@@ -33,7 +33,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
   children,
 }) => {
   return (
-    <Card className={cn('flex h-full flex-col overflow-hidden border-border bg-card shadow-sm', className)}>
+    <Card className={cn('flex flex-col border-border bg-card shadow-sm xl:h-full xl:overflow-hidden', className)}>
       <CardHeader className="shrink-0 border-b border-border p-4 pb-3 lg:p-5 lg:pb-4">
         <CardTitle className="flex items-center gap-2.5 text-base font-semibold tracking-tight text-card-foreground lg:text-lg">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-secondary text-primary shadow-inner">
@@ -43,7 +43,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className={cn('flex min-h-0 flex-1 flex-col overflow-hidden p-0', contentClassName)}>
+      <CardContent className={cn('flex min-h-0 flex-1 flex-col p-0 xl:overflow-hidden', contentClassName)}>
         {children}
       </CardContent>
     </Card>
@@ -95,7 +95,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
       contentClassName="p-4 lg:p-5"
     >
       {selectedTemplate ? (
-        <div className="flex h-full min-h-0 flex-col">
+        <div className="flex min-h-0 flex-col xl:h-full">
           <div className="mb-5 flex items-center justify-between gap-3 border-b border-border pb-3">
             <div className="min-w-0">
               <p className="text-sm font-medium leading-none text-primary">Preenchimento</p>
@@ -113,7 +113,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
             </Button>
           </div>
 
-          <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="custom-scrollbar min-h-0 flex-1 pr-1 xl:overflow-y-auto">
             <DynamicFieldsForm
               templateText={selectedTemplate.templateText}
               values={values}

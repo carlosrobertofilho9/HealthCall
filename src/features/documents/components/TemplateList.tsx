@@ -127,7 +127,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
   );
 
   return (
-    <div className="flex h-full flex-col bg-card">
+    <div className="flex flex-col bg-card xl:h-full">
       <div className="space-y-3 border-b border-border p-4 pb-3 pt-5">
         <div className="flex items-center justify-between px-1">
              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -163,7 +163,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
         </div>
       </div>
 
-      <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-3 pt-4">
+      <div className="custom-scrollbar flex-1 space-y-6 p-3 pt-4 xl:overflow-y-auto">
         {totalResults === 0 ? (
           <div className="animate-in flex h-48 flex-col items-center justify-center gap-3 text-muted-foreground fade-in zoom-in-95 duration-300">
              <div className="rounded-full border border-border bg-secondary/30 p-3">
