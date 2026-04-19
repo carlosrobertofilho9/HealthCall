@@ -1,17 +1,24 @@
-import { 
-  Activity, 
-  HeartPulse, 
-  Bandage, 
-  Ear,
-  Stethoscope,
-  ShieldAlert,
-  Syringe,
-  Baby,
-  ClipboardList,
-  Book,
-  Salad,
-  LucideIcon
-} from 'lucide-react';
+import React from 'react';
+import {
+  ControleGlicemicoIcon,
+  ControlePressaoIcon,
+  FichaCurativosIcon,
+  LavagemOuvidoIcon,
+  ProtocoloProcedimentoIcon,
+  ReacaoAdversaIcon,
+  MedicacaoInjetavelIcon,
+  FormulaLacteaIcon,
+  SolicitacaoCurativoIcon,
+  FolhaPendenciasIcon,
+  CapaCadernetaIcon,
+  HasLifestyleIcon,
+  DmLifestyleIcon,
+  DlpLifestyleIcon,
+  SleepLifestyleIcon,
+  CustomIconProps
+} from '../components/DocumentIcons';
+
+export type CustomIcon = React.FC<CustomIconProps>;
 
 export type TemplateCategory = 
   | 'Monitoramento' 
@@ -24,7 +31,7 @@ export interface Template {
   title: string;
   description?: string;
   templateText: string;
-  icon?: LucideIcon;
+  icon?: CustomIcon;
   category: TemplateCategory;
   tags?: string[];
 }
@@ -39,7 +46,7 @@ export const mockTemplates: Template[] = [
     tags: ['diabetes', 'hgt', 'glicemia', 'insulina'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Activity
+    icon: ControleGlicemicoIcon
   },
   {
     id: 'controle_pressao',
@@ -49,7 +56,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['hipertensão', 'has', 'pressão', 'mapa', 'mrpa'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: HeartPulse
+    icon: ControlePressaoIcon
   },
   {
     id: 'ficha_curativos',
@@ -59,7 +66,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['ferida', 'curativo', 'enfermagem', 'lesão'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Bandage
+    icon: FichaCurativosIcon
   },
 
   // --- PROTOCOLOS E TERMOS ---
@@ -71,7 +78,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['ouvido', 'cerume', 'limpeza', 'otoscopia'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Ear
+    icon: LavagemOuvidoIcon
   },
   {
     id: 'protocolo_procedimento',
@@ -81,7 +88,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['sutura', 'cirurgia', 'procedimento', 'biópsia'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Stethoscope
+    icon: ProtocoloProcedimentoIcon
   },
   {
     id: 'reacao_adversa',
@@ -91,7 +98,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['vacina', 'reação', 'alergia', 'anafilaxia'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: ShieldAlert
+    icon: ReacaoAdversaIcon
   },
   {
     id: 'medicacao_injetavel',
@@ -101,7 +108,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['injeção', 'im', 'ev', 'medicação'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Syringe
+    icon: MedicacaoInjetavelIcon
   },
 
   // --- ADMINISTRATIVO ---
@@ -112,7 +119,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     description: 'Solicitação de fórmulas infantis especiais com quantidades.',
     tags: ['leite', 'bebê', 'nutrição', 'puericultura'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}`,
-    icon: Baby
+    icon: FormulaLacteaIcon
   },
   {
     id: 'solicitacao_curativo',
@@ -122,7 +129,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['curativo', 'materiais', 'ferida', 'enfermagem', 'almoxarifado'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Bandage
+    icon: SolicitacaoCurativoIcon
   },
   {
     id: 'folha_pendencias',
@@ -131,7 +138,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     description: 'Registro de pendências semanais (encaminhamentos, laudos, etc).',
     tags: ['organização', 'administrativo', 'secretaria', 'espera'],
     templateText: ``,
-    icon: ClipboardList
+    icon: FolhaPendenciasIcon
   },
 
   // --- ORIENTAÇÕES E CAPAS ---
@@ -142,7 +149,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     description: 'Capa da caderneta com selos de receita opcionais.',
     tags: ['capa', 'identificação', 'receita', 'paciente'],
     templateText: ``,
-    icon: Book
+    icon: CapaCadernetaIcon
   },
   {
     id: 'has_lifestyle',
@@ -152,7 +159,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['educação', 'hipertensão', 'dieta', 'exercício', 'lifestyle'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Salad
+    icon: HasLifestyleIcon
   },
   {
     id: 'dm_lifestyle',
@@ -162,7 +169,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['educação', 'diabetes', 'dieta', 'glicemia', 'lifestyle'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Activity
+    icon: DmLifestyleIcon
   },
   {
     id: 'dlp_lifestyle',
@@ -172,7 +179,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['educação', 'colesterol', 'dieta', 'gordura', 'lifestyle'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Salad
+    icon: DlpLifestyleIcon
   },
   {
     id: 'sleep_lifestyle',
@@ -182,7 +189,7 @@ CNS ou CPF: {{CNS_CPF}}`,
     tags: ['educação', 'sono', 'ansiedade', 'estresse', 'lifestyle'],
     templateText: `Nome do Paciente: {{NOME_PACIENTE}}
 CNS ou CPF: {{CNS_CPF}}`,
-    icon: Book
+    icon: SleepLifestyleIcon
   }
 ];
 
