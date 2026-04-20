@@ -156,11 +156,253 @@ interface PressureDocumentProps {
 
 export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParagraphs, formData }) => {
   const DAYS = 7;
-  const dateColWidth = '8%';
-  const morningGroupWidth = '30%';
-  const afternoonGroupWidth = '30%';
-  const nightGroupWidth = '24%';
-  const obsColWidth = '8%';
+  const dateColWidth = '6%';
+  const morningGroupWidth = '28%';
+  const afternoonGroupWidth = '28%';
+  const nightGroupWidth = '28%';
+  const obsColWidth = '10%';
+
+  const renderTablePage = (isExample: boolean) => (
+      <View style={[commonStyles.page, { paddingBottom: pdfTheme.spacing.xxl, paddingTop: pdfTheme.spacing.xl }]} wrap={false}>
+        
+        <View style={[commonStyles.mainTitleContainer, { marginBottom: 16 }]}>
+          <View style={commonStyles.mainTitleLine} />
+          <DocTitle>Diário de Pressão Arterial (MAPA){isExample ? " - EXEMPLO DE PREENCHIMENTO" : ""}</DocTitle>
+          <View style={commonStyles.mainTitleLine} />
+        </View>
+
+        <View style={pressureStyles.container}>
+          {/* Legend */}
+          <View style={[pressureStyles.legendRow, { marginTop: 16 }]}>
+            <View style={pressureStyles.legendItem}>
+               <View style={[pressureStyles.legendColor, { backgroundColor: pdfTheme.colors.exam.yellow }]} />
+              <Text style={pressureStyles.legendText}>Manhã (PSF / Casa)</Text>
+            </View>
+            <View style={pressureStyles.legendItem}>
+              <View style={[pressureStyles.legendColor, { backgroundColor: pdfTheme.colors.exam.orange }]} />
+              <Text style={pressureStyles.legendText}>Tarde (PSF / Casa)</Text>
+            </View>
+            <View style={pressureStyles.legendItem}>
+              <View style={[pressureStyles.legendColor, { backgroundColor: pdfTheme.colors.exam.indigo }]} />
+              <Text style={pressureStyles.legendText}>Noite (Hospital / Casa)</Text>
+            </View>
+          </View>
+  
+          <View style={{ marginTop: 12 }} />
+  
+          {/* Main Table */}
+          <View style={tableStyles.table}>
+            {/* Row 1: Period Group Headers */}
+            <View style={[tableStyles.row, { height: 26, backgroundColor: pdfTheme.colors.bgLight }]}>
+              <View style={[tableStyles.col, { width: dateColWidth, backgroundColor: pdfTheme.colors.primaryDark }]}>
+                <Text style={pressureStyles.periodTitle}>DIA</Text>
+              </View>
+              <View style={[tableStyles.col, { width: morningGroupWidth, backgroundColor: pdfTheme.colors.period.morning, borderRightColor: pdfTheme.colors.border }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  <HeaderIcon icon="sun" color={pdfTheme.colors.text.white} />
+                  <Text style={pressureStyles.periodTitle}>MANHÃ</Text>
+                </View>
+              </View>
+              <View style={[tableStyles.col, { width: afternoonGroupWidth, backgroundColor: pdfTheme.colors.period.afternoon, borderRightColor: pdfTheme.colors.border }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  <HeaderIcon icon="coffee" color={pdfTheme.colors.text.white} />
+                  <Text style={pressureStyles.periodTitle}>TARDE</Text>
+                </View>
+              </View>
+              <View style={[tableStyles.col, { width: nightGroupWidth, backgroundColor: pdfTheme.colors.period.night, borderRightColor: pdfTheme.colors.border }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                  <HeaderIcon icon="moon" color={pdfTheme.colors.text.white} />
+                  <Text style={pressureStyles.periodTitle}>NOITE</Text>
+                </View>
+              </View>
+              <View style={[tableStyles.col, tableStyles.lastCol, { width: obsColWidth, backgroundColor: pdfTheme.colors.text.secondary }]}>
+                <Text style={pressureStyles.periodTitle}>OBS</Text>
+              </View>
+             </View>
+  
+            {/* Row 2: Sub-column Headers */}
+            <View style={[pressureStyles.subHeaderRow, { height: 34 }]}>
+              <View style={[tableStyles.col, { width: dateColWidth, backgroundColor: pdfTheme.colors.softBg }]}>
+                <Text style={pressureStyles.subHeaderText}>Data</Text>
+              </View>
+              {['warning.softBg', 'period.afternoonSoft', 'period.nightSoft'].map((bg, periodIdx) => {
+                const colors = [
+                  { bg: pdfTheme.colors.warning.softBg, text: pdfTheme.colors.warning.text, val: pdfTheme.colors.period.morningText },
+                  { bg: pdfTheme.colors.period.afternoonSoft, text: pdfTheme.colors.period.afternoonDark, val: pdfTheme.colors.period.afternoonText },
+                  { bg: pdfTheme.colors.period.nightSoft, text: pdfTheme.colors.period.nightDark, val: pdfTheme.colors.period.nightText }
+                ][periodIdx];
+                return ['1ª aferição', '2ª aferição', '3ª aferição', 'Média'].map((med, i) => {
+                  const isMedia = i === 3;
+                  return (
+                  <View key={`${periodIdx}-${i}`} style={[tableStyles.col, { width: '7%', backgroundColor: isMedia ? '#e2e8f0' : colors.bg }]}>
+                    <Text style={[pressureStyles.subHeaderText, { color: isMedia ? pdfTheme.colors.text.dark : colors.text, fontSize: 5 }]}>{med}</Text>
+                    <View style={{ flexDirection: 'row', marginTop: 4, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={[pressureStyles.subHeaderText, { color: isMedia ? pdfTheme.colors.text.muted : colors.val, fontSize: 4.5 }]}>PAS  x  PAD</Text>
+                    </View>
+                  </View>
+                )});
+              })}
+              <View style={[tableStyles.col, tableStyles.lastCol, { width: obsColWidth, backgroundColor: pdfTheme.colors.bgLight }]}>
+                <Text style={pressureStyles.subHeaderText}></Text>
+              </View>
+            </View>
+  
+            {/* Data Rows - 3 or 7 days based on isExample */}
+            {Array.from({ length: isExample ? 3 : DAYS }).map((_, i) => {
+              const isEven = i % 2 === 0;
+              const bgColor = isEven ? pdfTheme.colors.text.white : pdfTheme.colors.bgLight;
+              const isLast = i === (isExample ? 3 : DAYS) - 1;
+              
+              // Example Data
+              const mockExamples = [
+                { 
+                  date: "15/05", 
+                  vals: { m: ["120 x 80", "118 x 78", "122 x 80"], t: ["130 x 85", "128 x 82", "125 x 80"], n: ["118 x 75", "115 x 75", "115 x 78"] }, 
+                  meds: { m: "120 x 79", t: "127 x 82", n: "116 x 76" }, 
+                  obs: "Senti leve tontura de manhã" 
+                },
+                { 
+                  date: "16/05", 
+                  vals: { m: ["135 x 85", "130 x 82", "132 x 80"], t: ["140 x 90", "138 x 88", "—"], n: ["130 x 85", "128 x 80", "125 x 80"] }, 
+                  meds: { m: "132 x 82", t: "139 x 89", n: "127 x 81" }, 
+                  obs: "Esqueci a 3ª medida da tarde e o remédio" 
+                },
+                { 
+                  date: "17/05", 
+                  vals: { m: ["115 x 75", "112 x 75", "115 x 72"], t: ["120 x 80", "118 x 78", "118 x 80"], n: ["112 x 70", "115 x 75", "110 x 72"] }, 
+                  meds: { m: "114 x 74", t: "118 x 79", n: "112 x 72" }, 
+                  obs: "Sem intercorrências" 
+                }
+              ];
+              const showEx = isExample;
+              const exData = showEx ? mockExamples[i] : null;
+              const dateTxt = showEx ? exData.date : "___/___";
+              const obsTxt = showEx ? exData.obs : "";
+              const txtStyles = showEx ? { color: pdfTheme.colors.text.main, fontSize: 6, fontWeight: 'bold' } : { color: pdfTheme.colors.text.muted, opacity: 0.4 };
+
+              const getCellData = (period: 'm' | 't' | 'n', j: number) => {
+                if (!showEx) return "x";
+                if (j === 3) return exData?.meds[period];
+                return exData?.vals[period][j];
+              };
+
+              return (
+                <View style={[tableStyles.row, { backgroundColor: bgColor, height: 45 }, isLast ? { borderBottomWidth: 0 } : {}]} key={i}>
+                  <View style={[tableStyles.col, { width: dateColWidth }]}>
+                    <Text style={[tableStyles.cellText, { fontSize: showEx ? 6 : 8 }]}>{dateTxt}</Text>
+                  </View>
+                  {/* Manhã (4 sub-cols) */}
+                  {Array.from({ length: 4 }).map((_, j) => {
+                    const isMedia = j === 3;
+                    const cellBg = isMedia ? (isEven ? '#f1f5f9' : '#e2e8f0') : (isEven ? pdfTheme.colors.period.morningAlt : pdfTheme.colors.warning.softBg);
+                    return (
+                    <View key={`m-${j}`} style={[tableStyles.col, { width: '7%', backgroundColor: cellBg }]}>
+                      <Text style={[tableStyles.cellText, txtStyles as any]}>{getCellData('m', j)}</Text>
+                    </View>
+                  )})}
+                  {/* Tarde (4 sub-cols) */}
+                  {Array.from({ length: 4 }).map((_, j) => {
+                    const isMedia = j === 3;
+                    const cellBg = isMedia ? (isEven ? '#f1f5f9' : '#e2e8f0') : (isEven ? pdfTheme.colors.period.afternoonAlt : pdfTheme.colors.period.afternoonSoft);
+                    return (
+                    <View key={`t-${j}`} style={[tableStyles.col, { width: '7%', backgroundColor: cellBg }]}>
+                      <Text style={[tableStyles.cellText, txtStyles as any]}>{getCellData('t', j)}</Text>
+                    </View>
+                  )})}
+                  {/* Noite (4 sub-cols) */}
+                  {Array.from({ length: 4 }).map((_, j) => {
+                    const isMedia = j === 3;
+                    const cellBg = isMedia ? (isEven ? '#f1f5f9' : '#e2e8f0') : (isEven ? pdfTheme.colors.period.nightAlt : pdfTheme.colors.period.nightSoft);
+                    return (
+                    <View key={`n-${j}`} style={[tableStyles.col, { width: '7%', backgroundColor: cellBg }]}>
+                      <Text style={[tableStyles.cellText, txtStyles as any]}>{getCellData('n', j)}</Text>
+                    </View>
+                  )})}
+                  <View style={[tableStyles.col, tableStyles.lastCol, { width: obsColWidth }]}>
+                    <Text style={[tableStyles.cellText, showEx ? { fontSize: 5, color: pdfTheme.colors.text.main, lineHeight: 1.2 } : {}]}>
+                      {obsTxt}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+  
+          {/* Instructions Box / FAQ */}
+          {!isExample ? (
+            <View style={[pressureStyles.card, { marginTop: 20 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                <HeaderIcon icon="clipboard" color={pdfTheme.colors.primary} />
+                <Text style={[pressureStyles.cardTitle, { fontSize: 10 }]}>Lembretes ao Profissional:</Text>
+              </View>
+              <Text style={pressureStyles.listText}>- Anotar detalhadamente a PAS (sistólica) e PAD (diastólica) substituindo o 'x' central. Ex: 120 x 80.</Text>
+              <Text style={pressureStyles.listText}>- Usar a coluna OBS para relatar sintomas aferidos ou faltas/esquecimentos do paciente.</Text>
+            </View>
+          ) : (
+            <View style={{ marginTop: 20, gap: 12 }}>
+              <View style={[pressureStyles.card, { backgroundColor: pdfTheme.colors.neutral.bg }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                  <NotebookIcon size={16} color={pdfTheme.colors.primary} />
+                  <Text style={[pressureStyles.cardTitle, { fontSize: 12, color: pdfTheme.colors.primary }]}>Como preencher corretamente o seu diário</Text>
+                </View>
+                <View style={{ flexDirection: 'row' }}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                     <View style={{ marginBottom: 10 }}>
+                       <Text style={[pressureStyles.listText, { fontSize: 9, lineHeight: 1.4 }]}><Text style={{ fontWeight: 'bold' }}>1. O que devo anotar?</Text> {"\n"}Anote sempre o valor "maior" e o "menor" do aparelho. Se marcou "12" por "8", anote <Text style={{ fontWeight: 'bold' }}>120 x 80</Text>.</Text>
+                     </View>
+                     <View style={{ marginBottom: 4 }}>
+                       <Text style={[pressureStyles.listText, { fontSize: 9, lineHeight: 1.4 }]}><Text style={{ fontWeight: 'bold' }}>2. E a coluna de "OBS" (Observação)?</Text> {"\n"}Escreva lá se sentiu alguma dor de cabeça, tontura ou se esqueceu de tomar o remédio.</Text>
+                     </View>
+                  </View>
+                  <View style={{ flex: 1, paddingLeft: 10 }}>
+                     <View style={{ marginBottom: 10 }}>
+                       <Text style={[pressureStyles.listText, { fontSize: 9, lineHeight: 1.4 }]}><Text style={{ fontWeight: 'bold' }}>3. Quando anotar?</Text> {"\n"}Faça <Text style={{ fontWeight: 'bold' }}>3 medições seguidas</Text>, com 1 ou 2 minutos de descanso entre elas, de manhã, tarde e noite.</Text>
+                     </View>
+                     <View style={{ marginBottom: 4 }}>
+                       <Text style={[pressureStyles.listText, { fontSize: 9, lineHeight: 1.4 }]}><Text style={{ fontWeight: 'bold' }}>4. Esqueceu de medir?</Text> {"\n"}Não tem problema! Deixe aquele quadrinho em branco ou risque e continue anotando depois.</Text>
+                     </View>
+                  </View>
+                </View>
+              </View>
+
+              <View style={[pressureStyles.card, { backgroundColor: pdfTheme.colors.warning.softBg, borderColor: pdfTheme.colors.warning.border }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                  <InstructionIcon size={16} color={pdfTheme.colors.warning.text} />
+                  <Text style={[pressureStyles.cardTitle, { fontSize: 12, color: pdfTheme.colors.warning.text }]}>Como calcular o quadradinho cinza da "Média"</Text>
+                </View>
+                <Text style={[pressureStyles.listText, { fontSize: 9, marginBottom: 8 }]}>
+                  Você (ou o enfermeiro/médico) precisa somar os três valores da primeira parte (pressão alta) e dividir por 3. Depois faz a mesma coisa com a segunda parte (pressão baixa). Aquele número é o principal!
+                </Text>
+                
+                <View style={{ flexDirection: 'row', backgroundColor: pdfTheme.colors.text.white, padding: 10, borderRadius: 6, borderWidth: 1, borderColor: '#e2e8f0', gap: 16 }}>
+                  <View style={{ flex: 1 }}>
+                     <Text style={[pressureStyles.listText, { fontWeight: 'bold', color: pdfTheme.colors.primary, marginBottom: 6, fontSize: 10 }]}>Passo 1: Somar as 3 medidas</Text>
+                     <Text style={[pressureStyles.listText, { fontSize: 9 }]}>1ª Aferição: <Text style={{ fontWeight: 'bold' }}>120</Text> x 80</Text>
+                     <Text style={[pressureStyles.listText, { fontSize: 9 }]}>2ª Aferição: <Text style={{ fontWeight: 'bold', color: '#1d4ed8' }}>135</Text> x 85</Text>
+                     <Text style={[pressureStyles.listText, { fontSize: 9 }]}>3ª Aferição: <Text style={{ fontWeight: 'bold' }}>115</Text> x 75</Text>
+                     <Text style={[pressureStyles.listText, { fontSize: 9, marginTop: 4 }]}><Text style={{ fontStyle: 'italic' }}>Total ALTA</Text> = 120 + 135 + 115 = <Text style={{ fontWeight: 'bold', color: pdfTheme.colors.warning.strong }}>370</Text></Text>
+                     <Text style={[pressureStyles.listText, { fontSize: 9 }]}><Text style={{ fontStyle: 'italic' }}>Total BAIXA</Text> = 80 + 85 + 75 = <Text style={{ fontWeight: 'bold', color: pdfTheme.colors.warning.strong }}>240</Text></Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                     <Text style={[pressureStyles.listText, { fontWeight: 'bold', color: pdfTheme.colors.primary, marginBottom: 6, fontSize: 10 }]}>Passo 2: Dividir por três (3)</Text>
+                     <Text style={[pressureStyles.listText, { fontSize: 9 }]}>ALTA (370 dividido por 3) = <Text style={{ fontWeight: 'bold' }}>123</Text></Text>
+                     <Text style={[pressureStyles.listText, { fontSize: 9 }]}>BAIXA (240 dividido por 3) = <Text style={{ fontWeight: 'bold' }}>80</Text></Text>
+                     
+                     <View style={{ marginTop: 8, padding: 8, backgroundColor: pdfTheme.colors.success.softBg, borderRadius: 4, borderWidth: 1, borderColor: pdfTheme.colors.success.border }}>
+                       <Text style={[pressureStyles.listText, { fontSize: 10, fontWeight: 'bold', textAlign: 'center', color: pdfTheme.colors.success.strong }]}>
+                         Resultado na Média: Anote "123 x 80"
+                       </Text>
+                     </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <PageFooter />
+      </View>
+  );
 
   return (
     <React.Fragment>
@@ -176,7 +418,7 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
                 <Text style={pressureStyles.cardTitle}>Instruções para Medição no Ambulatório</Text>
               </View>
               <Text style={[pressureStyles.listText, { marginBottom: 8 }]}>
-                Compareça ao posto ou ambulatório nos períodos indicados. O profissional registrará <Text style={{ fontWeight: 'bold' }}>2 medições</Text> em cada comparecimento.
+                Compareça ao posto ou ambulatório nos períodos indicados. O profissional registrará <Text style={{ fontWeight: 'bold' }}>3 medições</Text> em cada comparecimento e fará a média.
               </Text>
               <View>
                 <View style={pressureStyles.listItem}>
@@ -276,184 +518,11 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
           </View>
         </View>
       </BaseDocument>
+      {/* === SEGUNDA PÁGINA (EXEMPLO PREENCHIDO) === */}
+      {renderTablePage(true)}
 
-      {/* === SEGUNDA PÁGINA (TABELA) === */}
-      <View style={[commonStyles.page, { paddingBottom: pdfTheme.spacing.xxl, paddingTop: pdfTheme.spacing.xl }]} wrap={false}>
-        
-        <View style={[commonStyles.mainTitleContainer, { marginBottom: 16 }]}>
-          <View style={commonStyles.mainTitleLine} />
-          <DocTitle>Diário de Pressão Arterial (MAPA)</DocTitle>
-          <View style={commonStyles.mainTitleLine} />
-        </View>
-
-        <View style={pressureStyles.container}>
-          {/* Legend */}
-          <View style={[pressureStyles.legendRow, { marginTop: 16 }]}>
-            <View style={pressureStyles.legendItem}>
-               <View style={[pressureStyles.legendColor, { backgroundColor: pdfTheme.colors.exam.yellow }]} />
-              <Text style={pressureStyles.legendText}>Manhã (PSF / Casa)</Text>
-            </View>
-            <View style={pressureStyles.legendItem}>
-              <View style={[pressureStyles.legendColor, { backgroundColor: pdfTheme.colors.exam.orange }]} />
-              <Text style={pressureStyles.legendText}>Tarde (PSF / Casa)</Text>
-            </View>
-            <View style={pressureStyles.legendItem}>
-              <View style={[pressureStyles.legendColor, { backgroundColor: pdfTheme.colors.exam.indigo }]} />
-              <Text style={pressureStyles.legendText}>Noite (Hospital / Casa)</Text>
-            </View>
-          </View>
-  
-          <View style={{ marginTop: 12 }} />
-  
-          {/* Main Table */}
-          <View style={tableStyles.table}>
-            {/* Row 1: Period Group Headers */}
-            <View style={[tableStyles.row, { height: 26, backgroundColor: pdfTheme.colors.bgLight }]}>
-              <View style={[tableStyles.col, { width: dateColWidth, backgroundColor: pdfTheme.colors.primaryDark }]}>
-                <Text style={pressureStyles.periodTitle}>DIA</Text>
-              </View>
-              <View style={[tableStyles.col, { width: morningGroupWidth, backgroundColor: pdfTheme.colors.period.morning, borderRightColor: pdfTheme.colors.border }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                  <HeaderIcon icon="sun" color={pdfTheme.colors.text.white} />
-                  <Text style={pressureStyles.periodTitle}>MANHÃ</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, { width: afternoonGroupWidth, backgroundColor: pdfTheme.colors.period.afternoon, borderRightColor: pdfTheme.colors.border }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                  <HeaderIcon icon="coffee" color={pdfTheme.colors.text.white} />
-                  <Text style={pressureStyles.periodTitle}>TARDE</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, { width: nightGroupWidth, backgroundColor: pdfTheme.colors.period.night, borderRightColor: pdfTheme.colors.border }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                  <HeaderIcon icon="moon" color={pdfTheme.colors.text.white} />
-                  <Text style={pressureStyles.periodTitle}>NOITE</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, tableStyles.lastCol, { width: obsColWidth, backgroundColor: pdfTheme.colors.text.secondary }]}>
-                <Text style={pressureStyles.periodTitle}>OBS</Text>
-              </View>
-            </View>
-  
-            {/* Row 2: Sub-column Headers (Med 1, Med 2 with PAS/PAD) */}
-            <View style={[pressureStyles.subHeaderRow, { height: 34 }]}>
-              <View style={[tableStyles.col, { width: dateColWidth, backgroundColor: pdfTheme.colors.softBg }]}>
-                <Text style={pressureStyles.subHeaderText}>Data</Text>
-              </View>
-              <View style={[tableStyles.col, { width: '15%', backgroundColor: pdfTheme.colors.warning.softBg }]}>
-                <Text style={[pressureStyles.subHeaderText, { color: pdfTheme.colors.warning.text }]}>1ª Medição</Text>
-                <View style={{ flexDirection: 'row', marginTop: 4, width: '100%' }}>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.morningText, fontSize: 5 }]}>PAS</Text>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.morningText, fontSize: 5 }]}>PAD</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, { width: '15%', backgroundColor: pdfTheme.colors.warning.softBg }]}>
-                <Text style={[pressureStyles.subHeaderText, { color: pdfTheme.colors.warning.text }]}>2ª Medição</Text>
-                <View style={{ flexDirection: 'row', marginTop: 4, width: '100%' }}>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.morningText, fontSize: 5 }]}>PAS</Text>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.morningText, fontSize: 5 }]}>PAD</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, { width: '15%', backgroundColor: pdfTheme.colors.period.afternoonSoft }]}>
-                <Text style={[pressureStyles.subHeaderText, { color: pdfTheme.colors.period.afternoonDark }]}>1ª Medição</Text>
-                <View style={{ flexDirection: 'row', marginTop: 4, width: '100%' }}>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.afternoonText, fontSize: 5 }]}>PAS</Text>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.afternoonText, fontSize: 5 }]}>PAD</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, { width: '15%', backgroundColor: pdfTheme.colors.period.afternoonSoft }]}>
-                <Text style={[pressureStyles.subHeaderText, { color: pdfTheme.colors.period.afternoonDark }]}>2ª Medição</Text>
-                <View style={{ flexDirection: 'row', marginTop: 4, width: '100%' }}>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.afternoonText, fontSize: 5 }]}>PAS</Text>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.afternoonText, fontSize: 5 }]}>PAD</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, { width: '12%', backgroundColor: pdfTheme.colors.period.nightSoft }]}>
-                <Text style={[pressureStyles.subHeaderText, { color: pdfTheme.colors.period.nightDark }]}>1ª Medição</Text>
-                <View style={{ flexDirection: 'row', marginTop: 4, width: '100%' }}>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.nightText, fontSize: 5 }]}>PAS</Text>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.nightText, fontSize: 5 }]}>PAD</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, { width: '12%', backgroundColor: pdfTheme.colors.period.nightSoft }]}>
-                <Text style={[pressureStyles.subHeaderText, { color: pdfTheme.colors.period.nightDark }]}>2ª Medição</Text>
-                <View style={{ flexDirection: 'row', marginTop: 4, width: '100%' }}>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.nightText, fontSize: 5 }]}>PAS</Text>
-                  <Text style={[pressureStyles.subHeaderText, { flex: 1, color: pdfTheme.colors.period.nightText, fontSize: 5 }]}>PAD</Text>
-                </View>
-              </View>
-              <View style={[tableStyles.col, tableStyles.lastCol, { width: obsColWidth, backgroundColor: pdfTheme.colors.bgLight }]}>
-                <Text style={pressureStyles.subHeaderText}></Text>
-              </View>
-            </View>
-  
-            {/* Data Rows - 7 days */}
-            {Array.from({ length: DAYS }).map((_, i) => {
-              const isEven = i % 2 === 0;
-              const bgColor = isEven ? pdfTheme.colors.text.white : pdfTheme.colors.bgLight;
-              const isLast = i === DAYS - 1;
-              return (
-                <View style={[tableStyles.row, { backgroundColor: bgColor, height: 45 }, isLast ? { borderBottomWidth: 0 } : {}]} key={i}>
-                  <View style={[tableStyles.col, { width: dateColWidth }]}>
-                    <Text style={[tableStyles.cellText, { fontSize: 8 }]}>___/___</Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '7.5%', backgroundColor: isEven ? pdfTheme.colors.period.morningAlt : pdfTheme.colors.warning.softBg }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '7.5%', backgroundColor: isEven ? pdfTheme.colors.period.morningAlt : pdfTheme.colors.warning.softBg }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '7.5%', backgroundColor: isEven ? pdfTheme.colors.period.morningAlt : pdfTheme.colors.warning.softBg }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '7.5%', backgroundColor: isEven ? pdfTheme.colors.period.morningAlt : pdfTheme.colors.warning.softBg }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '7.5%', backgroundColor: isEven ? pdfTheme.colors.period.afternoonAlt : pdfTheme.colors.period.afternoonSoft }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '7.5%', backgroundColor: isEven ? pdfTheme.colors.period.afternoonAlt : pdfTheme.colors.period.afternoonSoft }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '7.5%', backgroundColor: isEven ? pdfTheme.colors.period.afternoonAlt : pdfTheme.colors.period.afternoonSoft }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '7.5%', backgroundColor: isEven ? pdfTheme.colors.period.afternoonAlt : pdfTheme.colors.period.afternoonSoft }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '6%', backgroundColor: isEven ? pdfTheme.colors.period.nightAlt : pdfTheme.colors.period.nightSoft }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '6%', backgroundColor: isEven ? pdfTheme.colors.period.nightAlt : pdfTheme.colors.period.nightSoft }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '6%', backgroundColor: isEven ? pdfTheme.colors.period.nightAlt : pdfTheme.colors.period.nightSoft }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, { width: '6%', backgroundColor: isEven ? pdfTheme.colors.period.nightAlt : pdfTheme.colors.period.nightSoft }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                  <View style={[tableStyles.col, tableStyles.lastCol, { width: obsColWidth }]}>
-                    <Text style={tableStyles.cellText}></Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-  
-          {/* Instructions Box (Simplified) */}
-          <View style={[pressureStyles.card, { marginTop: 20 }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-              <HeaderIcon icon="clipboard" color={pdfTheme.colors.primary} />
-              <Text style={[pressureStyles.cardTitle, { fontSize: 10 }]}>Lembretes ao Profissional:</Text>
-            </View>
-            <Text style={pressureStyles.listText}>- Anotar detalhadamente a PAS (sistólica) e PAD (diastólica) Ex: 120 / 80.</Text>
-            <Text style={pressureStyles.listText}>- Usar a coluna OBS para relatar sintomas aferidos ou faltas/esquecimentos do paciente.</Text>
-          </View>
-        </View>
-
-        <PageFooter />
-      </View>
+      {/* === TERCEIRA PÁGINA (TABELA EM BRANCO) === */}
+      {renderTablePage(false)}
     </React.Fragment>
   );
 };
