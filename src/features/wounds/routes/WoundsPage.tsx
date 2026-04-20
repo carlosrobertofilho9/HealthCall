@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Modal, Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
+import { Button, Modal, Tabs, TabsContent, TabsList, TabsTrigger, SectionCard } from '@/components/ui';
+import { Users, List, History, ClipboardList, ShieldAlert, PlusCircle, Plus, Camera, Bandage, Stethoscope, Activity, TableProperties, Table, UserPlus } from 'lucide-react';
 import BodyDiagram from '@/components/clinical/BodyDiagram';
 import WoundPatientList from '../components/WoundPatientList';
 import WoundCaseList from '../components/WoundCaseList';
@@ -10,6 +11,7 @@ import WoundTimeline from '../components/WoundTimeline';
 import WoundGallery from '../components/WoundGallery';
 import WoundPhotoComparator from '../components/WoundPhotoComparator';
 import WoundEvolutionTable from '../components/WoundEvolutionTable';
+import WoundEvolutionForm from '../components/WoundEvolutionForm';
 import WoundCloseModal from '../components/WoundCloseModal';
 import WoundReopenModal from '../components/WoundReopenModal';
 import WoundSyncIndicator from '../components/WoundSyncIndicator';
@@ -46,6 +48,10 @@ const WoundsPage: React.FC = () => {
     persistDraft,
     restoreDraft,
     clearDraft,
+    updatePatient,
+    updateCase,
+    updateEntry,
+    removeEntry,
   } = useWounds();
 
   const {
@@ -59,10 +65,16 @@ const WoundsPage: React.FC = () => {
   const [mobileTab, setMobileTab] = useState<'patients' | 'summary' | 'photos' | 'table'>('patients');
   const [desktopTab, setDesktopTab] = useState<'summary' | 'photos'>('summary');
   const [showNewWoundModal, setShowNewWoundModal] = useState(false);
+  const [showEditWoundModal, setShowEditWoundModal] = useState(false);
   const [showComparatorModal, setShowComparatorModal] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showReopenModal, setShowReopenModal] = useState(false);
+  const [showEditEntryModal, setShowEditEntryModal] = useState(false);
+  const [showDeleteEntryModal, setShowDeleteEntryModal] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<WoundEntry | null>(null);
+  const [deletingEntry, setDeletingEntry] = useState<WoundEntry | null>(null);
+  const [showPatientForm, setShowPatientForm] = useState(false);
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
   const [isDesktopLayout, setIsDesktopLayout] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 1280px)').matches : false,
@@ -135,6 +147,14 @@ const WoundsPage: React.FC = () => {
 
     await refreshWounds(payload.caseInput.patient_id);
     setShowNewWoundModal(false);
+  };
+
+  const handleEditWoundSubmit = async (payload: {
+    caseInput: Parameters<typeof createCase>[0];
+  }) => {
+    if (!selectedWoundId) return;
+    await updateCase(selectedWoundId, payload.caseInput);
+    setShowEditWoundModal(false);
   };
 
 
@@ -245,6 +265,20 @@ const WoundsPage: React.FC = () => {
     });
   };
 
+  const handleEditEntrySubmit = async (input: Parameters<typeof updateEntry>[1]) => {
+    if (!editingEntry || !selectedWoundId) return;
+    await updateEntry(editingEntry.id, input, selectedWoundId);
+    setShowEditEntryModal(false);
+    setEditingEntry(null);
+  };
+
+  const handleDeleteEntryConfirm = async () => {
+    if (!deletingEntry || !selectedWoundId) return;
+    await removeEntry(deletingEntry.id, selectedWoundId);
+    setShowDeleteEntryModal(false);
+    setDeletingEntry(null);
+  };
+
   const selectedCodes = wounds.map((wound) => wound.anatomical_code);
 
   const handleDesktopTabChange = (value: string) => {
@@ -272,15 +306,8 @@ const WoundsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-4 pb-4 lg:h-full lg:overflow-hidden lg:pb-0">
-      <header className="rounded-2xl border border-border bg-card p-4 lg:rounded-none lg:border-0 lg:border-b">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Curativos</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Fluxo simplificado para cadastro de feridas, evolução clínica, fotos e sincronização offline.
-        </p>
-      </header>
-
-      <div className="flex flex-wrap items-center gap-3 px-4 xl:hidden">
+    <div className="flex w-full flex-col xl:h-full xl:overflow-hidden">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 xl:hidden">
         <WoundSyncIndicator
           isOnline={isOnline}
           isSyncing={isSyncing}
@@ -305,19 +332,85 @@ const WoundsPage: React.FC = () => {
       )}
 
       {isDesktopLayout ? (
-        <div className="min-h-0 flex-1">
-          <div className="grid h-full min-h-0 grid-cols-12 gap-4">
-            <aside className="col-span-3 h-full overflow-y-auto pb-6 pr-1 custom-scrollbar">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {/* Coluna 1: Pacientes */}
+          <div className="flex w-[320px] flex-col border-r border-border bg-background">
+          <SectionCard 
+            title="Pacientes" 
+            icon={<Users size={18} />}
+            headerActions={
+              <div className="group relative">
+                <Button 
+                  type="button" 
+                  size="icon" 
+                  variant="ghost"
+                  onClick={() => setShowPatientForm(prev => !prev)}
+                  className="h-8 w-8 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10"
+                >
+                  <UserPlus className="h-4 w-4" />
+                </Button>
+                <div className="pointer-events-none absolute right-0 top-full z-50 mt-2 -translate-y-1 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-popover-foreground opacity-0 shadow-md transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                  Novo Paciente
+                </div>
+              </div>
+            }
+          >
+            <div className="p-4 flex flex-col gap-4 h-full overflow-hidden">
               <WoundPatientList
                 patients={patients}
                 selectedPatientId={selectedPatientId}
                 onSelectPatient={setSelectedPatientId}
                 onCreatePatient={createPatient}
+                onUpdatePatient={updatePatient}
                 onDeletePatient={removePatient}
+                showForm={showPatientForm}
+                onToggleForm={() => setShowPatientForm(prev => !prev)}
               />
-            </aside>
+            </div>
+          </SectionCard>
+        </div>
 
-            <aside className="col-span-3 h-full overflow-y-auto pb-6 pr-1 custom-scrollbar">
+        <div className="flex w-[380px] flex-col border-r border-border bg-background">
+          <SectionCard 
+            title="Feridas" 
+            icon={<Bandage size={18} />}
+            headerActions={
+              <div className="flex items-center gap-1">
+                <div className="group relative">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setShowNewWoundModal(true)}
+                    disabled={!selectedPatientId}
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                  <div className="pointer-events-none absolute right-0 top-full z-50 mt-2 -translate-y-1 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-popover-foreground opacity-0 shadow-md transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                    Nova Ferida
+                  </div>
+                </div>
+
+                <div className="group relative">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => navigate(`/wounds/evolution/${selectedWoundId}`)}
+                    disabled={!selectedWoundId}
+                    className="h-8 w-8 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10"
+                  >
+                    <PlusCircle className="h-4 w-4 text-emerald-500" />
+                  </Button>
+                  <div className="pointer-events-none absolute right-0 top-full z-50 mt-2 -translate-y-1 whitespace-nowrap rounded-md border border-border bg-popover px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-popover-foreground opacity-0 shadow-md transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                    Nova Evolução
+                  </div>
+                </div>
+              </div>
+            }
+          >
+            <div className="p-4 h-full overflow-hidden">
               <WoundCaseList
                 wounds={wounds}
                 selectedWoundId={selectedWoundId}
@@ -325,9 +418,29 @@ const WoundsPage: React.FC = () => {
                 onNewWound={() => setShowNewWoundModal(true)}
                 onNewEvolution={() => navigate(`/wounds/evolution/${selectedWoundId}`)}
               />
-            </aside>
+            </div>
+          </SectionCard>
+        </div>
 
-            <main className="col-span-6 h-full overflow-y-auto pb-6 pr-1 custom-scrollbar">
+        <main className="flex min-w-0 flex-1 flex-col bg-background">
+          <SectionCard 
+            title={selectedWoundId ? `Detalhes: ${selectedWound?.anatomical_code}` : 'Acompanhamento'} 
+            icon={<Stethoscope size={18} />}
+            headerActions={
+              <div className="flex items-center gap-2">
+                <WoundSyncIndicator
+                  isOnline={isOnline}
+                  isSyncing={isSyncing}
+                  pendingCount={summary.pendingCount}
+                  conflictCount={summary.conflictCount}
+                  onSyncNow={() => {
+                    void syncNow();
+                  }}
+                />
+              </div>
+            }
+          >
+            <div className="flex-1 custom-scrollbar overflow-y-auto p-4 lg:p-6">
               <AnimatePresence mode="wait">
                 {!selectedPatientId ? (
                   <motion.div
@@ -356,10 +469,11 @@ const WoundsPage: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
-                    className="space-y-4"
+                    className="space-y-6"
                   >
                     <WoundCaseHeader
                       wound={selectedWound}
+                      onEditCase={() => setShowEditWoundModal(true)}
                       onCloseCase={() => setShowCloseModal(true)}
                       onReopenCase={() => setShowReopenModal(true)}
                       onGenerateUbsDocument={handleGenerateUbsDocument}
@@ -368,17 +482,33 @@ const WoundsPage: React.FC = () => {
                     <Tabs
                       value={desktopTab}
                       onValueChange={handleDesktopTabChange}
-                      className="space-y-3"
+                      className="space-y-4"
                     >
-                      <TabsList className="bg-background/40 backdrop-blur-sm border border-border/40 p-1 rounded-2xl">
-                        <TabsTrigger value="summary" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">Resumo</TabsTrigger>
-                        <TabsTrigger value="photos" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">Fotos</TabsTrigger>
-                        <TabsTrigger value="table" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">Tabela</TabsTrigger>
+                      <TabsList className="bg-background/40 backdrop-blur-sm border border-border/40 p-1 rounded-2xl w-fit">
+                        <TabsTrigger value="summary" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                          <Activity className="mr-2 h-3.5 w-3.5" />
+                          Resumo
+                        </TabsTrigger>
+                        <TabsTrigger value="photos" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                          <Camera className="mr-2 h-3.5 w-3.5" />
+                          Fotos
+                        </TabsTrigger>
+                        <TabsTrigger value="table" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">
+                          <TableProperties className="mr-2 h-3.5 w-3.5" />
+                          Tabela
+                        </TabsTrigger>
                       </TabsList>
 
-                      <TabsContent value="summary" className="space-y-4 outline-none">
-                        <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
-                        <WoundTimeline entries={entries} photos={photos} />
+                      <TabsContent value="summary" className="space-y-6 outline-none">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                          <div className="rounded-2xl border border-border/50 bg-card/30 p-4">
+                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Mapa Anatômico</h4>
+                            <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
+                          </div>
+                          <div className="space-y-6">
+                             <WoundTimeline entries={entries} photos={photos} />
+                          </div>
+                        </div>
                       </TabsContent>
 
                       <TabsContent value="photos" className="space-y-4 outline-none">
@@ -398,21 +528,34 @@ const WoundsPage: React.FC = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </main>
-          </div>
-        </div>
+            </div>
+          </SectionCard>
+        </main>
+      </div>
       ) : (
-        <div>
+        <div className="flex-1 overflow-y-auto px-4 xl:hidden">
           <Tabs
             value={mobileTab}
             onValueChange={handleMobileTabChange}
             className="space-y-4"
           >
             <TabsList className="w-full justify-between">
-              <TabsTrigger value="patients" className="flex-1">Pacientes</TabsTrigger>
-              <TabsTrigger value="summary" className="flex-1">Resumo</TabsTrigger>
-              <TabsTrigger value="photos" className="flex-1">Fotos</TabsTrigger>
-              <TabsTrigger value="table" className="flex-1">Tabela</TabsTrigger>
+              <TabsTrigger value="patients" className="flex-1">
+                <Users className="mr-2 h-4 w-4" />
+                Pacientes
+              </TabsTrigger>
+              <TabsTrigger value="summary" className="flex-1">
+                <Activity className="mr-2 h-4 w-4" />
+                Resumo
+              </TabsTrigger>
+              <TabsTrigger value="photos" className="flex-1">
+                <Camera className="mr-2 h-4 w-4" />
+                Fotos
+              </TabsTrigger>
+              <TabsTrigger value="table" className="flex-1">
+                <Table className="mr-2 h-4 w-4" />
+                Tabela
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="patients" className="space-y-3">
@@ -421,6 +564,7 @@ const WoundsPage: React.FC = () => {
                 selectedPatientId={selectedPatientId}
                 onSelectPatient={setSelectedPatientId}
                 onCreatePatient={createPatient}
+                onUpdatePatient={updatePatient}
                 onDeletePatient={removePatient}
               />
               <WoundCaseList
@@ -445,6 +589,7 @@ const WoundsPage: React.FC = () => {
                   >
                     <WoundCaseHeader
                       wound={selectedWound}
+                      onEditCase={() => setShowEditWoundModal(true)}
                       onCloseCase={() => setShowCloseModal(true)}
                       onReopenCase={() => setShowReopenModal(true)}
                       onGenerateUbsDocument={handleGenerateUbsDocument}
@@ -485,6 +630,20 @@ const WoundsPage: React.FC = () => {
         />
       </Modal>
 
+      <Modal
+        isOpen={showEditWoundModal}
+        onClose={() => setShowEditWoundModal(false)}
+        panelClassName="max-h-[90vh] max-w-4xl overflow-y-auto p-4 sm:p-5"
+      >
+        <NewWoundForm
+          patientId={selectedPatientId}
+          initialWound={selectedWound}
+          existingAnatomicalCodes={selectedCodes}
+          onSubmit={handleEditWoundSubmit}
+          onCancel={() => setShowEditWoundModal(false)}
+        />
+      </Modal>
+
 
       <Modal
         isOpen={showComparatorModal}
@@ -501,10 +660,49 @@ const WoundsPage: React.FC = () => {
       >
         <WoundEvolutionTable
           entries={entries}
+          photos={photos}
           mode="modal"
           patient={selectedPatient}
           wound={selectedWound}
+          onEditEntry={(entry) => {
+            setEditingEntry(entry);
+            setShowEditEntryModal(true);
+          }}
+          onDeleteEntry={(entry) => {
+            setDeletingEntry(entry);
+            setShowDeleteEntryModal(true);
+          }}
         />
+      </Modal>
+
+      <Modal
+        isOpen={showEditEntryModal}
+        onClose={() => setShowEditEntryModal(false)}
+        panelClassName="max-h-[90vh] max-w-4xl overflow-y-auto p-4 sm:p-5"
+      >
+        <WoundEvolutionForm
+          woundId={selectedWoundId}
+          initialEntry={editingEntry}
+          onSubmit={handleEditEntrySubmit}
+          onCancel={() => setShowEditEntryModal(false)}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={showDeleteEntryModal}
+        onClose={() => setShowDeleteEntryModal(false)}
+        panelClassName="max-w-md p-6"
+      >
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-foreground">Excluir Evolução</h3>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir esta evolução? Esta ação não pode ser desfeita e removerá permanentemente o registro e todas as fotos vinculadas a ele.
+          </p>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="ghost" onClick={() => setShowDeleteEntryModal(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteEntryConfirm}>Confirmar Exclusão</Button>
+          </div>
+        </div>
       </Modal>
 
       <WoundCloseModal

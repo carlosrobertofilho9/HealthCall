@@ -10,45 +10,14 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
-import { ActionBar, Badge, Button } from '@/components/ui';
+import { ActionBar, Badge, Button, SectionCard } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { Template } from '../utils/mockData';
 import { DocumentPdf } from './DocumentPdf';
 import { DynamicFieldsForm } from './DynamicFieldsForm';
 import { TemplateList } from './TemplateList';
 
-interface SectionCardProps {
-  title: string;
-  icon: React.ReactNode;
-  className?: string;
-  contentClassName?: string;
-  children: React.ReactNode;
-}
-
-const SectionCard: React.FC<SectionCardProps> = ({
-  title,
-  icon,
-  className,
-  contentClassName,
-  children,
-}) => {
-  return (
-    <div className={cn('flex flex-col flex-1 xl:h-full xl:overflow-hidden bg-background xl:bg-transparent rounded-xl border border-border shadow-sm xl:border-0 xl:shadow-none xl:rounded-none', className)}>
-      <div className="shrink-0 border-b border-border bg-background/50 p-4 pb-3 lg:p-5 lg:pb-4">
-        <h3 className="flex items-center gap-2.5 text-base font-semibold tracking-tight text-foreground lg:text-lg">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-secondary text-primary shadow-inner">
-            {icon}
-          </span>
-          {title}
-        </h3>
-      </div>
-
-      <div className={cn('flex min-h-0 flex-1 flex-col p-0 xl:overflow-hidden', contentClassName)}>
-        {children}
-      </div>
-    </div>
-  );
-};
+// SectionCard moved to @/components/ui
 
 interface TemplatesPanelProps {
   templates: Template[];

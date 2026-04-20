@@ -7,6 +7,7 @@ import {
   createWoundPatient,
   deleteWoundPatient,
   deleteWoundPhoto,
+  deleteWoundEntry,
   hydratePhotosWithSignedUrls,
   listPatientsWithTrackedWounds,
   listWoundEntries,
@@ -14,6 +15,9 @@ import {
   listWoundStatusEvents,
   listWoundsByPatient,
   reopenWoundCase,
+  updateWoundCase,
+  updateWoundEntry,
+  updateWoundPatient,
   uploadWoundPhotos,
 } from '../services/woundService';
 import {
@@ -186,6 +190,28 @@ export function useWounds() {
     }
   }, [refreshWounds]);
 
+  const updateCase = useCallback(async (woundId: string, input: Partial<CreateWoundCaseInput>) => {
+    try {
+      const updated = await updateWoundCase(woundId, input);
+      toast.success('Dados da ferida atualizados com sucesso.');
+      if (selectedPatientId) {
+        await refreshWounds(selectedPatientId);
+      }
+      return updated;
+    } catch (err) {
+      if (isOfflineError(err)) {
+        // We don't have a specific offline mutation for update_wound yet, 
+        // but we can add it later if needed. For now, just toast error if offline.
+        toast.error('Edição de ferida requer conexão no momento.');
+        throw err;
+      }
+
+      const message = err instanceof Error ? err.message : 'Falha ao atualizar ferida.';
+      toast.error(message);
+      throw err;
+    }
+  }, [refreshWounds, selectedPatientId]);
+
   const createEntry = useCallback(async (input: CreateWoundEntryInput) => {
     try {
       const created = await addWoundEntry(input);
@@ -200,6 +226,41 @@ export function useWounds() {
       }
 
       const message = err instanceof Error ? err.message : 'Falha ao registrar evolução.';
+      toast.error(message);
+      throw err;
+    }
+  }, [refreshWoundDetails]);
+
+  const updateEntry = useCallback(async (entryId: string, input: Partial<CreateWoundEntryInput>, woundId: string) => {
+    try {
+      const updated = await updateWoundEntry(entryId, input);
+      toast.success('Evolução atualizada com sucesso.');
+      await refreshWoundDetails(woundId);
+      return updated;
+    } catch (err) {
+      if (isOfflineError(err)) {
+        toast.error('Edição de evolução requer conexão no momento.');
+        throw err;
+      }
+
+      const message = err instanceof Error ? err.message : 'Falha ao atualizar evolução.';
+      toast.error(message);
+      throw err;
+    }
+  }, [refreshWoundDetails]);
+
+  const removeEntry = useCallback(async (entryId: string, woundId: string) => {
+    try {
+      await deleteWoundEntry(entryId);
+      toast.success('Evolução excluída com sucesso.');
+      await refreshWoundDetails(woundId);
+    } catch (err) {
+      if (isOfflineError(err)) {
+        toast.error('Exclusão de evolução requer conexão no momento.');
+        throw err;
+      }
+
+      const message = err instanceof Error ? err.message : 'Falha ao excluir evolução.';
       toast.error(message);
       throw err;
     }
@@ -384,6 +445,25 @@ export function useWounds() {
     }
   }, [refreshPatients, selectedPatientId]);
 
+  const updatePatient = useCallback(async (patientId: string, input: Partial<CreateWoundPatientInput>) => {
+    try {
+      const updated = await updateWoundPatient(patientId, input);
+      toast.success('Paciente atualizado com sucesso.');
+      await refreshPatients();
+      return updated;
+    } catch (err) {
+      if (isOfflineError(err)) {
+        await queueWoundMutation('update_patient', { id: patientId, ...input });
+        toast.info('Alterações do paciente salvas offline.');
+        return null;
+      }
+
+      const message = err instanceof Error ? err.message : 'Falha ao atualizar paciente.';
+      toast.error(message);
+      throw err;
+    }
+  }, [refreshPatients]);
+
   const persistDraft = useCallback(async (woundId: string, form: WoundFormDraft) => {
     await saveWoundDraft(woundId, form);
   }, []);
@@ -424,6 +504,10 @@ export function useWounds() {
     persistDraft,
     restoreDraft,
     clearDraft,
+    updatePatient,
+    updateCase,
+    updateEntry,
+    removeEntry,
   };
 }
 

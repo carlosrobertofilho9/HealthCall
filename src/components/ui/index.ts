@@ -14,5 +14,6 @@ export * from './Textarea';
 export * from './Calendar';
 export * from './DatePicker';
 export * from './DateTimePicker';
+export * from './SectionCard';
 export * from './sonner';
 export * from './switch';

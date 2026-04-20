@@ -648,6 +648,202 @@ html[data-theme="safira"] {
   color: var(--muted-foreground);
 }
 
+/* Estilos para o Resumo Clínico */
+.wound-evolution-clinical-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 0 4px 10px;
+}
+
+.wound-evolution-summary-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wound-evolution-summary-label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-foreground);
+  margin-bottom: 2px;
+}
+
+.wound-evolution-summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wound-evolution-summary-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.wound-evolution-summary-item-name {
+  font-weight: 700;
+  color: var(--card-foreground);
+}
+
+.wound-evolution-summary-item-period {
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+
+.wound-evolution-summary-badge {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.wound-evolution-summary-stats {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.wound-evolution-stat-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.wound-evolution-stat-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.wound-evolution-stat-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+@media print {
+  .wound-evolution-summary-card {
+    border-color: #ede9fe !important;
+    background: #ffffff !important;
+  }
+  .wound-evolution-summary-badge {
+    background: #f5f3ff !important;
+    color: #7c3aed !important;
+    border: 0.5px solid #c4b5fd !important;
+  }
+  .wound-evolution-stat-value {
+    color: #7c3aed !important;
+  }
+}
+
+/* Estilos para Alertas de Não Conformidade */
+.wound-evolution-alerts {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--destructive);
+  background: var(--background);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 0 4px 15px;
+}
+
+.wound-evolution-alerts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.wound-evolution-alerts-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--destructive);
+}
+
+.wound-evolution-alerts-count {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.wound-evolution-alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.wound-evolution-alert-item {
+  display: flex;
+  gap: 10px;
+  padding: 6px 8px;
+  background: var(--card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.wound-evolution-alert-date {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted-foreground);
+  min-width: 65px;
+}
+
+.wound-evolution-alert-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.wound-evolution-alert-type {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--card-foreground);
+}
+
+.wound-evolution-alert-desc {
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+
+.wound-evolution-alert-more {
+  grid-column: span 2;
+  font-size: 10px;
+  font-style: italic;
+  color: var(--muted-foreground);
+  margin-top: 4px;
+}
+
+@media print {
+  .wound-evolution-alerts {
+    border-color: #fecaca !important;
+    background: #fff1f2 !important;
+    border-left-color: #ef4444 !important;
+  }
+  .wound-evolution-alert-item {
+    background: #ffffff !important;
+    border-color: #fee2e2 !important;
+  }
+  .wound-evolution-alert-type {
+    color: #991b1b !important;
+  }
+  .wound-evolution-alert-date,
+  .wound-evolution-alert-desc,
+  .wound-evolution-alerts-count {
+    color: #7f1d1d !important;
+    opacity: 0.8;
+  }
+}
+
 .wound-evolution-table-wrapper {
   border-color: var(--border) !important;
 }
@@ -713,8 +909,29 @@ html[data-theme="safira"] {
 @media print {
   /* Reset geral para impressão */
   body {
+    --background: 0 0% 100% !important;
+    --foreground: 222.2 84% 4.9% !important;
+    --card: 0 0% 100% !important;
+    --card-foreground: 222.2 84% 4.9% !important;
+    --popover: 0 0% 100% !important;
+    --popover-foreground: 222.2 84% 4.9% !important;
+    --primary: 262.1 83.3% 57.8% !important;
+    --primary-foreground: 210 40% 98% !important;
+    --secondary: 210 40% 96.1% !important;
+    --secondary-foreground: 222.2 47.4% 11.2% !important;
+    --muted: 210 40% 96.1% !important;
+    --muted-foreground: 215.4 16.3% 46.9% !important;
+    --accent: 210 40% 96.1% !important;
+    --accent-foreground: 222.2 47.4% 11.2% !important;
+    --border: 214.3 31.8% 91.4% !important;
+    --input: 214.3 31.8% 91.4% !important;
+    --ring: 222.2 84% 4.9% !important;
+
     background-color: white !important;
+    background: white !important;
     color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -810,9 +1027,24 @@ html[data-theme="safira"] {
   }
 
   .wound-evolution-table-wrapper {
-    overflow: visible !important;
+    overflow: hidden !important;
     max-width: 100% !important;
     border-color: #c4b5fd !important;
+    border-radius: 12px !important;
+    background: white !important;
+  }
+
+  .wound-evolution-table-wrapper table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+  }
+
+  .wound-evolution-table-wrapper thead tr:first-child th:first-child {
+    border-top-left-radius: 12px !important;
+  }
+
+  .wound-evolution-table-wrapper thead tr:first-child th:last-child {
+    border-top-right-radius: 12px !important;
   }
 
   .wound-evolution-table-wrapper::-webkit-scrollbar {
@@ -831,8 +1063,18 @@ html[data-theme="safira"] {
   }
 
   .wound-evolution-print .wound-evolution-head-cell small {
-    color: #7c3aed !important;
-    opacity: 0.9;
+    color: #5b21b6 !important;
+    opacity: 1;
+  }
+
+  .wound-evolution-summary-label,
+  .wound-evolution-summary-item-period,
+  .wound-evolution-stat-label {
+    color: #64748b !important;
+  }
+
+  .wound-evolution-summary-item-name {
+    color: #1e293b !important;
   }
 
   .wound-evolution-print thead {

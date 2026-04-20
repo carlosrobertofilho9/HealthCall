@@ -1,14 +1,60 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
-import type { WoundCase, WoundEntry, WoundPatient, WoundSortOrder } from '../types';
+import type { WoundCase, WoundEntry, WoundPatient, WoundPhoto, WoundSortOrder } from '../types';
+import { useWoundPhotoMetadata } from '../hooks/useWoundPhotoMetadata';
 
 interface WoundEvolutionTableProps {
   entries: WoundEntry[];
+  photos?: WoundPhoto[];
   mode?: 'inline' | 'modal' | 'page';
   patient?: Pick<WoundPatient, 'full_name' | 'document_type' | 'document_value'> | null;
-  wound?: Pick<WoundCase, 'anatomical_code' | 'started_at' | 'classification' | 'etiology'> | null;
+  wound?: Pick<WoundCase, 'id' | 'anatomical_code' | 'started_at' | 'classification' | 'etiology' | 'comorbidities' | 'status' | 'closure_date'> | null;
+  onEditEntry?: (entry: WoundEntry) => void;
+  onDeleteEntry?: (entry: WoundEntry) => void;
 }
+
+const PrintPhotoItem: React.FC<{ photo: WoundPhoto }> = ({ photo }) => {
+  const { status, metadata } = useWoundPhotoMetadata(photo);
+
+  return (
+    <div className="wound-evolution-photo-item border border-border p-2 rounded-lg bg-white flex flex-col gap-2">
+      <div className="aspect-square w-full rounded overflow-hidden bg-muted flex items-center justify-center">
+        {photo.signed_url ? (
+          <img
+            src={photo.signed_url}
+            alt={photo.description || 'Foto da ferida'}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-[10px] text-muted-foreground uppercase font-bold">Sem URL</span>
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between text-[10px] font-bold text-foreground">
+          <span>{new Date(photo.captured_at).toLocaleDateString('pt-BR')}</span>
+          <span>{new Date(photo.captured_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+        {status === 'ready' && metadata?.address && (
+          <p className="text-[9px] leading-tight text-muted-foreground">
+            <span className="font-bold">Loc: </span>
+            {metadata.address}
+          </p>
+        )}
+        {status === 'ready' && !metadata?.address && (
+          <p className="text-[9px] leading-tight text-muted-foreground italic">
+            Localização não disponível
+          </p>
+        )}
+        {status === 'loading' && (
+          <p className="text-[9px] leading-tight text-muted-foreground animate-pulse">
+            Carregando localização...
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const formatDateTime = (value?: string | null): string => {
   if (!value) return '-';
@@ -22,9 +68,12 @@ const formatDate = (value?: string | null): string => {
 
 const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
   entries,
+  photos = [],
   mode = 'inline',
   patient,
   wound,
+  onEditEntry,
+  onDeleteEntry,
 }) => {
   const [sortOrder, setSortOrder] = useState<WoundSortOrder>('desc');
   const printableRef = useRef<HTMLDivElement>(null);
@@ -40,6 +89,83 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
     return list;
   }, [entries, sortOrder]);
 
+  const clinicalSummary = useMemo(() => {
+    if (!entries.length) return null;
+
+    // Data handling
+    const chronological = [...entries].sort(
+      (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
+    );
+    const first = chronological[0];
+    const latest = chronological[chronological.length - 1];
+
+    // Treatment Days
+    const start = wound?.started_at ? new Date(wound.started_at) : new Date(first.recorded_at);
+    const totalDays = Math.ceil((new Date().getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Area Reduction
+    const firstArea = (first.measure_length_cm || 0) * (first.measure_width_cm || 0);
+    const latestArea = (latest.measure_length_cm || 0) * (latest.measure_width_cm || 0);
+    const areaReduction = firstArea > 0 ? Math.round(((firstArea - latestArea) / firstArea) * 100) : 0;
+
+    // Medications
+    const meds = new Map<string, { name: string; type: 'atb' | 'pomada'; start: string; end: string }>();
+
+    chronological.forEach((entry) => {
+      if (entry.uses_antibiotic) {
+        const name = entry.antibiotic_type || 'Antibiótico';
+        const key = `atb-${name}`;
+        const current = meds.get(key);
+        if (!current) {
+          meds.set(key, { name, type: 'atb', start: entry.recorded_at, end: entry.recorded_at });
+        } else {
+          current.end = entry.recorded_at;
+        }
+      }
+      if (entry.uses_ointment) {
+        const name = entry.ointment_type || 'Pomada';
+        const key = `pomada-${name}`;
+        const current = meds.get(key);
+        if (!current) {
+          meds.set(key, { name, type: 'pomada', start: entry.recorded_at, end: entry.recorded_at });
+        } else {
+          current.end = entry.recorded_at;
+        }
+      }
+    });
+
+    const medicationsWithDays = Array.from(meds.values()).map((med) => {
+      const start = new Date(med.start);
+      const end = new Date(med.end);
+      const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      return { ...med, diffDays };
+    });
+
+    // Healing / Duration
+    let healingDurationDays = null;
+    if (wound?.status === 'cicatrizada' || wound?.status === 'encerrada') {
+      const end = wound.closure_date ? new Date(wound.closure_date) : new Date(latest.recorded_at);
+      healingDurationDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
+    // Non-conformities
+    const nonConformities = chronological
+      .filter((e) => e.non_conformity_detected)
+      .map((e) => ({
+        date: e.recorded_at,
+        type: e.non_conformity_type,
+        desc: e.non_conformity_description,
+      }));
+
+    return {
+      totalDays,
+      healingDurationDays,
+      areaReduction,
+      medications: medicationsWithDays,
+      nonConformities,
+    };
+  }, [entries, wound]);
+
   const latestEntryAt = sortedEntries[0]?.recorded_at ?? null;
   const oldestEntryAt = sortedEntries[sortedEntries.length - 1]?.recorded_at ?? null;
 
@@ -54,6 +180,14 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
       body {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+      }
+      .break-before-page {
+        break-before: page !important;
+        page-break-before: always !important;
+      }
+      .wound-evolution-photo-item {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
       }
     `,
   });
@@ -95,48 +229,156 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
 
           <div className="wound-evolution-document-grid">
             <article className="wound-evolution-meta-card wound-evolution-meta-card--wide">
-              <p className="wound-evolution-meta-label">Paciente</p>
-              <p className="wound-evolution-meta-value">{patient?.full_name || '-'}</p>
-              <p className="wound-evolution-meta-subvalue">
-                {patient?.document_type || 'Documento'}: {patient?.document_value || '-'}
-              </p>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="wound-evolution-meta-label">Paciente</p>
+                  <p className="wound-evolution-meta-value">{patient?.full_name || '-'}</p>
+                  <p className="wound-evolution-meta-subvalue">
+                    {patient?.document_type || 'CPF'}: {patient?.document_value || 'Não informado'}
+                  </p>
+                </div>
+                {wound?.comorbidities && wound.comorbidities.length > 0 && (
+                  <div className="flex-1 border-l border-border pl-4">
+                    <p className="wound-evolution-meta-label">Comorbidades</p>
+                    <p className="wound-evolution-meta-value !text-[10px] !font-medium !leading-tight">
+                      {wound.comorbidities.join(', ')}
+                    </p>
+                  </div>
+                )}
+              </div>
             </article>
 
-            <article className="wound-evolution-meta-card">
-              <p className="wound-evolution-meta-label">Localização da lesão</p>
-              <p className="wound-evolution-meta-value">{wound?.anatomical_code || '-'}</p>
+            <article className="wound-evolution-meta-card wound-evolution-meta-card--wide">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="flex flex-col">
+                  <p className="wound-evolution-meta-label">Localização e Início</p>
+                  <p className="wound-evolution-meta-value">{wound?.anatomical_code || '-'}</p>
+                  <p className="wound-evolution-meta-subvalue">Início: {formatDate(wound?.started_at)}</p>
+                </div>
+                {wound?.etiology && wound.etiology !== '-' && (
+                  <div className="flex flex-col border-l border-border pl-4">
+                    <p className="wound-evolution-meta-label">Etiologia / Causa</p>
+                    <p className="wound-evolution-meta-value">{wound.etiology}</p>
+                  </div>
+                )}
+                {wound?.classification && wound.classification !== '-' && (
+                  <div className="flex flex-col border-l border-border pl-4">
+                    <p className="wound-evolution-meta-label">Classificação</p>
+                    <p className="wound-evolution-meta-value">{wound.classification}</p>
+                  </div>
+                )}
+              </div>
             </article>
 
-            <article className="wound-evolution-meta-card">
-              <p className="wound-evolution-meta-label">Data de início</p>
-              <p className="wound-evolution-meta-value">{formatDate(wound?.started_at)}</p>
-            </article>
-
-            <article className="wound-evolution-meta-card">
-              <p className="wound-evolution-meta-label">Classificação</p>
-              <p className="wound-evolution-meta-value">{wound?.classification || '-'}</p>
-            </article>
-
-            <article className="wound-evolution-meta-card">
-              <p className="wound-evolution-meta-label">Etiologia</p>
-              <p className="wound-evolution-meta-value">{wound?.etiology || '-'}</p>
-            </article>
-
-            <article className="wound-evolution-meta-card">
-              <p className="wound-evolution-meta-label">Período da evolução</p>
-              <p className="wound-evolution-meta-value">
+            <article className="wound-evolution-meta-card wound-evolution-meta-card--wide">
+              <p className="wound-evolution-meta-label">Período Selecionado para este Relatório</p>
+              <p className="wound-evolution-meta-value !text-[11px]">
                 {sortedEntries.length > 0
                   ? `${formatDateTime(oldestEntryAt)} até ${formatDateTime(latestEntryAt)}`
-                  : 'Sem registros'}
+                  : 'Sem registros no período'}
               </p>
             </article>
           </div>
         </section>
 
+        {clinicalSummary && (
+          <section className="wound-evolution-clinical-summary">
+            <article className="wound-evolution-summary-card">
+              <span className="wound-evolution-summary-label">Indicadores de Evolução</span>
+              <div className="wound-evolution-summary-stats">
+                <div className="wound-evolution-stat-group">
+                  <span className="wound-evolution-stat-value">{clinicalSummary.totalDays}d</span>
+                  <span className="wound-evolution-stat-label">DDI (Intervenção)</span>
+                </div>
+                {clinicalSummary.healingDurationDays !== null && (
+                  <div className="wound-evolution-stat-group">
+                    <span className="wound-evolution-stat-value text-indigo-500">
+                      {clinicalSummary.healingDurationDays}d
+                    </span>
+                    <span className="wound-evolution-stat-label">Cicatrização</span>
+                  </div>
+                )}
+                {clinicalSummary.areaReduction > 0 && clinicalSummary.healingDurationDays === null && (
+                  <div className="wound-evolution-stat-group">
+                    <span className="wound-evolution-stat-value !text-indigo-600">
+                      -{clinicalSummary.areaReduction}%
+                    </span>
+                    <span className="wound-evolution-stat-label">Área reduzida</span>
+                  </div>
+                )}
+                {wound?.comorbidities && wound.comorbidities.length > 0 && (
+                  <div className="wound-evolution-stat-group">
+                    <span className="wound-evolution-stat-value text-xs !font-bold">
+                      {wound.comorbidities.length}
+                    </span>
+                    <span className="wound-evolution-stat-label">Comorbidades</span>
+                  </div>
+                )}
+              </div>
+            </article>
+
+            <article className="wound-evolution-summary-card">
+              <span className="wound-evolution-summary-label">Terapêutica Utilizada (ATB / Pomadas)</span>
+              <div className="wound-evolution-summary-list">
+                {clinicalSummary.medications.length > 0 ? (
+                  clinicalSummary.medications.map((med, idx) => (
+                    <div key={idx} className="wound-evolution-summary-item">
+                      <div className="flex items-center gap-2">
+                        <span className="wound-evolution-summary-badge">
+                          {med.type.toUpperCase()}
+                        </span>
+                        <span className="wound-evolution-summary-item-name">{med.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="wound-evolution-summary-item-period">
+                          {formatDate(med.start)} - {formatDate(med.end)}
+                        </span>
+                        <span className="font-bold text-primary text-[10px] bg-primary/10 px-1.5 py-0.5 rounded">
+                          {med.diffDays} dias
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <span className="text-[10px] text-muted-foreground italic">
+                    Nenhum uso de ATB ou Pomada registrado nas evoluções.
+                  </span>
+                )}
+              </div>
+            </article>
+          </section>
+        )}
+
+        {clinicalSummary && clinicalSummary.nonConformities.length > 0 && (
+          <section className="wound-evolution-alerts">
+            <div className="wound-evolution-alerts-header">
+              <span className="wound-evolution-alerts-title">Alertas e Incidências Detectadas (Não Conformidades)</span>
+              <span className="wound-evolution-alerts-count">{clinicalSummary.nonConformities.length} registros</span>
+            </div>
+            <div className="wound-evolution-alerts-grid">
+              {clinicalSummary.nonConformities.slice(0, 4).map((nc, idx) => (
+                <div key={idx} className="wound-evolution-alert-item">
+                  <span className="wound-evolution-alert-date">{formatDate(nc.date)}</span>
+                  <div className="wound-evolution-alert-content">
+                    <span className="wound-evolution-alert-type">{nc.type || 'Não conformidade'}</span>
+                    {nc.desc && <span className="wound-evolution-alert-desc">{nc.desc}</span>}
+                  </div>
+                </div>
+              ))}
+              {clinicalSummary.nonConformities.length > 4 && (
+                <div className="wound-evolution-alert-more">
+                  + {clinicalSummary.nonConformities.length - 4} outros eventos registrados na tabela abaixo.
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <Table wrapperClassName="wound-evolution-table-wrapper overflow-x-auto" className="min-w-[2000px] text-xs">
           <TableHeader>
             <TableRow>
               <TableHead className="whitespace-nowrap">Data</TableHead>
+              <TableHead className="print-hide">Ações</TableHead>
               <TableHead className="whitespace-nowrap">
                 <div className="wound-evolution-head-cell">
                   <span>Medida</span>
@@ -189,6 +431,32 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
               sortedEntries.map((entry) => (
                 <TableRow key={entry.id}>
                   <TableCell className="align-top whitespace-nowrap">{formatDateTime(entry.recorded_at)}</TableCell>
+                  <TableCell className="align-top print-hide">
+                    <div className="flex items-center gap-1">
+                      {onEditEntry && (
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className="h-7 w-7 p-0 text-primary hover:bg-primary/10"
+                          onClick={() => onEditEntry(entry)}
+                          title="Editar evolução"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </Button>
+                      )}
+                      {onDeleteEntry && (
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                          onClick={() => onDeleteEntry(entry)}
+                          title="Excluir evolução"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="align-top whitespace-nowrap">
                     {entry.measure_length_cm ?? '-'} x {entry.measure_width_cm ?? '-'} x {entry.measure_depth_cm ?? '-'}
                   </TableCell>
@@ -218,6 +486,23 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
             )}
           </TableBody>
         </Table>
+
+        {photos.length > 0 && (
+          <section className="wound-evolution-print-gallery break-before-page pt-8">
+            <div className="wound-evolution-document-ribbon mb-6">
+              <span className="wound-evolution-brand">HEALTHCALL</span>
+              <span className="wound-evolution-ribbon-title">Galeria de Fotos do Prontuário</span>
+            </div>
+            
+            <div className="grid grid-cols-4 gap-4">
+              {[...photos]
+                .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime())
+                .map((photo) => (
+                  <PrintPhotoItem key={photo.id} photo={photo} />
+                ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

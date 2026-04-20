@@ -3,7 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui';
 import WoundEvolutionTable from '../components/WoundEvolutionTable';
+import WoundEvolutionForm from '../components/WoundEvolutionForm';
+import { Modal } from '@/components/ui';
 import { useWounds } from '../hooks/useWounds';
+import type { WoundEntry } from '../types';
 
 const WoundEvolutionTablePage: React.FC = () => {
   const { woundId } = useParams<{ woundId: string }>();
@@ -11,11 +14,20 @@ const WoundEvolutionTablePage: React.FC = () => {
   const {
     entries,
     patients,
+    photos,
+    events,
     selectedWound,
     loading,
     error,
     setSelectedWoundId,
+    updateEntry,
+    removeEntry,
   } = useWounds();
+
+  const [showEditEntryModal, setShowEditEntryModal] = React.useState(false);
+  const [showDeleteEntryModal, setShowDeleteEntryModal] = React.useState(false);
+  const [editingEntry, setEditingEntry] = React.useState<WoundEntry | null>(null);
+  const [deletingEntry, setDeletingEntry] = React.useState<WoundEntry | null>(null);
 
   useEffect(() => {
     if (!woundId) return;
@@ -35,6 +47,20 @@ const WoundEvolutionTablePage: React.FC = () => {
       </div>
     );
   }
+
+  const handleEditEntrySubmit = async (input: Parameters<typeof updateEntry>[1]) => {
+    if (!editingEntry || !woundId) return;
+    await updateEntry(editingEntry.id, input, woundId);
+    setShowEditEntryModal(false);
+    setEditingEntry(null);
+  };
+
+  const handleDeleteEntryConfirm = async () => {
+    if (!deletingEntry || !woundId) return;
+    await removeEntry(deletingEntry.id, woundId);
+    setShowDeleteEntryModal(false);
+    setDeletingEntry(null);
+  };
 
   return (
     <div className="flex w-full flex-col gap-4 p-4 lg:h-full lg:overflow-y-auto">
@@ -61,10 +87,49 @@ const WoundEvolutionTablePage: React.FC = () => {
 
       <WoundEvolutionTable
         entries={entries}
+        photos={photos}
         mode="page"
         patient={selectedPatient}
         wound={selectedWound}
+        onEditEntry={(entry) => {
+          setEditingEntry(entry);
+          setShowEditEntryModal(true);
+        }}
+        onDeleteEntry={(entry) => {
+          setDeletingEntry(entry);
+          setShowDeleteEntryModal(true);
+        }}
       />
+
+      <Modal
+        isOpen={showEditEntryModal}
+        onClose={() => setShowEditEntryModal(false)}
+        panelClassName="max-h-[90vh] max-w-4xl overflow-y-auto p-4 sm:p-5"
+      >
+        <WoundEvolutionForm
+          woundId={woundId}
+          initialEntry={editingEntry}
+          onSubmit={handleEditEntrySubmit}
+          onCancel={() => setShowEditEntryModal(false)}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={showDeleteEntryModal}
+        onClose={() => setShowDeleteEntryModal(false)}
+        panelClassName="max-w-md p-6"
+      >
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-foreground">Excluir Evolução</h3>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir esta evolução? Esta ação não pode ser desfeita e removerá permanentemente o registro e todas as fotos vinculadas a ele.
+          </p>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="ghost" onClick={() => setShowDeleteEntryModal(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteEntryConfirm}>Confirmar Exclusão</Button>
+          </div>
+        </div>
+      </Modal>
 
       {loading && <p className="text-xs text-muted-foreground">Carregando dados de curativos...</p>}
     </div>

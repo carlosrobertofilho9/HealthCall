@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Badge, Card, Modal, Button } from '@/components/ui';
 import type { WoundEntry, WoundPhoto } from '../types';
 import { buildTimelineAlerts } from '../utils/woundAlertRules';
-import { TrendingDown, TrendingUp, Minus, Activity, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, Activity, Calendar, ChevronLeft, ChevronRight, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 import WoundPhotoMetadataCard from './WoundPhotoMetadataCard';
 
@@ -68,10 +68,10 @@ const WoundTimeline: React.FC<WoundTimelineProps> = ({ entries, photos }) => {
   };
 
   return (
-    <Card className="space-y-4 p-5 bg-card/50 backdrop-blur-sm border-border/40">
+    <div className="space-y-6 pt-2 h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-primary" />
+          <History className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-bold text-foreground">Timeline de evolução</h3>
         </div>
         <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider">
@@ -268,7 +268,7 @@ const WoundTimeline: React.FC<WoundTimelineProps> = ({ entries, photos }) => {
           )}
         </div>
       </Modal>
-    </Card>
+    </div>
   );
 };
 

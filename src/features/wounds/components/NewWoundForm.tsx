@@ -35,6 +35,7 @@ interface NewWoundFormSubmitPayload {
 interface NewWoundFormProps {
   patientId: string | null;
   existingAnatomicalCodes: string[];
+  initialWound?: WoundCase | null;
   onSubmit: (payload: NewWoundFormSubmitPayload) => Promise<void>;
   onCancel: () => void;
 }
@@ -48,23 +49,37 @@ const etiologyOptions = [
   'Outra',
 ];
 
-const comorbiditiesOptions = ['DM', 'HAS', 'IVC', 'Tabagismo', 'Obesidade', 'Outra'];
+const comorbiditiesOptions = [
+  'DM', 
+  'HAS', 
+  'IVC', 
+  'Tabagismo', 
+  'Obesidade', 
+  'Cardiopatia',
+  'DRC',
+  'Anemia',
+  'Imunossupressão',
+  'Hipotireoidismo',
+  'Outra'
+];
 const bedAspectOptions = ['Granulação', 'Epitelização', 'Esfacelo', 'Necrose', 'Misto'];
 const edgeOptions = ['Regulares', 'Irregulares', 'Descoladas', 'Maceradas', 'Hiperqueratóticas'];
 
 const NewWoundForm: React.FC<NewWoundFormProps> = ({
   patientId,
   existingAnatomicalCodes,
+  initialWound,
   onSubmit,
   onCancel,
 }) => {
-  const [startedAt, setStartedAt] = useState(() => new Date().toISOString().slice(0, 10));
-  const [etiology, setEtiology] = useState(etiologyOptions[0]);
-  const [classification, setClassification] = useState('');
-  const [anatomicalCode, setAnatomicalCode] = useState('');
-  const [comorbidities, setComorbidities] = useState<string[]>([]);
-  const [initialBedAspect, setInitialBedAspect] = useState<string[]>([]);
-  const [initialEdges, setInitialEdges] = useState<string[]>([]);
+  const isEditing = !!initialWound;
+  const [startedAt, setStartedAt] = useState(() => initialWound?.started_at || new Date().toISOString().slice(0, 10));
+  const [etiology, setEtiology] = useState(initialWound?.etiology || etiologyOptions[0]);
+  const [classification, setClassification] = useState(initialWound?.classification || '');
+  const [anatomicalCode, setAnatomicalCode] = useState(initialWound?.anatomical_code || '');
+  const [comorbidities, setComorbidities] = useState<string[]>(initialWound?.comorbidities || []);
+  const [initialBedAspect, setInitialBedAspect] = useState<string[]>(initialWound?.initial_bed_aspect || []);
+  const [initialEdges, setInitialEdges] = useState<string[]>(initialWound?.initial_edges || []);
   const [initialLength, setInitialLength] = useState('');
   const [initialWidth, setInitialWidth] = useState('');
   const [initialDepth, setInitialDepth] = useState('');
@@ -76,17 +91,17 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
   const parsedAnatomy = useMemo(() => (anatomicalCode ? getSubregionByCode(anatomicalCode) : null), [anatomicalCode]);
 
   const missingRequiredFields = useMemo(() => {
-    return !patientId || !anatomicalCode || !startedAt || !etiology;
-  }, [anatomicalCode, etiology, patientId, startedAt]);
+    return (!isEditing && !patientId) || !anatomicalCode || !startedAt || !etiology;
+  }, [anatomicalCode, etiology, isEditing, patientId, startedAt]);
 
   const formError = useMemo(() => {
-    if (!patientId) return 'Selecione um paciente antes de cadastrar a ferida.';
+    if (!isEditing && !patientId) return 'Selecione um paciente antes de cadastrar a ferida.';
     if (!anatomicalCode) return 'Selecione a localização anatômica da ferida.';
     if (!startedAt) return 'Data de início da lesão é obrigatória.';
     if (!etiology) return 'Etiologia é obrigatória.';
     if (fileError) return fileError;
     return null;
-  }, [anatomicalCode, etiology, fileError, patientId, startedAt]);
+  }, [anatomicalCode, etiology, fileError, isEditing, patientId, startedAt]);
 
   const toggleListValue = (list: string[], value: string, setter: (next: string[]) => void) => {
     setter(list.includes(value) ? list.filter((item) => item !== value) : [...list, value]);
@@ -95,7 +110,7 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (formError || !patientId) {
+    if (formError || (!isEditing && !patientId)) {
       return;
     }
 
@@ -103,7 +118,7 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
 
     try {
       const caseInput: CreateWoundCaseInput = {
-        patient_id: patientId,
+        patient_id: initialWound?.patient_id || patientId!,
         started_at: startedAt,
         etiology,
         classification: classification || null,
@@ -143,7 +158,7 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
         <div>
           <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
             <span className="w-2 h-6 bg-primary rounded-full" />
-            Cadastro de Nova Lesão
+            {isEditing ? 'Editar Registro da Ferida' : 'Cadastro de Nova Lesão'}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Inicie um novo acompanhamento clínico mapeando a lesão.
@@ -249,149 +264,153 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
             </fieldset>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70">3. Estado Inicial e Medidas</h4>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <fieldset className="space-y-3 rounded-2xl border border-border p-4">
-                <legend className="px-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Aspecto do Leito</legend>
-                <div className="flex flex-wrap gap-2">
-                  {bedAspectOptions.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`rounded-full border px-5 py-2.5 text-sm sm:text-base font-bold transition-all ${
-                        initialBedAspect.includes(item)
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border bg-background text-foreground hover:border-primary/40'
-                      }`}
-                      onClick={() => toggleListValue(initialBedAspect, item, setInitialBedAspect)}
-                    >
-                      {item}
-                    </button>
-                  ))}
+          {!isEditing && (
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70">3. Estado Inicial e Medidas</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <fieldset className="space-y-3 rounded-2xl border border-border p-4">
+                  <legend className="px-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Aspecto do Leito</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {bedAspectOptions.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        className={`rounded-full border px-5 py-2.5 text-sm sm:text-base font-bold transition-all ${
+                          initialBedAspect.includes(item)
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background text-foreground hover:border-primary/40'
+                        }`}
+                        onClick={() => toggleListValue(initialBedAspect, item, setInitialBedAspect)}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <fieldset className="space-y-3 rounded-2xl border border-border p-4">
+                  <legend className="px-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Bordas</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {edgeOptions.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        className={`rounded-full border px-5 py-2.5 text-sm sm:text-base font-bold transition-all ${
+                          initialEdges.includes(item)
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-background text-foreground hover:border-primary/40'
+                        }`}
+                        onClick={() => toggleListValue(initialEdges, item, setInitialEdges)}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground text-center block">C (cm)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0.0"
+                    icon={<Ruler className="h-3 w-3" />}
+                    value={initialLength}
+                    onChange={(event) => setInitialLength(event.target.value)}
+                    className="text-center font-bold"
+                  />
                 </div>
-              </fieldset>
-
-              <fieldset className="space-y-3 rounded-2xl border border-border p-4">
-                <legend className="px-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Bordas</legend>
-                <div className="flex flex-wrap gap-2">
-                  {edgeOptions.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      className={`rounded-full border px-5 py-2.5 text-sm sm:text-base font-bold transition-all ${
-                        initialEdges.includes(item)
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border bg-background text-foreground hover:border-primary/40'
-                      }`}
-                      onClick={() => toggleListValue(initialEdges, item, setInitialEdges)}
-                    >
-                      {item}
-                    </button>
-                  ))}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground text-center block">L (cm)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0.0"
+                    icon={<Maximize className="h-3 w-3" />}
+                    value={initialWidth}
+                    onChange={(event) => setInitialWidth(event.target.value)}
+                    className="text-center font-bold"
+                  />
                 </div>
-              </fieldset>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground text-center block">C (cm)</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0.0"
-                  icon={<Ruler className="h-3 w-3" />}
-                  value={initialLength}
-                  onChange={(event) => setInitialLength(event.target.value)}
-                  className="text-center font-bold"
-                />
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-muted-foreground text-center block">P (cm)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="0.0"
+                    icon={<Ruler className="h-3 w-3 rotate-90" />}
+                    value={initialDepth}
+                    onChange={(event) => setInitialDepth(event.target.value)}
+                    className="text-center font-bold"
+                  />
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground text-center block">L (cm)</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0.0"
-                  icon={<Maximize className="h-3 w-3" />}
-                  value={initialWidth}
-                  onChange={(event) => setInitialWidth(event.target.value)}
-                  className="text-center font-bold"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-muted-foreground text-center block">P (cm)</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0.0"
-                  icon={<Ruler className="h-3 w-3 rotate-90" />}
-                  value={initialDepth}
-                  onChange={(event) => setInitialDepth(event.target.value)}
-                  className="text-center font-bold"
-                />
-              </div>
-            </div>
 
-            <Textarea
-              value={initialObservations}
-              onChange={(event) => setInitialObservations(event.target.value)}
-              placeholder="Observações clínicas iniciais (ex: presença de exsudato, odor, dor)..."
-              className="min-h-[100px]"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70">4. Registro Fotográfico</h4>
-            <div className="relative">
-              <Input
-                id="wound-initial-photos"
-                type="file"
-                accept="image/*"
-                multiple
-                disabled={missingRequiredFields}
-                className="sr-only"
-                onChange={(event) => {
-                  const selectedFiles = Array.from(event.target.files ?? []);
-
-                  if (missingRequiredFields) {
-                    setFileError('Preencha os campos obrigatórios (*) antes de anexar fotos.');
-                    setImageFiles([]);
-                    event.target.value = '';
-                    return;
-                  }
-
-                  const validation = validateWoundImageFiles(selectedFiles);
-                  if (!validation.isValid) {
-                    setFileError(validation.error);
-                    setImageFiles([]);
-                    event.target.value = '';
-                    return;
-                  }
-
-                  setFileError(null);
-                  setImageFiles(selectedFiles);
-                }}
+              <Textarea
+                value={initialObservations}
+                onChange={(event) => setInitialObservations(event.target.value)}
+                placeholder="Observações clínicas iniciais (ex: presença de exsudato, odor, dor)..."
+                className="min-h-[100px]"
               />
-              <label 
-                htmlFor="wound-initial-photos"
-                className={`flex items-center justify-center gap-2 border-2 border-dashed rounded-full h-12 px-4 cursor-pointer transition-all ${
-                  missingRequiredFields ? 'opacity-50 cursor-not-allowed bg-muted' : 'border-primary/30 hover:border-primary hover:bg-primary/5'
-                }`}
-              >
-                <Camera className="h-5 w-5 text-primary" />
-                <span className="text-sm font-bold text-primary uppercase">
-                  {imageFiles.length > 0 ? `${imageFiles.length} Foto(s) Selecionada(s)` : 'Anexar Fotos Iniciais'}
-                </span>
-              </label>
-              {fileError && <p className="text-[10px] text-destructive font-bold mt-1 ml-4">{fileError}</p>}
-              {!fileError && missingRequiredFields && (
-                <p className="text-[10px] text-muted-foreground mt-1 ml-4 italic">Complete os obrigatórios (*) para liberar upload.</p>
-              )}
             </div>
-          </div>
+          )}
+
+          {!isEditing && (
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70">4. Registro Fotográfico</h4>
+              <div className="relative">
+                <Input
+                  id="wound-initial-photos"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={missingRequiredFields}
+                  className="sr-only"
+                  onChange={(event) => {
+                    const selectedFiles = Array.from(event.target.files ?? []);
+
+                    if (missingRequiredFields) {
+                      setFileError('Preencha os campos obrigatórios (*) antes de anexar fotos.');
+                      setImageFiles([]);
+                      event.target.value = '';
+                      return;
+                    }
+
+                    const validation = validateWoundImageFiles(selectedFiles);
+                    if (!validation.isValid) {
+                      setFileError(validation.error);
+                      setImageFiles([]);
+                      event.target.value = '';
+                      return;
+                    }
+
+                    setFileError(null);
+                    setImageFiles(selectedFiles);
+                  }}
+                />
+                <label 
+                  htmlFor="wound-initial-photos"
+                  className={`flex items-center justify-center gap-2 border-2 border-dashed rounded-full h-12 px-4 cursor-pointer transition-all ${
+                    missingRequiredFields ? 'opacity-50 cursor-not-allowed bg-muted' : 'border-primary/30 hover:border-primary hover:bg-primary/5'
+                  }`}
+                >
+                  <Camera className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-bold text-primary uppercase">
+                    {imageFiles.length > 0 ? `${imageFiles.length} Foto(s) Selecionada(s)` : 'Anexar Fotos Iniciais'}
+                  </span>
+                </label>
+                {fileError && <p className="text-[10px] text-destructive font-bold mt-1 ml-4">{fileError}</p>}
+                {!fileError && missingRequiredFields && (
+                  <p className="text-[10px] text-muted-foreground mt-1 ml-4 italic">Complete os obrigatórios (*) para liberar upload.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="pt-4 border-t border-border flex flex-col gap-3">
             <Button 
@@ -403,12 +422,12 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
               {isSubmitting ? (
                 <>
                   <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                  Salvando registro...
+                  Salvando alterações...
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-5 w-5" />
-                  Salvar Cadastro da Ferida
+                  {isEditing ? 'Atualizar Dados da Ferida' : 'Salvar Cadastro da Ferida'}
                 </>
               )}
             </Button>

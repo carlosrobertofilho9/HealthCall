@@ -40,6 +40,7 @@ import {
 interface WoundEvolutionFormProps {
   woundId: string | null;
   initialDraft?: Record<string, unknown> | null;
+  initialEntry?: WoundEntry | null;
   onSubmit: (input: CreateWoundEntryInput, files: File[]) => Promise<void>;
   onDraftChange?: (draft: Record<string, unknown>) => void;
   onDraftClear?: () => void;
@@ -114,6 +115,31 @@ const createDefaultState = () => ({
   next_change_date: '',
 });
 
+const populateStateFromEntry = (entry: WoundEntry) => ({
+  recorded_at: entry.recorded_at ? entry.recorded_at.slice(0, 16) : new Date().toISOString().slice(0, 16),
+  measure_length_cm: entry.measure_length_cm?.toString() || '',
+  measure_width_cm: entry.measure_width_cm?.toString() || '',
+  measure_depth_cm: entry.measure_depth_cm?.toString() || '',
+  bed_aspect: entry.bed_aspect || [],
+  edges: entry.edges || [],
+  exudate: (entry.exudate as WoundExudate) || '',
+  odor: (entry.odor as WoundOdor) || '',
+  perilesional_skin: entry.perilesional_skin || [],
+  pain_scale: entry.pain_scale || 0,
+  uses_antibiotic: entry.uses_antibiotic || false,
+  antibiotic_type: entry.antibiotic_type || '',
+  uses_ointment: entry.uses_ointment || false,
+  ointment_type: entry.ointment_type || '',
+  dressing_type: entry.dressing_type || '',
+  dressing_notes: entry.dressing_notes || '',
+  non_conformity_detected: entry.non_conformity_detected || false,
+  non_conformity_type: entry.non_conformity_type || '',
+  non_conformity_description: entry.non_conformity_description || '',
+  non_conformity_action: entry.non_conformity_action || '',
+  observations: entry.observations || '',
+  next_change_date: entry.next_change_date || '',
+});
+
 const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
   woundId,
   initialDraft,
@@ -121,8 +147,9 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
   onDraftChange,
   onDraftClear,
   onCancel,
+  initialEntry,
 }) => {
-  const [form, setForm] = useState(createDefaultState);
+  const [form, setForm] = useState(() => initialEntry ? populateStateFromEntry(initialEntry) : createDefaultState());
   const [files, setFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -148,6 +175,12 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
       return next;
     });
   }, [initialDraft]);
+
+  useEffect(() => {
+    if (initialEntry) {
+      setForm(populateStateFromEntry(initialEntry));
+    }
+  }, [initialEntry]);
 
   useEffect(() => {
     onDraftChangeRef.current?.(form);
@@ -253,7 +286,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
         <div>
           <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
             <span className="w-2 h-6 bg-primary rounded-full" />
-            Nova evolução clínica
+            {initialEntry ? 'Editar evolução clínica' : 'Nova evolução clínica'}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Preencha os detalhes técnicos para registrar a evolução da lesão.
@@ -679,7 +712,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
             <div className="space-y-2">
               <label htmlFor="wound-evolution-photos" className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1">
                 <Camera className="h-3 w-3" />
-                Registro Fotográfico
+                Registro Fotográfico {initialEntry && <span className="text-[10px] text-warning ml-1">(Não editável)</span>}
               </label>
               <div className="relative">
                 <Input
@@ -746,7 +779,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
             ) : (
               <>
                 <Save className="mr-2 h-5 w-5" />
-                Concluir Evolução Clínica
+                {initialEntry ? 'Salvar Alterações' : 'Concluir Evolução Clínica'}
               </>
             )}
           </Button>

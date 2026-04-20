@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Badge, Button, Input } from '@/components/ui';
 import type { CreateWoundPatientInput, WoundPatientWithSummary } from '../types';
-import { Search, UserPlus, Trash2 } from 'lucide-react';
+import { Search, UserPlus, UserMinus, PencilLine } from 'lucide-react';
 import {
   detectDocumentoPacienteTipo,
   formatDocumentoPaciente,
@@ -14,7 +14,10 @@ interface WoundPatientListProps {
   selectedPatientId: string | null;
   onSelectPatient: (patientId: string) => void;
   onCreatePatient: (input: CreateWoundPatientInput) => Promise<unknown>;
+  onUpdatePatient: (patientId: string, input: Partial<CreateWoundPatientInput>) => Promise<unknown>;
   onDeletePatient?: (patientId: string) => Promise<unknown>;
+  showForm?: boolean;
+  onToggleForm?: () => void;
 }
 
 const WoundPatientList: React.FC<WoundPatientListProps> = ({
@@ -22,9 +25,15 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
   selectedPatientId,
   onSelectPatient,
   onCreatePatient,
+  onUpdatePatient,
   onDeletePatient,
+  showForm,
+  onToggleForm,
 }) => {
-  const [showForm, setShowForm] = useState(false);
+  const [internalShowForm, setInternalShowForm] = useState(false);
+  const activeShowForm = showForm !== undefined ? showForm : internalShowForm;
+  
+  const [editingPatientId, setEditingPatientId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [fullName, setFullName] = useState('');
   const [documentValue, setDocumentValue] = useState('');
@@ -68,16 +77,45 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
 
     setIsSubmitting(true);
     try {
-      await onCreatePatient({
-        full_name: fullName.trim(),
-        document_type: detectedType,
-        document_value: documentDigits,
-      });
-      setFullName('');
-      setDocumentValue('');
-      setShowForm(false);
+      if (editingPatientId) {
+        await onUpdatePatient(editingPatientId, {
+          full_name: fullName.trim(),
+          document_type: detectedType,
+          document_value: documentDigits,
+        });
+      } else {
+        await onCreatePatient({
+          full_name: fullName.trim(),
+          document_type: detectedType,
+          document_value: documentDigits,
+        });
+      }
+      resetForm();
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFullName('');
+    setDocumentValue('');
+    if (onToggleForm) {
+      if (activeShowForm) onToggleForm();
+    } else {
+      setInternalShowForm(false);
+    }
+    setEditingPatientId(null);
+  };
+
+  const handleEdit = (event: React.MouseEvent, patient: WoundPatientWithSummary) => {
+    event.stopPropagation();
+    setEditingPatientId(patient.id);
+    setFullName(patient.full_name);
+    setDocumentValue(formatDocumentoPaciente(patient.document_value).formatado);
+    if (onToggleForm) {
+      if (!activeShowForm) onToggleForm();
+    } else {
+      setInternalShowForm(true);
     }
   };
 
@@ -104,17 +142,12 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
   };
 
   return (
-    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-foreground">Pacientes em acompanhamento</h2>
-        <Button type="button" size="sm" onClick={() => setShowForm((prev) => !prev)}>
-          <UserPlus className="h-4 w-4" />
-          Novo paciente
-        </Button>
-      </div>
-
-      {showForm && (
+    <div className="space-y-4 flex flex-col h-full overflow-hidden">
+      {activeShowForm && (
         <form className="space-y-2 rounded-xl border border-border p-3" onSubmit={handleSubmit}>
+          <p className="text-xs font-bold text-primary mb-1">
+            {editingPatientId ? 'Editando paciente' : 'Novo paciente'}
+          </p>
           <p className="text-xs text-muted-foreground">Campos obrigatórios: <strong>Nome do paciente</strong> e <strong>CPF/CNS</strong>.</p>
           <Input
             placeholder="Nome do paciente *"
@@ -142,9 +175,9 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
 
           <div className="flex gap-2">
             <Button type="submit" size="sm" disabled={isSubmitting || !!documentError}>
-              {isSubmitting ? 'Salvando...' : 'Salvar paciente'}
+              {isSubmitting ? 'Salvando...' : editingPatientId ? 'Atualizar paciente' : 'Salvar paciente'}
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setShowForm(false)}>
+            <Button type="button" variant="ghost" size="sm" onClick={resetForm}>
               Cancelar
             </Button>
           </div>
@@ -158,7 +191,7 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
         icon={<Search className="h-4 w-4" />}
       />
 
-      <div className="space-y-2 pr-1">
+      <div className="space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
         {filteredPatients.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">
             Nenhum paciente em acompanhamento.
@@ -177,10 +210,12 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
                 className="cursor-pointer"
                 onClick={() => onSelectPatient(patient.id)}
               >
-                <p className="text-sm font-semibold text-foreground">{patient.full_name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {patient.document_type}: {formatDocumentoPaciente(patient.document_value).formatado}
-                </p>
+                <div className="pr-14">
+                  <p className="text-sm font-semibold text-foreground truncate">{patient.full_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {patient.document_type}: {formatDocumentoPaciente(patient.document_value).formatado}
+                  </p>
+                </div>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Badge variant={patient.open_wounds_count > 0 ? 'warning' : 'muted'}>
                     Abertas: {patient.open_wounds_count}
@@ -189,16 +224,27 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
                 </div>
               </div>
 
-              {onDeletePatient && (
+              <div className="absolute right-2 top-2 z-20 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   type="button"
-                  onClick={(e) => handleDelete(e, patient)}
-                  className="absolute right-2 top-2 z-20 rounded-lg p-2 text-muted-foreground opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-                  title="Excluir paciente"
+                  onClick={(e) => handleEdit(e, patient)}
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  title="Editar paciente"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <PencilLine className="h-4 w-4" />
                 </button>
-              )}
+                
+                {onDeletePatient && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDelete(e, patient)}
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    title="Excluir paciente"
+                  >
+                    <UserMinus className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           ))
         )}
@@ -208,3 +254,4 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
 };
 
 export default WoundPatientList;
+

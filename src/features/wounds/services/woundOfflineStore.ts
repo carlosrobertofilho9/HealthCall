@@ -1,7 +1,7 @@
 import type { WoundConflict, WoundPhotoExifMetadata, WoundSyncMutation } from '../types';
 
 const DB_NAME = 'healthcall-wound-offline';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export const STORES = {
   drafts: 'woundDrafts',
@@ -9,6 +9,7 @@ export const STORES = {
   photoBlobs: 'woundPhotoBlobs',
   conflicts: 'woundConflicts',
   photoMetadata: 'woundPhotoMetadata',
+  photoCache: 'woundPhotoCache', // New store for caching downloaded photos
 } as const;
 
 type WoundDraftRecord = {
@@ -66,6 +67,10 @@ function openDatabase(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(STORES.photoMetadata)) {
         db.createObjectStore(STORES.photoMetadata, { keyPath: 'id' });
+      }
+
+      if (!db.objectStoreNames.contains(STORES.photoCache)) {
+        db.createObjectStore(STORES.photoCache, { keyPath: 'photo_id' });
       }
     };
 
@@ -276,4 +281,38 @@ export async function resolveWoundConflict(conflictId: string): Promise<void> {
   };
 
   await withStore(STORES.conflicts, 'readwrite', (store) => store.put(updated));
+}
+
+export async function saveWoundPhotoCache(photoId: string, blob: Blob): Promise<void> {
+  await withStore(STORES.photoCache, 'readwrite', (store) => 
+    store.put({
+      photo_id: photoId,
+      blob,
+      cachedAt: Date.now(),
+    })
+  );
+}
+
+export async function getWoundPhotoCache(photoId: string): Promise<Blob | null> {
+  const result = await withStore<{ photo_id: string; blob: Blob } | undefined>(
+    STORES.photoCache, 
+    'readonly', 
+    (store) => store.get(photoId)
+  );
+  return result?.blob ?? null;
+}
+
+export async function deleteWoundPhotoCache(photoId: string): Promise<void> {
+  await withStore(STORES.photoCache, 'readwrite', (store) => store.delete(photoId));
+}
+
+export async function clearWoundPhotoCache(): Promise<void> {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORES.photoCache, 'readwrite');
+    const store = tx.objectStore(STORES.photoCache);
+    const request = store.clear();
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
 }

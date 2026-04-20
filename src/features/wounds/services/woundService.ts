@@ -11,10 +11,9 @@ import type {
   WoundEntry,
   WoundPatient,
   WoundPatientWithSummary,
-  WoundPhoto,
   WoundStatusEvent,
-  WoundPatient,
 } from '../types';
+import { getWoundPhotoCache, saveWoundPhotoCache, deleteWoundPhotoCache } from './woundOfflineStore';
 
 const WOUND_STORAGE_BUCKET = 'wound-photos';
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -114,6 +113,31 @@ export async function createWoundPatient(input: CreateWoundPatientInput): Promis
       document_type: input.document_type,
       document_value: input.document_value.trim(),
     })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as WoundPatient;
+}
+
+export async function updateWoundPatient(patientId: string, input: Partial<CreateWoundPatientInput>): Promise<WoundPatient> {
+  if (input.full_name && !input.full_name.trim()) {
+    throw new Error('Nome do paciente é obrigatório.');
+  }
+
+  if (input.document_value && !input.document_value.trim()) {
+    throw new Error('Documento do paciente é obrigatório.');
+  }
+
+  const { data, error } = await supabase
+    .from('wound_patients')
+    .update({
+      full_name: input.full_name?.trim(),
+      document_type: input.document_type,
+      document_value: input.document_value?.trim(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', patientId)
     .select('*')
     .single();
 
@@ -255,8 +279,106 @@ export async function addWoundEntry(input: CreateWoundEntryInput): Promise<Wound
     .single();
 
   if (error) throw error;
+  
+  // Se for sucesso, atualizar o last_entry_at do wound_case
+  await supabase
+    .from('wound_cases')
+    .update({ 
+      last_entry_at: payload.recorded_at,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', payload.wound_id);
 
   return data as WoundEntry;
+}
+
+export async function updateWoundEntry(entryId: string, input: Partial<CreateWoundEntryInput>): Promise<WoundEntry> {
+  const { data, error } = await supabase
+    .from('wound_entries')
+    .update({
+      recorded_at: input.recorded_at,
+      professional_id: input.professional_id,
+      measure_length_cm: input.measure_length_cm,
+      measure_width_cm: input.measure_width_cm,
+      measure_depth_cm: input.measure_depth_cm,
+      bed_aspect: input.bed_aspect,
+      edges: input.edges,
+      exudate: input.exudate,
+      odor: input.odor,
+      perilesional_skin: input.perilesional_skin,
+      pain_scale: input.pain_scale,
+      uses_antibiotic: input.uses_antibiotic,
+      antibiotic_type: input.antibiotic_type,
+      uses_ointment: input.uses_ointment,
+      ointment_type: input.ointment_type,
+      dressing_type: input.dressing_type,
+      dressing_notes: input.dressing_notes,
+      non_conformity_detected: input.non_conformity_detected,
+      non_conformity_type: input.non_conformity_type,
+      non_conformity_description: input.non_conformity_description,
+      non_conformity_action: input.non_conformity_action,
+      observations: input.observations,
+      next_change_date: input.next_change_date,
+    })
+    .eq('id', entryId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as WoundEntry;
+}
+
+export async function deleteWoundEntry(entryId: string): Promise<void> {
+  // 1. Buscar fotos vinculadas a esta evolução
+  const { data: photos, error: photosError } = await supabase
+    .from('wound_photos')
+    .select('id, storage_path')
+    .eq('entry_id', entryId);
+
+  if (photosError) throw photosError;
+
+  // 2. Deletar fotos do storage e metadados
+  if (photos && photos.length > 0) {
+    const paths = photos.map((p) => p.storage_path);
+    await supabase.storage.from(WOUND_STORAGE_BUCKET).remove(paths);
+    
+    // O delete da entrada vai dar cascade nos metadados da foto se configurado, 
+    // mas vamos garantir deletando os ids de cache local também
+    for (const photo of photos) {
+      await deleteWoundPhotoCache(photo.id).catch(() => undefined);
+    }
+  }
+
+  // 3. Deletar a evolução
+  const { error } = await supabase
+    .from('wound_entries')
+    .delete()
+    .eq('id', entryId);
+
+  if (error) throw error;
+}
+
+export async function updateWoundCase(woundId: string, input: Partial<CreateWoundCaseInput>): Promise<WoundCase> {
+  const payload = {
+    started_at: input.started_at,
+    etiology: input.etiology?.trim(),
+    classification: input.classification?.trim(),
+    anatomical_region: input.anatomical_region,
+    anatomical_subregion: input.anatomical_subregion,
+    anatomical_code: input.anatomical_code,
+    comorbidities: input.comorbidities,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from('wound_cases')
+    .update(payload)
+    .eq('id', woundId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as WoundCase;
 }
 
 export async function listWoundEntries(woundId: string): Promise<WoundEntry[]> {
@@ -340,7 +462,11 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
       throw metadataError;
     }
 
-    uploaded.push(metadata as WoundPhoto);
+    // Cache the blob locally immediately
+    const photo = metadata as WoundPhoto;
+    await saveWoundPhotoCache(photo.id, item.file);
+
+    uploaded.push(photo);
   }
 
   return uploaded;
@@ -369,6 +495,9 @@ export async function deleteWoundPhoto(photoId: string): Promise<void> {
 
   const { error: storageError } = await supabase.storage.from(WOUND_STORAGE_BUCKET).remove([storagePath]);
   if (storageError) throw storageError;
+
+  // Clear local cache for this photo
+  await deleteWoundPhotoCache(photoId).catch(() => undefined);
 }
 
 export async function listWoundPhotos(woundId: string): Promise<WoundPhoto[]> {
@@ -416,12 +545,32 @@ export async function hydratePhotosWithSignedUrls(photos: WoundPhoto[], expiresI
   const signedPhotos = await Promise.all(
     photos.map(async (photo) => {
       try {
+        // 1. Try to get from local cache first
+        const cachedBlob = await getWoundPhotoCache(photo.id);
+        if (cachedBlob) {
+          return {
+            ...photo,
+            signed_url: URL.createObjectURL(cachedBlob),
+          };
+        }
+
+        // 2. If not in cache, get signed URL and download to cache
         const signedUrl = await getSignedWoundPhotoUrl(photo.storage_path, expiresInSec);
+        
+        // Background fetch the blob to cache it for next time
+        // We don't await this to avoid blocking the initial render, 
+        // but we return the signedUrl for immediate use.
+        void fetch(signedUrl)
+          .then(res => res.blob())
+          .then(blob => saveWoundPhotoCache(photo.id, blob))
+          .catch(err => console.warn(`Falha ao cachear foto ${photo.id}:`, err));
+
         return {
           ...photo,
           signed_url: signedUrl,
         };
-      } catch {
+      } catch (err) {
+        console.error(`Erro ao hidratar foto ${photo.id}:`, err);
         return {
           ...photo,
           signed_url: null,

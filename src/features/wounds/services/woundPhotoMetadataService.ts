@@ -1,6 +1,7 @@
 import * as ExifReader from 'exifreader';
 import { supabase } from '@/lib/supabaseClient';
 import type { WoundPhotoExifMetadata } from '../types';
+import { reverseGeocode } from './geocodingService';
 
 const WOUND_STORAGE_BUCKET = 'wound-photos';
 
@@ -137,7 +138,13 @@ export async function extractWoundPhotoMetadata(blob: Blob): Promise<WoundPhotoE
     dateTimeOriginal: parseString(tags.DateTimeOriginal),
     latitude: parseCoordinate(tags.GPSLatitude, tags.GPSLatitudeRef),
     longitude: parseCoordinate(tags.GPSLongitude, tags.GPSLongitudeRef),
+    address: null,
   };
+
+  // If we have GPS coordinates, try to resolve the address
+  if (typeof metadata.latitude === 'number' && typeof metadata.longitude === 'number') {
+    metadata.address = await reverseGeocode(metadata.latitude, metadata.longitude);
+  }
 
   return hasUsefulMetadata(metadata) ? metadata : null;
 }

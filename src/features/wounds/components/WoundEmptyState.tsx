@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FolderHeart, Search, ArrowRight, UserPlus } from 'lucide-react';
+import { Bandage, Search, ArrowRight, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 interface WoundEmptyStateProps {
@@ -17,7 +17,7 @@ export const WoundEmptyState: React.FC<WoundEmptyStateProps> = ({ type, onAction
       actionLabel: "Ver pacientes"
     },
     wound: {
-      icon: <FolderHeart className="h-10 w-10 text-primary/40" />,
+      icon: <Bandage className="h-10 w-10 text-primary/40" />,
       title: "Selecione uma ferida",
       description: "Este paciente possui registros, mas nenhuma ferida foi selecionada para visualização detalhada.",
       actionLabel: "Selecione uma ferida"

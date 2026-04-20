@@ -5,6 +5,7 @@ import {
   createWoundPatient,
   deleteWoundPhoto,
   reopenWoundCase,
+  updateWoundPatient,
   uploadWoundPhotos,
 } from './woundService';
 import {
@@ -83,6 +84,12 @@ async function executeMutation(mutation: WoundSyncMutation): Promise<void> {
   switch (mutation.type) {
     case 'create_patient': {
       await createWoundPatient(mutation.payload as Parameters<typeof createWoundPatient>[0]);
+      return;
+    }
+
+    case 'update_patient': {
+      const { id, ...input } = mutation.payload as { id: string } & Partial<CreateWoundPatientInput>;
+      await updateWoundPatient(id, input);
       return;
     }
 

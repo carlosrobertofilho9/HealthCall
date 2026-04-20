@@ -105,6 +105,7 @@ export interface WoundPhotoExifMetadata {
   dateTimeOriginal?: string;
   latitude?: number;
   longitude?: number;
+  address?: string | null;
 }
 
 export type WoundPhotoMetadataStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
@@ -216,6 +217,7 @@ export interface UploadWoundPhotoInput {
 
 export type WoundSyncMutationType =
   | 'create_patient'
+  | 'update_patient'
   | 'create_wound'
   | 'add_entry'
   | 'close_wound'

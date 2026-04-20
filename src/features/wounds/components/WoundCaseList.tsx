@@ -48,36 +48,8 @@ const WoundCaseList: React.FC<WoundCaseListProps> = ({
   }, [statusFilter]);
 
   return (
-    <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-foreground">Feridas do paciente</h2>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            onClick={onNewWound}
-            className="h-8 gap-1.5 text-xs font-bold sm:h-9 sm:text-sm"
-          >
-            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Nova ferida</span>
-            <span className="sm:hidden">Ferida</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={onNewEvolution}
-            disabled={!selectedWoundId}
-            className="h-8 gap-1.5 text-xs font-bold sm:h-9 sm:text-sm border-primary/20 hover:border-primary/50"
-          >
-            <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
-            <span className="hidden sm:inline">Nova evolução</span>
-            <span className="sm:hidden">Evolução</span>
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid gap-2 sm:grid-cols-2">
+    <div className="space-y-4 h-full flex flex-col overflow-hidden">
+      <div className="grid gap-2 sm:grid-cols-2 flex-shrink-0">
         <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as WoundCaseStatus | 'all')}>
           <SelectTrigger icon={activeStatusIcon}>
             <SelectValue placeholder="Status" />
@@ -98,7 +70,7 @@ const WoundCaseList: React.FC<WoundCaseListProps> = ({
         />
       </div>
 
-      <div className="space-y-2 pr-1">
+      <div className="space-y-2 flex-1 overflow-y-auto pr-1 custom-scrollbar">
         {filtered.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">
             Sem feridas para o filtro selecionado.
