@@ -55,20 +55,23 @@ const WoundCaseList: React.FC<WoundCaseListProps> = ({
             type="button"
             size="sm"
             onClick={onNewWound}
-            className="h-8 text-xs sm:h-9 sm:text-sm"
+            className="h-8 gap-1.5 text-xs font-bold sm:h-9 sm:text-sm"
           >
-            <Plus className="hidden h-4 w-4 sm:inline-block" />
-            Nova ferida
+            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Nova ferida</span>
+            <span className="sm:hidden">Ferida</span>
           </Button>
           <Button
             type="button"
             size="sm"
-            variant="secondary"
+            variant="outline"
             onClick={onNewEvolution}
             disabled={!selectedWoundId}
-            className="h-8 text-xs sm:h-9 sm:text-sm"
+            className="h-8 gap-1.5 text-xs font-bold sm:h-9 sm:text-sm border-primary/20 hover:border-primary/50"
           >
-            Nova evolução
+            <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+            <span className="hidden sm:inline">Nova evolução</span>
+            <span className="sm:hidden">Evolução</span>
           </Button>
         </div>
       </div>

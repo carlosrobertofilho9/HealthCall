@@ -30,12 +30,15 @@ function assertImageFile(file: File): void {
 
 function buildPhotoPath(woundId: string, fileName: string): string {
   const extension = fileName.includes('.') ? fileName.split('.').pop() : 'jpg';
-  const safeExt = extension?.replace(/[^a-zA-Z0-9]/g, '') || 'jpg';
+  const safeExt = (extension?.toLowerCase().replace(/[^a-zA-Z0-9]/g, '') || 'jpg').slice(0, 5);
+  
+  // Use a more robust unique ID for the file path
   const randomId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-  return `${woundId}/${Date.now()}-${randomId}.${safeExt}`;
+    : `${Math.random().toString(36).slice(2, 11)}-${Math.random().toString(36).slice(2, 11)}`;
+  
+  const timestamp = Date.now();
+  return `${woundId}/${timestamp}-${randomId}.${safeExt}`;
 }
 
 export async function listPatientsWithTrackedWounds(filters?: {
@@ -277,9 +280,11 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
       .upload(storagePath, item.file, {
         cacheControl: '31536000',
         contentType: item.file.type || undefined,
+        upsert: false,
       });
 
     if (uploadError) {
+      console.error('[uploadWoundPhotos] Erro no upload para storage:', uploadError);
       throw uploadError;
     }
 
@@ -298,6 +303,8 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
       .single();
 
     if (metadataError) {
+      console.error('[uploadWoundPhotos] Erro ao inserir metadados no banco:', metadataError);
+      // Tentativa de rollback no storage caso o banco falhe
       await supabase.storage.from(WOUND_STORAGE_BUCKET).remove([storagePath]).catch(() => undefined);
       throw metadataError;
     }

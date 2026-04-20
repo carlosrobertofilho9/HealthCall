@@ -12,10 +12,13 @@ const buttonVariants = cva(
         destructive: `${DS_COLOR.action.destructive} font-bold`,
         secondary: `${DS_COLOR.action.secondary} font-semibold`,
         ghost: DS_COLOR.action.ghost,
+        outline: "border border-input bg-background/50 hover:bg-accent hover:text-accent-foreground backdrop-blur-sm",
+        glass: "bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 shadow-xl",
       },
       size: {
         default: `${DS_RADIUS.pill} h-14 px-6 text-base`,
         sm: `${DS_RADIUS.section} h-11 px-4 text-sm`,
+        lg: `${DS_RADIUS.pill} h-14 px-8 text-lg`,
         icon: `h-10 w-10 ${DS_RADIUS.control} p-0`,
       }
     },

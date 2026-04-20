@@ -44,25 +44,35 @@ const WoundCaseHeader: React.FC<WoundCaseHeaderProps> = ({
         {wound.last_entry_at && <p>Última evolução: {new Date(wound.last_entry_at).toLocaleString('pt-BR')}</p>}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {wound.status !== 'encerrada' ? (
-          <Button type="button" size="sm" onClick={onCloseCase}>
-            <History className="h-4 w-4" />
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/50">
+        <div className="flex flex-wrap gap-2">
+          {wound.status === 'encerrada' && (
+            <>
+              <Button type="button" variant="secondary" size="sm" onClick={onReopenCase} className="h-8 text-xs font-semibold">
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                Reabrir ferida
+              </Button>
+              {wound.closure_type === 'ubs' && (
+                <Button type="button" variant="outline" size="sm" onClick={onGenerateUbsDocument} className="h-8 text-xs font-semibold">
+                  <FileText className="mr-1.5 h-3.5 w-3.5" />
+                  Gerar referência UBS
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+
+        {wound.status !== 'encerrada' && (
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="sm" 
+            onClick={onCloseCase}
+            className="h-8 px-2 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <History className="mr-1.5 h-3.5 w-3.5" />
             Encerrar acompanhamento
           </Button>
-        ) : (
-          <>
-            <Button type="button" variant="secondary" size="sm" onClick={onReopenCase}>
-              <RotateCcw className="h-4 w-4" />
-              Reabrir ferida
-            </Button>
-            {wound.closure_type === 'ubs' && (
-              <Button type="button" size="sm" onClick={onGenerateUbsDocument}>
-                <FileText className="h-4 w-4" />
-                Gerar referência UBS
-              </Button>
-            )}
-          </>
         )}
       </div>
     </div>

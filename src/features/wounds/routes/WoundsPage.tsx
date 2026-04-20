@@ -319,7 +319,7 @@ const WoundsPage: React.FC = () => {
 
                 <TabsContent value="summary" className="space-y-4">
                   <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
-                  <WoundTimeline entries={entries} />
+                  <WoundTimeline entries={entries} photos={photos} />
                 </TabsContent>
 
                 <TabsContent value="photos" className="space-y-4">
@@ -380,7 +380,7 @@ const WoundsPage: React.FC = () => {
                 onGenerateUbsDocument={handleGenerateUbsDocument}
               />
               <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
-              <WoundTimeline entries={entries} />
+              <WoundTimeline entries={entries} photos={photos} />
             </TabsContent>
 
             <TabsContent value="photos" className="space-y-3">
