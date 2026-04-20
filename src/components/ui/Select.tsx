@@ -29,7 +29,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex w-full items-center justify-between border h-11 pr-10 focus:ring-2 transition-all focus:outline-none appearance-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+      'relative flex w-full items-center justify-between border h-11 pr-10 focus:ring-2 transition-all focus:outline-none appearance-none disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
       DS_COLOR.field.default,
       DS_COLOR.focus.field,
       DS_RADIUS.pill,
@@ -38,14 +38,12 @@ const SelectTrigger = React.forwardRef<
     )}
     {...props}
   >
-    <div className="flex items-center gap-2">
-      {icon && (
-        <span className={cn('absolute left-4 top-1/2 -translate-y-1/2', DS_COLOR.text.muted)}>
-          {icon}
-        </span>
-      )}
-      {children}
-    </div>
+    {icon && (
+      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+        {icon}
+      </span>
+    )}
+    {children}
     <SelectPrimitive.Icon asChild>
       <ChevronDown className={cn('h-4 w-4 opacity-50', DS_COLOR.text.muted)} />
     </SelectPrimitive.Icon>
@@ -140,18 +138,27 @@ const SelectLabel = React.forwardRef<
 SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
 /**
+ * Propriedades para o SelectItem.
+ */
+interface SelectItemProps
+  extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> {
+  icon?: React.ReactNode;
+}
+
+/**
  * Um item que pode ser selecionado dentro de um `Select`.
  */
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
+  SelectItemProps
+>(({ className, children, icon, ...props }, ref) => (
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
       'relative flex w-full cursor-default select-none items-center py-2.5 pl-10 pr-4 text-sm outline-none data-disabled:pointer-events-none data-disabled:opacity-50 font-medium',
       DS_COLOR.interactive.option,
       DS_RADIUS.control,
+      icon ? 'pl-12' : 'pl-4',
       className,
     )}
     {...props}
@@ -162,7 +169,14 @@ const SelectItem = React.forwardRef<
       </SelectPrimitive.ItemIndicator>
     </span>
 
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    <div className="flex items-center gap-2">
+      {icon && (
+        <span className="absolute left-6 h-4 w-4 flex items-center justify-center">
+          {icon}
+        </span>
+      )}
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    </div>
   </SelectPrimitive.Item>
 ));
 SelectItem.displayName = SelectPrimitive.Item.displayName;

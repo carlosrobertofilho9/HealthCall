@@ -12,6 +12,7 @@ import {
 } from '@/components/ui';
 import type { CreateWoundEntryInput, WoundExudate, WoundOdor } from '../types';
 import { validateWoundImageFiles } from '../utils/woundFileValidation';
+import { cn } from '@/lib/utils';
 import { 
   Calendar, 
   Clock, 
@@ -23,7 +24,15 @@ import {
   ChevronRight,
   Camera,
   Save,
-  X
+  X,
+  Ruler,
+  ClipboardEdit,
+  FileText,
+  Pill,
+  ShieldPlus,
+  StickyNote,
+  User,
+  Activity
 } from 'lucide-react';
 
 interface WoundEvolutionFormProps {
@@ -63,6 +72,20 @@ const nonConformityTypes = [
 
 const exudateOptions: WoundExudate[] = ['ausente', 'seroso', 'sanguinolento', 'serossanguinolento', 'purulento'];
 const odorOptions: WoundOdor[] = ['ausente', 'discreto', 'fetido'];
+
+const exudateIcons: Record<WoundExudate, React.ReactNode> = {
+  ausente: <Droplets className="h-3.5 w-3.5 text-muted-foreground opacity-40" />,
+  seroso: <Droplets className="h-3.5 w-3.5 text-yellow-500" />,
+  sanguinolento: <Droplets className="h-3.5 w-3.5 text-rose-600" />,
+  serossanguinolento: <Droplets className="h-3.5 w-3.5 text-rose-400" />,
+  purulento: <Droplets className="h-3.5 w-3.5 text-amber-600" />,
+};
+
+const odorIcons: Record<WoundOdor, React.ReactNode> = {
+  ausente: <Wind className="h-3.5 w-3.5 text-muted-foreground opacity-40" />,
+  discreto: <Wind className="h-3.5 w-3.5 text-emerald-500" />,
+  fetido: <Wind className="h-3.5 w-3.5 text-rose-600" />,
+};
 
 const createDefaultState = () => ({
   recorded_at: new Date().toISOString().slice(0, 16),
@@ -263,7 +286,10 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
           
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground ml-1">Data e hora do registro *</label>
+              <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+                <Clock className="h-3 w-3" />
+                Data e hora do registro *
+              </label>
               <Input
                 type="datetime-local"
                 icon={<Clock className="h-4 w-4" />}
@@ -282,6 +308,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
                   step="0.1"
                   min="0"
                   placeholder="0.0"
+                  icon={<Ruler className="h-3 w-3" />}
                   value={form.measure_length_cm}
                   onChange={(event) => setForm((prev) => ({ ...prev, measure_length_cm: event.target.value }))}
                   className="text-center font-bold"
@@ -294,6 +321,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
                   step="0.1"
                   min="0"
                   placeholder="0.0"
+                  icon={<Maximize className="h-3 w-3" />}
                   value={form.measure_width_cm}
                   onChange={(event) => setForm((prev) => ({ ...prev, measure_width_cm: event.target.value }))}
                   className="text-center font-bold"
@@ -306,6 +334,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
                   step="0.1"
                   min="0"
                   placeholder="0.0"
+                  icon={<Ruler className="h-3 w-3 rotate-90" />}
                   value={form.measure_depth_cm}
                   onChange={(event) => setForm((prev) => ({ ...prev, measure_depth_cm: event.target.value }))}
                   className="text-center font-bold"
@@ -315,23 +344,30 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
           </div>
         </div>
 
-        {/* Seção 2: Características da Lesão */}
         <div className="space-y-4">
-          <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70">2. Avaliação da Lesão</h4>
+          <h4 className="text-xs font-bold uppercase tracking-widest text-primary/70 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            2. Avaliação da Lesão
+          </h4>
           
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground ml-1">Exsudato *</label>
+              <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+                <Droplets className="h-3 w-3" />
+                Exsudato *
+              </label>
               <Select 
                 value={form.exudate || undefined} 
                 onValueChange={(value) => setForm((prev) => ({ ...prev, exudate: value as WoundExudate }))}
               >
-                <SelectTrigger icon={<Droplets className="h-4 w-4 text-sky-500" />}>
+                <SelectTrigger 
+                  icon={form.exudate ? exudateIcons[form.exudate] : <Droplets className="h-4 w-4 text-sky-500/80" />}
+                >
                   <SelectValue placeholder="Selecione o exsudato" />
                 </SelectTrigger>
                 <SelectContent>
                   {exudateOptions.map((item) => (
-                    <SelectItem key={item} value={item}>
+                    <SelectItem key={item} value={item} icon={exudateIcons[item]}>
                       {item.charAt(0).toUpperCase() + item.slice(1)}
                     </SelectItem>
                   ))}
@@ -340,17 +376,22 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground ml-1">Odor *</label>
+              <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+                <Wind className="h-3 w-3" />
+                Odor *
+              </label>
               <Select 
                 value={form.odor || undefined} 
                 onValueChange={(value) => setForm((prev) => ({ ...prev, odor: value as WoundOdor }))}
               >
-                <SelectTrigger icon={<Wind className="h-4 w-4 text-emerald-500" />}>
+                <SelectTrigger 
+                  icon={form.odor ? odorIcons[form.odor] : <Wind className="h-4 w-4 text-emerald-500/80" />}
+                >
                   <SelectValue placeholder="Selecione o odor" />
                 </SelectTrigger>
                 <SelectContent>
                   {odorOptions.map((item) => (
-                    <SelectItem key={item} value={item}>
+                    <SelectItem key={item} value={item} icon={odorIcons[item]}>
                       {item.charAt(0).toUpperCase() + item.slice(1)}
                     </SelectItem>
                   ))}
@@ -426,7 +467,8 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
 
           <div className="space-y-3 rounded-2xl border border-border bg-secondary/10 p-4">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <label className="text-xs font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                <Activity className="h-3.5 w-3.5 text-primary" />
                 Escala de Dor (0-10)
               </label>
               <span className={`text-sm font-black px-3 py-1 rounded-full ${
@@ -475,7 +517,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
               {form.uses_antibiotic && (
                 <Input
                   placeholder="Qual antibiótico? *"
-                  icon={<AlertTriangle className="h-4 w-4 text-warning" />}
+                  icon={<ShieldPlus className="h-4 w-4 text-primary" />}
                   value={form.antibiotic_type}
                   onChange={(event) => setForm((prev) => ({ ...prev, antibiotic_type: event.target.value }))}
                   className="animate-in slide-in-from-left-2 duration-200"
@@ -500,7 +542,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
               {form.uses_ointment && (
                 <Input
                   placeholder="Qual pomada? *"
-                  icon={<AlertTriangle className="h-4 w-4 text-warning" />}
+                  icon={<Pill className="h-4 w-4 text-primary" />}
                   value={form.ointment_type}
                   onChange={(event) => setForm((prev) => ({ ...prev, ointment_type: event.target.value }))}
                   className="animate-in slide-in-from-left-2 duration-200"
@@ -511,16 +553,18 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
 
           <div className="space-y-2">
             <label className="text-xs font-semibold text-muted-foreground ml-1">Cobertura utilizada *</label>
-            <Select
-              value={form.dressing_type || undefined}
+            <Select 
+              value={form.dressing_type || undefined} 
               onValueChange={(value) => setForm((prev) => ({ ...prev, dressing_type: value }))}
             >
-              <SelectTrigger icon={<ShieldCheck className="h-4 w-4 text-primary" />}>
+              <SelectTrigger 
+                icon={<ShieldCheck className={cn("h-4 w-4", form.dressing_type ? "text-primary" : "text-primary/40")} />}
+              >
                 <SelectValue placeholder="Selecione a cobertura" />
               </SelectTrigger>
               <SelectContent>
                 {dressingOptions.map((item) => (
-                  <SelectItem key={item} value={item}>
+                  <SelectItem key={item} value={item} icon={<ShieldCheck className="h-3.5 w-3.5 text-primary/50" />}>
                     {item}
                   </SelectItem>
                 ))}
@@ -528,12 +572,16 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
             </Select>
           </div>
 
-          <Textarea
-            placeholder="Anotações específicas sobre a aplicação da cobertura..."
-            value={form.dressing_notes}
-            onChange={(event) => setForm((prev) => ({ ...prev, dressing_notes: event.target.value }))}
-            className="min-h-[80px]"
-          />
+            <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+              <StickyNote className="h-3 w-3" />
+              Anotações da Cobertura
+            </label>
+            <Textarea
+              placeholder="Anotações específicas sobre a aplicação da cobertura..."
+              value={form.dressing_notes}
+              onChange={(event) => setForm((prev) => ({ ...prev, dressing_notes: event.target.value }))}
+              className="min-h-[80px]"
+            />
         </div>
 
         {/* Seção 4: Segurança e Registro Fotográfico */}
@@ -556,45 +604,65 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
 
             {form.non_conformity_detected && (
               <div className="space-y-4 animate-in zoom-in-95 duration-200">
-                <Select
-                  value={form.non_conformity_type || undefined}
+                <Select 
+                  value={form.non_conformity_type || undefined} 
                   onValueChange={(value) => setForm((prev) => ({ ...prev, non_conformity_type: value }))}
                 >
-                  <SelectTrigger icon={<AlertTriangle className="h-4 w-4 text-destructive" />}>
-                    <SelectValue placeholder="Tipo de não conformidade *" />
+                  <SelectTrigger 
+                    icon={<AlertTriangle className={cn("h-4 w-4", form.non_conformity_type ? "text-destructive" : "text-destructive/40")} />}
+                  >
+                    <SelectValue placeholder="Qual o problema? *" />
                   </SelectTrigger>
                   <SelectContent>
                     {nonConformityTypes.map((item) => (
-                      <SelectItem key={item} value={item}>
+                      <SelectItem key={item} value={item} icon={<AlertTriangle className="h-3.5 w-3.5 text-destructive/50" />}>
                         {item}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Textarea
-                  placeholder="Descrição detalhada do que foi encontrado *"
-                  value={form.non_conformity_description}
-                  onChange={(event) => setForm((prev) => ({ ...prev, non_conformity_description: event.target.value }))}
-                  required
-                />
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+                      <FileText className="h-3 w-3" />
+                      Descrição da não conformidade *
+                    </label>
+                    <Textarea
+                      placeholder="Descrição detalhada do que foi encontrado *"
+                      value={form.non_conformity_description}
+                      onChange={(event) => setForm((prev) => ({ ...prev, non_conformity_description: event.target.value }))}
+                      required
+                    />
+                  </div>
 
-                <Textarea
-                  placeholder="Ação imediata tomada *"
-                  value={form.non_conformity_action}
-                  onChange={(event) => setForm((prev) => ({ ...prev, non_conformity_action: event.target.value }))}
-                  required
-                />
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+                      <Activity className="h-3 w-3" />
+                      Ação imediata tomada *
+                    </label>
+                    <Textarea
+                      placeholder="Ação imediata tomada *"
+                      value={form.non_conformity_action}
+                      onChange={(event) => setForm((prev) => ({ ...prev, non_conformity_action: event.target.value }))}
+                      required
+                    />
+                  </div>
               </div>
             )}
           </div>
 
-          <Textarea
-            placeholder="Observações clínicas adicionais (presença de tunelamento, tecidos adjacentes, etc)..."
-            value={form.observations}
-            onChange={(event) => setForm((prev) => ({ ...prev, observations: event.target.value }))}
-            className="min-h-[100px]"
-          />
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+              <ClipboardEdit className="h-3 w-3" />
+              Observações Clínicas Adicionais
+            </label>
+            <Textarea
+              placeholder="Presença de tunelamento, tecidos adjacentes, etc..."
+              value={form.observations}
+              onChange={(event) => setForm((prev) => ({ ...prev, observations: event.target.value }))}
+              className="min-h-[100px]"
+            />
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

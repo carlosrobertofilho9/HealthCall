@@ -22,7 +22,8 @@ import {
   Camera, 
   Save, 
   X,
-  ChevronRight
+  ChevronRight,
+  Maximize
 } from 'lucide-react';
 
 interface NewWoundFormSubmitPayload {
@@ -180,7 +181,10 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground ml-1">Data de início *</label>
+                <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+                  <Calendar className="h-3 w-3" />
+                  Data de início *
+                </label>
                 <Input
                   type="date"
                   icon={<Calendar className="h-4 w-4" />}
@@ -192,7 +196,10 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-muted-foreground ml-1">Etiologia (Causa) *</label>
+                <label className="text-xs font-semibold text-muted-foreground ml-1 flex items-center gap-1.5">
+                  <Stethoscope className="h-3 w-3" />
+                  Etiologia (Causa) *
+                </label>
                 <Select value={etiology} onValueChange={setEtiology}>
                   <SelectTrigger icon={<Stethoscope className="h-4 w-4 text-primary" />}>
                     <SelectValue placeholder="Selecione a etiologia" />
@@ -294,6 +301,7 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
                   min="0"
                   step="0.1"
                   placeholder="0.0"
+                  icon={<Ruler className="h-3 w-3" />}
                   value={initialLength}
                   onChange={(event) => setInitialLength(event.target.value)}
                   className="text-center font-bold"
@@ -306,6 +314,7 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
                   min="0"
                   step="0.1"
                   placeholder="0.0"
+                  icon={<Maximize className="h-3 w-3" />}
                   value={initialWidth}
                   onChange={(event) => setInitialWidth(event.target.value)}
                   className="text-center font-bold"
@@ -318,6 +327,7 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
                   min="0"
                   step="0.1"
                   placeholder="0.0"
+                  icon={<Ruler className="h-3 w-3 rotate-90" />}
                   value={initialDepth}
                   onChange={(event) => setInitialDepth(event.target.value)}
                   className="text-center font-bold"
