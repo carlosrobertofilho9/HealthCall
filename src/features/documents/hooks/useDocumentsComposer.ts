@@ -31,6 +31,10 @@ export const useDocumentsComposer = () => {
     setFieldValues((previous) => ({ ...previous, [key]: value }));
   }, []);
 
+  const setFieldValuesBulk = useCallback((values: Record<string, string>) => {
+    setFieldValues(values);
+  }, []);
+
   const clearForm = useCallback(() => {
     setFieldValues({});
     setPreviewValues(null);
@@ -58,6 +62,16 @@ export const useDocumentsComposer = () => {
     }, 400);
   }, [fieldValues, selectedTemplate]);
 
+  const applyPreset = useCallback((template: Template, values: Record<string, string>) => {
+    setSelectedTemplate(template);
+    setFieldValues(values);
+    setPreviewValues(values);
+
+    const keys = extractPlaceholders(template.templateText);
+    const missing = keys.filter((key) => !values[key] || values[key].trim() === '');
+    setMissingKeys(missing);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (generateTimeoutRef.current) {
@@ -74,7 +88,9 @@ export const useDocumentsComposer = () => {
     isGenerating,
     selectTemplate,
     setFieldValue,
+    setFieldValuesBulk,
     clearForm,
     generateDocument,
+    applyPreset,
   };
 };

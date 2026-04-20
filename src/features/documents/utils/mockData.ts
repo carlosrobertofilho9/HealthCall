@@ -188,6 +188,16 @@ CNS ou CPF: {{CNS_CPF}}`,
     icon: SolicitacaoCurativoIcon
   },
   {
+    id: 'referencia_ubs_curativo',
+    title: 'Referência UBS - Curativo',
+    category: 'Administrativo',
+    description: 'Referência clínica para continuidade do cuidado na UBS após encerramento do acompanhamento.',
+    tags: ['ubs', 'curativo', 'referência', 'continuidade'],
+    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
+CNS ou CPF: {{CNS_CPF}}`,
+    icon: SolicitacaoCurativoIcon
+  },
+  {
     id: 'folha_pendencias',
     title: 'Folha de Pendências',
     category: 'Administrativo',
@@ -323,6 +333,13 @@ export const fieldHints: Record<string, FieldHint> = {
   DATA_SOLICITACAO_CURATIVO: { label: 'Data da Solicitação', type: 'date', placeholder: 'dd/mm/aaaa' },
   OUTROS_MATERIAIS_CURATIVO: { label: 'Quais outros materiais?', type: 'textarea', placeholder: 'Descreva outros materiais necessários...' },
   OBSERVACOES_CURATIVO: { label: 'Observações da solicitação', type: 'textarea', placeholder: 'Ex: frequência de troca, quantidade estimada ou justificativa clínica...' },
+  TIPO_FECHAMENTO: { label: 'Tipo de Fechamento', type: 'text', placeholder: 'Ex: Curativo na UBS' },
+  DATA_FECHAMENTO: { label: 'Data do Fechamento', type: 'date', placeholder: 'dd/mm/aaaa' },
+  MOTIVO_ENCERRAMENTO: { label: 'Motivo do Encerramento', type: 'textarea', placeholder: 'Descreva o motivo...' },
+  ULTIMA_MEDIDA: { label: 'Última Medida', type: 'text', placeholder: 'Ex: 2 x 1 x 0.2 cm' },
+  ULTIMA_COBERTURA: { label: 'Última Cobertura', type: 'text', placeholder: 'Ex: Hidrogel' },
+  ULTIMA_OBSERVACAO: { label: 'Última Observação Clínica', type: 'textarea', placeholder: 'Resumo clínico da última evolução' },
+  ORIENTACOES_UBS: { label: 'Orientações para UBS', type: 'textarea', placeholder: 'Orientações de continuidade do cuidado' },
 
   // --- Folha de Pendências ---
   // Pendência 1
@@ -421,6 +438,20 @@ export const extraFieldsByTemplate: Record<string, string[]> = {
     'MATERIAL_CURATIVO_RAYON', 'MATERIAL_CURATIVO_OUTROS',
     'OUTROS_MATERIAIS_CURATIVO', 'OBSERVACOES_CURATIVO',
     'PROFISSIONAL', 'CRM_COREN',
+  ],
+  referencia_ubs_curativo: [
+    'NOME_PACIENTE',
+    'CNS_CPF',
+    'LOCALIZACAO_LESAO',
+    'DATA_INICIO_LESAO',
+    'CLASSIFICACAO_LESAO',
+    'TIPO_FECHAMENTO',
+    'DATA_FECHAMENTO',
+    'MOTIVO_ENCERRAMENTO',
+    'ULTIMA_MEDIDA',
+    'ULTIMA_COBERTURA',
+    'ULTIMA_OBSERVACAO',
+    'ORIENTACOES_UBS',
   ],
   folha_pendencias: [
     'NOME_PACIENTE_1', 'CNS_CPF_1', 'TIPO_PENDENCIA_1', 'RESUMO_PENDENCIA_1',

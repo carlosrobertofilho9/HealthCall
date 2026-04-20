@@ -21,15 +21,13 @@ export interface InputProps
  */
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, icon, ...props }, ref) => {
-    const hasIcon = icon !== null;
-
     return (
       <div className="relative w-full">
-        {hasIcon ? (
+        {icon && (
           <span className={cn('pointer-events-none absolute left-4 top-1/2 -translate-y-1/2', DS_COLOR.text.muted)}>
-            {icon ?? <Search className="h-4 w-4" />}
+            {icon}
           </span>
-        ) : null}
+        )}
         <input
           type={type}
           className={cn(
@@ -37,7 +35,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             DS_COLOR.field.default,
             DS_COLOR.focus.field,
             DS_RADIUS.pill,
-            hasIcon ? 'pl-12' : 'pl-4',
+            icon ? 'pl-12' : 'pl-4',
             className,
           )}
           ref={ref}

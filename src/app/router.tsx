@@ -8,6 +8,7 @@ import WarningsPage from '@/features/warnings/pages/WarningsPage';
 import { AppointmentsPage, CapacityDashboardPage, WeeklyAppointmentsPage } from '@/features/appointments';
 import DocumentsPage from '@/features/documents/pages/DocumentsPage';
 import { PendenciasPage } from '@/features/pendencias';
+import { WoundsPage, WoundEvolutionPage } from '@/features/wounds';
 import LoginPage from '@/features/authentication/routes/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -36,6 +37,8 @@ export const router = createBrowserRouter([
       { path: 'appointments/capacity', element: <CapacityDashboardPage /> },
       { path: 'documents', element: <DocumentsPage /> },
 	{ path: 'pendencias', element: <PendenciasPage /> },
+      { path: 'wounds', element: <WoundsPage /> },
+      { path: 'wounds/evolution/:woundId', element: <WoundEvolutionPage /> },
 		],
 	},
 	// Standalone route for the public display screen

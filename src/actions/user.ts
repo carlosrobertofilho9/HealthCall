@@ -1,10 +1,7 @@
 import { supabase } from '@/lib/supabaseClient';
+import type { SettingsUserProfile } from '@/features/settings/types';
 
-export type UserProfile = {
-  id: string;
-  updated_at: string | null;
-  default_destination: string | null;
-};
+export type UserProfile = SettingsUserProfile;
 
 /**
  * Fetches the profile for the currently authenticated user.
@@ -19,7 +16,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, updated_at, default_destination')
+    .select('id, updated_at, default_destination, full_name, specialty, department, avatar_url')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -27,7 +24,17 @@ export async function getUserProfile(): Promise<UserProfile | null> {
     console.error('Error fetching user profile:', error);
     return null;
   }
-  return (data as UserProfile) ?? { id: user.id, updated_at: null, default_destination: null };
+  return (
+    (data as UserProfile) ?? {
+      id: user.id,
+      updated_at: null,
+      default_destination: null,
+      full_name: null,
+      specialty: null,
+      department: null,
+      avatar_url: null,
+    }
+  );
 }
 
 /**
@@ -48,7 +55,7 @@ export async function updateUserProfile(update: Partial<UserProfile>): Promise<U
   const { data, error } = await supabase
     .from('profiles')
     .upsert(payload, { onConflict: 'id' })
-    .select('id, updated_at, default_destination')
+    .select('id, updated_at, default_destination, full_name, specialty, department, avatar_url')
     .single();
 
   if (error) {

@@ -1,22 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Bell,
-  CalendarDays,
+  BellRing,
+  Bandage,
+  CalendarRange,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
-  FileText,
-  LayoutList,
+  ClipboardCheck,
+  Files,
   LogOut,
   Menu,
-  Monitor,
-  Settings,
+  MonitorSmartphone,
+  SlidersHorizontal,
+  Users,
   X,
 } from 'lucide-react';
 
 import { supabase } from '@/lib/supabaseClient';
 import { cn } from '@/lib/utils';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -24,15 +27,42 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [initials, setInitials] = useState<string>('?');
-  const [userName, setUserName] = useState<string>('Usuário');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { profile } = useUserProfile();
+  const { user } = useAuth();
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const isCompact = isCollapsed && !isMobileMenuOpen;
+
+  const computeInitials = (text: string | null | undefined) => {
+    const value = (text ?? '').trim();
+    if (!value) return '?';
+    if (value.includes(' ')) {
+      const parts = value.split(' ').filter(Boolean);
+      const first = parts[0]?.[0] ?? '';
+      const last = parts[parts.length - 1]?.[0] ?? '';
+      return (first + last).toUpperCase();
+    }
+    return value.slice(0, 2).toUpperCase();
+  };
+
+  const userMeta = (user?.user_metadata ?? {}) as {
+    name?: string;
+    full_name?: string;
+    avatar_url?: string;
+  };
+
+  const userName =
+    profile?.full_name?.trim() ||
+    userMeta.name ||
+    userMeta.full_name ||
+    user?.email?.split('@')[0] ||
+    'Usuário';
+
+  const avatarUrl = profile?.avatar_url || userMeta.avatar_url || null;
+  const initials = computeInitials(userName);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -42,40 +72,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     }
     navigate('/login');
   };
-
-  useEffect(() => {
-    const computeInitials = (text: string | null | undefined) => {
-      const value = (text ?? '').trim();
-      if (!value) return '?';
-      if (value.includes(' ')) {
-        const parts = value.split(' ').filter(Boolean);
-        const first = parts[0]?.[0] ?? '';
-        const last = parts[parts.length - 1]?.[0] ?? '';
-        return (first + last).toUpperCase();
-      }
-      return value.slice(0, 2).toUpperCase();
-    };
-
-    const loadUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const meta = (user.user_metadata ?? {}) as {
-        name?: string;
-        full_name?: string;
-        avatar_url?: string;
-      };
-
-      const name = meta.name || meta.full_name || user.email?.split('@')[0] || 'Usuário';
-      setAvatarUrl(meta.avatar_url ?? null);
-      setInitials(computeInitials(name));
-      setUserName(name);
-    };
-
-    loadUser();
-  }, []);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -105,13 +101,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   }, [isMobileMenuOpen]);
 
   const navItems = [
-    { to: '/', icon: LayoutList, label: 'Fila', end: true },
-    { to: '/appointments', icon: CalendarDays, label: 'Marcações' },
-    { to: '/display', icon: Monitor, label: 'Display' },
-    { to: '/documents', icon: FileText, label: 'Documentos' },
-    { to: '/warnings', icon: Bell, label: 'Avisos' },
-    { to: '/pendencias', icon: ClipboardList, label: 'Pendências' },
-    { to: '/settings', icon: Settings, label: 'Ajustes' },
+    { to: '/', icon: Users, label: 'Fila', end: true },
+    { to: '/appointments', icon: CalendarRange, label: 'Marcações' },
+    { to: '/display', icon: MonitorSmartphone, label: 'Display' },
+    { to: '/documents', icon: Files, label: 'Documentos' },
+    { to: '/wounds', icon: Bandage, label: 'Curativos' },
+    { to: '/warnings', icon: BellRing, label: 'Avisos' },
+    { to: '/pendencias', icon: ClipboardCheck, label: 'Pendências' },
+    { to: '/settings', icon: SlidersHorizontal, label: 'Ajustes' },
   ];
 
   return (

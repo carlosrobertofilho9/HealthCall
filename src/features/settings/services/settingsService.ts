@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
-import { UserProfile } from '@/types';
+import type { SettingsUserProfile, UpdateSettingsUserProfileInput } from '@/features/settings/types';
 
 /**
  * Busca todos os destinos únicos da tabela de pacientes.
@@ -22,10 +22,13 @@ export async function getUniqueDestinations(): Promise<string[]> {
  * @returns {Promise<UserProfile | null>} Uma promessa que resolve para o perfil do usuário atualizado.
  * @throws {Error} Se a atualização falhar.
  */
-export async function updateUserProfile(userId: string, profile: Partial<UserProfile>): Promise<UserProfile | null> {
+export async function updateUserProfile(
+    userId: string,
+    profile: UpdateSettingsUserProfileInput,
+): Promise<SettingsUserProfile | null> {
     const { data, error } = await supabase
         .from('profiles')
-        .update(profile)
+        .update({ ...profile, updated_at: new Date().toISOString() })
         .eq('id', userId)
         .select()
         .single();
@@ -39,7 +42,7 @@ export async function updateUserProfile(userId: string, profile: Partial<UserPro
  * @returns {Promise<UserProfile | null>} Uma promessa que resolve para o perfil do usuário.
  * @throws {Error} Se a busca falhar.
  */
-export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+export async function getUserProfile(userId: string): Promise<SettingsUserProfile | null> {
     const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -47,4 +50,30 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
         .single();
     if (error) throw error;
     return data;
+}
+
+/**
+ * Faz upload do avatar do usuário para o bucket `avatars`.
+ *
+ * @param {string} userId - ID do usuário autenticado.
+ * @param {File} file - Arquivo de imagem a ser enviado.
+ * @returns {Promise<string>} URL pública do arquivo após upload.
+ * @throws {Error} Quando o upload falha.
+ */
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const filePath = `${userId}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: file.type,
+        });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    return data.publicUrl;
 }

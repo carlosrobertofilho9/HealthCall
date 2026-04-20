@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { DS_COLOR, DS_RADIUS } from './design-system';
 
 const badgeVariants = cva(
-  `inline-flex items-center ${DS_RADIUS.pill} border px-2.5 py-1 text-xs font-medium leading-none`,
+  `inline-flex items-center ${DS_RADIUS.pill} border px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none tracking-tight transition-all`,
   {
     variants: {
       variant: {

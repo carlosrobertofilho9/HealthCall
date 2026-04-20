@@ -11,8 +11,14 @@ export const usePageTitle = (title?: string) => {
   useEffect(() => {
     if (title) {
         document.title = `${title} | HealthCall`;
+    } else if (location.pathname.startsWith('/wounds')) {
+      document.title = 'Curativos | HealthCall';
     } else if (location.pathname === '/display') {
       document.title = 'HealthCall Display';
+    } else if (location.pathname.startsWith('/appointments')) {
+      document.title = 'Marcações | HealthCall';
+    } else if (location.pathname.startsWith('/documents')) {
+      document.title = 'Documentos | HealthCall';
     } else {
       document.title = 'HealthCall';
     }

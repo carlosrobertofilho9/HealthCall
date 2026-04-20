@@ -18,6 +18,7 @@ import { DMLifestyleDocument } from './pdfs/DMLifestyleDocument';
 import { DyslipidemiaDocument } from './pdfs/DyslipidemiaDocument';
 import { MentalHealthDocument } from './pdfs/MentalHealthDocument';
 import { DressingRequestDocument } from './pdfs/DressingRequestDocument';
+import { WoundUbsReferralDocument } from './pdfs/WoundUbsReferralDocument';
 
 /** Estrutura para itens de pendência */
 export interface PendingItem {
@@ -142,6 +143,7 @@ const specialDocuments: Record<string, {
   'Relatório de Medicação Injetável': { component: InjectableMedDocument, multiPage: true },
   'Solicitação de Fórmula Láctea': { component: FormulaRequestDocument },
   'Solicitação de Curativo': { component: DressingRequestDocument },
+  'Referência UBS - Curativo': { component: WoundUbsReferralDocument },
   'Folha de Pendências': { component: PendingItemsDocument },
   'Capa de Caderneta': { component: CapaCadernetaDocument as any, landscape: true },
   'Guia de Estilo de Vida (HAS)': { component: HASLifestyleDocument as any },

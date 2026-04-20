@@ -51,3 +51,27 @@ export const isValidCNS = (cns: string): boolean => {
   const numbers = cns.replace(/\D/g, '');
   return numbers.length === 15;
 };
+
+export type DocumentoPacienteTipo = 'CPF' | 'CNS' | null;
+
+export const detectDocumentoPacienteTipo = (value: string): DocumentoPacienteTipo => {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length > 11) return 'CNS';
+  if (digits.length > 0) return 'CPF';
+  return null;
+};
+
+export const formatDocumentoPaciente = (value: string): { tipo: DocumentoPacienteTipo; formatado: string; digitos: string } => {
+  const digits = value.replace(/\D/g, '');
+  const tipo = detectDocumentoPacienteTipo(digits);
+
+  if (tipo === 'CNS') {
+    return { tipo, formatado: formatCNS(digits), digitos: digits.slice(0, 15) };
+  }
+
+  if (tipo === 'CPF') {
+    return { tipo, formatado: formatCPF(digits), digitos: digits.slice(0, 11) };
+  }
+
+  return { tipo: null, formatado: value, digitos: digits };
+};

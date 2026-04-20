@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
   FormPanel,
@@ -10,6 +11,8 @@ import { mockTemplates, Template } from '../utils/mockData';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 
 const DocumentsPage: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('templates');
   const {
     selectedTemplate,
@@ -19,6 +22,8 @@ const DocumentsPage: React.FC = () => {
     isGenerating,
     selectTemplate,
     setFieldValue,
+    setFieldValuesBulk,
+    applyPreset,
     clearForm,
     generateDocument,
   } = useDocumentsComposer();
@@ -32,6 +37,29 @@ const DocumentsPage: React.FC = () => {
     generateDocument();
     setActiveTab('preview');
   };
+
+  useEffect(() => {
+    const state = location.state as {
+      documentPreset?: {
+        templateId: string;
+        values: Record<string, string>;
+      };
+    } | null;
+
+    if (!state?.documentPreset) {
+      return;
+    }
+
+    const { templateId, values } = state.documentPreset;
+    const template = mockTemplates.find((item) => item.id === templateId);
+    if (!template) return;
+
+    applyPreset(template, values);
+    setFieldValuesBulk(values);
+    setActiveTab('preview');
+
+    navigate(location.pathname, { replace: true, state: null });
+  }, [applyPreset, location.pathname, location.state, navigate, setFieldValuesBulk]);
 
   return (
     <div className="flex w-full flex-col gap-4 xl:h-full xl:overflow-hidden">
