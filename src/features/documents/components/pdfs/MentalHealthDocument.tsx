@@ -1,21 +1,67 @@
 import React from 'react';
-import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import {
-  SleepIcon,
-} from './LifestyleGraphics';
-import {
-  MindIcon,
-  FoodIcon,
-  BulletIcon,
-  AlertBulletIcon,
-  TipBulletIcon,
-  LeafIcon,
-} from './HASLifestyleGraphics';
+import { Text, View, StyleSheet, Svg, Path, Circle } from '@react-pdf/renderer';
 import {
   BaseDocument,
   type DocumentFormData,
   pdfTheme,
 } from './PdfCommon';
+
+// --- Ícones Estilo Lucide (Desenhados para React PDF) ---
+const ClockIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Circle cx="12" cy="12" r="10" fill="none" stroke={color} strokeWidth="2" />
+    <Path d="M12 6v6l4 2" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const MoonIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const CoffeeIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M17 8h1a4 4 0 1 1 0 8h-1" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M6 2v2 M10 2v2 M14 2v2" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const SunIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Circle cx="12" cy="12" r="4" fill="none" stroke={color} strokeWidth="2" />
+    <Path d="M12 2v2 M12 20v2 m-7.07-7.07 1.41 1.41 m12.72 12.72 1.41 1.41 M2 12h2 M20 12h2 m-5.66 5.66-1.41 1.41 m12.72-12.72-1.41 1.41" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const HeartPulseIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M12 5.5v13" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M9 12h6" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const BulletPointIcon = ({ size = 10, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Circle cx="12" cy="12" r="6" fill={color} />
+  </Svg>
+);
+
+const WindIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M17.7 7.7a2.5 2.5 0 1 1-1.3 4.8H2 M20.2 16.7a2.5 2.5 0 1 0-1.8-4.2H2 M14.7 12.2a2.5 2.5 0 1 1-1.4 4.7H2" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const AlertTriangleIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M12 9v4 M12 17h.01" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+// --------------------------------------------------------
 
 const S = StyleSheet.create({
   twoCol: {
@@ -29,49 +75,37 @@ const S = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: pdfTheme.colors.text.white,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: pdfTheme.colors.border,
-    padding: 12,
+    padding: 10,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 6,
     borderBottomWidth: 1,
-    borderBottomColor: pdfTheme.colors.bgLight,
-    paddingBottom: 6,
+    paddingBottom: 4,
   },
   cardTitle: {
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: 'bold',
-    color: pdfTheme.colors.primary,
     flex: 1,
   },
-  subTitle: {
-    fontSize: 7.5,
-    fontWeight: 'bold',
-    color: pdfTheme.colors.text.main,
-    marginTop: 6,
-    marginBottom: 3,
-  },
   bodyText: {
-    fontSize: 7.5,
-    color: pdfTheme.colors.text.muted,
+    fontSize: 8,
     lineHeight: 1.45,
+    marginBottom: 4,
   },
   bulletRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 6,
-    marginBottom: 5,
+    marginBottom: 4,
   },
   bulletText: {
     flex: 1,
-    fontSize: 7.5,
-    color: pdfTheme.colors.text.main,
+    fontSize: 8,
     lineHeight: 1.45,
   },
   bulletBold: {
@@ -79,18 +113,14 @@ const S = StyleSheet.create({
   },
   highlightPill: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: pdfTheme.colors.purple.bg,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: pdfTheme.colors.purple.border,
     borderRadius: 6,
     padding: 6,
-    marginVertical: 5,
-    gap: 6,
+    marginVertical: 4,
   },
   highlightText: {
-    fontSize: 7.5,
-    color: pdfTheme.colors.purple.text,
+    fontSize: 8,
     fontWeight: 'bold',
     flex: 1,
     lineHeight: 1.4,
@@ -102,66 +132,14 @@ const S = StyleSheet.create({
     marginTop: 4,
   },
   chip: {
-    backgroundColor: pdfTheme.colors.softBg,
+    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: pdfTheme.colors.border,
     borderRadius: 4,
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
     paddingVertical: 2,
   },
   chipText: {
-    fontSize: 6.5,
-    color: pdfTheme.colors.primary,
-    fontWeight: 'bold',
-  },
-  alertStrip: {
-    flexDirection: 'row',
-    backgroundColor: pdfTheme.colors.warning.bg,
-    borderWidth: 1,
-    borderColor: pdfTheme.colors.warning.border,
-    borderRadius: 6,
-    padding: 6,
-    marginTop: 5,
-    gap: 6,
-    alignItems: 'flex-start',
-  },
-  alertText: {
-    flex: 1,
-    fontSize: 7.5,
-    color: pdfTheme.colors.warning.text,
-    lineHeight: 1.45,
-  },
-  positiveStrip: {
-    flexDirection: 'row',
-    backgroundColor: pdfTheme.colors.softBg,
-    borderRadius: 6,
-    padding: 6,
-    marginTop: 5,
-    gap: 6,
-    alignItems: 'flex-start',
-  },
-  positiveText: {
-    flex: 1,
-    fontSize: 7.5,
-    color: pdfTheme.colors.primary,
-    lineHeight: 1.45,
-  },
-  reminderBanner: {
-    marginTop: 10,
-    backgroundColor: pdfTheme.colors.purple.text,
-    borderRadius: 6,
-    padding: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  reminderText: {
-    fontSize: 7.5,
-    color: pdfTheme.colors.text.white,
-    flex: 1,
-    lineHeight: 1.5,
-  },
-  reminderBold: {
+    fontSize: 7,
     fontWeight: 'bold',
   },
 });
@@ -175,9 +153,28 @@ export const MentalHealthDocument: React.FC<MentalHealthDocumentProps> = ({
   visibleParagraphs,
   formData,
 }) => {
+  // Paleta de Cores AAA misturada com fundos sólidos suaves no estilo MAPA
+  const cPurple = '#4c1d95'; // purple-900 
+  const bgPurple = pdfTheme.colors.purple.bg; 
+
+  const cTeal = '#0f766e'; // teal-700
+  const bgTeal = pdfTheme.colors.success.softBg;
+
+  const cRed = '#7f1d1d'; // red-900 
+  const bgRed = pdfTheme.colors.danger.bg;
+
+  const cOrange = '#78350f'; // amber-900 
+  const bgOrange = pdfTheme.colors.warning.softBg;
+
+  const cBlue = '#1e3a8a'; // blue-900
+  const bgBlue = pdfTheme.colors.info.bg;
+  
+  const cIndigo = '#312e81'; // indigo-900
+  const bgIndigo = pdfTheme.colors.exam.indigoBg;
+
   return (
     <BaseDocument
-      title="Guia Completo: Higiene do Sono e Saúde Mental"
+      title="Guia Direto: Higiene do Sono e Saúde Mental"
       visibleParagraphs={visibleParagraphs}
       wrap={false}
       nomePaciente={formData?.nomePaciente}
@@ -186,163 +183,160 @@ export const MentalHealthDocument: React.FC<MentalHealthDocumentProps> = ({
       <View style={S.twoCol}>
         {/* ---- COLUNA ESQUERDA ---- */}
         <View style={S.col}>
-          {/* Card 1 – A Regra de Ouro 3-2-1 */}
-          <View style={[S.card, { borderColor: pdfTheme.colors.purple.text }]}>
-            <View style={S.cardHeader}>
-              <SleepIcon size={18} color={pdfTheme.colors.purple.text} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.purple.text }]}>
-                1. A Regra de Ouro: 3 - 2 - 1
+          {/* Card 1 – Rotina do Sono */}
+          <View style={[S.card, { backgroundColor: bgPurple, borderColor: '#ddd6fe' }]}>
+            <View style={[S.cardHeader, { borderBottomColor: '#c4b5fd' }]}>
+              <ClockIcon size={16} color={cPurple} />
+              <Text style={[S.cardTitle, { color: cPurple }]}>
+                1. O Relógio de Dormir
               </Text>
             </View>
-            <Text style={S.bodyText}>
-              Para que seu cérebro produza Melatonina (o hormônio do sono), você precisa de uma transição:
-            </Text>
             <View style={S.bulletRow}>
-              <BulletIcon size={8} color={pdfTheme.colors.purple.text} />
-              <Text style={S.bulletText}><Text style={S.bulletBold}>3 horas antes:</Text> Pare de comer refeições pesadas.</Text>
+              <BulletPointIcon size={6} color={cPurple} />
+              <Text style={[S.bulletText, { color: cPurple }]}>Tente <Text style={S.bulletBold}>dormir e acordar sempre na mesma hora</Text>.</Text>
             </View>
             <View style={S.bulletRow}>
-              <BulletIcon size={8} color={pdfTheme.colors.purple.text} />
-              <Text style={S.bulletText}><Text style={S.bulletBold}>2 horas antes:</Text> Pare de trabalhar ou estudar.</Text>
+              <BulletPointIcon size={6} color={cPurple} />
+              <Text style={[S.bulletText, { color: cPurple }]}>Vá para a cama só quando a vontade de dormir chegar.</Text>
             </View>
-            <View style={S.bulletRow}>
-              <BulletIcon size={8} color={pdfTheme.colors.purple.text} />
-              <Text style={S.bulletText}><Text style={S.bulletBold}>1 hora antes:</Text> <Text style={{ color: pdfTheme.colors.danger.text }}>SEM TELAS</Text> (celular e TV).</Text>
-            </View>
-          </View>
-
-          {/* Card 2 – Ambiente e Temperatura */}
-          <View style={S.card}>
-            <View style={S.cardHeader}>
-              <LeafIcon size={18} color={pdfTheme.colors.primary} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.primary }]}>
-                2. Prepare a sua "Caverna"
-              </Text>
-            </View>
-            <Text style={S.bodyText}>
-              O corpo precisa baixar a temperatura interna para dormir fundo.
-            </Text>
-            <View style={S.bulletRow}>
-              <BulletIcon size={10} color={pdfTheme.colors.primary} />
-              <Text style={S.bulletText}>Mantenha o quarto <Text style={S.bulletBold}>fresco e ventilado</Text>.</Text>
-            </View>
-            <View style={S.bulletRow}>
-              <BulletIcon size={10} color={pdfTheme.colors.primary} />
-              <Text style={S.bulletText}>Use lâmpadas de cor <Text style={S.bulletBold}>amarelada/quente</Text> à noite.</Text>
-            </View>
-            <View style={[S.positiveStrip, { marginTop: 4 }]}>
-              <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
-              <Text style={S.positiveText}>
-                Se houver ruído externo, use um ventilador ou som de chuva para mascarar o barulho.
+            <View style={[S.highlightPill, { borderColor: '#c4b5fd' }]}>
+              <Text style={[S.highlightText, { color: cPurple }]}>
+                Sem sono? Levante. Leia um papel ou ouça uma rádio calma em meia luz, e só volte pra cama ao sentir sono.
               </Text>
             </View>
           </View>
 
-          {/* Card 3 – O poder da Luz Solar */}
-          <View style={S.card}>
-            <View style={S.cardHeader}>
-              <MindIcon size={18} color={pdfTheme.colors.warning.strong} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.warning.strong }]}>
-                3. O Sono começa de Manhã
+          {/* Card 2 – Ambiente e Luz */}
+          <View style={[S.card, { backgroundColor: bgTeal, borderColor: '#a7f3d0' }]}>
+            <View style={[S.cardHeader, { borderBottomColor: '#6ee7b7' }]}>
+              <MoonIcon size={16} color={cTeal} />
+              <Text style={[S.cardTitle, { color: cTeal }]}>
+                2. A "Caverna" do Sono
               </Text>
             </View>
-            <Text style={S.bodyText}>
-              Seu relógio biológico se ajusta pela luz que entra nos seus olhos logo cedo.
-            </Text>
-            <View style={S.positiveStrip}>
-              <TipBulletIcon size={10} color={pdfTheme.colors.warning.strong} />
-              <Text style={S.positiveText}>
-                Procure receber <Text style={{ fontWeight: 'bold' }}>15 min de luz natural</Text> assim que acordar (mesmo se estiver nublado). Isso "liga" seu corpo para o dia e prepara o sono da noite.
-              </Text>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cTeal} />
+              <Text style={[S.bulletText, { color: cTeal }]}>Desligue a TV no quarto e fique longe do <Text style={S.bulletBold}>celular</Text> 1 hora antes de dormir. A luz do celular afasta o sono.</Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cTeal} />
+              <Text style={[S.bulletText, { color: cTeal }]}>Evite ver notícias tristes ou violentas à noite.</Text>
             </View>
           </View>
 
-          {/* Card 4 – Bebidas e Estimulantes */}
-          <View style={S.card}>
-            <View style={S.cardHeader}>
-              <FoodIcon size={18} color={pdfTheme.colors.danger.strong} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.danger.strong }]}>
-                4. Cuidado com Extras
+          {/* Card 3 – Pneumologia e Ronco */}
+          <View style={[S.card, { backgroundColor: bgIndigo, borderColor: '#c7d2fe' }]}>
+            <View style={[S.cardHeader, { borderBottomColor: '#a5b4fc' }]}>
+              <WindIcon size={16} color={cIndigo} />
+              <Text style={[S.cardTitle, { color: cIndigo }]}>
+                3. Ronco e Apneia Não São Normais
               </Text>
             </View>
             <View style={S.bulletRow}>
-              <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
-              <Text style={S.bulletText}><Text style={S.bulletBold}>Cafeína:</Text> O efeito dura até 8 horas. Evite após as 14h-15h.</Text>
+              <BulletPointIcon size={6} color={cIndigo} />
+              <Text style={[S.bulletText, { color: cIndigo }]}><Text style={S.bulletBold}>Ronco alto ou acordar engasgado</Text> significa que falta ar no cérebro. Procure o posto (UBS).</Text>
             </View>
             <View style={S.bulletRow}>
-              <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
-              <Text style={S.bulletText}><Text style={S.bulletBold}>Álcool:</Text> Ajuda a pegar no sono, mas <Text style={S.bulletBold}>estraga</Text> a qualidade dele. Você acorda mais cansado.</Text>
+              <BulletPointIcon size={6} color={cIndigo} />
+              <Text style={[S.bulletText, { color: cIndigo }]}><Text style={S.bulletBold}>Obesidade e travesseiros:</Text> Deitar de lado melhora o ronco. Perder peso ajuda na respiração noturna.</Text>
+            </View>
+          </View>
+          
+          {/* Card 4 – O que evitar (Estimulantes) */}
+          <View style={[S.card, { backgroundColor: bgRed, borderColor: '#fecaca' }]}>
+            <View style={[S.cardHeader, { borderBottomColor: '#fca5a5' }]}>
+              <CoffeeIcon size={16} color={cRed} />
+              <Text style={[S.cardTitle, { color: cRed }]}>
+                4. O Que Rouba Seu Sono
+              </Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cRed} />
+              <Text style={[S.bulletText, { color: cRed }]}><Text style={S.bulletBold}>Café e chás:</Text> Nada de café ou chimarrão depois das 3 da tarde.</Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cRed} />
+              <Text style={[S.bulletText, { color: cRed }]}><Text style={S.bulletBold}>Álcool e Comida:</Text> Cerveja piora o sono. Jante leve à noite!</Text>
             </View>
           </View>
         </View>
 
         {/* ---- COLUNA DIREITA ---- */}
         <View style={S.col}>
-          {/* Card 5 – Faxina Mental: Técnica 4-7-8 */}
-          <View style={S.card}>
-            <View style={S.cardHeader}>
-              <MindIcon size={18} color={pdfTheme.colors.purple.text} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.purple.text }]}>
-                5. Acalmando o Pensamento
+          {/* Card 5 – Hábitos de Dia */}
+          <View style={[S.card, { backgroundColor: bgOrange, borderColor: '#fde68a' }]}>
+            <View style={[S.cardHeader, { borderBottomColor: '#fcd34d' }]}>
+              <SunIcon size={16} color={cOrange} />
+              <Text style={[S.cardTitle, { color: cOrange }]}>
+                5. O Dia Ajuda a Noite
               </Text>
             </View>
-            <Text style={S.bodyText}>
-              Se a mente não para, use a técnica de respiração <Text style={S.bulletBold}>4-7-8</Text>:
-            </Text>
-            <View style={S.highlightPill}>
-              <Text style={S.highlightText}>
-                Inale por 4 seg. Segure por 7 seg. Solte o ar (fazendo barulho) por 8 seg. Repita 4 vezes.
-              </Text>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cOrange} />
+              <Text style={[S.bulletText, { color: cOrange }]}><Text style={S.bulletBold}>Luz do Sol:</Text> Tome 15 minutos de sol logo cedo. Isso avisa o corpo que o dia começou.</Text>
             </View>
-            <View style={S.positiveStrip}>
-              <TipBulletIcon size={10} color={pdfTheme.colors.purple.text} />
-              <Text style={[S.positiveText, { color: pdfTheme.colors.purple.textDark }]}>
-                <Text style={{ fontWeight: 'bold' }}>Diário da Preocupação:</Text> Se o problema martela na cabeça, anote-o em um papel com a frase: "Vou resolver isso amanhã às 09h".
-              </Text>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cOrange} />
+              <Text style={[S.bulletText, { color: cOrange }]}><Text style={S.bulletBold}>Cansaço bom:</Text> Faça esporte de dia, mas evite no final do dia perto de dormir!</Text>
             </View>
           </View>
 
-          {/* Card 6 – Sinais de Alerta */}
-          <View style={[S.card, { backgroundColor: '#fff5f5' }]}>
-            <View style={S.cardHeader}>
-              <AlertBulletIcon size={18} color={pdfTheme.colors.danger.strong} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.danger.strong }]}>
-                6. Quando Buscar Ajuda Profissional?
+          {/* Card 6 – Acalmando o Pensamento */}
+          <View style={[S.card, { backgroundColor: bgBlue, borderColor: '#bfdbfe' }]}>
+            <View style={[S.cardHeader, { borderBottomColor: '#93c5fd' }]}>
+              <HeartPulseIcon size={16} color={cBlue} />
+              <Text style={[S.cardTitle, { color: cBlue }]}>
+                6. Mente Calma
               </Text>
             </View>
-            <Text style={S.bodyText}>
-              Não sofra em silêncio. Procure o postinho se sentir:
+            <Text style={[S.bodyText, { color: cBlue }]}>
+              Use a técnica do <Text style={S.bulletBold}>Diário da Preocupação</Text>:
             </Text>
+            <View style={[S.highlightPill, { borderColor: '#93c5fd' }]}>
+              <Text style={[S.highlightText, { color: cBlue }]}>
+                Se o problema martelar, anote no papel e pense: "Vou olhar isso amanhã às 9h". E tire da cabeça!
+              </Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cBlue} />
+              <Text style={[S.bulletText, { color: cBlue }]}>Respire fundo 3 vezes antes de dormir e solte o ar devagar pela boca.</Text>
+            </View>
+          </View>
+
+          {/* Card 7 – Sinais de Alerta */}
+          <View style={[S.card, { backgroundColor: '#fff1f2', borderColor: '#fecaca' }]}>
+            <View style={[S.cardHeader, { borderBottomColor: '#fca5a5' }]}>
+              <AlertTriangleIcon size={16} color={cRed} />
+              <Text style={[S.cardTitle, { color: cRed }]}>
+                7. Cuidado com Remédios e Mente Triste
+              </Text>
+            </View>
+            <View style={[S.highlightPill, { borderColor: cRed }]}>
+              <Text style={[S.highlightText, { color: cRed }]}>
+                NUNCA tome remédios "tarja preta" de outras pessoas. Eles viciam e pioram o sono.
+              </Text>
+            </View>
             <View style={S.chipRow}>
-              {['Tristeza Constante', 'Falta de Ar', 'Irritação Forte', 'Medo Excessivo', 'Perda de Vontade'].map((f) => (
-                <View key={f} style={[S.chip, { backgroundColor: '#fff', borderColor: '#feb2b2' }]}>
-                  <Text style={[S.chipText, { color: '#e53e3e' }]}>{f}</Text>
+              {['Isolamento', 'Irritação Forte', 'Falta de Vontade'].map((f) => (
+                <View key={f} style={[S.chip, { borderColor: cRed }]}>
+                  <Text style={[S.chipText, { color: cRed }]}>{f}</Text>
                 </View>
               ))}
             </View>
-            <View style={[S.alertStrip, { backgroundColor: '#fff' }]}>
-              <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
-              <Text style={[S.alertText, { fontSize: 7 }]}>
-                <Text style={{ fontWeight: 'bold' }}>Automedicação:</Text> Nunca use remédios "faixa preta" de vizinhos. Eles causam vício e pioram a memória.
-              </Text>
-            </View>
+            <Text style={[S.bodyText, { color: cRed, marginTop: 4, fontWeight: 'bold' }]}>
+              Busque a UBS com urgência se sentir os itens acima!
+            </Text>
           </View>
 
-          {/* Banner de Saúde Mental */}
-          <View style={[S.card, { backgroundColor: pdfTheme.colors.softBg, borderColor: pdfTheme.colors.primary }]}>
-             <Text style={[S.bodyText, { textAlign: 'center', fontStyle: 'italic' }]}>
-               "Cuidar da mente é o primeiro passo para o corpo não adoecer."
-             </Text>
-          </View>
-
-          {/* Footer reminder */}
-          <View style={S.reminderBanner}>
-            <SleepIcon size={22} color={pdfTheme.colors.text.white} />
-            <Text style={S.reminderText}>
-              <Text style={S.reminderBold}>Sono é prioridade, não luxo!</Text> Enquanto você dorme, seu cérebro limpa toxinas e fixa o aprendizado. Priorize seu descanso hoje.
+          {/* Footer banner */}
+          <View style={{ marginTop: 6, backgroundColor: pdfTheme.colors.primaryDark, padding: 8, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <MoonIcon size={18} color="#fff" />
+            <Text style={{ flex: 1, fontSize: 8, color: '#fff' }}>
+              <Text style={{ fontWeight: 'bold' }}>Dormir não é luxo, é remédio!</Text> O cérebro precisa do sono para curar sua saúde.
             </Text>
           </View>
         </View>
+
       </View>
     </BaseDocument>
   );
