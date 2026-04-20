@@ -61,6 +61,21 @@ const AlertTriangleIcon = ({ size = 24, color = "#000" }) => (
     <Path d="M12 9v4 M12 17h.01" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
+
+const SofaIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0Z" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M4 18v2 M20 18v2" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M12 4v9" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const EyeOffIcon = ({ size = 24, color = "#000" }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path d="M9.88 9.88a3 3 0 1 0 4.24 4.24 M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68 M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61 M2 2l20 20" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 // --------------------------------------------------------
 
 const S = StyleSheet.create({
@@ -224,30 +239,12 @@ export const MentalHealthDocument: React.FC<MentalHealthDocumentProps> = ({
             </View>
           </View>
 
-          {/* Card 3 – Pneumologia e Ronco */}
-          <View style={[S.card, { backgroundColor: bgIndigo, borderColor: '#c7d2fe' }]}>
-            <View style={[S.cardHeader, { borderBottomColor: '#a5b4fc' }]}>
-              <WindIcon size={16} color={cIndigo} />
-              <Text style={[S.cardTitle, { color: cIndigo }]}>
-                3. Ronco e Apneia Não São Normais
-              </Text>
-            </View>
-            <View style={S.bulletRow}>
-              <BulletPointIcon size={6} color={cIndigo} />
-              <Text style={[S.bulletText, { color: cIndigo }]}><Text style={S.bulletBold}>Ronco alto ou acordar engasgado</Text> significa que falta ar no cérebro. Procure o posto (UBS).</Text>
-            </View>
-            <View style={S.bulletRow}>
-              <BulletPointIcon size={6} color={cIndigo} />
-              <Text style={[S.bulletText, { color: cIndigo }]}><Text style={S.bulletBold}>Obesidade e travesseiros:</Text> Deitar de lado melhora o ronco. Perder peso ajuda na respiração noturna.</Text>
-            </View>
-          </View>
-          
-          {/* Card 4 – O que evitar (Estimulantes) */}
+          {/* Card 3 - O Que Rouba Seu Sono */}
           <View style={[S.card, { backgroundColor: bgRed, borderColor: '#fecaca' }]}>
             <View style={[S.cardHeader, { borderBottomColor: '#fca5a5' }]}>
               <CoffeeIcon size={16} color={cRed} />
               <Text style={[S.cardTitle, { color: cRed }]}>
-                4. O Que Rouba Seu Sono
+                3. O Que Rouba Seu Sono
               </Text>
             </View>
             <View style={S.bulletRow}>
@@ -259,16 +256,52 @@ export const MentalHealthDocument: React.FC<MentalHealthDocumentProps> = ({
               <Text style={[S.bulletText, { color: cRed }]}><Text style={S.bulletBold}>Álcool e Comida:</Text> Cerveja piora o sono. Jante leve à noite!</Text>
             </View>
           </View>
+
+          {/* Card 4 - O Perigo do Cochilo */}
+          <View style={[S.card, { backgroundColor: pdfTheme.colors.warning.bg, borderColor: pdfTheme.colors.warning.border }]}>
+            <View style={[S.cardHeader, { borderBottomColor: pdfTheme.colors.border }]}>
+              <SofaIcon size={16} color={cOrange} />
+              <Text style={[S.cardTitle, { color: cOrange }]}>
+                4. O Perigo do Cochilo
+              </Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cOrange} />
+              <Text style={[S.bulletText, { color: cOrange }]}><Text style={S.bulletBold}>Sonecas longas de dia</Text> roubam completamente o sono da noite.</Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cOrange} />
+              <Text style={[S.bulletText, { color: cOrange }]}>Se não aguentar, durma no máximo <Text style={S.bulletBold}>20 minutinhos</Text> após o almoço, e não depois disso.</Text>
+            </View>
+          </View>
+
+          {/* Card 5 – Pneumologia e Ronco */}
+          <View style={[S.card, { backgroundColor: bgIndigo, borderColor: '#c7d2fe' }]}>
+            <View style={[S.cardHeader, { borderBottomColor: '#a5b4fc' }]}>
+              <WindIcon size={16} color={cIndigo} />
+              <Text style={[S.cardTitle, { color: cIndigo }]}>
+                5. Ronco e Apneia Não São Normais
+              </Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cIndigo} />
+              <Text style={[S.bulletText, { color: cIndigo }]}><Text style={S.bulletBold}>Ronco alto ou acordar engasgado</Text> significa que falta ar no cérebro. Procure o posto (UBS).</Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cIndigo} />
+              <Text style={[S.bulletText, { color: cIndigo }]}><Text style={S.bulletBold}>Obesidade e travesseiros:</Text> Deitar de lado melhora o ronco. Perder peso ajuda na respiração noturna.</Text>
+            </View>
+          </View>
         </View>
 
         {/* ---- COLUNA DIREITA ---- */}
         <View style={S.col}>
-          {/* Card 5 – Hábitos de Dia */}
+          {/* Card 6 – Hábitos de Dia */}
           <View style={[S.card, { backgroundColor: bgOrange, borderColor: '#fde68a' }]}>
             <View style={[S.cardHeader, { borderBottomColor: '#fcd34d' }]}>
               <SunIcon size={16} color={cOrange} />
               <Text style={[S.cardTitle, { color: cOrange }]}>
-                5. O Dia Ajuda a Noite
+                6. O Dia Ajuda a Noite
               </Text>
             </View>
             <View style={S.bulletRow}>
@@ -281,12 +314,30 @@ export const MentalHealthDocument: React.FC<MentalHealthDocumentProps> = ({
             </View>
           </View>
 
-          {/* Card 6 – Acalmando o Pensamento */}
+          {/* Card 7 - A Cama é Exclusiva */}
+          <View style={[S.card, { backgroundColor: pdfTheme.colors.neutral?.bg || '#f8fafc', borderColor: pdfTheme.colors.border }]}>
+            <View style={[S.cardHeader, { borderBottomColor: pdfTheme.colors.bgLight }]}>
+              <EyeOffIcon size={16} color={cTeal} />
+              <Text style={[S.cardTitle, { color: cTeal }]}>
+                7. Esconda o Relógio!
+              </Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cTeal} />
+              <Text style={[S.bulletText, { color: cTeal }]}>Estar na cama sem dormir e ficar olhando a hora no celular <Text style={S.bulletBold}>aumenta a ansiedade</Text>.</Text>
+            </View>
+            <View style={S.bulletRow}>
+              <BulletPointIcon size={6} color={cTeal} />
+              <Text style={[S.bulletText, { color: cTeal }]}>Deite APENAS para dormir. Evite comer e assistir TV deitado. O cérebro precisa associar a cama só ao descanso profundo.</Text>
+            </View>
+          </View>
+
+          {/* Card 8 – Acalmando o Pensamento */}
           <View style={[S.card, { backgroundColor: bgBlue, borderColor: '#bfdbfe' }]}>
             <View style={[S.cardHeader, { borderBottomColor: '#93c5fd' }]}>
               <HeartPulseIcon size={16} color={cBlue} />
               <Text style={[S.cardTitle, { color: cBlue }]}>
-                6. Mente Calma
+                8. Mente Calma
               </Text>
             </View>
             <Text style={[S.bodyText, { color: cBlue }]}>
@@ -303,12 +354,12 @@ export const MentalHealthDocument: React.FC<MentalHealthDocumentProps> = ({
             </View>
           </View>
 
-          {/* Card 7 – Sinais de Alerta */}
+          {/* Card 9 – Sinais de Alerta */}
           <View style={[S.card, { backgroundColor: '#fff1f2', borderColor: '#fecaca' }]}>
             <View style={[S.cardHeader, { borderBottomColor: '#fca5a5' }]}>
               <AlertTriangleIcon size={16} color={cRed} />
               <Text style={[S.cardTitle, { color: cRed }]}>
-                7. Cuidado com Remédios e Mente Triste
+                9. Cuidado com Remédios e Mente Triste
               </Text>
             </View>
             <View style={[S.highlightPill, { borderColor: cRed }]}>
