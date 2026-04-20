@@ -98,7 +98,7 @@ const WoundCaseList: React.FC<WoundCaseListProps> = ({
         />
       </div>
 
-      <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+      <div className="space-y-2 pr-1">
         {filtered.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">
             Sem feridas para o filtro selecionado.

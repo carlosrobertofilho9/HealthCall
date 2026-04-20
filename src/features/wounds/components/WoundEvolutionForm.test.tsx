@@ -14,7 +14,7 @@ describe('WoundEvolutionForm', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Salvar evolução/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Concluir Evolução Clínica/i }));
 
     expect(await screen.findByText(/Comprimento é obrigatório/i)).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
@@ -31,7 +31,7 @@ describe('WoundEvolutionForm', () => {
     );
 
     fireEvent.click(screen.getByLabelText(/Não conformidade detectada/i));
-    fireEvent.click(screen.getByRole('button', { name: /Salvar evolução/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Concluir Evolução Clínica/i }));
 
     expect(await screen.findByText(/Selecione o tipo de não conformidade/i)).toBeInTheDocument();
   });

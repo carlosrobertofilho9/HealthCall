@@ -1,13 +1,14 @@
-import type { WoundConflict, WoundSyncMutation } from '../types';
+import type { WoundConflict, WoundPhotoExifMetadata, WoundSyncMutation } from '../types';
 
 const DB_NAME = 'healthcall-wound-offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   drafts: 'woundDrafts',
   queue: 'woundMutationsQueue',
   photoBlobs: 'woundPhotoBlobs',
   conflicts: 'woundConflicts',
+  photoMetadata: 'woundPhotoMetadata',
 } as const;
 
 type WoundDraftRecord = {
@@ -24,6 +25,16 @@ type WoundPhotoBlobRecord = {
   mimeType: string;
   blob: Blob;
   createdAt: number;
+};
+
+export type WoundPhotoMetadataCacheRecord = {
+  id: string;
+  photo_id: string;
+  wound_id: string;
+  storage_path: string;
+  captured_at: string;
+  metadata: WoundPhotoExifMetadata | null;
+  updatedAt: number;
 };
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -51,6 +62,10 @@ function openDatabase(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(STORES.conflicts)) {
         db.createObjectStore(STORES.conflicts, { keyPath: 'id' });
+      }
+
+      if (!db.objectStoreNames.contains(STORES.photoMetadata)) {
+        db.createObjectStore(STORES.photoMetadata, { keyPath: 'id' });
       }
     };
 
@@ -197,6 +212,30 @@ export async function getWoundPhotoBlob(id: string): Promise<WoundPhotoBlobRecor
 
 export async function deleteWoundPhotoBlob(id: string): Promise<void> {
   await withStore(STORES.photoBlobs, 'readwrite', (store) => store.delete(id));
+}
+
+export async function saveWoundPhotoMetadataCache(input: Omit<WoundPhotoMetadataCacheRecord, 'id' | 'updatedAt'>): Promise<void> {
+  const payload: WoundPhotoMetadataCacheRecord = {
+    id: `photo-meta:${input.photo_id}`,
+    ...input,
+    updatedAt: Date.now(),
+  };
+
+  await withStore(STORES.photoMetadata, 'readwrite', (store) => store.put(payload));
+}
+
+export async function getWoundPhotoMetadataCache(photoId: string): Promise<WoundPhotoMetadataCacheRecord | null> {
+  const result = await withStore<WoundPhotoMetadataCacheRecord | undefined>(
+    STORES.photoMetadata,
+    'readonly',
+    (store) => store.get(`photo-meta:${photoId}`),
+  );
+
+  return result ?? null;
+}
+
+export async function deleteWoundPhotoMetadataCache(photoId: string): Promise<void> {
+  await withStore(STORES.photoMetadata, 'readwrite', (store) => store.delete(`photo-meta:${photoId}`));
 }
 
 export async function addWoundConflict(conflict: WoundConflict): Promise<void> {

@@ -123,7 +123,6 @@ const WoundCloseModal: React.FC<WoundCloseModalProps> = ({ isOpen, onClose, onSu
               id="wound-close-final-photo"
               type="file"
               accept="image/*"
-              capture="environment"
               className="sr-only"
               onChange={(event) => {
                 const selectedFile = (event.target.files ?? [])[0] ?? null;

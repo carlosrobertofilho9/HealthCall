@@ -350,7 +350,6 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
                 id="wound-initial-photos"
                 type="file"
                 accept="image/*"
-                capture="environment"
                 multiple
                 disabled={missingRequiredFields}
                 className="sr-only"

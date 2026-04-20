@@ -13,6 +13,8 @@ import WoundEvolutionTable from '../components/WoundEvolutionTable';
 import WoundCloseModal from '../components/WoundCloseModal';
 import WoundReopenModal from '../components/WoundReopenModal';
 import WoundSyncIndicator from '../components/WoundSyncIndicator';
+import WoundEmptyState from '../components/WoundEmptyState';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useWounds } from '../hooks/useWounds';
 import { useWoundSync } from '../hooks/useWoundSync';
 import { createOfflineId, saveWoundPhotoBlob } from '../services/woundOfflineStore';
@@ -55,9 +57,10 @@ const WoundsPage: React.FC = () => {
   } = useWoundSync();
 
   const [mobileTab, setMobileTab] = useState<'patients' | 'summary' | 'photos' | 'table'>('patients');
-  const [desktopTab, setDesktopTab] = useState<'summary' | 'photos' | 'table'>('summary');
+  const [desktopTab, setDesktopTab] = useState<'summary' | 'photos'>('summary');
   const [showNewWoundModal, setShowNewWoundModal] = useState(false);
   const [showComparatorModal, setShowComparatorModal] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [draft, setDraft] = useState<Record<string, unknown> | null>(null);
@@ -244,6 +247,30 @@ const WoundsPage: React.FC = () => {
 
   const selectedCodes = wounds.map((wound) => wound.anatomical_code);
 
+  const handleDesktopTabChange = (value: string) => {
+    if (value === 'table') {
+      if (!selectedWoundId) return;
+      setShowTableModal(true);
+      return;
+    }
+
+    setDesktopTab(value as 'summary' | 'photos');
+  };
+
+  const handleMobileTabChange = (value: string) => {
+    if (value === 'table') {
+      if (!selectedWoundId) {
+        setMobileTab('patients');
+        return;
+      }
+
+      navigate(`/wounds/table/${selectedWoundId}`);
+      return;
+    }
+
+    setMobileTab(value as 'patients' | 'summary' | 'photos' | 'table');
+  };
+
   return (
     <div className="flex w-full flex-col gap-4 pb-4 lg:h-full lg:overflow-hidden lg:pb-0">
       <header className="rounded-2xl border border-border bg-card p-4 lg:rounded-none lg:border-0 lg:border-b">
@@ -278,9 +305,9 @@ const WoundsPage: React.FC = () => {
       )}
 
       {isDesktopLayout ? (
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <div className="grid min-h-0 flex-1 grid-cols-12 gap-4 overflow-hidden">
-            <aside className="col-span-3 overflow-y-auto pb-2 pr-1">
+        <div className="min-h-0 flex-1">
+          <div className="grid h-full min-h-0 grid-cols-12 gap-4">
+            <aside className="col-span-3 h-full overflow-y-auto pb-6 pr-1 custom-scrollbar">
               <WoundPatientList
                 patients={patients}
                 selectedPatientId={selectedPatientId}
@@ -290,7 +317,7 @@ const WoundsPage: React.FC = () => {
               />
             </aside>
 
-            <aside className="col-span-3 overflow-y-auto pb-2 pr-1">
+            <aside className="col-span-3 h-full overflow-y-auto pb-6 pr-1 custom-scrollbar">
               <WoundCaseList
                 wounds={wounds}
                 selectedWoundId={selectedWoundId}
@@ -300,47 +327,77 @@ const WoundsPage: React.FC = () => {
               />
             </aside>
 
-            <main className="col-span-6 space-y-4 overflow-y-auto pb-2 pr-1">
-              <WoundCaseHeader
-                wound={selectedWound}
-                onCloseCase={() => setShowCloseModal(true)}
-                onReopenCase={() => setShowReopenModal(true)}
-                onGenerateUbsDocument={handleGenerateUbsDocument}
-              />
-
-              <Tabs
-                value={desktopTab}
-                onValueChange={(value) => setDesktopTab(value as 'summary' | 'photos' | 'table')}
-                className="space-y-3"
-              >
-                <TabsList>
-                  <TabsTrigger value="summary">Resumo</TabsTrigger>
-                  <TabsTrigger value="photos">Fotos</TabsTrigger>
-                  <TabsTrigger value="table">Tabela</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="summary" className="space-y-4">
-                  <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
-                  <WoundTimeline entries={entries} photos={photos} />
-                </TabsContent>
-
-                <TabsContent value="photos" className="space-y-4">
-                  <WoundGallery photos={photos} onDeletePhoto={removePhoto} />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowComparatorModal(true)}
-                    disabled={photos.length < 2}
+            <main className="col-span-6 h-full overflow-y-auto pb-6 pr-1 custom-scrollbar">
+              <AnimatePresence mode="wait">
+                {!selectedPatientId ? (
+                  <motion.div
+                    key="no-patient"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
                   >
-                    Comparar fotos
-                  </Button>
-                </TabsContent>
+                    <WoundEmptyState type="selection" />
+                  </motion.div>
+                ) : !selectedWoundId ? (
+                  <motion.div
+                    key="no-wound"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <WoundEmptyState type="wound" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key={selectedWoundId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <WoundCaseHeader
+                      wound={selectedWound}
+                      onCloseCase={() => setShowCloseModal(true)}
+                      onReopenCase={() => setShowReopenModal(true)}
+                      onGenerateUbsDocument={handleGenerateUbsDocument}
+                    />
 
-                <TabsContent value="table">
-                  <WoundEvolutionTable entries={entries} />
-                </TabsContent>
-              </Tabs>
+                    <Tabs
+                      value={desktopTab}
+                      onValueChange={handleDesktopTabChange}
+                      className="space-y-3"
+                    >
+                      <TabsList className="bg-background/40 backdrop-blur-sm border border-border/40 p-1 rounded-2xl">
+                        <TabsTrigger value="summary" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">Resumo</TabsTrigger>
+                        <TabsTrigger value="photos" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">Fotos</TabsTrigger>
+                        <TabsTrigger value="table" className="rounded-xl font-bold uppercase tracking-widest text-[10px]">Tabela</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="summary" className="space-y-4 outline-none">
+                        <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
+                        <WoundTimeline entries={entries} photos={photos} />
+                      </TabsContent>
+
+                      <TabsContent value="photos" className="space-y-4 outline-none">
+                        <WoundGallery photos={photos} onDeletePhoto={removePhoto} />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setShowComparatorModal(true)}
+                          disabled={photos.length < 2}
+                          className="w-full h-11 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-secondary/50 hover:bg-secondary transition-all"
+                        >
+                          Comparar fotos evolutivas
+                        </Button>
+                      </TabsContent>
+                    </Tabs>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </main>
           </div>
         </div>
@@ -348,7 +405,7 @@ const WoundsPage: React.FC = () => {
         <div>
           <Tabs
             value={mobileTab}
-            onValueChange={(value) => setMobileTab(value as 'patients' | 'summary' | 'photos' | 'table')}
+            onValueChange={handleMobileTabChange}
             className="space-y-4"
           >
             <TabsList className="w-full justify-between">
@@ -375,15 +432,28 @@ const WoundsPage: React.FC = () => {
               />
             </TabsContent>
 
-            <TabsContent value="summary" className="space-y-3">
-              <WoundCaseHeader
-                wound={selectedWound}
-                onCloseCase={() => setShowCloseModal(true)}
-                onReopenCase={() => setShowReopenModal(true)}
-                onGenerateUbsDocument={handleGenerateUbsDocument}
-              />
-              <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
-              <WoundTimeline entries={entries} photos={photos} />
+            <TabsContent value="summary" className="space-y-3 outline-none">
+              <AnimatePresence mode="wait">
+                {!selectedWound ? (
+                  <WoundEmptyState type="wound" />
+                ) : (
+                  <motion.div
+                    key={selectedWoundId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-4"
+                  >
+                    <WoundCaseHeader
+                      wound={selectedWound}
+                      onCloseCase={() => setShowCloseModal(true)}
+                      onReopenCase={() => setShowReopenModal(true)}
+                      onGenerateUbsDocument={handleGenerateUbsDocument}
+                    />
+                    <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
+                    <WoundTimeline entries={entries} photos={photos} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </TabsContent>
 
             <TabsContent value="photos" className="space-y-3">
@@ -397,10 +467,6 @@ const WoundsPage: React.FC = () => {
               >
                 Comparar fotos
               </Button>
-            </TabsContent>
-
-            <TabsContent value="table">
-              <WoundEvolutionTable entries={entries} />
             </TabsContent>
           </Tabs>
         </div>
@@ -426,6 +492,19 @@ const WoundsPage: React.FC = () => {
         panelClassName="max-h-[90vh] max-w-5xl overflow-y-auto p-4 sm:p-5"
       >
         <WoundPhotoComparator photos={photos} />
+      </Modal>
+
+      <Modal
+        isOpen={showTableModal}
+        onClose={() => setShowTableModal(false)}
+        panelClassName="max-h-[92vh] max-w-[96vw] overflow-y-auto p-4 sm:p-5"
+      >
+        <WoundEvolutionTable
+          entries={entries}
+          mode="modal"
+          patient={selectedPatient}
+          wound={selectedWound}
+        />
       </Modal>
 
       <WoundCloseModal

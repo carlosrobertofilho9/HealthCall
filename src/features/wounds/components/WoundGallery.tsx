@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Button, Card } from '@/components/ui';
 import type { WoundPhoto } from '../types';
+import WoundPhotoMetadataCard from './WoundPhotoMetadataCard';
 
 interface WoundGalleryProps {
   photos: WoundPhoto[];
@@ -36,6 +37,8 @@ const WoundGallery: React.FC<WoundGalleryProps> = ({ photos, onDeletePhoto }) =>
               </div>
             )}
           </div>
+
+          <WoundPhotoMetadataCard key={activePhoto.id} photo={activePhoto} />
 
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>{new Date(activePhoto.captured_at).toLocaleString('pt-BR')}</span>

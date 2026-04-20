@@ -4,6 +4,8 @@ import { Badge, Button } from '@/components/ui';
 import { FileText, History, RotateCcw } from 'lucide-react';
 import AnatomicalMiniMap from '@/components/clinical/AnatomicalMiniMap';
 
+import { cn } from '@/lib/utils';
+
 interface WoundCaseHeaderProps {
   wound: WoundCase | null;
   onCloseCase: () => void;
@@ -17,13 +19,7 @@ const WoundCaseHeader: React.FC<WoundCaseHeaderProps> = ({
   onReopenCase,
   onGenerateUbsDocument,
 }) => {
-  if (!wound) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <p className="text-sm text-muted-foreground">Selecione uma ferida para visualizar os detalhes.</p>
-      </div>
-    );
-  }
+  if (!wound) return null;
 
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
@@ -32,20 +28,29 @@ const WoundCaseHeader: React.FC<WoundCaseHeaderProps> = ({
           <AnatomicalMiniMap code={wound.anatomical_code} size={42} className="shrink-0" />
           <div>
             <h2 className="text-lg font-bold text-foreground leading-tight">{wound.anatomical_code}</h2>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-tight">Etiologia: <span className="text-foreground">{wound.etiology}</span></p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-tight">
+              Etiologia: <span className="text-foreground">{wound.etiology}</span>
+            </p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Badge variant={wound.status === 'encerrada' ? 'muted' : 'warning'}>{wound.status}</Badge>
+          <Badge 
+            variant={wound.status === 'encerrada' ? 'muted' : 'warning'}
+            className={cn(
+               wound.status === 'ativa' && "animate-pulse"
+            )}
+          >
+            {wound.status}
+          </Badge>
           {wound.closure_type && <Badge variant="outline">Fechamento: {wound.closure_type}</Badge>}
           <Badge variant="secondary">Versão {wound.version}</Badge>
         </div>
       </div>
 
-      <div className="text-xs text-muted-foreground">
-        <p>Início da lesão: {new Date(wound.started_at).toLocaleDateString('pt-BR')}</p>
-        {wound.last_entry_at && <p>Última evolução: {new Date(wound.last_entry_at).toLocaleString('pt-BR')}</p>}
+      <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60 flex gap-4">
+        <p>Início: {new Date(wound.started_at).toLocaleDateString('pt-BR')}</p>
+        {wound.last_entry_at && <p>Última: {new Date(wound.last_entry_at).toLocaleDateString('pt-BR')}</p>}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/50">
@@ -72,7 +77,7 @@ const WoundCaseHeader: React.FC<WoundCaseHeaderProps> = ({
             variant="ghost" 
             size="sm" 
             onClick={onCloseCase}
-            className="h-8 px-2 text-xs text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            className="h-8 px-2 text-xs text-muted-foreground/50 hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
             <History className="mr-1.5 h-3.5 w-3.5" />
             Encerrar acompanhamento

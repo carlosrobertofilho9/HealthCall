@@ -98,6 +98,27 @@ export interface WoundPhoto {
   signed_url?: string | null;
 }
 
+export interface WoundPhotoExifMetadata {
+  make?: string;
+  model?: string;
+  software?: string;
+  dateTimeOriginal?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export type WoundPhotoMetadataStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
+
+export type WoundPhotoMetadataSource = 'memory' | 'indexeddb' | 'supabase' | null;
+
+export interface WoundPhotoMetadataResult {
+  status: WoundPhotoMetadataStatus;
+  metadata: WoundPhotoExifMetadata | null;
+  error: string | null;
+  source: WoundPhotoMetadataSource;
+  reload: () => void;
+}
+
 export interface WoundStatusEvent {
   id: string;
   wound_id: string;

@@ -552,6 +552,162 @@ html[data-theme="safira"] {
 }
 
 /* =============================================================================
+   Estilos Visuais - Tabela de Evolução de Curativos
+   ============================================================================= */
+.wound-evolution-document-header {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.wound-evolution-document-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  padding: 6px 12px;
+}
+
+.wound-evolution-brand {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.wound-evolution-ribbon-title {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wound-evolution-document-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+}
+
+.wound-evolution-document-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--foreground);
+}
+
+.wound-evolution-generated-at {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.wound-evolution-document-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 8px 12px 10px;
+  background: var(--background);
+}
+
+.wound-evolution-meta-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 6px 10px;
+}
+
+.wound-evolution-meta-card--wide {
+  grid-column: span 3;
+}
+
+.wound-evolution-meta-label {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.wound-evolution-meta-value {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--card-foreground);
+  line-height: 1.2;
+}
+
+.wound-evolution-meta-subvalue {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+
+.wound-evolution-table-wrapper {
+  border-color: var(--border) !important;
+}
+
+.wound-evolution-table-wrapper table {
+  background: var(--card);
+}
+
+.wound-evolution-table-wrapper table thead tr {
+  background: var(--background);
+}
+
+.wound-evolution-table-wrapper table th {
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 800;
+  border-bottom-color: var(--border);
+}
+
+.wound-evolution-head-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+
+.wound-evolution-head-cell small {
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.wound-evolution-table-wrapper table tbody tr:nth-child(even) {
+  background: var(--background);
+}
+
+@media (max-width: 1024px) {
+  .wound-evolution-document-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wound-evolution-meta-card--wide {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .wound-evolution-document-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wound-evolution-meta-card--wide {
+    grid-column: span 1;
+  }
+}
+
+/* =============================================================================
    Estilos de Impressão - Página de Marcações
    ============================================================================= */
 @media print {
@@ -577,12 +733,148 @@ html[data-theme="safira"] {
 
   /* Configuração da página */
   @page {
-    size: A4;
-    margin: 1.5cm;
+    size: A4 landscape;
+    margin: 8mm;
   }
 
   /* Ajustar tamanho de fonte para impressão */
   html {
     font-size: 12px;
+  }
+
+  .wound-evolution-print {
+    background: white !important;
+  }
+
+  .wound-evolution-table {
+    border: none !important;
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  .wound-evolution-document-header {
+    border-color: #c4b5fd !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .wound-evolution-document-ribbon {
+    background: #7c3aed !important;
+    color: #ffffff !important;
+  }
+
+  .wound-evolution-document-title-row {
+    border-bottom-color: #c4b5fd !important;
+    background: #f5f3ff !important;
+  }
+
+  .wound-evolution-document-title {
+    color: #5b21b6 !important;
+  }
+
+  .wound-evolution-generated-at {
+    color: #6b7280 !important;
+  }
+
+  .wound-evolution-document-grid {
+    background: #faf8ff !important;
+  }
+
+  .wound-evolution-meta-card {
+    border-color: #d8b4fe !important;
+    background: #ffffff !important;
+  }
+
+  .wound-evolution-meta-label {
+    color: #6b7280 !important;
+  }
+
+  .wound-evolution-meta-value {
+    color: #111827 !important;
+  }
+
+  .wound-evolution-meta-subvalue {
+    color: #475569 !important;
+  }
+
+  .wound-evolution-actions {
+    display: none !important;
+  }
+
+  .wound-evolution-print table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    font-size: 8.4px !important;
+    min-width: 0 !important;
+  }
+
+  .wound-evolution-table-wrapper {
+    overflow: visible !important;
+    max-width: 100% !important;
+    border-color: #c4b5fd !important;
+  }
+
+  .wound-evolution-table-wrapper::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .wound-evolution-print thead tr {
+    background: #ede9fe !important;
+  }
+
+  .wound-evolution-print th {
+    color: #5b21b6 !important;
+    border-bottom: 1.5px solid #c4b5fd !important;
+    font-size: 8.2px !important;
+    padding: 10px 5px !important;
+  }
+
+  .wound-evolution-print .wound-evolution-head-cell small {
+    color: #7c3aed !important;
+    opacity: 0.9;
+  }
+
+  .wound-evolution-print thead {
+    display: table-header-group;
+  }
+
+  .wound-evolution-print tbody tr {
+    background: white !important;
+  }
+
+  .wound-evolution-print tbody tr:nth-child(even) {
+    background: #faf8ff !important;
+  }
+
+  .wound-evolution-print td {
+    font-size: 8.2px !important;
+    padding: 10px 5px !important;
+    line-height: 1.5 !important;
+    word-break: break-word;
+    border-bottom: 0.5px solid #ede9fe !important;
+  }
+
+  .wound-evolution-print .print-hide {
+    display: none !important;
+  }
+
+  .wound-evolution-print .print-observacoes {
+    width: 18% !important;
+    max-width: none !important;
+    white-space: normal !important;
+  }
+
+  .wound-evolution-print th:last-child,
+  .wound-evolution-print td:last-child {
+    width: 14% !important;
+    white-space: normal !important;
+  }
+
+  .wound-evolution-print tr,
+  .wound-evolution-print td,
+  .wound-evolution-print th {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }

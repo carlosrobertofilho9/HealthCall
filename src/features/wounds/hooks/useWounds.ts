@@ -18,12 +18,14 @@ import {
 } from '../services/woundService';
 import {
   createOfflineId,
+  deleteWoundPhotoMetadataCache,
   deleteWoundDraft,
   getWoundDraft,
   saveWoundDraft,
   saveWoundPhotoBlob,
 } from '../services/woundOfflineStore';
 import { queueWoundMutation } from '../services/woundSyncService';
+import { deleteWoundPhotoMetadataFromMemoryCache } from '../services/woundPhotoMetadataService';
 import type {
   CloseWoundCaseInput,
   CreateWoundCaseInput,
@@ -347,6 +349,8 @@ export function useWounds() {
 
     try {
       await deleteWoundPhoto(photoId);
+      deleteWoundPhotoMetadataFromMemoryCache(photoId);
+      await deleteWoundPhotoMetadataCache(photoId).catch(() => undefined);
       toast.success('Foto removida com sucesso.');
       await refreshWoundDetails(currentWoundId);
     } catch (err) {

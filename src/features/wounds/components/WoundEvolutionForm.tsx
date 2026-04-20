@@ -686,7 +686,6 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
                   id="wound-evolution-photos"
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   multiple
                   disabled={uploadLocked}
                   className="sr-only"

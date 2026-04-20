@@ -32,7 +32,7 @@ describe('WoundCloseModal', () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText(/Descreva o motivo do fechamento/i), {
+    fireEvent.change(screen.getByPlaceholderText(/Descreva detalhadamente o estado da ferida no fechamento/i), {
       target: { value: 'Paciente transferido para UBS.' },
     });
 
