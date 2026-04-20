@@ -3,6 +3,8 @@ import {
   Button,
   Card,
   Input,
+  DatePicker,
+  DateTimePicker,
   Select,
   SelectContent,
   SelectItem,
@@ -290,12 +292,10 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
                 <Clock className="h-3 w-3" />
                 Data e hora do registro *
               </label>
-              <Input
-                type="datetime-local"
+              <DateTimePicker
                 icon={<Clock className="h-4 w-4" />}
                 value={form.recorded_at}
-                onChange={(event) => setForm((prev) => ({ ...prev, recorded_at: event.target.value }))}
-                required
+                onChange={(value) => setForm((prev) => ({ ...prev, recorded_at: value }))}
                 className="font-medium"
               />
             </div>
@@ -667,12 +667,12 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <label className="text-xs font-semibold text-muted-foreground ml-1">Próxima troca sugerida</label>
-              <Input
-                type="date"
+              <DatePicker
                 icon={<Calendar className="h-4 w-4" />}
                 value={form.next_change_date}
-                onChange={(event) => setForm((prev) => ({ ...prev, next_change_date: event.target.value }))}
+                onChange={(value) => setForm((prev) => ({ ...prev, next_change_date: value }))}
                 className="font-medium"
+                placeholder="Selecione uma data"
               />
             </div>
 

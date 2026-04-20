@@ -252,7 +252,7 @@ const WoundsPage: React.FC = () => {
         </p>
       </header>
 
-      <div className="flex flex-wrap items-center gap-3 px-4">
+      <div className="flex flex-wrap items-center gap-3 px-4 xl:hidden">
         <WoundSyncIndicator
           isOnline={isOnline}
           isSyncing={isSyncing}
@@ -261,41 +261,7 @@ const WoundsPage: React.FC = () => {
           onSyncNow={() => {
             void syncNow();
           }}
-          className="xl:hidden"
         />
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setShowNewWoundModal(true)}
-            disabled={!selectedPatientId}
-          >
-            Nova ferida
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={() => navigate(`/wounds/evolution/${selectedWoundId}`)}
-            disabled={!selectedWoundId}
-          >
-            Nova evolução
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setMobileTab('photos');
-              setDesktopTab('photos');
-            }}
-            disabled={!selectedWoundId}
-            className="text-muted-foreground"
-          >
-            Ver fotos
-          </Button>
-        </div>
       </div>
 
       {conflicts.length > 0 && (
@@ -313,22 +279,26 @@ const WoundsPage: React.FC = () => {
       {isDesktopLayout ? (
         <div className="min-h-0 flex-1 overflow-hidden">
           <div className="grid min-h-0 flex-1 grid-cols-12 gap-4 overflow-hidden">
-            <aside className="col-span-4 space-y-4 overflow-y-auto pb-2 pr-1">
+            <aside className="col-span-3 overflow-y-auto pb-2 pr-1">
               <WoundPatientList
                 patients={patients}
                 selectedPatientId={selectedPatientId}
                 onSelectPatient={setSelectedPatientId}
                 onCreatePatient={createPatient}
               />
+            </aside>
+
+            <aside className="col-span-3 overflow-y-auto pb-2 pr-1">
               <WoundCaseList
                 wounds={wounds}
                 selectedWoundId={selectedWoundId}
                 onSelectWound={setSelectedWoundId}
                 onNewWound={() => setShowNewWoundModal(true)}
+                onNewEvolution={() => navigate(`/wounds/evolution/${selectedWoundId}`)}
               />
             </aside>
 
-            <main className="col-span-8 space-y-4 overflow-y-auto pb-2 pr-1">
+            <main className="col-span-6 space-y-4 overflow-y-auto pb-2 pr-1">
               <WoundCaseHeader
                 wound={selectedWound}
                 onCloseCase={() => setShowCloseModal(true)}
@@ -398,6 +368,7 @@ const WoundsPage: React.FC = () => {
                 selectedWoundId={selectedWoundId}
                 onSelectWound={setSelectedWoundId}
                 onNewWound={() => setShowNewWoundModal(true)}
+                onNewEvolution={() => navigate(`/wounds/evolution/${selectedWoundId}`)}
               />
             </TabsContent>
 

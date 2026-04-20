@@ -41,7 +41,9 @@ const WoundTimeline: React.FC<WoundTimelineProps> = ({ entries }) => {
                 <Badge variant="outline">Dor: {entry.pain_scale ?? '-'}</Badge>
               </div>
 
-              <p className="mt-1 text-xs text-muted-foreground">Profissional: {entry.professional_id}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Profissional: {entry.profiles?.full_name || entry.professional_id}
+              </p>
 
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
                 <Badge variant="secondary">

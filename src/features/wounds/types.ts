@@ -77,6 +77,9 @@ export interface WoundEntry {
   observations: string | null;
   next_change_date: string | null;
   created_at: string;
+  profiles?: {
+    full_name: string | null;
+  };
 }
 
 export interface WoundPhoto {
@@ -105,6 +108,9 @@ export interface WoundStatusEvent {
   performed_by: string;
   created_at: string;
   payload: Record<string, unknown>;
+  profiles?: {
+    full_name: string | null;
+  };
 }
 
 export interface WoundPatientWithSummary extends WoundPatient {

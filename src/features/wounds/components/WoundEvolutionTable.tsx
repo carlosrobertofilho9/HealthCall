@@ -81,7 +81,7 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({ entries }) =>
                       {entry.non_conformity_detected ? 'Sim' : 'Não'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs">{entry.professional_id}</TableCell>
+                  <TableCell className="text-xs">{entry.profiles?.full_name || entry.professional_id}</TableCell>
                   <TableCell>
                     <Button
                       type="button"

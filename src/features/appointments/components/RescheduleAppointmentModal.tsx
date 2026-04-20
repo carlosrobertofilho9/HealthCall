@@ -3,6 +3,7 @@ import { CalendarClock, X } from 'lucide-react';
 import {
   Button,
   Input,
+  DatePicker,
   Label,
   Modal,
   Select,
@@ -140,11 +141,9 @@ export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProp
 
           <div>
             <Label className="mb-2 block text-card-foreground">Nova data *</Label>
-            <Input
-              type="date"
+            <DatePicker
               value={dateValue}
-              onChange={(event) => setDateValue(event.target.value)}
-              min={formatDateToISO(new Date())}
+              onChange={(value) => setDateValue(value)}
               className="pl-12"
               icon={<CalendarClock className="h-4 w-4" />}
             />

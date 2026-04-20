@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { 
   Button, 
   Input, 
+  DatePicker,
   Modal, 
   Select, 
   SelectContent, 
@@ -91,12 +92,11 @@ const WoundCloseModal: React.FC<WoundCloseModalProps> = ({ isOpen, onClose, onSu
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground ml-1">Data de fechamento*</label>
-          <Input 
-            type="date" 
+          <DatePicker
             icon={<Calendar className="h-4 w-4" />}
-            value={closureDate} 
-            onChange={(event) => setClosureDate(event.target.value)} 
-            required 
+            value={closureDate}
+            onChange={(value) => setClosureDate(value)}
+            placeholder="Selecione a data"
           />
         </div>
 

@@ -4,6 +4,7 @@ import {
   Input,
   Textarea,
   Button,
+  DatePicker,
   Badge,
   Select,
   SelectContent,
@@ -14,10 +15,10 @@ import {
 import { formatCPF, formatCNS } from '@/lib/utils';
 import { extractPlaceholders } from '../utils/templateUtils';
 import { fieldHints, extraFieldsByTemplate, itemListConfigByTemplate } from '../utils/mockData';
-import { DocumentDateSelector } from './DocumentDateSelector';
 import {
   clampIsoDateToFutureRange,
   getTodayIsoDate,
+  DOCUMENTS_MAX_FUTURE_DAYS,
 } from '../utils/dateSequence';
 import {
   AlertCircle,
@@ -325,10 +326,44 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                 <Label htmlFor={key} className="pl-1 text-sm font-medium text-primary">
                   {label}
                 </Label>
-                <DocumentDateSelector
+                <DatePicker
                   value={value || getTodayIsoDate()}
                   onChange={(nextValue) => onChange(key, clampIsoDateToFutureRange(nextValue))}
-                />
+                  minDate={new Date()}
+                  maxDate={(() => {
+                    const d = new Date();
+                    d.setDate(d.getDate() + DOCUMENTS_MAX_FUTURE_DAYS);
+                    return d;
+                  })()}
+                >
+                  {({ open, value: val }) => (
+                    <div className="rounded-xl border border-border bg-secondary/20 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">Data inicial do monitoramento</p>
+                          <p className="text-sm font-semibold text-foreground">
+                            {val ? new Date(val + 'T12:00:00').toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                            }) : '___/___'}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="gap-2"
+                          onClick={open}
+                        >
+                          <Calendar className="h-4 w-4" />
+                          Selecionar
+                        </Button>
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">Permite de hoje até +{DOCUMENTS_MAX_FUTURE_DAYS} dias.</p>
+                    </div>
+                  )}
+                </DatePicker>
               </div>
             );
           }

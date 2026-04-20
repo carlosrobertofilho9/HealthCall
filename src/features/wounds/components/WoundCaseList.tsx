@@ -1,13 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { Badge, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import type { WoundCase, WoundCaseStatus } from '../types';
-import { Filter, Plus } from 'lucide-react';
+import { Filter, Plus, Play, Eye, CheckCircle, Lock, ListFilter } from 'lucide-react';
 
 interface WoundCaseListProps {
   wounds: WoundCase[];
   selectedWoundId: string | null;
   onSelectWound: (woundId: string) => void;
   onNewWound: () => void;
+  onNewEvolution: () => void;
 }
 
 const woundStatusLabels: Record<WoundCaseStatus, string> = {
@@ -22,6 +23,7 @@ const WoundCaseList: React.FC<WoundCaseListProps> = ({
   selectedWoundId,
   onSelectWound,
   onNewWound,
+  onNewEvolution,
 }) => {
   const [statusFilter, setStatusFilter] = useState<WoundCaseStatus | 'all'>('all');
   const [locationFilter, setLocationFilter] = useState('');
@@ -34,32 +36,56 @@ const WoundCaseList: React.FC<WoundCaseListProps> = ({
     });
   }, [locationFilter, statusFilter, wounds]);
 
+  const activeStatusIcon = useMemo(() => {
+    switch (statusFilter) {
+      case 'ativa': return <Play className="h-4 w-4 text-emerald-500" />;
+      case 'acompanhamento': return <Eye className="h-4 w-4 text-sky-500" />;
+      case 'cicatrizada': return <CheckCircle className="h-4 w-4 text-emerald-600" />;
+      case 'encerrada': return <Lock className="h-4 w-4 text-muted-foreground" />;
+      default: return <ListFilter className="h-4 w-4" />;
+    }
+  }, [statusFilter]);
+
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-foreground">Feridas do paciente</h2>
-        <Button type="button" size="sm" onClick={onNewWound}>
-          <Plus className="h-4 w-4" />
-          Nova ferida
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={onNewWound}
+            className="h-8 text-xs sm:h-9 sm:text-sm"
+          >
+            <Plus className="hidden h-4 w-4 sm:inline-block" />
+            Nova ferida
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={onNewEvolution}
+            disabled={!selectedWoundId}
+            className="h-8 text-xs sm:h-9 sm:text-sm"
+          >
+            Nova evolução
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        <div className="relative">
-          <Filter className="pointer-events-none absolute left-4 top-4 h-4 w-4 text-muted-foreground" />
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as WoundCaseStatus | 'all')}>
-            <SelectTrigger className="pl-10">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="ativa">Ativa</SelectItem>
-              <SelectItem value="acompanhamento">Acompanhamento</SelectItem>
-              <SelectItem value="cicatrizada">Cicatrizada</SelectItem>
-              <SelectItem value="encerrada">Encerrada</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as WoundCaseStatus | 'all')}>
+          <SelectTrigger icon={activeStatusIcon}>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" icon={<ListFilter className="h-4 w-4" />}>Todos</SelectItem>
+            <SelectItem value="ativa" icon={<Play className="h-4 w-4 text-emerald-500" />}>Ativa</SelectItem>
+            <SelectItem value="acompanhamento" icon={<Eye className="h-4 w-4 text-sky-500" />}>Acompanhamento</SelectItem>
+            <SelectItem value="cicatrizada" icon={<CheckCircle className="h-4 w-4 text-emerald-600" />}>Cicatrizada</SelectItem>
+            <SelectItem value="encerrada" icon={<Lock className="h-4 w-4 text-muted-foreground" />}>Encerrada</SelectItem>
+          </SelectContent>
+        </Select>
 
         <Input
           placeholder="Filtrar por código anatômico"

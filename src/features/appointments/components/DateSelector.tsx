@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, X } from 'lucide-react';
-import { DS_RADIUS, Modal } from '@/components/ui';
+import React from 'react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarClock } from 'lucide-react';
+import { DS_RADIUS, DatePicker } from '@/components/ui';
 import { getDayConfig } from '../services/appointmentService';
 import type { DayScheduleConfig } from '@/types';
 
@@ -13,8 +13,6 @@ interface DateSelectorProps {
   onDateChange: (date: Date) => void;
 }
 
-// Nomes dos dias da semana em português
-const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -22,7 +20,7 @@ const MONTHS = [
 
 /**
  * Componente para selecionar a data das marcações.
- * Permite navegar entre dias e selecionar uma data específica via calendário customizado.
+ * Refatorado para utilizar o componente genérico DatePicker, mantendo a navegação customizada.
  */
 export const DateSelector: React.FC<DateSelectorProps> = ({
   selectedDate,
@@ -32,72 +30,13 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
   onToday,
   onDateChange,
 }) => {
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [viewDate, setViewDate] = useState(new Date(selectedDate));
-
-  // Atualizar viewDate quando selectedDate mudar
-  useEffect(() => {
-    setViewDate(new Date(selectedDate));
-  }, [selectedDate]);
-
-  const isToday = () => {
+  const isTodayValue = () => {
     const today = new Date();
     return (
       selectedDate.getDate() === today.getDate() &&
       selectedDate.getMonth() === today.getMonth() &&
       selectedDate.getFullYear() === today.getFullYear()
     );
-  };
-
-  const isSameDay = (date1: Date, date2: Date) => {
-    return (
-      date1.getDate() === date2.getDate() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getFullYear() === date2.getFullYear()
-    );
-  };
-
-  const isTodayDate = (date: Date) => {
-    const today = new Date();
-    return isSameDay(date, today);
-  };
-
-  // Gerar dias do mês para o calendário
-  const generateCalendarDays = () => {
-    const year = viewDate.getFullYear();
-    const month = viewDate.getMonth();
-    
-    // Primeiro dia do mês
-    const firstDay = new Date(year, month, 1);
-    // Último dia do mês
-    const lastDay = new Date(year, month + 1, 0);
-    
-    const days: (Date | null)[] = [];
-    
-    // Preencher dias vazios antes do primeiro dia
-    for (let i = 0; i < firstDay.getDay(); i++) {
-      days.push(null);
-    }
-    
-    // Preencher dias do mês
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(year, month, i));
-    }
-    
-    return days;
-  };
-
-  const goToPreviousMonth = () => {
-    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
-  };
-
-  const goToNextMonth = () => {
-    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
-  };
-
-  const handleDateSelect = (date: Date) => {
-    onDateChange(date);
-    setIsCalendarOpen(false);
   };
 
   const formatWeekday = (date: Date) => {
@@ -109,6 +48,8 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
       ? `${dayConfig.totalSlots} visitas domiciliares`
       : `${dayConfig.totalSlots} vagas disponíveis`
     : 'Sem atendimento';
+
+  const isoValue = selectedDate.toISOString().slice(0, 10);
 
   return (
     <div className={`${DS_RADIUS.surface} border border-border bg-card p-4 sm:p-5 print:border-gray-300 print:bg-white`}>
@@ -124,21 +65,43 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
               <ChevronLeft className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
             </button>
 
-            <button
-              type="button"
-              onClick={() => setIsCalendarOpen(true)}
-              className={`${DS_RADIUS.section} bg-transparent px-3 py-3 text-center transition-colors hover:bg-secondary/30 print:bg-transparent`}
+            <DatePicker
+              value={isoValue}
+              onChange={(val) => {
+                const [y, m, d] = val.split('-').map(Number);
+                onDateChange(new Date(y, m - 1, d, 12, 0, 0, 0));
+              }}
+              renderDay={(date, isSelected, isToday, selectable) => {
+                const config = getDayConfig(date);
+                const hasService = config.hasService;
+                return (
+                  <div className="flex flex-col items-center">
+                    <span className="text-base">{date.getDate()}</span>
+                    {hasService && !isSelected && (
+                      <span className={`w-1.5 h-1.5 ${DS_RADIUS.pill} bg-primary mt-0.5`} />
+                    )}
+                  </div>
+                );
+              }}
             >
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary sm:text-sm">
-                {formatWeekday(selectedDate)}
-              </p>
-              <h2 className="mt-1 text-2xl font-bold text-card-foreground sm:text-3xl print:text-black">
-                {selectedDate.getDate()} de {MONTHS[selectedDate.getMonth()]}
-              </h2>
-              <p className={`mt-1 text-xs font-medium sm:text-sm ${dayConfig.hasService ? 'text-muted-foreground' : 'text-red-400'} print:text-gray-500`}>
-                {serviceSummary}
-              </p>
-            </button>
+              {({ open }) => (
+                <button
+                  type="button"
+                  onClick={open}
+                  className={`${DS_RADIUS.section} bg-transparent px-3 py-3 text-center transition-colors hover:bg-secondary/30 print:bg-transparent w-full`}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary sm:text-sm">
+                    {formatWeekday(selectedDate)}
+                  </p>
+                  <h2 className="mt-1 text-2xl font-bold text-card-foreground sm:text-3xl print:text-black">
+                    {selectedDate.getDate()} de {MONTHS[selectedDate.getMonth()]}
+                  </h2>
+                  <p className={`mt-1 text-xs font-medium sm:text-sm ${dayConfig.hasService ? 'text-muted-foreground' : 'text-red-400'} print:text-gray-500`}>
+                    {serviceSummary}
+                  </p>
+                </button>
+              )}
+            </DatePicker>
 
             <button
               type="button"
@@ -151,135 +114,54 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
           </div>
 
           <div className="mt-3 flex items-center justify-center">
-            <span className={`${DS_RADIUS.pill} border px-3 py-1 text-xs font-semibold ${isToday() ? 'border-primary bg-primary/20 text-primary' : 'border-border bg-secondary/60 text-muted-foreground'}`}>
-              {isToday() ? 'Hoje' : 'Dia selecionado'}
+            <span className={`${DS_RADIUS.pill} border px-3 py-1 text-xs font-semibold ${isTodayValue() ? 'border-primary bg-primary/20 text-primary' : 'border-border bg-secondary/60 text-muted-foreground'}`}>
+              {isTodayValue() ? 'Hoje' : 'Dia selecionado'}
             </span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2.5 print:hidden">
-          <button
-            type="button"
-            onClick={() => setIsCalendarOpen(true)}
-            className={`inline-flex h-11 items-center justify-center gap-2 ${DS_RADIUS.section} border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90`}
+          <DatePicker
+            value={isoValue}
+            onChange={(val) => {
+              const [y, m, d] = val.split('-').map(Number);
+              onDateChange(new Date(y, m - 1, d, 12, 0, 0, 0));
+            }}
+            renderDay={(date, isSelected, isToday, selectable) => {
+              const config = getDayConfig(date);
+              const hasService = config.hasService;
+              return (
+                <div className="flex flex-col items-center">
+                  <span className="text-base">{date.getDate()}</span>
+                  {hasService && !isSelected && (
+                    <span className={`w-1.5 h-1.5 ${DS_RADIUS.pill} bg-primary mt-0.5`} />
+                  )}
+                </div>
+              );
+            }}
           >
-            <Calendar className="h-4 w-4" />
-            <span>Calendário</span>
-          </button>
+            {({ open }) => (
+              <button
+                type="button"
+                onClick={open}
+                className={`inline-flex h-11 items-center justify-center gap-2 ${DS_RADIUS.section} border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90 w-full`}
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Calendário</span>
+              </button>
+            )}
+          </DatePicker>
 
           <button
             type="button"
             onClick={onToday}
-            disabled={isToday()}
+            disabled={isTodayValue()}
             className={`h-11 ${DS_RADIUS.section} bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60`}
           >
             Ir para Hoje
           </button>
         </div>
       </div>
-
-      {/* Modal do Calendário */}
-      {isCalendarOpen && (
-        <Modal
-          isOpen
-          onClose={() => setIsCalendarOpen(false)}
-          position="bottom"
-          overlayClassName="p-0 sm:p-4"
-          panelClassName="w-full overflow-hidden animate-slide-up sm:w-auto sm:min-w-85 sm:max-w-100"
-        >
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <button
-                type="button"
-                onClick={goToPreviousMonth}
-                className={`${DS_RADIUS.section} p-2 text-card-foreground transition-colors hover:bg-secondary`}
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              
-              <h3 className="text-lg font-bold text-card-foreground">
-                {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
-              </h3>
-              
-              <button
-                type="button"
-                onClick={goToNextMonth}
-                className={`${DS_RADIUS.section} p-2 text-card-foreground transition-colors hover:bg-secondary`}
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 p-3 pb-0">
-              {WEEKDAYS.map((day) => (
-                <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 p-3">
-              {generateCalendarDays().map((date, index) => {
-                if (!date) {
-                  return <div key={`empty-${index}`} className="aspect-square" />;
-                }
-
-                const isSelected = isSameDay(date, selectedDate);
-                const isCurrentDay = isTodayDate(date);
-                const config = getDayConfig(date);
-                const hasService = config.hasService;
-
-                return (
-                  <button
-                    type="button"
-                    key={date.toISOString()}
-                    onClick={() => handleDateSelect(date)}
-                    className={`
-                      aspect-square ${DS_RADIUS.section} flex flex-col items-center justify-center
-                      text-sm font-medium transition-all
-                      ${isSelected 
-                        ? 'bg-primary text-primary-foreground scale-105' 
-                        : isCurrentDay
-                          ? 'bg-secondary text-primary ring-2 ring-primary'
-                          : hasService
-                            ? 'text-card-foreground hover:bg-secondary'
-                            : 'text-muted-foreground/50 hover:bg-secondary/50'
-                      }
-                    `}
-                  >
-                    <span className="text-base">{date.getDate()}</span>
-                    {hasService && !isSelected && (
-                      <span className={`w-1.5 h-1.5 ${DS_RADIUS.pill} bg-primary mt-0.5`} />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="p-4 pt-2 border-t border-border">
-              <div className="mb-4 flex items-center justify-center gap-4 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 ${DS_RADIUS.pill} bg-primary`} />
-                  <span className="text-muted-foreground">Com atendimento</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 ${DS_RADIUS.pill} bg-muted-foreground/50`} />
-                  <span className="text-muted-foreground">Sem atendimento</span>
-                </div>
-              </div>
-              
-              <button
-                type="button"
-                onClick={() => setIsCalendarOpen(false)}
-                className={`w-full ${DS_RADIUS.section} bg-secondary py-3 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90`}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <X className="h-4 w-4" />
-                  Fechar
-                </span>
-              </button>
-            </div>
-        </Modal>
-      )}
     </div>
   );
 };

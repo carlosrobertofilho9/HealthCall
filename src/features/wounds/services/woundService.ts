@@ -234,7 +234,7 @@ export async function listWoundEntries(woundId: string): Promise<WoundEntry[]> {
 
   if (error) throw error;
 
-  return (data ?? []) as WoundEntry[];
+  return hydrateEntriesWithProfiles(data ?? []);
 }
 
 export async function closeWoundCase(input: CloseWoundCaseInput): Promise<WoundCase> {
@@ -356,7 +356,7 @@ export async function listWoundStatusEvents(woundId: string): Promise<WoundStatu
 
   if (error) throw error;
 
-  return (data ?? []) as WoundStatusEvent[];
+  return hydrateEventsWithProfiles(data ?? []);
 }
 
 export async function getSignedWoundPhotoUrl(storagePath: string, expiresInSec = 3600): Promise<string> {
@@ -393,4 +393,48 @@ export async function hydratePhotosWithSignedUrls(photos: WoundPhoto[], expiresI
   );
 
   return signedPhotos;
+}
+
+async function hydrateEntriesWithProfiles(entries: any[]): Promise<WoundEntry[]> {
+  if (entries.length === 0) return [];
+
+  const professionalIds = [...new Set(entries.map((e) => e.professional_id))];
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', professionalIds);
+
+  if (error) {
+    console.error('Erro ao buscar perfis dos profissionais:', error);
+    return entries as WoundEntry[];
+  }
+
+  const profileMap = new Map(profiles?.map((p) => [p.id, p]));
+
+  return entries.map((entry) => ({
+    ...entry,
+    profiles: profileMap.get(entry.professional_id) || undefined,
+  })) as WoundEntry[];
+}
+
+async function hydrateEventsWithProfiles(events: any[]): Promise<WoundStatusEvent[]> {
+  if (events.length === 0) return [];
+
+  const performedByBy = [...new Set(events.map((e) => e.performed_by))];
+  const { data: profiles, error } = await supabase
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', performedByBy);
+
+  if (error) {
+    console.error('Erro ao buscar perfis dos eventos:', error);
+    return events as WoundStatusEvent[];
+  }
+
+  const profileMap = new Map(profiles?.map((p) => [p.id, p]));
+
+  return events.map((event) => ({
+    ...event,
+    profiles: profileMap.get(event.performed_by) || undefined,
+  })) as WoundStatusEvent[];
 }
