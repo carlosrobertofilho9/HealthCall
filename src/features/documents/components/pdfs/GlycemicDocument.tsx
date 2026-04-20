@@ -1,10 +1,7 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
 import { HeaderIcon, tableStyles, BaseDocument, type DocumentFormData, PageFooter, DocTitle, commonStyles, pdfTheme } from './PdfCommon';
-import { 
-  InstructionIcon, CheckmarkIcon, DropIcon,
-  NotebookIcon, WarningLightIcon, FlaskIcon, HeartPulseIcon
-} from './PressureGraphics';
+import { PdfIconBadge, type PdfIconName } from './icons';
 
 const glycemicStyles = StyleSheet.create({
   container: { width: '100%' },
@@ -31,6 +28,26 @@ const glycemicStyles = StyleSheet.create({
   examIconBg: { width: 20, height: 20, borderRadius: 10, backgroundColor: pdfTheme.colors.exam.indigoBg, alignItems: 'center', justifyContent: 'center' },
   examText: { fontSize: 9, color: pdfTheme.colors.text.main, flex: 1 },
 });
+
+const GlycemicBadge = ({
+  name,
+  size = 20,
+  color,
+  backgroundColor,
+}: {
+  name: PdfIconName;
+  size?: number;
+  color: string;
+  backgroundColor: string;
+}) => (
+  <PdfIconBadge
+    name={name}
+    size={size}
+    color={color}
+    backgroundColor={backgroundColor}
+    strokeWidth={1.7}
+  />
+);
 
 export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?: DocumentFormData }> = ({ visibleParagraphs, formData }) => {
   const DAYS = 16;
@@ -83,7 +100,7 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
             </View>
             <View style={[tableStyles.col, { width: afternoonGroupWidth, backgroundColor: pdfTheme.colors.period.lunch, borderRightColor: pdfTheme.colors.border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                <HeaderIcon icon="utensils" color={pdfTheme.colors.text.white} />
+                <HeaderIcon icon="soup" color={pdfTheme.colors.text.white} />
                 <Text style={glycemicStyles.periodTitle}>TARDE</Text>
               </View>
             </View>
@@ -121,15 +138,15 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
               <Text style={[glycemicStyles.subHeaderText, { color: pdfTheme.colors.period.lunchText, marginTop: 1 }]}>Pré Almoço</Text>
             </View>
             <View style={[tableStyles.col, { width: '11.5%', backgroundColor: pdfTheme.colors.period.lunchSoft }]}>
-              <HeaderIcon icon="clock" color={pdfTheme.colors.period.lunchText} />
+              <HeaderIcon icon="timer" color={pdfTheme.colors.period.lunchText} />
               <Text style={[glycemicStyles.subHeaderText, { color: pdfTheme.colors.period.lunchText, marginTop: 1 }]}>2h pós Almoço</Text>
             </View>
             <View style={[tableStyles.col, { width: '11.5%', backgroundColor: pdfTheme.colors.purple.bg }]}>
-              <HeaderIcon icon="utensils" color={pdfTheme.colors.purple.iconDark} />
+              <HeaderIcon icon="soup" color={pdfTheme.colors.purple.iconDark} />
               <Text style={[glycemicStyles.subHeaderText, { color: pdfTheme.colors.purple.iconDark, marginTop: 1 }]}>Pré Jantar</Text>
             </View>
             <View style={[tableStyles.col, { width: '11.5%', backgroundColor: pdfTheme.colors.purple.bg }]}>
-              <HeaderIcon icon="clock" color={pdfTheme.colors.purple.iconDark} />
+              <HeaderIcon icon="alarm-clock" color={pdfTheme.colors.purple.iconDark} />
               <Text style={[glycemicStyles.subHeaderText, { color: pdfTheme.colors.purple.iconDark, marginTop: 1 }]}>2h pós Jantar</Text>
             </View>
             <View style={[tableStyles.col, { width: madrugadaColWidth, backgroundColor: pdfTheme.colors.bgLight }]}>
@@ -207,7 +224,7 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
 
             <View style={[glycemicStyles.card, { backgroundColor: pdfTheme.colors.neutral?.bg || '#f8fafc' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-                <NotebookIcon size={16} color={pdfTheme.colors.primary} />
+                <GlycemicBadge name="sparkles" size={16} color={pdfTheme.colors.primary} backgroundColor={pdfTheme.colors.softBg} />
                 <Text style={[glycemicStyles.cardTitle, { fontSize: 12, color: pdfTheme.colors.primary }]}>Dicas de Ouro pro Dia a Dia</Text>
               </View>
               <View style={{ flexDirection: 'row' }}>
@@ -233,7 +250,7 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
             <View style={{ flexDirection: 'row', gap: 12 }}>
               <View style={[glycemicStyles.card, { flex: 1, backgroundColor: pdfTheme.colors.info.bg, borderColor: pdfTheme.colors.info.border }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-                  <HeartPulseIcon size={16} color={pdfTheme.colors.info.strong} />
+                  <GlycemicBadge name="footprints" size={16} color={pdfTheme.colors.info.strong} backgroundColor={pdfTheme.colors.info.bg} />
                   <Text style={[glycemicStyles.cardTitle, { fontSize: 10, color: pdfTheme.colors.info.strong }]}>Cuidados com os Pés</Text>
                 </View>
                 <Text style={[glycemicStyles.listText, { fontSize: 9, lineHeight: 1.4 }]}>
@@ -243,7 +260,7 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
 
               <View style={[glycemicStyles.card, { flex: 1, backgroundColor: pdfTheme.colors.success.softBg, borderColor: pdfTheme.colors.success.border }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-                  <FlaskIcon size={16} color={pdfTheme.colors.success.strong} />
+                  <GlycemicBadge name="droplets" size={16} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
                   <Text style={[glycemicStyles.cardTitle, { fontSize: 10, color: pdfTheme.colors.success.strong }]}>O Poder da Água</Text>
                 </View>
                 <Text style={[glycemicStyles.listText, { fontSize: 9, lineHeight: 1.4 }]}>
@@ -266,27 +283,27 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
           <View style={glycemicStyles.coverCol}>
             <View style={glycemicStyles.card}>
               <View style={glycemicStyles.cardHeader}>
-                <WarningLightIcon size={20} color={pdfTheme.colors.warning.strong} />
+                <GlycemicBadge name="hand" color={pdfTheme.colors.warning.strong} backgroundColor={pdfTheme.colors.warning.bg} />
                 <Text style={[glycemicStyles.cardTitle, { color: pdfTheme.colors.warning.strong }]}>Segredos do Furo Perfeito</Text>
               </View>
               <Text style={[glycemicStyles.listText, { marginBottom: 8 }]}>Evite valores errados no glicosímetro:</Text>
               <View style={glycemicStyles.listItem}>
-                <CheckmarkIcon size={12} color={pdfTheme.colors.success.strong} />
+                <GlycemicBadge name="badge-check" size={12} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
                 <Text style={glycemicStyles.listItemText}><Text style={{ fontWeight: 'bold' }}>Seca Bem:</Text> Lave com água e sabão e seque. Dedo molhado abaixa o valor real no aparelho.</Text>
               </View>
               <View style={glycemicStyles.listItem}>
-                <CheckmarkIcon size={12} color={pdfTheme.colors.success.strong} />
+                <GlycemicBadge name="waves" size={12} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
                 <Text style={glycemicStyles.listItemText}><Text style={{ fontWeight: 'bold' }}>Agite o Braço:</Text> Deixe o braço pendurado pra balançar o sangue para a ponta dos dedos antes.</Text>
               </View>
               <View style={glycemicStyles.listItem}>
-                <CheckmarkIcon size={12} color={pdfTheme.colors.success.strong} />
+                <GlycemicBadge name="bandage" size={12} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
                 <Text style={glycemicStyles.listItemText}><Text style={{ fontWeight: 'bold' }}>Fure de Lado:</Text> A lateral da ponta do dedo sente muito menos dor que o centro. E mude o dedo sempre!</Text>
               </View>
             </View>
 
             <View style={[glycemicStyles.card, { marginTop: -2, backgroundColor: pdfTheme.colors.warning.softBg, borderColor: pdfTheme.colors.warning.border }]}>
               <View style={glycemicStyles.cardHeader}>
-                <InstructionIcon size={20} color={pdfTheme.colors.warning.text} />
+                <GlycemicBadge name="siren" color={pdfTheme.colors.warning.text} backgroundColor={pdfTheme.colors.warning.bg} />
                 <Text style={[glycemicStyles.cardTitle, { color: pdfTheme.colors.warning.text }]}>Alerta Vermelho: Queda de Açúcar</Text>
               </View>
               <Text style={[glycemicStyles.listText, { fontSize: 9, color: pdfTheme.colors.warning.dark }]}>Menor que 70 mg/dL (Hipoglicemia = Apagão)</Text>
@@ -300,45 +317,45 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
           <View style={glycemicStyles.coverCol}>
             <View style={glycemicStyles.card}>
               <View style={glycemicStyles.cardHeader}>
-                <FlaskIcon size={20} color={pdfTheme.colors.purple.text} />
+                <GlycemicBadge name="clipboard-plus" color={pdfTheme.colors.purple.text} backgroundColor={pdfTheme.colors.purple.bg} />
                 <Text style={[glycemicStyles.cardTitle, { color: pdfTheme.colors.purple.text }]}>Exames de Revisão SBD</Text>
               </View>
               <Text style={[glycemicStyles.listText, { fontSize: 9, marginBottom: 8 }]}>Leve no Postinho ou Médico na consulta de revisão:</Text>
               
               <View style={glycemicStyles.examItem}>
-                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.magentaBg }]}><DropIcon size={12} color={pdfTheme.colors.exam.magenta} /></View>
+                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.magentaBg }]}><GlycemicBadge name="chart-spline" size={12} color={pdfTheme.colors.exam.magenta} backgroundColor={pdfTheme.colors.exam.magentaBg} /></View>
                 <Text style={glycemicStyles.examText}>Hemoglobina Glicada (HbA1c) <Text style={{ fontSize: 8, fontStyle: 'italic', color: pdfTheme.colors.text.secondary }}>(Média de açúcar dos últimos 3 meses antes do exame)</Text></Text>
               </View>
 
               <View style={glycemicStyles.examItem}>
-                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.orangeBg }]}><DropIcon size={12} color={pdfTheme.colors.period.afternoon} /></View>
+                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.orangeBg }]}><GlycemicBadge name="chart-no-axes-combined" size={12} color={pdfTheme.colors.period.afternoon} backgroundColor={pdfTheme.colors.exam.orangeBg} /></View>
                 <Text style={glycemicStyles.examText}>Colesterol e Triglicerídeos <Text style={{ fontSize: 8, fontStyle: 'italic', color: pdfTheme.colors.text.secondary }}>(Perfil Lipídico para ver gordura do sangue)</Text></Text>
               </View>
 
               <View style={glycemicStyles.examItem}>
-                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.redBg }]}><DropIcon size={12} color={pdfTheme.colors.exam.red} /></View>
+                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.redBg }]}><GlycemicBadge name="gauge" size={12} color={pdfTheme.colors.exam.red} backgroundColor={pdfTheme.colors.exam.redBg} /></View>
                 <Text style={glycemicStyles.examText}>Avaliação Renal <Text style={{ fontSize: 8, fontStyle: 'italic', color: pdfTheme.colors.text.secondary }}>(Uréia, Creatinina, Ritmo de Filtração - TFG)</Text></Text>
               </View>
 
               <View style={glycemicStyles.examItem}>
-                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.success.softBg }]}><FlaskIcon size={12} color={pdfTheme.colors.exam.green} /></View>
+                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.success.softBg }]}><GlycemicBadge name="test-tube" size={12} color={pdfTheme.colors.exam.green} backgroundColor={pdfTheme.colors.success.softBg} /></View>
                 <Text style={glycemicStyles.examText}>Relação Albuminúria e Urina 1 <Text style={{ fontSize: 8, fontStyle: 'italic', color: pdfTheme.colors.text.secondary }}>(Detecta mais no começo a fraqueza do rim vazando proteína)</Text></Text>
               </View>
 
               <View style={glycemicStyles.examItem}>
-                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.tealBg }]}><HeartPulseIcon size={12} color={pdfTheme.colors.exam.teal} /></View>
+                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.tealBg }]}><GlycemicBadge name="eye-off" size={12} color={pdfTheme.colors.exam.teal} backgroundColor={pdfTheme.colors.exam.tealBg} /></View>
                 <Text style={glycemicStyles.examText}>Mapeamento de Retina <Text style={{ fontSize: 8, fontStyle: 'italic', color: pdfTheme.colors.text.secondary }}>(Fundo de Olho - Avaliado por oftalmologista 1x ao ano)</Text></Text>
               </View>
               
               <View style={glycemicStyles.examItem}>
-                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.warning.bg }]}><InstructionIcon size={12} color={pdfTheme.colors.warning.text} /></View>
+                <View style={[glycemicStyles.examIconBg, { backgroundColor: pdfTheme.colors.warning.bg }]}><GlycemicBadge name="scan-heart" size={12} color={pdfTheme.colors.warning.text} backgroundColor={pdfTheme.colors.warning.bg} /></View>
                 <Text style={glycemicStyles.examText}>Avaliação de Risco para os Pés (Sensibilidade) <Text style={{ fontSize: 8, fontStyle: 'italic', color: pdfTheme.colors.text.secondary }}>(Com a enfermagem)</Text></Text>
               </View>
             </View>
 
             <View style={[glycemicStyles.card, { marginTop: -2 }]}>
               <View style={glycemicStyles.cardHeader}>
-                <NotebookIcon size={20} color={pdfTheme.colors.primary} />
+                <GlycemicBadge name="shield" color={pdfTheme.colors.primary} backgroundColor={pdfTheme.colors.softBg} />
                 <Text style={glycemicStyles.cardTitle}>Guarde bem as fitas</Text>
               </View>
               <Text style={glycemicStyles.listText}>Pote de fita aberto muito tempo no ar úmido <Text style={{ fontWeight: 'bold' }}>vence as fitas antes do tempo</Text>. Feche sempre!</Text>

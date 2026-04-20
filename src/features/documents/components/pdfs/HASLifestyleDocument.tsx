@@ -1,144 +1,100 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
 import {
-  ScaleIcon,
-  FoodIcon,
-  WalkIcon,
-  NoSmokingIcon,
-  MindIcon,
-  BulletIcon,
-  AlertBulletIcon,
-  TipBulletIcon,
-  SaltIcon,
-  LeafIcon,
-} from './HASLifestyleGraphics';
-import {
   BaseDocument,
   type DocumentFormData,
-  PageFooter,
-  DocTitle,
-  commonStyles,
   pdfTheme,
 } from './PdfCommon';
+import { PdfIconBadge, type PdfIconName } from './icons';
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
 const S = StyleSheet.create({
-  /* Two-column grid */
   twoCol: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 14,
     flex: 1,
-    marginTop: 10,
+    marginTop: 8,
   },
   col: {
     flex: 1,
     gap: 12,
   },
-
-  /* Section card */
   card: {
     backgroundColor: pdfTheme.colors.text.white,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.8,
     borderColor: pdfTheme.colors.border,
     padding: 12,
   },
-
-  /* Card header (icon + colored title) */
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    marginBottom: 8,
-    borderBottomWidth: 1,
+    gap: 8,
+    marginBottom: 10,
+    borderBottomWidth: 0.8,
     borderBottomColor: pdfTheme.colors.bgLight,
-    paddingBottom: 6,
+    paddingBottom: 8,
   },
   cardTitle: {
-    fontSize: 9,
+    fontSize: 10.5,
     fontWeight: 'bold',
-    color: pdfTheme.colors.primary,
+    color: pdfTheme.colors.text.dark,
     flex: 1,
   },
-
-  /* Section subtitle inside a card */
-  subTitle: {
-    fontSize: 7.5,
-    fontWeight: 'bold',
-    color: pdfTheme.colors.text.main,
-    marginTop: 6,
-    marginBottom: 3,
-  },
-
-  /* Standard body text */
   bodyText: {
-    fontSize: 7.5,
-    color: pdfTheme.colors.text.muted,
+    fontSize: 8.4,
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.45,
   },
-
-  /* Bullet row */
-  bulletRow: {
+  listRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 6,
-    marginBottom: 5,
+    marginTop: 6,
   },
-  bulletText: {
+  listText: {
     flex: 1,
-    fontSize: 7.5,
+    fontSize: 8.3,
     color: pdfTheme.colors.text.main,
     lineHeight: 1.45,
   },
-  bulletBold: {
+  bold: {
     fontWeight: 'bold',
   },
-
-  /* Highlight pill (e.g. "1 colherzinha por dia") */
-  highlightPill: {
+  infoBox: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: pdfTheme.colors.lifestyle.foodBg,
+    alignItems: 'flex-start',
+    backgroundColor: pdfTheme.colors.info.bg,
     borderWidth: 1,
-    borderColor: pdfTheme.colors.lifestyle.foodBorder,
+    borderColor: pdfTheme.colors.info.borderStrong,
     borderRadius: 6,
     padding: 6,
-    marginVertical: 5,
+    marginTop: 6,
     gap: 6,
   },
-  highlightText: {
-    fontSize: 7.5,
-    color: pdfTheme.colors.lifestyle.foodText,
-    fontWeight: 'bold',
+  infoText: {
+    fontSize: 8,
+    color: pdfTheme.colors.info.strong,
     flex: 1,
-    lineHeight: 1.4,
+    lineHeight: 1.42,
   },
-
-  /* Food chip list */
-  chipRow: {
+  warningBox: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginTop: 4,
-  },
-  chip: {
-    backgroundColor: pdfTheme.colors.lifestyle.positiveBg,
+    backgroundColor: pdfTheme.colors.warning.bg,
     borderWidth: 1,
-    borderColor: pdfTheme.colors.lifestyle.positiveBorder,
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    borderColor: pdfTheme.colors.warning.border,
+    borderRadius: 6,
+    padding: 6,
+    marginTop: 5,
+    gap: 6,
+    alignItems: 'flex-start',
   },
-  chipText: {
-    fontSize: 6.5,
-    color: pdfTheme.colors.lifestyle.positiveText,
-    fontWeight: 'bold',
+  warningText: {
+    flex: 1,
+    fontSize: 8,
+    color: pdfTheme.colors.warning.dark,
+    lineHeight: 1.42,
   },
-
-  /* No-drink/smoke alert strip */
-  alertStrip: {
+  dangerBox: {
     flexDirection: 'row',
     backgroundColor: pdfTheme.colors.danger.bg,
     borderWidth: 1,
@@ -149,288 +105,243 @@ const S = StyleSheet.create({
     gap: 6,
     alignItems: 'flex-start',
   },
-  alertText: {
+  dangerText: {
     flex: 1,
-    fontSize: 7.5,
-    color: pdfTheme.colors.danger.text,
-    lineHeight: 1.45,
+    fontSize: 8,
+    color: pdfTheme.colors.danger.dark,
+    lineHeight: 1.42,
   },
-
-  /* Positive strip (teal) */
-  positiveStrip: {
+  successBox: {
     flexDirection: 'row',
-    backgroundColor: pdfTheme.colors.softBg,
+    backgroundColor: pdfTheme.colors.success.softBg,
     borderWidth: 1,
-    borderColor: pdfTheme.colors.softBg,
+    borderColor: pdfTheme.colors.success.borderStrong,
     borderRadius: 6,
     padding: 6,
-    marginTop: 5,
+    marginTop: 6,
     gap: 6,
     alignItems: 'flex-start',
   },
-  positiveText: {
+  successText: {
     flex: 1,
-    fontSize: 7.5,
-    color: pdfTheme.colors.primary,
-    lineHeight: 1.45,
+    fontSize: 8,
+    color: pdfTheme.colors.success.dark,
+    lineHeight: 1.42,
   },
-
-  /* Footer reminder banner */
   reminderBanner: {
     marginTop: 10,
     backgroundColor: pdfTheme.colors.primary,
+    borderWidth: 1,
+    borderColor: pdfTheme.colors.primaryDark,
     borderRadius: 6,
     padding: 8,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
   },
   reminderText: {
     fontSize: 7.5,
     color: pdfTheme.colors.text.white,
     flex: 1,
-    lineHeight: 1.5,
+    lineHeight: 1.45,
   },
   reminderBold: {
     fontWeight: 'bold',
   },
 });
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
 interface HASLifestyleDocumentProps {
   visibleParagraphs: string[];
   formData?: DocumentFormData;
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+const HasBadge = ({
+  name,
+  color,
+  backgroundColor,
+  size = 16,
+}: {
+  name: PdfIconName;
+  color: string;
+  backgroundColor: string;
+  size?: number;
+}) => (
+  <PdfIconBadge
+    name={name}
+    size={size}
+    color={color}
+    backgroundColor={backgroundColor}
+    strokeWidth={1.8}
+  />
+);
+
 export const HASLifestyleDocument: React.FC<HASLifestyleDocumentProps> = ({
   visibleParagraphs,
   formData,
 }) => {
   return (
-    <React.Fragment>
-      {/* ======================================================
-          ÚNICA PÁGINA                                         
-      ====================================================== */}
-      <BaseDocument
-        title="Guia de Estilo de Vida para Controle da HAS"
-        visibleParagraphs={visibleParagraphs}
-        wrap={false}
-        nomePaciente={formData?.nomePaciente}
-        cnsCpf={formData?.cnsCpf}
-      >
-        {/* Two-column layout */}
-        <View style={S.twoCol}>
-
-          {/* ---- COLUNA ESQUERDA ---- */}
-          <View style={S.col}>
-
-            {/* Card 1 – Peso */}
-            <View style={S.card}>
-              <View style={S.cardHeader}>
-                <ScaleIcon size={18} color={pdfTheme.colors.primary} />
-                <Text style={[S.cardTitle, { color: pdfTheme.colors.primary }]}>
-                  1. Mantenha um Peso Saudável
-                </Text>
-              </View>
-              <Text style={S.bodyText}>
-                Estar no peso certo ajuda o seu coração a trabalhar melhor e protege suas articulações.
+    <BaseDocument
+      title="Guia Prático: Pressão Alta (HAS)"
+      visibleParagraphs={visibleParagraphs}
+      wrap={false}
+      nomePaciente={formData?.nomePaciente}
+      cnsCpf={formData?.cnsCpf}
+    >
+      <View style={S.twoCol}>
+        <View style={S.col}>
+          <View style={S.card}>
+            <View style={S.cardHeader}>
+              <HasBadge
+                name="heart-pulse"
+                color={pdfTheme.colors.primary}
+                backgroundColor={pdfTheme.colors.softBg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.primary }]}>1. Meta de pressão: combine com a UBS</Text>
+            </View>
+            <Text style={S.bodyText}>
+              A diretriz atual da Sociedade Brasileira de Cardiologia orienta meta mais protegida para a maioria dos adultos.
+            </Text>
+            <View style={S.infoBox}>
+              <HasBadge name="gauge" size={10} color={pdfTheme.colors.info.strong} backgroundColor={pdfTheme.colors.info.bg} />
+              <Text style={S.infoText}>
+                Em geral, a meta é ficar <Text style={S.bold}>abaixo de 130 x 80</Text>, se você tolerar bem e sem tontura.
               </Text>
-              <View style={S.positiveStrip}>
-                <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
-                <Text style={S.positiveText}>
-                  A equipe do postinho vai medir seu{' '}
-                  <Text style={{ fontWeight: 'bold' }}>peso e altura</Text> nas consultas.
-                  O objetivo é manter a balança em um número saudável para a sua idade.
-                </Text>
-              </View>
             </View>
-
-            {/* Card 2 – Alimentação */}
-            <View style={S.card}>
-              <View style={S.cardHeader}>
-                <FoodIcon size={18} color={pdfTheme.colors.warning.strong} />
-                <Text style={[S.cardTitle, { color: pdfTheme.colors.warning.strong }]}>
-                  2. Alimentação Saudável (Menos Sal!)
-                </Text>
-              </View>
-
-              {/* Salt highlight */}
-              <View style={S.highlightPill}>
-                <SaltIcon size={14} color={pdfTheme.colors.lifestyle.cyanText} />
-                <Text style={S.highlightText}>
-                  Limite: <Text style={{ fontSize: 8 }}>1 colherzinha de chá (rasa) de sal por dia</Text> para toda a comida.
-                </Text>
-              </View>
-
-              {/* Tips */}
-              <Text style={S.subTitle}>Dicas práticas:</Text>
-              <View style={S.bulletRow}>
-                <BulletIcon size={10} color={pdfTheme.colors.success.strong} />
-                <Text style={S.bulletText}>
-                  Tire o <Text style={S.bulletBold}>saleiro da mesa</Text>.
-                </Text>
-              </View>
-              <View style={S.bulletRow}>
-                <BulletIcon size={10} color={pdfTheme.colors.success.strong} />
-                <Text style={S.bulletText}>
-                  Use <Text style={S.bulletBold}>alho, cebola, coentro, cebolinha, colorau e cominho</Text> para dar sabor.
-                </Text>
-              </View>
-              <View style={S.bulletRow}>
-                <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
-                <Text style={[S.bulletText, { color: pdfTheme.colors.danger.text }]}>
-                  Evite <Text style={S.bulletBold}>temperos prontos em tablete</Text> — são puro sal!
-                </Text>
-              </View>
-
-              {/* Potassium foods */}
-              <Text style={S.subTitle}>Coma mais (Potássio):</Text>
-              <View style={S.chipRow}>
-                {['Banana', 'Laranja', 'Mamão', 'Jerimum', 'Macaxeira', 'Batata-doce', 'Feijão'].map((f) => (
-                  <View key={f} style={S.chip}>
-                    <Text style={S.chipText}>{f}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* Card 3 – Atividade */}
-            <View style={S.card}>
-              <View style={S.cardHeader}>
-                <WalkIcon size={18} color={pdfTheme.colors.lifestyle.activityText} />
-                <Text style={[S.cardTitle, { color: pdfTheme.colors.lifestyle.activityText }]}>
-                  3. Movimente o Seu Corpo
-                </Text>
-              </View>
-              <Text style={S.bodyText}>
-                Ficar parado enfraquece o corpo. Qualquer movimento já ajuda muito!
+            <View style={S.warningBox}>
+              <HasBadge name="info" size={10} color={pdfTheme.colors.warning.text} backgroundColor={pdfTheme.colors.warning.softBg} />
+              <Text style={S.warningText}>
+                Idoso frágil, pessoa com muitas doenças ou sintomas precisa de meta individual. A equipe da UBS ajusta com segurança.
               </Text>
-
-              <View style={[S.positiveStrip, { marginTop: 6 }]}>
-                <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
-                <Text style={S.positiveText}>
-                  <Text style={{ fontWeight: 'bold' }}>Meta:</Text> 30 minutos por dia, pelo menos 5 dias na semana.
-                </Text>
-              </View>
-
-              <Text style={S.subTitle}>Exemplos de exercícios (Cardio):</Text>
-              <View style={S.bulletRow}>
-                <BulletIcon size={10} color={pdfTheme.colors.lifestyle.activityText} />
-                <Text style={S.bulletText}>Caminhar rápido na rua ou na praça.</Text>
-              </View>
-              <View style={S.bulletRow}>
-                <BulletIcon size={10} color={pdfTheme.colors.lifestyle.activityText} />
-                <Text style={S.bulletText}>Andar de bicicleta, capinar o quintal ou varrer a casa com vontade.</Text>
-              </View>
-
-              <Text style={S.subTitle}>Para fortalecer os músculos (Resistência):</Text>
-              <View style={S.bulletRow}>
-                <BulletIcon size={10} color={pdfTheme.colors.lifestyle.activityText} />
-                <Text style={S.bulletText}>Sentar e levantar da cadeira várias vezes seguidas.</Text>
-              </View>
-              <View style={S.bulletRow}>
-                <BulletIcon size={10} color={pdfTheme.colors.lifestyle.activityText} />
-                <Text style={S.bulletText}>
-                  Usar <Text style={S.bulletBold}>garrafas PET</Text> cheias de água ou areia para exercícios com os braços.
-                </Text>
-              </View>
             </View>
-
           </View>
 
-          {/* ---- COLUNA DIREITA ---- */}
-          <View style={S.col}>
-
-            {/* Card 4 – Álcool e Fumo */}
-            <View style={S.card}>
-              <View style={S.cardHeader}>
-                <NoSmokingIcon size={18} color={pdfTheme.colors.danger.strong} />
-                <Text style={[S.cardTitle, { color: pdfTheme.colors.danger.strong }]}>
-                  4. Cuidado com a Bebida e o Fumo
-                </Text>
-              </View>
-              <Text style={[S.bodyText, { color: pdfTheme.colors.danger.dark, fontWeight: 'bold', marginBottom: 4 }]}>
-                Esses dois são os maiores inimigos do seu tratamento.
-              </Text>
-
-              {/* Alcohol */}
-              <Text style={S.subTitle}>Bebida Alcoólica:</Text>
-              <View style={S.alertStrip}>
-                <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
-                <Text style={S.alertText}>
-                  O melhor para a saúde é <Text style={{ fontWeight: 'bold' }}>não beber</Text>. Se beber, o limite máximo
-                  por dia é de <Text style={{ fontWeight: 'bold' }}>2 latinhas (homens)</Text> e{' '}
-                  <Text style={{ fontWeight: 'bold' }}>1 latinha (mulheres)</Text>.
-                </Text>
-              </View>
-
-              {/* Smoking */}
-              <Text style={S.subTitle}>Fumo:</Text>
-              <View style={S.alertStrip}>
-                <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
-                <Text style={S.alertText}>
-                  <Text style={{ fontWeight: 'bold' }}>Corte totalmente.</Text> Cigarro, vape, fumo de rolo e narguilé{' '}
-                  entopem as veias e causam doenças graves.
-                </Text>
-              </View>
-              <View style={[S.positiveStrip, { marginTop: 6 }]}>
-                <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
-                <Text style={S.positiveText}>
-                  Se precisar de ajuda para parar, <Text style={{ fontWeight: 'bold' }}>fale com a gente no posto!</Text>
-                </Text>
-              </View>
+          <View style={S.card}>
+            <View style={S.cardHeader}>
+              <HasBadge
+                name="soup"
+                color={pdfTheme.colors.warning.text}
+                backgroundColor={pdfTheme.colors.warning.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.warning.text }]}>2. Menos sal no dia a dia</Text>
             </View>
-
-            {/* Card 5 – Saúde Mental */}
-            <View style={S.card}>
-              <View style={S.cardHeader}>
-                <MindIcon size={18} color={pdfTheme.colors.purple.text} />
-                <Text style={[S.cardTitle, { color: pdfTheme.colors.purple.text }]}>
-                  5. Cuide da Cabeça e da Alma
-                </Text>
-              </View>
-              <Text style={S.bodyText}>
-                O estresse e o nervosismo fazem a pressão subir.{' '}
-                <Text style={{ fontWeight: 'bold' }}>Cuidar do coração também é cuidar da mente.</Text>
-              </Text>
-
-              <Text style={S.subTitle}>Respire:</Text>
-              <View style={S.bulletRow}>
-                <BulletIcon size={10} color={pdfTheme.colors.purple.text} />
-                <Text style={S.bulletText}>
-                  Tire <Text style={S.bulletBold}>5 minutinhos</Text> do seu dia. Sente em um lugar silencioso, feche os olhos,
-                  puxe o ar pelo nariz bem devagar e solte pela boca.
-                </Text>
-              </View>
-
-              <Text style={S.subTitle}>Fé e Esperança:</Text>
-              <View style={[S.positiveStrip]}>
-                <TipBulletIcon size={10} color={pdfTheme.colors.purple.text} />
-                <Text style={[S.positiveText, { color: pdfTheme.colors.purple.textDark }]}>
-                  Praticar sua fé, rezar, ir à igreja ou ao templo, ou cuidar das plantas no quintal —
-                  essas coisas trazem <Text style={{ fontWeight: 'bold' }}>paz e ajudam a controlar o estresse</Text> do dia a dia.
-                </Text>
-              </View>
+            <Text style={S.bodyText}>
+              O excesso de sal sobe a pressão mesmo quando a pessoa não sente nada.
+            </Text>
+            <View style={S.listRow}>
+              <HasBadge name="ruler" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.listText}><Text style={S.bold}>Limite diário:</Text> até 1 colher de chá rasa de sal (aprox. 5g), somando toda a comida do dia.</Text>
             </View>
-
-            {/* Footer reminder */}
-            <View style={S.reminderBanner}>
-              <LeafIcon size={22} color={pdfTheme.colors.text.white} />
-              <Text style={S.reminderText}>
-                <Text style={S.reminderBold}>Lembre-se: </Text>
-                Essas mudanças no estilo de vida, junto com os seus remédios, são fundamentais para
-                manter a pressão controlada e ter uma vida saudável. A equipe do posto está aqui para te apoiar!
-              </Text>
+            <View style={S.listRow}>
+              <HasBadge name="leaf" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.listText}>Tire o saleiro da mesa e use alho, cebola, cheiro-verde, limão e ervas para dar sabor.</Text>
             </View>
+            <View style={S.dangerBox}>
+              <HasBadge name="circle-alert" size={10} color={pdfTheme.colors.danger.strong} backgroundColor={pdfTheme.colors.danger.bg} />
+              <Text style={S.dangerText}>Evite tempero pronto, macarrão instantâneo, embutidos e enlatados: costumam ter muito sódio.</Text>
+            </View>
+          </View>
 
+          <View style={S.card}>
+            <View style={S.cardHeader}>
+              <HasBadge
+                name="footprints"
+                color={pdfTheme.colors.info.strong}
+                backgroundColor={pdfTheme.colors.info.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.info.strong }]}>3. Movimento que cabe na sua rotina</Text>
+            </View>
+            <Text style={S.bodyText}>Mexer o corpo ajuda a baixar pressão, açúcar e colesterol.</Text>
+            <View style={S.successBox}>
+              <HasBadge name="activity" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.successText}><Text style={S.bold}>Meta semanal:</Text> 150 minutos de caminhada/ciclismo/dança + 2 dias de exercício de força.</Text>
+            </View>
+            <View style={S.listRow}>
+              <HasBadge name="clock" size={10} color={pdfTheme.colors.primary} backgroundColor={pdfTheme.colors.softBg} />
+              <Text style={S.listText}>Se for começar agora: inicie com 10 minutos por dia e aumente aos poucos.</Text>
+            </View>
           </View>
         </View>
-      </BaseDocument>
-    </React.Fragment>
+
+        <View style={S.col}>
+          <View style={[S.card, { borderColor: pdfTheme.colors.danger.border, backgroundColor: pdfTheme.colors.danger.bg }]}> 
+            <View style={S.cardHeader}>
+              <HasBadge
+                name="pill"
+                color={pdfTheme.colors.danger.strong}
+                backgroundColor={pdfTheme.colors.danger.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.danger.text }]}>4. Remédio: uso correto e seguro</Text>
+            </View>
+            <View style={S.listRow}>
+              <HasBadge name="siren" size={10} color={pdfTheme.colors.danger.strong} backgroundColor={pdfTheme.colors.danger.bg} />
+              <Text style={S.listText}><Text style={S.bold}>Nunca tome remédio de outra pessoa.</Text> Pode dar reação grave e mascarar risco.</Text>
+            </View>
+            <View style={S.listRow}>
+              <HasBadge name="alarm-clock" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.listText}>Tome no horário combinado. Se esquecer dose, pergunte na UBS como retomar com segurança.</Text>
+            </View>
+          </View>
+
+          <View style={S.card}>
+            <View style={S.cardHeader}>
+              <HasBadge
+                name="cigarette-off"
+                color={pdfTheme.colors.danger.strong}
+                backgroundColor={pdfTheme.colors.danger.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.danger.text }]}>5. Álcool e cigarro pioram o controle</Text>
+            </View>
+            <View style={S.listRow}>
+              <HasBadge name="triangle-alert" size={10} color={pdfTheme.colors.danger.strong} backgroundColor={pdfTheme.colors.danger.bg} />
+              <Text style={S.listText}>Se puder, <Text style={S.bold}>não beba</Text>. Álcool em excesso aumenta a pressão e reduz efeito do tratamento.</Text>
+            </View>
+            <View style={S.listRow}>
+              <HasBadge name="cigarette-off" size={10} color={pdfTheme.colors.danger.strong} backgroundColor={pdfTheme.colors.danger.bg} />
+              <Text style={S.listText}>Cigarro, vape e narguilé lesionam os vasos e aumentam risco de infarto e derrame.</Text>
+            </View>
+          </View>
+
+          <View style={S.card}>
+            <View style={S.cardHeader}>
+              <HasBadge
+                name="brain"
+                color={pdfTheme.colors.purple.textDark}
+                backgroundColor={pdfTheme.colors.purple.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.purple.textDark }]}>6. Sono e estresse também contam</Text>
+            </View>
+            <View style={S.infoBox}>
+              <HasBadge name="moon" size={10} color={pdfTheme.colors.info.strong} backgroundColor={pdfTheme.colors.info.bg} />
+              <Text style={S.infoText}>Dormir melhor ajuda no controle da pressão. Tente horário regular para deitar e levantar.</Text>
+            </View>
+            <View style={S.successBox}>
+              <HasBadge name="wind" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.successText}>Faça 3 respirações lentas quando estiver nervoso: isso ajuda a reduzir tensão na hora.</Text>
+            </View>
+          </View>
+
+          <View style={S.reminderBanner}>
+            <HasBadge
+              name="heart"
+              color={pdfTheme.colors.text.white}
+              backgroundColor={pdfTheme.colors.primaryDark}
+              size={22}
+            />
+            <Text style={S.reminderText}>
+              <Text style={S.reminderBold}>Procure urgência imediatamente</Text> se tiver dor forte no peito, falta de ar intensa,
+              fraqueza de um lado do corpo, fala enrolada ou pressão muito alta com mal-estar importante.
+              {'\n'}
+              Continue o acompanhamento na UBS: controle bom evita complicações.
+            </Text>
+          </View>
+        </View>
+      </View>
+    </BaseDocument>
   );
 };

@@ -1,10 +1,7 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import { 
-  InstructionIcon, CheckmarkIcon, DropIcon, HeartPulseIcon, 
-  FlaskIcon, NotebookIcon, WarningLightIcon 
-} from './PressureGraphics';
 import { HeaderIcon, tableStyles, BaseDocument, type DocumentFormData, PageHeader, PatientInfoBar, PageFooter, DocTitle, DocText, commonStyles, pdfTheme } from './PdfCommon';
+import { PdfIconBadge, type PdfIconName } from './icons';
 const pressureStyles = StyleSheet.create({
   container: {
     width: '100%',
@@ -154,6 +151,26 @@ interface PressureDocumentProps {
   formData?: DocumentFormData;
 }
 
+const PressureBadge = ({
+  name,
+  size = 20,
+  color,
+  backgroundColor,
+}: {
+  name: PdfIconName;
+  size?: number;
+  color: string;
+  backgroundColor: string;
+}) => (
+  <PdfIconBadge
+    name={name}
+    size={size}
+    color={color}
+    backgroundColor={backgroundColor}
+    strokeWidth={1.7}
+  />
+);
+
 export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParagraphs, formData }) => {
   const DAYS = 7;
   const dateColWidth = '6%';
@@ -205,7 +222,7 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
               </View>
               <View style={[tableStyles.col, { width: afternoonGroupWidth, backgroundColor: pdfTheme.colors.period.afternoon, borderRightColor: pdfTheme.colors.border }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                  <HeaderIcon icon="coffee" color={pdfTheme.colors.text.white} />
+                  <HeaderIcon icon="sun" color={pdfTheme.colors.text.white} />
                   <Text style={pressureStyles.periodTitle}>TARDE</Text>
                 </View>
               </View>
@@ -342,7 +359,7 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
             <View style={{ marginTop: 20, gap: 12 }}>
               <View style={[pressureStyles.card, { backgroundColor: pdfTheme.colors.neutral.bg }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-                  <NotebookIcon size={16} color={pdfTheme.colors.primary} />
+                  <PressureBadge name="clipboard-list" size={16} color={pdfTheme.colors.primary} backgroundColor={pdfTheme.colors.softBg} />
                   <Text style={[pressureStyles.cardTitle, { fontSize: 12, color: pdfTheme.colors.primary }]}>Como preencher corretamente o seu diário</Text>
                 </View>
                 <View style={{ flexDirection: 'row' }}>
@@ -367,7 +384,7 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
 
               <View style={[pressureStyles.card, { backgroundColor: pdfTheme.colors.warning.softBg, borderColor: pdfTheme.colors.warning.border }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-                  <InstructionIcon size={16} color={pdfTheme.colors.warning.text} />
+                  <PressureBadge name="calculator" size={16} color={pdfTheme.colors.warning.text} backgroundColor={pdfTheme.colors.warning.bg} />
                   <Text style={[pressureStyles.cardTitle, { fontSize: 12, color: pdfTheme.colors.warning.text }]}>Como calcular o quadradinho cinza da "Média"</Text>
                 </View>
                 <Text style={[pressureStyles.listText, { fontSize: 9, marginBottom: 8 }]}>
@@ -414,7 +431,7 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
           <View style={pressureStyles.coverCol}>
             <View style={pressureStyles.card}>
               <View style={pressureStyles.cardHeader}>
-                <NotebookIcon size={20} color={pdfTheme.colors.primary} />
+                <PressureBadge name="stethoscope" color={pdfTheme.colors.primary} backgroundColor={pdfTheme.colors.softBg} />
                 <Text style={pressureStyles.cardTitle}>Instruções para Medição no Ambulatório</Text>
               </View>
               <Text style={[pressureStyles.listText, { marginBottom: 8 }]}>
@@ -422,15 +439,15 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
               </Text>
               <View>
                 <View style={pressureStyles.listItem}>
-                  <InstructionIcon size={12} color={pdfTheme.colors.primary} />
+                  <PressureBadge name="sun" size={12} color={pdfTheme.colors.primary} backgroundColor={pdfTheme.colors.softBg} />
                   <Text style={pressureStyles.listItemText}><Text style={{ fontWeight: 'bold' }}>Manhã:</Text> Comparecer antes do desjejum ou da primeira medicação.</Text>
                 </View>
                 <View style={pressureStyles.listItem}>
-                  <InstructionIcon size={12} color={pdfTheme.colors.primary} />
+                  <PressureBadge name="clock" size={12} color={pdfTheme.colors.primary} backgroundColor={pdfTheme.colors.softBg} />
                   <Text style={pressureStyles.listItemText}><Text style={{ fontWeight: 'bold' }}>Tarde:</Text> Comparecer preferencialmente antes do almoço ou entre 13h e 15h.</Text>
                 </View>
                 <View style={pressureStyles.listItem}>
-                  <InstructionIcon size={12} color={pdfTheme.colors.primary} />
+                  <PressureBadge name="moon" size={12} color={pdfTheme.colors.primary} backgroundColor={pdfTheme.colors.softBg} />
                   <Text style={pressureStyles.listItemText}><Text style={{ fontWeight: 'bold' }}>Noite:</Text> Comparecer antes do jantar ou conforme orientação da equipe.</Text>
                 </View>
               </View>
@@ -438,23 +455,23 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
 
             <View style={pressureStyles.card}>
               <View style={pressureStyles.cardHeader}>
-                <WarningLightIcon size={20} color={pdfTheme.colors.warning.strong} />
+                <PressureBadge name="gauge" color={pdfTheme.colors.warning.strong} backgroundColor={pdfTheme.colors.warning.bg} />
                 <Text style={[pressureStyles.cardTitle, { color: pdfTheme.colors.warning.strong }]}>Como realizar a medida corretamente</Text>
               </View>
               <View style={pressureStyles.listItem}>
-                <CheckmarkIcon size={12} color={pdfTheme.colors.success.strong} />
+                <PressureBadge name="droplets" size={12} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
                 <Text style={pressureStyles.listItemText}>Bexiga vazia (urinar antes de iniciar as medições).</Text>
               </View>
               <View style={pressureStyles.listItem}>
-                <CheckmarkIcon size={12} color={pdfTheme.colors.success.strong} />
+                <PressureBadge name="timer" size={12} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
                 <Text style={pressureStyles.listItemText}>Repouso de 5 min antes de iniciar.</Text>
               </View>
               <View style={pressureStyles.listItem}>
-                <CheckmarkIcon size={12} color={pdfTheme.colors.success.strong} />
+                <PressureBadge name="sofa" size={12} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
                 <Text style={pressureStyles.listItemText}>Não cruzar pernas, pés no chão, braço na mesa na altura do coração. Manguito colocado livre de roupas.</Text>
               </View>
               <View style={pressureStyles.listItem}>
-                <CheckmarkIcon size={12} color={pdfTheme.colors.success.strong} />
+                <PressureBadge name="message-circle-warning" size={12} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
                 <Text style={pressureStyles.listItemText}>Silêncio. É importante não falar ou se mover.</Text>
               </View>
             </View>
@@ -464,47 +481,47 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
           <View style={pressureStyles.coverCol}>
              <View style={pressureStyles.card}>
               <View style={pressureStyles.cardHeader}>
-                <FlaskIcon size={20} color={pdfTheme.colors.purple.text} />
+                <PressureBadge name="clipboard-check" color={pdfTheme.colors.purple.text} backgroundColor={pdfTheme.colors.purple.bg} />
                 <Text style={[pressureStyles.cardTitle, { color: pdfTheme.colors.purple.text }]}>Exames a trazer com o Diário</Text>
               </View>
 
               <View style={pressureStyles.examItem}>
-                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.yellowBg }]}><DropIcon size={12} color={pdfTheme.colors.period.morningIcon} /></View>
+                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.yellowBg }]}><PressureBadge name="test-tube" size={12} color={pdfTheme.colors.period.morningIcon} backgroundColor={pdfTheme.colors.exam.yellowBg} /></View>
                 <Text style={pressureStyles.examText}>Análise de urina</Text>
               </View>
 
               <View style={pressureStyles.examItem}>
-                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.redBg }]}><DropIcon size={12} color={pdfTheme.colors.exam.red} /></View>
+                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.redBg }]}><PressureBadge name="zap" size={12} color={pdfTheme.colors.exam.red} backgroundColor={pdfTheme.colors.exam.redBg} /></View>
                 <Text style={pressureStyles.examText}>Potássio plasmático e Creatinina plasmática</Text>
               </View>
 
               <View style={pressureStyles.examItem}>
-                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.indigoBg }]}><FlaskIcon size={12} color={pdfTheme.colors.period.night} /></View>
+                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.indigoBg }]}><PressureBadge name="chart-spline" size={12} color={pdfTheme.colors.period.night} backgroundColor={pdfTheme.colors.exam.indigoBg} /></View>
                 <Text style={pressureStyles.examText}>Estimativa da TFGe pelo CKD-EPI*</Text>
               </View>
 
               <View style={pressureStyles.examItem}>
-                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.success.softBg }]}><FlaskIcon size={12} color={pdfTheme.colors.exam.green} /></View>
+                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.success.softBg }]}><PressureBadge name="waves" size={12} color={pdfTheme.colors.exam.green} backgroundColor={pdfTheme.colors.success.softBg} /></View>
                 <Text style={pressureStyles.examText}>Razão proteinúria/creatininúria</Text>
               </View>
 
               <View style={pressureStyles.examItem}>
-                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.magentaBg }]}><DropIcon size={12} color={pdfTheme.colors.exam.magenta} /></View>
+                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.magentaBg }]}><PressureBadge name="droplet" size={12} color={pdfTheme.colors.exam.magenta} backgroundColor={pdfTheme.colors.exam.magentaBg} /></View>
                 <Text style={pressureStyles.examText}>Glicemia de jejum e hemoglobina glicada</Text>
               </View>
 
               <View style={pressureStyles.examItem}>
-                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.orangeBg }]}><DropIcon size={12} color={pdfTheme.colors.period.afternoon} /></View>
+                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.orangeBg }]}><PressureBadge name="chart-no-axes-combined" size={12} color={pdfTheme.colors.period.afternoon} backgroundColor={pdfTheme.colors.exam.orangeBg} /></View>
                 <Text style={pressureStyles.examText}>Colesterol e triglicerídeos plasmáticos**</Text>
               </View>
 
               <View style={pressureStyles.examItem}>
-                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.tealBg }]}><DropIcon size={12} color={pdfTheme.colors.exam.teal} /></View>
+                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.tealBg }]}><PressureBadge name="activity" size={12} color={pdfTheme.colors.exam.teal} backgroundColor={pdfTheme.colors.exam.tealBg} /></View>
                 <Text style={pressureStyles.examText}>Ácido úrico plasmático</Text>
               </View>
 
               <View style={pressureStyles.examItem}>
-                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.roseBg }]}><HeartPulseIcon size={12} color={pdfTheme.colors.exam.rose} /></View>
+                <View style={[pressureStyles.examIconBg, { backgroundColor: pdfTheme.colors.exam.roseBg }]}><PressureBadge name="scan-heart" size={12} color={pdfTheme.colors.exam.rose} backgroundColor={pdfTheme.colors.exam.roseBg} /></View>
                 <Text style={pressureStyles.examText}>Eletrocardiograma convencional</Text>
               </View>
 

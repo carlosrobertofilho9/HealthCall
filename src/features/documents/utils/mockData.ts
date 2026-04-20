@@ -1,22 +1,78 @@
 import React from 'react';
 import {
-  ControleGlicemicoIcon,
-  ControlePressaoIcon,
-  FichaCurativosIcon,
-  LavagemOuvidoIcon,
-  ProtocoloProcedimentoIcon,
-  ReacaoAdversaIcon,
-  MedicacaoInjetavelIcon,
-  FormulaLacteaIcon,
-  SolicitacaoCurativoIcon,
-  FolhaPendenciasIcon,
-  CapaCadernetaIcon,
-  HasLifestyleIcon,
-  DmLifestyleIcon,
-  DlpLifestyleIcon,
-  SleepLifestyleIcon,
-  CustomIconProps
-} from '../components/DocumentIcons';
+  Candy,
+  Heart,
+  Bandage,
+  Ear,
+  ClipboardList,
+  AlertTriangle,
+  Syringe,
+  Baby,
+  ShoppingCart,
+  ListChecks,
+  Book,
+  Activity,
+  Apple,
+  TrendingDown,
+  Moon,
+} from 'lucide-react';
+
+// ============================================================================
+// Icon Types and Components
+// ============================================================================
+
+export interface CustomIconProps extends React.SVGProps<SVGSVGElement> {
+  size?: number | string;
+}
+
+export const ControleGlicemicoIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Candy, props);
+
+export const ControlePressaoIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Heart, props);
+
+export const FichaCurativosIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Bandage, props);
+
+export const LavagemOuvidoIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Ear, props);
+
+export const ProtocoloProcedimentoIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(ClipboardList, props);
+
+export const ReacaoAdversaIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(AlertTriangle, props);
+
+export const MedicacaoInjetavelIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Syringe, props);
+
+export const FormulaLacteaIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Baby, props);
+
+export const SolicitacaoCurativoIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(ShoppingCart, props);
+
+export const FolhaPendenciasIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(ListChecks, props);
+
+export const CapaCadernetaIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Book, props);
+
+export const HasLifestyleIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Activity, props);
+
+export const DmLifestyleIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Apple, props);
+
+export const DlpLifestyleIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(TrendingDown, props);
+
+export const SleepLifestyleIcon: React.FC<CustomIconProps> = (props) => 
+  React.createElement(Moon, props);
+
+// ============================================================================
+// Template Types and Data
+// ============================================================================
 
 export type CustomIcon = React.FC<CustomIconProps>;
 

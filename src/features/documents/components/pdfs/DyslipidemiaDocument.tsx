@@ -1,19 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
-import {
-  CholesterolIcon,
-  FiberIcon,
-} from './LifestyleGraphics';
-import {
-  FoodIcon,
-  WalkIcon,
-  ScaleIcon,
-  MindIcon,
-  BulletIcon,
-  AlertBulletIcon,
-  TipBulletIcon,
-  LeafIcon,
-} from './HASLifestyleGraphics';
+import { PdfIconBadge, type PdfIconName } from './icons';
 import {
   BaseDocument,
   type DocumentFormData,
@@ -23,9 +10,9 @@ import {
 const S = StyleSheet.create({
   twoCol: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 14,
     flex: 1,
-    marginTop: 10,
+    marginTop: 8,
   },
   col: {
     flex: 1,
@@ -34,90 +21,99 @@ const S = StyleSheet.create({
   card: {
     backgroundColor: pdfTheme.colors.text.white,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.8,
     borderColor: pdfTheme.colors.border,
     padding: 12,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    marginBottom: 8,
-    borderBottomWidth: 1,
+    gap: 8,
+    marginBottom: 10,
+    borderBottomWidth: 0.8,
     borderBottomColor: pdfTheme.colors.bgLight,
-    paddingBottom: 6,
+    paddingBottom: 8,
   },
   cardTitle: {
-    fontSize: 9,
+    fontSize: 10.5,
     fontWeight: 'bold',
-    color: pdfTheme.colors.primary,
+    color: pdfTheme.colors.text.dark,
     flex: 1,
   },
-  subTitle: {
-    fontSize: 7.5,
-    fontWeight: 'bold',
-    color: pdfTheme.colors.text.main,
-    marginTop: 6,
-    marginBottom: 3,
-  },
   bodyText: {
-    fontSize: 7.5,
-    color: pdfTheme.colors.text.muted,
+    fontSize: 8.4,
+    color: pdfTheme.colors.text.main,
     lineHeight: 1.45,
   },
-  bulletRow: {
+  listRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 6,
-    marginBottom: 5,
+    marginTop: 6,
   },
-  bulletText: {
+  listText: {
     flex: 1,
-    fontSize: 7.5,
+    fontSize: 8.3,
     color: pdfTheme.colors.text.main,
     lineHeight: 1.45,
   },
-  bulletBold: {
+  bold: {
     fontWeight: 'bold',
   },
-  highlightPill: {
+  infoBox: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: pdfTheme.colors.lifestyle.foodBg,
+    alignItems: 'flex-start',
+    backgroundColor: pdfTheme.colors.info.bg,
     borderWidth: 1,
-    borderColor: pdfTheme.colors.lifestyle.foodBorder,
+    borderColor: pdfTheme.colors.info.borderStrong,
     borderRadius: 6,
     padding: 6,
-    marginVertical: 5,
+    marginTop: 6,
     gap: 6,
   },
-  highlightText: {
-    fontSize: 7.5,
-    color: pdfTheme.colors.lifestyle.foodText,
-    fontWeight: 'bold',
+  infoText: {
+    fontSize: 8,
+    color: pdfTheme.colors.info.strong,
     flex: 1,
-    lineHeight: 1.4,
+    lineHeight: 1.42,
   },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
-    marginTop: 4,
+    marginTop: 6,
   },
   chip: {
-    backgroundColor: pdfTheme.colors.lifestyle.positiveBg,
+    backgroundColor: pdfTheme.colors.bgLight,
     borderWidth: 1,
-    borderColor: pdfTheme.colors.lifestyle.positiveBorder,
+    borderColor: pdfTheme.colors.borderDark,
     borderRadius: 4,
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
     paddingVertical: 2,
   },
   chipText: {
-    fontSize: 6.5,
-    color: pdfTheme.colors.lifestyle.positiveText,
+    fontSize: 7,
+    color: pdfTheme.colors.text.dark,
     fontWeight: 'bold',
   },
-  alertStrip: {
+  warningBox: {
+    flexDirection: 'row',
+    backgroundColor: pdfTheme.colors.warning.bg,
+    borderWidth: 1,
+    borderColor: pdfTheme.colors.warning.border,
+    borderRadius: 6,
+    padding: 6,
+    marginTop: 5,
+    gap: 6,
+    alignItems: 'flex-start',
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 8,
+    color: pdfTheme.colors.warning.dark,
+    lineHeight: 1.42,
+  },
+  dangerBox: {
     flexDirection: 'row',
     backgroundColor: pdfTheme.colors.danger.bg,
     borderWidth: 1,
@@ -128,48 +124,70 @@ const S = StyleSheet.create({
     gap: 6,
     alignItems: 'flex-start',
   },
-  alertText: {
+  dangerText: {
     flex: 1,
-    fontSize: 7.5,
-    color: pdfTheme.colors.danger.text,
-    lineHeight: 1.45,
+    fontSize: 8,
+    color: pdfTheme.colors.danger.dark,
+    lineHeight: 1.42,
   },
-  positiveStrip: {
+  successBox: {
     flexDirection: 'row',
-    backgroundColor: pdfTheme.colors.softBg,
+    backgroundColor: pdfTheme.colors.success.softBg,
     borderWidth: 1,
-    borderColor: pdfTheme.colors.softBg,
+    borderColor: pdfTheme.colors.success.borderStrong,
     borderRadius: 6,
     padding: 6,
-    marginTop: 5,
+    marginTop: 6,
     gap: 6,
     alignItems: 'flex-start',
   },
-  positiveText: {
+  successText: {
     flex: 1,
-    fontSize: 7.5,
-    color: pdfTheme.colors.primary,
-    lineHeight: 1.45,
+    fontSize: 8,
+    color: pdfTheme.colors.success.dark,
+    lineHeight: 1.42,
   },
   reminderBanner: {
     marginTop: 10,
     backgroundColor: pdfTheme.colors.primary,
+    borderWidth: 1,
+    borderColor: pdfTheme.colors.primaryDark,
     borderRadius: 6,
     padding: 8,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
   },
   reminderText: {
     fontSize: 7.5,
     color: pdfTheme.colors.text.white,
     flex: 1,
-    lineHeight: 1.5,
+    lineHeight: 1.45,
   },
   reminderBold: {
     fontWeight: 'bold',
   },
 });
+
+const DyslipidemiaBadge = ({
+  name,
+  color,
+  backgroundColor,
+  size = 16,
+}: {
+  name: PdfIconName;
+  color: string;
+  backgroundColor: string;
+  size?: number;
+}) => (
+  <PdfIconBadge
+    name={name}
+    size={size}
+    color={color}
+    backgroundColor={backgroundColor}
+    strokeWidth={1.8}
+  />
+);
 
 interface DyslipidemiaDocumentProps {
   visibleParagraphs: string[];
@@ -182,165 +200,232 @@ export const DyslipidemiaDocument: React.FC<DyslipidemiaDocumentProps> = ({
 }) => {
   return (
     <BaseDocument
-      title="Guia Completo: Controle do Colesterol e Triglicerídeos"
+      title="Guia Simples: Colesterol e Triglicerídeos"
       visibleParagraphs={visibleParagraphs}
       wrap={false}
       nomePaciente={formData?.nomePaciente}
       cnsCpf={formData?.cnsCpf}
     >
       <View style={S.twoCol}>
-        {/* ---- COLUNA ESQUERDA ---- */}
         <View style={S.col}>
-          {/* Card 1 – Conheça os seus Números */}
-          <View style={[S.card, { borderColor: pdfTheme.colors.primary }]}>
+          <View style={S.card}> 
             <View style={S.cardHeader}>
-              <CholesterolIcon size={18} color={pdfTheme.colors.primary} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.primary }]}>
-                1. LDL vs. HDL (Quem é quem?)
-              </Text>
+              <DyslipidemiaBadge
+                name="heart-pulse"
+                color={pdfTheme.colors.primary}
+                backgroundColor={pdfTheme.colors.softBg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.primary }]}>1. Entenda seus números</Text>
             </View>
             <Text style={S.bodyText}>
-              O colesterol não é todo igual. Pense neles como funcionários do seu corpo:
+              O exame mostra três pontos principais. A equipe da UBS usa isso para montar sua meta.
             </Text>
-            <View style={S.bulletRow}>
-              <AlertBulletIcon size={8} color={pdfTheme.colors.danger.strong} />
-              <Text style={S.bulletText}><Text style={S.bulletBold}>LDL (Colesterol Ruim):</Text> É o "sujador". Ele deixa gordura nas paredes das artérias, podendo entupi-las.</Text>
+            <View style={S.listRow}>
+              <DyslipidemiaBadge name="circle-alert" size={10} color={pdfTheme.colors.danger.strong} backgroundColor={pdfTheme.colors.danger.bg} />
+              <Text style={S.listText}>
+                <Text style={S.bold}>Colesterol ruim (LDL):</Text> quando sobe, gruda na veia e pode causar infarto e derrame.
+              </Text>
             </View>
-            <View style={S.bulletRow}>
-              <BulletIcon size={8} color={pdfTheme.colors.success.strong} />
-              <Text style={S.bulletText}><Text style={S.bulletBold}>HDL (Colesterol Bom):</Text> É o "faxineiro". Ele recolhe a gordura das artérias e leva para o fígado eliminar.</Text>
+            <View style={S.listRow}>
+              <DyslipidemiaBadge name="check" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.listText}>
+                <Text style={S.bold}>Colesterol bom (HDL):</Text> ajuda a limpar a gordura do sangue.
+              </Text>
+            </View>
+            <View style={S.listRow}>
+              <DyslipidemiaBadge name="droplet" size={10} color={pdfTheme.colors.warning.text} backgroundColor={pdfTheme.colors.warning.bg} />
+              <Text style={S.listText}>
+                <Text style={S.bold}>Triglicerídeos:</Text> sobem com muito açúcar, farinha branca e bebida alcoólica.
+              </Text>
             </View>
           </View>
 
-          {/* Card 2 – O Perigo dos Triglicerídeos */}
-          <View style={S.card}>
+          <View style={S.card}> 
             <View style={S.cardHeader}>
-              <MindIcon size={18} color={pdfTheme.colors.warning.strong} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.warning.strong }]}>
-                2. Triglicerídeos: Açúcar e Álcool
-              </Text>
+              <DyslipidemiaBadge
+                name="soup"
+                color={pdfTheme.colors.warning.text}
+                backgroundColor={pdfTheme.colors.warning.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.warning.text }]}>2. Comida de verdade no prato</Text>
             </View>
             <Text style={S.bodyText}>
-              Diferente do colesterol, os triglicerídeos sobem muito com o excesso de <Text style={S.bulletBold}>massas, doces e bebidas alcoólicas</Text>.
+              A base do tratamento é comida simples do dia a dia, sem precisar gastar muito.
             </Text>
-            <View style={S.alertStrip}>
-              <AlertBulletIcon size={10} color={pdfTheme.colors.danger.strong} />
-              <Text style={S.alertText}>
-                O excesso de carboidrato que você come e não queima, o corpo transforma em gordura (triglicerídeos) para guardar.
+            <View style={S.infoBox}>
+              <DyslipidemiaBadge name="check" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.infoText}>
+                Prefira: feijão, arroz, verduras, legumes, aveia, frutas com casca, peixe quando possível, frango sem pele.
+              </Text>
+            </View>
+            <View style={S.warningBox}>
+              <DyslipidemiaBadge name="info" size={10} color={pdfTheme.colors.warning.text} backgroundColor={pdfTheme.colors.warning.softBg} />
+              <Text style={S.warningText}>
+                Cozinhar em casa e reduzir fritura já ajuda muito. Trocas pequenas, feitas todo dia, funcionam melhor.
               </Text>
             </View>
           </View>
 
-          {/* Card 3 – Gorduras: Trocas Inteligentes */}
-          <View style={S.card}>
+          <View style={[S.card, { borderColor: pdfTheme.colors.danger.border, backgroundColor: pdfTheme.colors.danger.bg }]}> 
             <View style={S.cardHeader}>
-              <FoodIcon size={18} color={pdfTheme.colors.primary} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.primary }]}>
-                3. Trocas que Salvam Vidas
-              </Text>
+              <DyslipidemiaBadge
+                name="circle-alert"
+                color={pdfTheme.colors.danger.strong}
+                backgroundColor={pdfTheme.colors.danger.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.danger.text }]}>3. O que piora o exame</Text>
             </View>
-            <Text style={S.bodyText}>Pequenas mudanças diárias geram grandes resultados nos exames:</Text>
-            
-            <View style={[S.positiveStrip, { backgroundColor: '#f0fdf4', borderColor: '#bcf0da' }]}>
-               <Text style={[S.positiveText, { fontSize: 7, color: '#166534' }]}>
-                 <Text style={{ fontWeight: 'bold' }}>Troque:</Text> Manteiga/Banha  |  <Text style={{ fontWeight: 'bold' }}>Por:</Text> Azeite de Oliva{"\n"}
-                 <Text style={{ fontWeight: 'bold' }}>Troque:</Text> Carne Gorda/Pele |  <Text style={{ fontWeight: 'bold' }}>Por:</Text> Peixe ou Frango sem pele{"\n"}
-                 <Text style={{ fontWeight: 'bold' }}>Troque:</Text> Queijo Amarelo  |  <Text style={{ fontWeight: 'bold' }}>Por:</Text> Queijo Branco (Minas/Ricota)
-               </Text>
-            </View>
-          </View>
-
-          {/* Card 4 – Perigos Silenciosos */}
-          <View style={S.card}>
-            <View style={S.cardHeader}>
-              <AlertBulletIcon size={18} color={pdfTheme.colors.danger.strong} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.danger.strong }]}>
-                4. Cuidado com o "Invisível"
-              </Text>
-            </View>
-            <Text style={S.bodyText}>Muitos alimentos não parecem gordurosos, mas são <Text style={S.bulletBold}>bombas de colesterol</Text>:</Text>
+            <Text style={S.bodyText}>Evite no dia a dia:</Text>
             <View style={S.chipRow}>
-              {['Biscoito Recheado', 'Sorvete', 'Salgadinho', 'Nuggets', 'Sopa de Pacote'].map((f) => (
-                <View key={f} style={[S.chip, { backgroundColor: '#fff5f5', borderColor: '#feb2b2' }]}>
-                  <Text style={[S.chipText, { color: '#c53030' }]}>{f}</Text>
+              {[
+                'Biscoito recheado',
+                'Salgadinho',
+                'Embutidos',
+                'Fritura frequente',
+                'Margarina dura',
+                'Doces todo dia',
+              ].map((item) => (
+                <View key={item} style={[S.chip, { borderColor: pdfTheme.colors.danger.border }]}> 
+                  <Text style={[S.chipText, { color: pdfTheme.colors.danger.text }]}>{item}</Text>
                 </View>
               ))}
+            </View>
+            <View style={S.dangerBox}>
+              <DyslipidemiaBadge name="siren" size={10} color={pdfTheme.colors.danger.strong} backgroundColor={pdfTheme.colors.danger.bg} />
+              <Text style={S.dangerText}>
+                Evite bebida alcoólica em excesso. Ela sobe muito os triglicerídeos.
+              </Text>
+            </View>
+          </View>
+
+          <View style={S.card}> 
+            <View style={S.cardHeader}>
+              <DyslipidemiaBadge
+                name="coffee"
+                color={pdfTheme.colors.warning.text}
+                backgroundColor={pdfTheme.colors.warning.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.warning.text }]}>4. Triglicerídeo alto: ação rápida</Text>
+            </View>
+            <Text style={S.bodyText}>
+              Se o triglicerídeo estiver alto, sua prioridade é cortar açúcar e álcool.
+            </Text>
+            <View style={S.listRow}>
+              <DyslipidemiaBadge name="badge-check" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.listText}>Reduza refrigerante, suco de caixinha, bolo, biscoito e pão em excesso.</Text>
+            </View>
+            <View style={S.listRow}>
+              <DyslipidemiaBadge name="badge-check" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.listText}>Coma nos horários e não “belisque” o dia inteiro.</Text>
+            </View>
+            <View style={S.warningBox}>
+              <DyslipidemiaBadge name="info" size={10} color={pdfTheme.colors.warning.text} backgroundColor={pdfTheme.colors.warning.softBg} />
+              <Text style={S.warningText}>
+                Meta de colesterol é diferente para cada pessoa. Quem define é o profissional da UBS, conforme seu risco do coração.
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* ---- COLUNA DIREITA ---- */}
         <View style={S.col}>
-          {/* Card 5 – Fibras: A Vassoura do Sangue */}
-          <View style={S.card}>
+          <View style={S.card}> 
             <View style={S.cardHeader}>
-              <FiberIcon size={18} color={pdfTheme.colors.success.strong} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.success.strong }]}>
-                5. Fibras (O Faxineiro do Sangue)
-              </Text>
+              <DyslipidemiaBadge
+                name="footprints"
+                color={pdfTheme.colors.info.strong}
+                backgroundColor={pdfTheme.colors.info.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.info.strong }]}>5. Corpo em movimento</Text>
             </View>
             <Text style={S.bodyText}>
-              As fibras "grudam" na gordura da comida e impedem que ela entre no seu sangue.
+              Caminhar, pedalar ou dançar ajuda a baixar gordura no sangue e melhorar o colesterol bom.
             </Text>
-            <View style={S.highlightPill}>
-              <LeafIcon size={14} color={pdfTheme.colors.lifestyle.cyanText} />
-              <Text style={S.highlightText}>
-                Dica: Coma 2 colheres de sopa de Farelo de Aveia por dia. É um remédio natural!
+            <View style={S.successBox}>
+              <DyslipidemiaBadge name="check" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.successText}>
+                Meta prática: pelo menos 30 minutos, 5 dias na semana, no seu ritmo.
               </Text>
             </View>
-            <Text style={S.subTitle}>Super Alimentos:</Text>
-            <View style={S.chipRow}>
-              {['Berinjela', 'Abóbora', 'Maçã com Casca', 'Feijão', 'Quiabo', 'Linhaça'].map((f) => (
-                <View key={f} style={S.chip}>
-                  <Text style={S.chipText}>{f}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Card 6 – Movimento e Metabolismo */}
-          <View style={S.card}>
-            <View style={S.cardHeader}>
-              <WalkIcon size={18} color={pdfTheme.colors.lifestyle.activityText} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.lifestyle.activityText }]}>
-                6. Ative o seu Metabolismo
-              </Text>
-            </View>
-            <Text style={S.bodyText}>
-              A atividade física é a única forma natural de <Text style={S.bulletBold}>subir o seu HDL (colesterol bom)</Text>.
-            </Text>
-            <View style={S.positiveStrip}>
-              <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
-              <Text style={S.positiveText}>
-                Combine caminhadas (cardio) com pequenos pesos (fortalecimento). Isso faz seu corpo queimar gordura mesmo quando você está em repouso.
+            <View style={S.infoBox}>
+              <DyslipidemiaBadge name="waves" size={10} color={pdfTheme.colors.info.strong} backgroundColor={pdfTheme.colors.info.bg} />
+              <Text style={S.infoText}>
+                Se sentir dor no peito, falta de ar importante ou mal-estar forte, pare a atividade e procure atendimento.
               </Text>
             </View>
           </View>
 
-          {/* Card 7 – Peso e Cintura */}
-          <View style={S.card}>
+          <View style={S.card}> 
             <View style={S.cardHeader}>
-              <ScaleIcon size={18} color={pdfTheme.colors.primary} />
-              <Text style={[S.cardTitle, { color: pdfTheme.colors.primary }]}>
-                7. Fique de Olho na Cintura
-              </Text>
+              <DyslipidemiaBadge
+                name="clipboard-plus"
+                color={pdfTheme.colors.success.strong}
+                backgroundColor={pdfTheme.colors.success.softBg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.success.strong }]}>6. Remédio e retorno na UBS</Text>
             </View>
             <Text style={S.bodyText}>
-              A gordura que fica na barriga (abdominal) é a mais perigosa para o coração e para o fígado.
+              Muitas pessoas precisam de remédio junto com alimentação e exercício.
             </Text>
-            <View style={[S.positiveStrip, { marginTop: 4 }]}>
-              <TipBulletIcon size={10} color={pdfTheme.colors.primary} />
-              <Text style={S.positiveText}>
-                 Perder apenas <Text style={{ fontWeight: 'bold' }}>5 a 10%</Text> do seu peso atual já melhora drasticamente todos os seus exames de colesterol.
+            <View style={S.listRow}>
+              <DyslipidemiaBadge name="check" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.listText}>Tome no horário orientado. Não pare por conta própria, mesmo sem sintomas.</Text>
+            </View>
+            <View style={S.listRow}>
+              <DyslipidemiaBadge name="check" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.listText}>Leve exames, receitas e lista de remédios em todo retorno no postinho.</Text>
+            </View>
+            <View style={S.dangerBox}>
+              <DyslipidemiaBadge name="siren" size={10} color={pdfTheme.colors.danger.strong} backgroundColor={pdfTheme.colors.danger.bg} />
+              <Text style={S.dangerText}>
+                Não use remédio de vizinho e não faça automedicação. Isso pode fazer mal ao fígado e aos rins.
               </Text>
             </View>
           </View>
 
-          {/* Footer reminder */}
+          <View style={S.card}> 
+            <View style={S.cardHeader}>
+              <DyslipidemiaBadge
+                name="weight"
+                color={pdfTheme.colors.purple.textDark}
+                backgroundColor={pdfTheme.colors.purple.bg}
+                size={22}
+              />
+              <Text style={[S.cardTitle, { color: pdfTheme.colors.purple.textDark }]}>7. Cintura e peso importam</Text>
+            </View>
+            <Text style={S.bodyText}>
+              A gordura da barriga aumenta o risco de pressão alta, diabetes e problema no coração.
+            </Text>
+            <View style={S.successBox}>
+              <DyslipidemiaBadge name="sparkles" size={10} color={pdfTheme.colors.success.strong} backgroundColor={pdfTheme.colors.success.softBg} />
+              <Text style={S.successText}>
+                Perder um pouco de peso já melhora muito os exames e o bem-estar.
+              </Text>
+            </View>
+            <View style={S.infoBox}>
+              <DyslipidemiaBadge name="info" size={10} color={pdfTheme.colors.info.strong} backgroundColor={pdfTheme.colors.info.bg} />
+              <Text style={S.infoText}>
+                Evite “dieta da moda”. Faça mudanças que você consegue manter.
+              </Text>
+            </View>
+          </View>
+
           <View style={S.reminderBanner}>
-            <LeafIcon size={22} color={pdfTheme.colors.text.white} />
+            <DyslipidemiaBadge
+              name="hand"
+              color={pdfTheme.colors.text.white}
+              backgroundColor={pdfTheme.colors.primaryDark}
+              size={22}
+            />
             <Text style={S.reminderText}>
-              <Text style={S.reminderBold}>Colesterol não dói,</Text> mas entope aos poucos. A prevenção através da comida é o seu melhor seguro de vida. Comece hoje!
+              <Text style={S.reminderBold}>Resumo final:</Text> colesterol alto geralmente não dá dor. Por isso, mantenha o cuidado todo dia e retorne à UBS na data combinada.
+              {'\n'}
+              Procure atendimento antes se tiver dor no peito, falta de ar, fraqueza súbita ou fala enrolada.
             </Text>
           </View>
         </View>
