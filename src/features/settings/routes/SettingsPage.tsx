@@ -61,7 +61,7 @@ const SettingsPage: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="geral" className="space-y-6">
+        <TabsContent value="geral" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex justify-center">
             {/* Fluxo de Trabalho */}
             <Card className="p-8 border-none shadow-xl bg-card backdrop-blur-sm w-full max-w-2xl">
@@ -107,7 +107,7 @@ const SettingsPage: React.FC = () => {
           </ActionBar>
         </TabsContent>
 
-        <TabsContent value="aparencia" className="space-y-6">
+        <TabsContent value="aparencia" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <Card className="p-8 border-none shadow-2xl bg-linear-to-br from-card/80 to-card/40 backdrop-blur-md">
             <div className="space-y-8">
               <div>

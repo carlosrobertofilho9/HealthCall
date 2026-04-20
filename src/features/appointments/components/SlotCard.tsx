@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
   FileText,
@@ -78,23 +77,20 @@ export const SlotCard: React.FC<SlotCardProps> = ({
     const emptyLabel = serviceType === 'HOME_VISIT' ? 'Visita disponível' : 'Vaga disponível';
 
     return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        whileHover={{ scale: 1.01, borderColor: 'var(--primary)' }}
-        whileTap={{ scale: 0.99 }}
+      <div
         onClick={() => onAddClick(slotNumber)}
         role="button"
         tabIndex={0}
         onKeyDown={e => e.key === 'Enter' && onAddClick(slotNumber)}
         className="group flex items-center gap-3 rounded-xl border-2 border-dashed border-border
           bg-background/40 px-4 py-3.5 cursor-pointer
-          hover:bg-card transition-all duration-150 print:bg-white print:border-gray-300"
+          hover:border-primary/60 hover:bg-card active:scale-[0.99]
+          transition-all duration-150 print:bg-white print:border-gray-300"
       >
         {/* Slot number */}
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-          bg-secondary text-muted-foreground text-xs font-bold group-hover:bg-primary group-hover:text-primary-foreground transition-colors print:bg-gray-100 print:text-gray-500">
+          bg-secondary text-muted-foreground text-xs font-bold group-hover:bg-primary/20
+          group-hover:text-primary transition-colors print:bg-gray-100 print:text-gray-500">
           {slotNumber}
         </span>
 
@@ -108,14 +104,10 @@ export const SlotCard: React.FC<SlotCardProps> = ({
           </p>
         </div>
 
-        <motion.span 
-          initial={{ x: -10, opacity: 0 }}
-          whileHover={{ x: 0, opacity: 1 }}
-          className="text-xs text-primary shrink-0 print:hidden"
-        >
+        <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity shrink-0 print:hidden">
           Agendar →
-        </motion.span>
-      </motion.div>
+        </span>
+      </div>
     );
   }
 
@@ -124,13 +116,8 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
   if (isBlocked) {
     return (
-      <motion.div 
-        layout
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        className="flex items-center gap-3 rounded-xl border border-red-900/30 bg-red-950/15
-        px-4 py-3.5 print:bg-white print:border-gray-300"
-      >
+      <div className="flex items-center gap-3 rounded-xl border border-red-900/30 bg-red-950/15
+        px-4 py-3.5 print:bg-white print:border-gray-300">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
           border border-red-900/30 bg-red-950/20 text-red-300 text-xs font-bold">
           {slotNumber}
@@ -149,16 +136,14 @@ export const SlotCard: React.FC<SlotCardProps> = ({
           </div>
         </div>
 
-        <motion.button
-          whileHover={{ scale: 1.1, backgroundColor: 'rgba(127, 29, 29, 0.4)' }}
-          whileTap={{ scale: 0.9 }}
+        <button
           onClick={() => onDeleteClick(appointment)}
-          className="p-2.5 rounded-xl transition-colors shrink-0 print:hidden"
+          className="p-2.5 rounded-xl hover:bg-red-900/30 transition-colors shrink-0 print:hidden"
           title="Desbloquear"
         >
           <Trash2 className="w-4 h-4 text-red-400" />
-        </motion.button>
-      </motion.div>
+        </button>
+      </div>
     );
   }
 
@@ -175,14 +160,8 @@ export const SlotCard: React.FC<SlotCardProps> = ({
   );
 
   return (
-    <motion.div 
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2, shadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}
-      className="rounded-xl border border-border bg-card overflow-hidden
-      print:bg-white print:border-gray-300 transition-all"
-    >
+    <div className="rounded-xl border border-border bg-card overflow-hidden
+      print:bg-white print:border-gray-300 transition-all">
       
       {/* ── Main row ── */}
       <div className="flex items-start gap-3 px-4 py-3.5">
@@ -220,15 +199,13 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             >
               {appointment.patient_name}
             </p>
-            <motion.button
-              whileHover={{ scale: 1.2, color: 'var(--foreground)' }}
-              whileTap={{ scale: 0.8 }}
+            <button
               onClick={() => handleCopy(appointment.patient_name, 'Nome')}
-              className="shrink-0 text-muted-foreground/40 transition-colors print:hidden"
+              className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors print:hidden"
               title="Copiar nome"
             >
               <Copy className="w-3 h-3" />
-            </motion.button>
+            </button>
           </div>
 
           {/* Document row */}
@@ -252,49 +229,41 @@ export const SlotCard: React.FC<SlotCardProps> = ({
 
             {/* Home visit extras – collapsible on mobile */}
             {hasExtraInfo && (
-              <AnimatePresence>
+              <>
                 {isExpanded && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-2 space-y-1.5 border-t border-border pt-2">
-                      {appointment.home_visit_address && (
-                        <div className="flex items-start gap-2 min-w-0">
-                          <MapPin className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                          <p
-                            className="text-xs text-foreground/90 cursor-pointer hover:text-card-foreground transition-colors"
-                            onClick={() =>
-                              handleCopy(appointment.home_visit_address || '', 'Endereço')
-                            }
-                          >
-                            {appointment.home_visit_address}
-                          </p>
-                        </div>
-                      )}
-                      {appointment.home_visit_reference && (
-                        <div className="flex items-start gap-2 min-w-0">
-                          <MapPin className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
-                          <p className="text-xs text-muted-foreground">
-                            Ref.: {appointment.home_visit_reference}
-                          </p>
-                        </div>
-                      )}
-                      {appointment.home_visit_reason && (
-                        <div className="flex items-start gap-2 min-w-0">
-                          <ClipboardList className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
-                          <p className="text-xs text-muted-foreground">
-                            Motivo: {appointment.home_visit_reason}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
+                  <div className="mt-2 space-y-1.5 border-t border-border pt-2">
+                    {appointment.home_visit_address && (
+                      <div className="flex items-start gap-2 min-w-0">
+                        <MapPin className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                        <p
+                          className="text-xs text-foreground/90 cursor-pointer hover:text-card-foreground transition-colors"
+                          onClick={() =>
+                            handleCopy(appointment.home_visit_address || '', 'Endereço')
+                          }
+                        >
+                          {appointment.home_visit_address}
+                        </p>
+                      </div>
+                    )}
+                    {appointment.home_visit_reference && (
+                      <div className="flex items-start gap-2 min-w-0">
+                        <MapPin className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground">
+                          Ref.: {appointment.home_visit_reference}
+                        </p>
+                      </div>
+                    )}
+                    {appointment.home_visit_reason && (
+                      <div className="flex items-start gap-2 min-w-0">
+                        <ClipboardList className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0 mt-0.5" />
+                        <p className="text-xs text-muted-foreground">
+                          Motivo: {appointment.home_visit_reason}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </AnimatePresence>
+              </>
             )}
           </div>
 
@@ -307,7 +276,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
               <SelectTrigger
                 className={`h-8 w-full rounded-full border px-3 text-xs font-semibold shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]
                   ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}
-                  hover:brightness-110 focus:ring-2 focus:ring-primary/30 transition-all duration-300`}
+                  hover:brightness-110 focus:ring-2 focus:ring-primary/30`}
               >
                 <SelectValue />
               </SelectTrigger>
@@ -323,55 +292,44 @@ export const SlotCard: React.FC<SlotCardProps> = ({
             {/* Icon buttons */}
             <div className="flex items-center justify-end gap-1">
               {hasExtraInfo && (
-                <motion.button
-                  whileHover={{ scale: 1.1, backgroundColor: 'var(--secondary)' }}
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={() => setIsExpanded(v => !v)}
-                  className="p-2 rounded-lg transition-colors"
+                  className="p-2 rounded-lg hover:bg-secondary transition-colors"
                   title={isExpanded ? 'Recolher' : 'Ver endereço'}
                 >
-                  <motion.div
-                    animate={{ rotate: isExpanded ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  </motion.div>
-                </motion.button>
+                  {isExpanded
+                    ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  }
+                </button>
               )}
-              <motion.button
-                whileHover={{ scale: 1.1, backgroundColor: 'var(--secondary)' }}
-                whileTap={{ scale: 0.9 }}
+              <button
                 onClick={() => onRescheduleClick(appointment)}
-                className="p-2 rounded-lg transition-colors"
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
                 title="Remarcar"
               >
                 <CalendarClock className="w-4 h-4 text-muted-foreground hover:text-card-foreground" />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1, backgroundColor: 'var(--secondary)' }}
-                whileTap={{ scale: 0.9 }}
+              </button>
+              <button
                 onClick={() => onEditClick(appointment)}
-                className="p-2 rounded-lg transition-colors"
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
                 title="Editar"
               >
                 <Edit className="w-4 h-4 text-muted-foreground hover:text-card-foreground" />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1, backgroundColor: 'rgba(120, 53, 15, 0.2)' }}
-                whileTap={{ scale: 0.9 }}
+              </button>
+              <button
                 onClick={() => onDeleteClick(appointment)}
-                className="p-2 rounded-lg transition-colors"
+                className="p-2 rounded-lg hover:bg-amber-900/30 transition-colors"
                 title="Marcar falta"
               >
                 <Trash2 className="w-4 h-4 text-muted-foreground hover:text-amber-300" />
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
 export default SlotCard;
-

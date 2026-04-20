@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, X } from 'lucide-react';
 import { DS_RADIUS, Modal } from '@/components/ui';
 import { getDayConfig } from '../services/appointmentService';
@@ -35,7 +34,6 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
 }) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [viewDate, setViewDate] = useState(new Date(selectedDate));
-  const [direction, setDirection] = useState(0);
 
   // Atualizar viewDate quando selectedDate mudar
   useEffect(() => {
@@ -102,16 +100,6 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
     setIsCalendarOpen(false);
   };
 
-  const handlePrevDay = () => {
-    setDirection(-1);
-    onPreviousDay();
-  };
-
-  const handleNextDay = () => {
-    setDirection(1);
-    onNextDay();
-  };
-
   const formatWeekday = (date: Date) => {
     return date.toLocaleDateString('pt-BR', { weekday: 'long' });
   };
@@ -123,211 +111,177 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
     : 'Sem atendimento';
 
   return (
-    <div className={`${DS_RADIUS.surface} border border-border bg-card p-4 print:border-gray-300 print:bg-white overflow-hidden lg:p-0 lg:border-0 lg:bg-transparent lg:shadow-none lg:rounded-none`}>
-      <div className="flex flex-col gap-3">
-        <div className={`${DS_RADIUS.section} bg-card p-3 lg:bg-transparent lg:p-0`}>
-          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
-            <motion.button
-              whileHover={{ scale: 1.1, x: -2 }}
-              whileTap={{ scale: 0.9 }}
+    <div className={`${DS_RADIUS.surface} border border-border bg-card p-4 sm:p-5 print:border-gray-300 print:bg-white`}>
+      <div className="flex flex-col gap-4">
+        <div className={`${DS_RADIUS.section} bg-card p-3 sm:p-4`}>
+          <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
+            <button
               type="button"
-              onClick={handlePrevDay}
-              className={`w-auto shrink-0 ${DS_RADIUS.section} bg-transparent p-2 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden lg:rounded-md`}
+              onClick={onPreviousDay}
+              className={`w-auto shrink-0 ${DS_RADIUS.section} bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden`}
               aria-label="Dia anterior"
             >
-              <ChevronLeft className="h-4 w-4" />
-            </motion.button>
+              <ChevronLeft className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+            </button>
 
             <button
               type="button"
               onClick={() => setIsCalendarOpen(true)}
-              className={`${DS_RADIUS.section} relative bg-transparent px-2 py-2 text-center transition-colors hover:bg-secondary/30 print:bg-transparent overflow-hidden lg:rounded-md lg:py-1`}
+              className={`${DS_RADIUS.section} bg-transparent px-3 py-3 text-center transition-colors hover:bg-secondary/30 print:bg-transparent`}
             >
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={selectedDate.toISOString()}
-                  initial={{ x: direction * 50, opacity: 0, filter: 'blur(4px)' }}
-                  animate={{ x: 0, opacity: 1, filter: 'blur(0px)' }}
-                  exit={{ x: -direction * 50, opacity: 0, filter: 'blur(4px)' }}
-                  transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-                >
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-primary lg:text-xs">
-                    {formatWeekday(selectedDate)}
-                  </p>
-                  <h2 className="text-2xl font-bold text-card-foreground lg:text-3xl print:text-black">
-                    {selectedDate.getDate()} de {MONTHS[selectedDate.getMonth()]}
-                  </h2>
-                  <p className={`text-[11px] font-medium lg:text-xs ${dayConfig.hasService ? 'text-muted-foreground' : 'text-red-400'} print:text-gray-500`}>
-                    {serviceSummary}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary sm:text-sm">
+                {formatWeekday(selectedDate)}
+              </p>
+              <h2 className="mt-1 text-2xl font-bold text-card-foreground sm:text-3xl print:text-black">
+                {selectedDate.getDate()} de {MONTHS[selectedDate.getMonth()]}
+              </h2>
+              <p className={`mt-1 text-xs font-medium sm:text-sm ${dayConfig.hasService ? 'text-muted-foreground' : 'text-red-400'} print:text-gray-500`}>
+                {serviceSummary}
+              </p>
             </button>
 
-            <motion.button
-              whileHover={{ scale: 1.1, x: 2 }}
-              whileTap={{ scale: 0.9 }}
+            <button
               type="button"
-              onClick={handleNextDay}
-              className={`w-auto shrink-0 ${DS_RADIUS.section} bg-transparent p-2 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden lg:rounded-md`}
+              onClick={onNextDay}
+              className={`w-auto shrink-0 ${DS_RADIUS.section} bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden`}
               aria-label="Próximo dia"
             >
-              <ChevronRight className="h-4 w-4" />
-            </motion.button>
+              <ChevronRight className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
+            </button>
           </div>
 
-          <div className="mt-2 flex items-center justify-center">
-            <motion.span 
-              layout
-              className={`${DS_RADIUS.pill} border px-2.5 py-0.5 text-[10px] font-semibold ${isToday() ? 'border-primary bg-primary/20 text-primary' : 'border-border bg-secondary/60 text-muted-foreground'} lg:text-xs lg:px-3 lg:py-1`}
-            >
+          <div className="mt-3 flex items-center justify-center">
+            <span className={`${DS_RADIUS.pill} border px-3 py-1 text-xs font-semibold ${isToday() ? 'border-primary bg-primary/20 text-primary' : 'border-border bg-secondary/60 text-muted-foreground'}`}>
               {isToday() ? 'Hoje' : 'Dia selecionado'}
-            </motion.span>
+            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 print:hidden">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+        <div className="grid grid-cols-2 gap-2.5 print:hidden">
+          <button
             type="button"
             onClick={() => setIsCalendarOpen(true)}
-            className={`inline-flex h-9 items-center justify-center gap-1.5 ${DS_RADIUS.section} border border-border bg-secondary px-3 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90 shadow-sm lg:rounded-md lg:h-8`}
+            className={`inline-flex h-11 items-center justify-center gap-2 ${DS_RADIUS.section} border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90`}
           >
-            <Calendar className="h-3.5 w-3.5" />
+            <Calendar className="h-4 w-4" />
             <span>Calendário</span>
-          </motion.button>
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             type="button"
             onClick={onToday}
             disabled={isToday()}
-            className={`h-9 ${DS_RADIUS.section} bg-primary px-3 text-xs font-bold text-primary-foreground transition-all shadow-sm shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60 disabled:scale-100 lg:rounded-md lg:h-8`}
+            className={`h-11 ${DS_RADIUS.section} bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60`}
           >
             Ir para Hoje
-          </motion.button>
+          </button>
         </div>
       </div>
 
       {/* Modal do Calendário */}
-      <AnimatePresence>
-        {isCalendarOpen && (
-          <Modal
-            isOpen
-            onClose={() => setIsCalendarOpen(false)}
-            position="bottom"
-            overlayClassName="p-0 sm:p-4 backdrop-blur-sm"
-            panelClassName="w-full overflow-hidden sm:w-auto sm:min-w-85 sm:max-w-100"
-          >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="bg-card w-full"
-            >
-              <div className="flex items-center justify-between border-b border-border p-4">
-                <button
-                  type="button"
-                  onClick={goToPreviousMonth}
-                  className={`${DS_RADIUS.section} p-2 text-card-foreground transition-colors hover:bg-secondary`}
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                
-                <h3 className="text-lg font-bold text-card-foreground">
-                  {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
-                </h3>
-                
-                <button
-                  type="button"
-                  onClick={goToNextMonth}
-                  className={`${DS_RADIUS.section} p-2 text-card-foreground transition-colors hover:bg-secondary`}
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
+      {isCalendarOpen && (
+        <Modal
+          isOpen
+          onClose={() => setIsCalendarOpen(false)}
+          position="bottom"
+          overlayClassName="p-0 sm:p-4"
+          panelClassName="w-full overflow-hidden animate-slide-up sm:w-auto sm:min-w-85 sm:max-w-100"
+        >
+            <div className="flex items-center justify-between border-b border-border p-4">
+              <button
+                type="button"
+                onClick={goToPreviousMonth}
+                className={`${DS_RADIUS.section} p-2 text-card-foreground transition-colors hover:bg-secondary`}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              
+              <h3 className="text-lg font-bold text-card-foreground">
+                {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
+              </h3>
+              
+              <button
+                type="button"
+                onClick={goToNextMonth}
+                className={`${DS_RADIUS.section} p-2 text-card-foreground transition-colors hover:bg-secondary`}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </div>
 
-              <div className="grid grid-cols-7 gap-1 p-3 pb-0">
-                {WEEKDAYS.map((day) => (
-                  <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-1 p-3">
-                {generateCalendarDays().map((date, index) => {
-                  if (!date) {
-                    return <div key={`empty-${index}`} className="aspect-square" />;
-                  }
-
-                  const isSelected = isSameDay(date, selectedDate);
-                  const isCurrentDay = isTodayDate(date);
-                  const config = getDayConfig(date);
-                  const hasService = config.hasService;
-
-                  return (
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      type="button"
-                      key={date.toISOString()}
-                      onClick={() => handleDateSelect(date)}
-                      className={`
-                        aspect-square ${DS_RADIUS.section} flex flex-col items-center justify-center
-                        text-sm font-medium transition-all
-                        ${isSelected 
-                          ? 'bg-primary text-primary-foreground shadow-md' 
-                          : isCurrentDay
-                            ? 'bg-secondary text-primary ring-2 ring-primary'
-                            : hasService
-                              ? 'text-card-foreground hover:bg-secondary'
-                              : 'text-muted-foreground/50 hover:bg-secondary/50'
-                        }
-                      `}
-                    >
-                      <span className="text-base">{date.getDate()}</span>
-                      {hasService && !isSelected && (
-                        <span className={`w-1.5 h-1.5 ${DS_RADIUS.pill} bg-primary mt-0.5`} />
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              <div className="p-4 pt-2 border-t border-border">
-                <div className="mb-4 flex items-center justify-center gap-4 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 ${DS_RADIUS.pill} bg-primary`} />
-                    <span className="text-muted-foreground">Com atendimento</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 ${DS_RADIUS.pill} bg-muted-foreground/50`} />
-                    <span className="text-muted-foreground">Sem atendimento</span>
-                  </div>
+            <div className="grid grid-cols-7 gap-1 p-3 pb-0">
+              {WEEKDAYS.map((day) => (
+                <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+                  {day}
                 </div>
-                
-                <button
-                  type="button"
-                  onClick={() => setIsCalendarOpen(false)}
-                  className={`w-full ${DS_RADIUS.section} bg-secondary py-3 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90`}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <X className="h-4 w-4" />
-                    Fechar
-                  </span>
-                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 p-3">
+              {generateCalendarDays().map((date, index) => {
+                if (!date) {
+                  return <div key={`empty-${index}`} className="aspect-square" />;
+                }
+
+                const isSelected = isSameDay(date, selectedDate);
+                const isCurrentDay = isTodayDate(date);
+                const config = getDayConfig(date);
+                const hasService = config.hasService;
+
+                return (
+                  <button
+                    type="button"
+                    key={date.toISOString()}
+                    onClick={() => handleDateSelect(date)}
+                    className={`
+                      aspect-square ${DS_RADIUS.section} flex flex-col items-center justify-center
+                      text-sm font-medium transition-all
+                      ${isSelected 
+                        ? 'bg-primary text-primary-foreground scale-105' 
+                        : isCurrentDay
+                          ? 'bg-secondary text-primary ring-2 ring-primary'
+                          : hasService
+                            ? 'text-card-foreground hover:bg-secondary'
+                            : 'text-muted-foreground/50 hover:bg-secondary/50'
+                      }
+                    `}
+                  >
+                    <span className="text-base">{date.getDate()}</span>
+                    {hasService && !isSelected && (
+                      <span className={`w-1.5 h-1.5 ${DS_RADIUS.pill} bg-primary mt-0.5`} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="p-4 pt-2 border-t border-border">
+              <div className="mb-4 flex items-center justify-center gap-4 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 ${DS_RADIUS.pill} bg-primary`} />
+                  <span className="text-muted-foreground">Com atendimento</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 ${DS_RADIUS.pill} bg-muted-foreground/50`} />
+                  <span className="text-muted-foreground">Sem atendimento</span>
+                </div>
               </div>
-            </motion.div>
-          </Modal>
-        )}
-      </AnimatePresence>
+              
+              <button
+                type="button"
+                onClick={() => setIsCalendarOpen(false)}
+                className={`w-full ${DS_RADIUS.section} bg-secondary py-3 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90`}
+              >
+                <span className="inline-flex items-center gap-2">
+                  <X className="h-4 w-4" />
+                  Fechar
+                </span>
+              </button>
+            </div>
+        </Modal>
+      )}
     </div>
   );
 };
 
 export default DateSelector;
-

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarClock, X, Clock, Calendar } from 'lucide-react';
+import { CalendarClock, X } from 'lucide-react';
 import {
   Button,
   Input,
@@ -10,8 +9,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-  ActionBar
+  SelectValue
 } from '@/components/ui';
 import type { Appointment } from '@/types';
 import {
@@ -28,27 +26,6 @@ interface RescheduleAppointmentModalProps {
   onClose: () => void;
   isLoading: boolean;
 }
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 15, scale: 0.98 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1,
-    transition: { type: 'spring', damping: 25, stiffness: 200 }
-  },
-};
 
 export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProps> = ({
   appointment,
@@ -136,111 +113,82 @@ export const RescheduleAppointmentModal: React.FC<RescheduleAppointmentModalProp
       onClose={onClose}
       position="bottom"
       showMobileHandle
-      panelClassName="safe-area-bottom max-h-[92vh] overflow-y-auto p-0 sm:w-[95vw] sm:max-w-2xl sm:max-h-[90vh] overflow-x-hidden"
+      panelClassName="max-h-[92vh] overflow-y-auto p-5 sm:p-6"
     >
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="p-6 sm:p-10"
-      >
-        <div className="flex items-center justify-between mb-8">
-          <motion.div variants={itemVariants}>
-            <h3 className="text-2xl font-bold text-card-foreground">Remarcar Paciente</h3>
-            <p className="text-sm text-muted-foreground mt-1">{appointment.patient_name}</p>
-          </motion.div>
-          <motion.button
-            variants={itemVariants}
-            whileTap={{ scale: 0.9 }}
+
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-card-foreground sm:text-xl">Remarcar</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{appointment.patient_name}</p>
+          </div>
+          <button
+            type="button"
             onClick={onClose}
-            className="p-3 rounded-2xl bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
+            className="rounded-xl p-2.5 transition-colors hover:bg-secondary active:bg-secondary"
           >
-            <X className="w-6 h-6" />
-          </motion.button>
+            <X className="h-5 w-5 text-card-foreground" />
+          </button>
         </div>
 
-        <motion.div 
-          variants={itemVariants}
-          className="rounded-2xl border border-border bg-secondary/20 p-5 mb-8 flex flex-wrap gap-4"
-        >
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span>Ficha atual: <b className="text-card-foreground">{appointment.slot_number}</b></span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4" />
-            <span>Data original: <b className="text-card-foreground">{parseISODate(appointment.scheduled_date).toLocaleDateString('pt-BR')}</b></span>
-          </div>
-        </motion.div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <motion.div variants={itemVariants}>
-              <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">Nova data *</Label>
-              <Input
-                type="date"
-                value={dateValue}
-                onChange={(event) => setDateValue(event.target.value)}
-                min={formatDateToISO(new Date())}
-                className="h-14 rounded-2xl bg-background border-border shadow-sm pl-12"
-                icon={<CalendarClock className="w-5 h-5" />}
-              />
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">Novo slot *</Label>
-              <Select
-                value={slotNumber?.toString() ?? ''}
-                onValueChange={(value) => setSlotNumber(Number(value))}
-                disabled={isLoadingSlots || availableSlots.length === 0 || !canUseSelectedDate}
-              >
-                <SelectTrigger className="h-14 rounded-2xl bg-background border-border shadow-sm">
-                  <SelectValue placeholder={isLoadingSlots ? 'Carregando...' : 'Selecione um slot'} />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border-border shadow-2xl">
-                  {availableSlots.map(slot => (
-                    <SelectItem key={slot} value={slot.toString()} className="rounded-xl py-3 my-1">
-                      Slot {slot} — {getSlotTime(slot, selectedConfig)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </motion.div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="rounded-xl border border-border bg-background/40 p-3 text-sm text-muted-foreground">
+            Ficha atual: <span className="font-bold text-card-foreground">{appointment.slot_number}</span> em{' '}
+            <span className="font-bold text-card-foreground">
+              {parseISODate(appointment.scheduled_date).toLocaleDateString('pt-BR')}
+            </span>
           </div>
 
-          <AnimatePresence>
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="p-4 rounded-xl bg-red-400/10 border border-red-400/20 text-red-400 text-sm font-medium"
-              >
-                {error}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div>
+            <Label className="mb-2 block text-card-foreground">Nova data *</Label>
+            <Input
+              type="date"
+              value={dateValue}
+              onChange={(event) => setDateValue(event.target.value)}
+              min={formatDateToISO(new Date())}
+              className="pl-12"
+              icon={<CalendarClock className="h-4 w-4" />}
+            />
+          </div>
 
-          <motion.div variants={itemVariants} className="pt-6 border-t border-border">
-            <ActionBar className="gap-4" align="between">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-4 px-6 rounded-2xl bg-secondary text-secondary-foreground font-bold hover:bg-secondary/80 transition-all touch-manipulation"
-              >
-                Cancelar
-              </button>
-              <Button
-                type="submit"
-                disabled={isLoading || isLoadingSlots || !slotNumber || !canUseSelectedDate}
-                className="flex-1 py-4 rounded-2xl font-bold touch-manipulation shadow-xl shadow-primary/20"
-              >
-                {isLoading ? 'Salvando...' : 'Confirmar Remarcação'}
-              </Button>
-            </ActionBar>
-          </motion.div>
+          <div>
+            <Label className="mb-2 block text-card-foreground">Novo slot *</Label>
+            <Select
+              value={slotNumber?.toString() ?? ''}
+              onValueChange={(value) => setSlotNumber(Number(value))}
+              disabled={isLoadingSlots || availableSlots.length === 0 || !canUseSelectedDate}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={isLoadingSlots ? 'Carregando...' : 'Selecione um slot'} />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSlots.map(slot => (
+                  <SelectItem key={slot} value={slot.toString()}>
+                    Slot {slot} - {getSlotTime(slot, selectedConfig)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {error && <p className="text-sm text-red-400">{error}</p>}
+
+          <div className="flex gap-3 pt-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl bg-secondary px-4 py-3.5 font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90 active:bg-secondary/90"
+            >
+              Cancelar
+            </button>
+            <Button
+              type="submit"
+              disabled={isLoading || isLoadingSlots || !slotNumber || !canUseSelectedDate}
+              className="flex-1 py-3.5"
+            >
+              {isLoading ? 'Remarcando...' : 'Remarcar'}
+            </Button>
+          </div>
         </form>
-      </motion.div>
     </Modal>
   );
 };

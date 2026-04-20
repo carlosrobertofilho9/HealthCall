@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   User,
   FileText,
   UserCheck,
   MapPin,
-  ClipboardList,
-  Clock
+  ClipboardList
 } from 'lucide-react';
 import {
   Button,
@@ -39,27 +37,6 @@ interface EditAppointmentModalProps {
   onClose: () => void;
   isLoading: boolean;
 }
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 15, scale: 0.98 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    scale: 1,
-    transition: { type: 'spring', damping: 25, stiffness: 200 }
-  },
-};
 
 /**
  * Modal para editar uma marcação existente.
@@ -154,253 +131,209 @@ export const EditAppointmentModal: React.FC<EditAppointmentModalProps> = ({
       onClose={onClose}
       position="bottom"
       showMobileHandle
-      panelClassName="safe-area-bottom max-h-[92vh] overflow-y-auto p-0 sm:w-[95vw] sm:max-w-3xl sm:max-h-[90vh] overflow-x-hidden"
+      panelClassName="max-h-[92vh] overflow-y-auto p-5 sm:max-h-[90vh] sm:p-6"
     >
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="p-6 sm:p-10"
-      >
-        <div className="flex items-center justify-between mb-8">
-          <motion.div variants={itemVariants}>
-            <h3 className="text-2xl font-bold text-card-foreground">Editar Marcação</h3>
-            <p className="text-sm text-muted-foreground mt-1">Atualize os dados ou o status do paciente</p>
-          </motion.div>
-          <motion.button
-            variants={itemVariants}
-            whileTap={{ scale: 0.9 }}
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg sm:text-xl font-bold text-card-foreground">Editar Marcação</h3>
+          <button
             onClick={onClose}
-            className="p-3 rounded-2xl bg-secondary/50 text-muted-foreground hover:text-foreground transition-colors touch-manipulation"
+            className="p-2.5 rounded-xl active:bg-secondary hover:bg-secondary transition-colors touch-manipulation"
           >
-            <X className="w-6 h-6" />
-          </motion.button>
+            <X className="w-5 h-5 text-card-foreground" />
+          </button>
         </div>
 
-        <motion.div 
-          variants={itemVariants} 
-          className="mb-8 p-5 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-between shadow-lg shadow-primary/5"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-background flex items-center justify-center shadow-inner">
-              <Clock className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-0.5">Identificador</p>
-              <p className="text-lg font-bold text-card-foreground">
-                Ficha {appointment.slot_number} <span className="text-muted-foreground">·</span> {getSlotTime(appointment.slot_number, dayConfig)}
-              </p>
+        <div className="mb-4 p-3 bg-secondary rounded-lg">
+          <p className="text-muted-foreground text-sm">
+            Slot <span className="text-card-foreground font-bold">{appointment.slot_number}</span> •{' '}
+            {getSlotTime(appointment.slot_number, dayConfig)}
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label className="text-card-foreground mb-2 block">Status</Label>
+            <Select
+              value={status}
+              onValueChange={(value) => setStatus(value as AppointmentStatus)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {APPOINTMENT_STATUSES.filter(item => item !== 'Remarcado').map(item => (
+                  <SelectItem key={item} value={item}>
+                    {item}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Nome do Paciente */}
+          <div>
+            <Label className="text-card-foreground mb-2 block">Nome do Paciente *</Label>
+            <Input
+              type="text"
+              value={patientName}
+              onChange={(e) => setPatientName(e.target.value)}
+              placeholder="Digite o nome completo"
+              icon={<User className="w-4 h-4" />}
+            />
+            {errors.patientName && (
+              <p className="text-red-400 text-sm mt-1">{errors.patientName}</p>
+            )}
+          </div>
+
+          {/* Tipo de Documento */}
+          <div>
+            <Label className="text-card-foreground mb-2 block">Tipo de Documento *</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-card-foreground cursor-pointer">
+                <input
+                  type="radio"
+                  name="documentType"
+                  value="CPF"
+                  checked={documentType === 'CPF'}
+                  onChange={() => {
+                    setDocumentType('CPF');
+                    setDocumentValue('');
+                  }}
+                  className="accent-primary w-4 h-4"
+                />
+                CPF
+              </label>
+              <label className="flex items-center gap-2 text-card-foreground cursor-pointer">
+                <input
+                  type="radio"
+                  name="documentType"
+                  value="CARTAO_SUS"
+                  checked={documentType === 'CARTAO_SUS'}
+                  onChange={() => {
+                    setDocumentType('CARTAO_SUS');
+                    setDocumentValue('');
+                  }}
+                  className="accent-primary w-4 h-4"
+                />
+                Cartão SUS
+              </label>
             </div>
           </div>
-        </motion.div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {/* Status */}
-            <motion.div variants={itemVariants}>
-              <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">Status do Atendimento</Label>
+          {/* Documento */}
+          <div>
+            <Label className="text-card-foreground mb-2 block">
+              {documentType === 'CPF' ? 'CPF *' : 'Número do Cartão SUS *'}
+            </Label>
+            <Input
+              type="text"
+              value={documentValue}
+              onChange={handleDocumentChange}
+              placeholder={documentType === 'CPF' ? '000.000.000-00' : 'Número do cartão'}
+              icon={<FileText className="w-4 h-4" />}
+            />
+            {errors.documentValue && (
+              <p className="text-red-400 text-sm mt-1">{errors.documentValue}</p>
+            )}
+          </div>
+
+          {/* ACS */}
+          <div>
+            <Label className="text-card-foreground mb-2 block">ACS Responsável *</Label>
+            <div className="relative mb-2">
+              <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
               <Select
-                value={status}
-                onValueChange={(value) => setStatus(value as AppointmentStatus)}
+                value={selectedAcs}
+                onValueChange={setSelectedAcs}
               >
-                <SelectTrigger className="h-14 rounded-2xl bg-background border-border shadow-sm">
-                  <SelectValue />
+                <SelectTrigger className="pl-12">
+                  <SelectValue placeholder="Selecione..." />
                 </SelectTrigger>
-                <SelectContent className="rounded-2xl border-border shadow-2xl">
-                  {APPOINTMENT_STATUSES.filter(item => item !== 'Remarcado').map(item => (
-                    <SelectItem key={item} value={item} className="rounded-xl py-3 my-1">
-                      {item}
+                <SelectContent>
+                  {ACS_OPTIONS.map((acs) => (
+                    <SelectItem key={acs} value={acs}>
+                      {acs}
                     </SelectItem>
                   ))}
+                  <SelectItem value="Outro">Outro (Digitar nome)</SelectItem>
                 </SelectContent>
               </Select>
-            </motion.div>
+            </div>
 
-            {/* Nome do Paciente */}
-            <motion.div variants={itemVariants}>
-              <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">Nome do Paciente *</Label>
-              <Input
-                type="text"
-                value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
-                placeholder="Digite o nome completo"
-                icon={<User className="w-5 h-5" />}
-                className="h-14 rounded-2xl bg-background shadow-sm"
-              />
-              {errors.patientName && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-400 text-xs font-medium mt-1.5 ml-1">{errors.patientName}</motion.p>
-              )}
-            </motion.div>
-
-            {/* Tipo de Documento */}
-            <motion.div variants={itemVariants}>
-              <Label className="text-sm font-semibold text-card-foreground mb-3 block">Tipo de Documento *</Label>
-              <div className="flex gap-2">
-                {['CPF', 'CARTAO_SUS'].map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => {
-                      setDocumentType(type as DocumentType);
-                      setDocumentValue('');
-                    }}
-                    className={`flex-1 py-3 px-4 rounded-xl border text-sm font-bold transition-all ${
-                      documentType === type
-                        ? 'bg-primary/10 border-primary text-primary shadow-lg shadow-primary/5'
-                        : 'bg-background border-border text-muted-foreground hover:border-muted-foreground/30'
-                    }`}
-                  >
-                    {type === 'CPF' ? 'CPF' : 'Cartão SUS'}
-                  </button>
-                ))}
+            {selectedAcs === 'Outro' && (
+              <div className="animate-in fade-in zoom-in duration-200">
+                <Input
+                  type="text"
+                  value={customAcs}
+                  onChange={(e) => setCustomAcs(e.target.value)}
+                  placeholder="Digite o nome do ACS"
+                  icon={<UserCheck className="w-4 h-4" />}
+                />
               </div>
-            </motion.div>
+            )}
 
-            {/* Documento */}
-            <motion.div variants={itemVariants}>
-              <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">
-                {documentType === 'CPF' ? 'Número do CPF *' : 'Número do Cartão SUS *'}
-              </Label>
-              <Input
-                type="text"
-                value={documentValue}
-                onChange={handleDocumentChange}
-                placeholder={documentType === 'CPF' ? '000.000.000-00' : 'Número do cartão'}
-                icon={<FileText className="w-5 h-5" />}
-                className="h-14 rounded-2xl bg-background shadow-sm"
-              />
-              {errors.documentValue && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-400 text-xs font-medium mt-1.5 ml-1">{errors.documentValue}</motion.p>
-              )}
-            </motion.div>
-
-            {/* ACS */}
-            <motion.div variants={itemVariants} className="sm:col-span-2">
-              <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">ACS Responsável *</Label>
-              <div className="relative mb-3">
-                <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-                <Select
-                  value={selectedAcs}
-                  onValueChange={setSelectedAcs}
-                >
-                  <SelectTrigger className="pl-12 h-14 rounded-2xl bg-background border-border shadow-sm">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-border shadow-2xl">
-                    {ACS_OPTIONS.map((acs) => (
-                      <SelectItem key={acs} value={acs} className="rounded-xl py-3 my-1">
-                        {acs}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="Outro" className="rounded-xl py-3 my-1 font-semibold text-primary">Outro (Digitar nome)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <AnimatePresence>
-                {selectedAcs === 'Outro' && (
-                  <motion.div 
-                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
-                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <Input
-                      type="text"
-                      value={customAcs}
-                      onChange={(e) => setCustomAcs(e.target.value)}
-                      placeholder="Digite o nome do ACS responsável"
-                      icon={<UserCheck className="w-5 h-5" />}
-                      className="h-14 rounded-2xl bg-background shadow-sm"
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {errors.acsName && (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-400 text-xs font-medium mt-1.5 ml-1">{errors.acsName}</motion.p>
-              )}
-            </motion.div>
+            {errors.acsName && (
+              <p className="text-red-400 text-sm mt-1">{errors.acsName}</p>
+            )}
           </div>
 
           {isHomeVisit && (
-            <motion.div 
-              variants={itemVariants}
-              className="space-y-6 rounded-3xl border border-border bg-secondary/20 p-6 sm:p-8"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <MapPin className="w-5 h-5 text-primary" />
-                </div>
-                <h4 className="font-bold text-card-foreground">Dados da Visita Domiciliar</h4>
+            <div className="space-y-4 rounded-2xl border border-border bg-background/40 p-4">
+              <div>
+                <Label className="text-card-foreground mb-2 block">Endereço completo *</Label>
+                <Input
+                  type="text"
+                  value={homeVisitAddress}
+                  onChange={(e) => setHomeVisitAddress(e.target.value)}
+                  placeholder="Rua, número, bairro e complemento"
+                  icon={<MapPin className="w-4 h-4" />}
+                />
+                {errors.homeVisitAddress && (
+                  <p className="text-red-400 text-sm mt-1">{errors.homeVisitAddress}</p>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">Endereço Completo *</Label>
-                  <Input
-                    type="text"
-                    value={homeVisitAddress}
-                    onChange={(e) => setHomeVisitAddress(e.target.value)}
-                    placeholder="Rua, número, bairro e complemento"
-                    icon={<MapPin className="w-5 h-5" />}
-                    className="h-14 rounded-2xl bg-background shadow-sm"
-                  />
-                  {errors.homeVisitAddress && (
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-400 text-xs font-medium mt-1.5 ml-1">{errors.homeVisitAddress}</motion.p>
-                  )}
-                </div>
-
-                <div>
-                  <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">Ponto de Referência</Label>
-                  <Input
-                    type="text"
-                    value={homeVisitReference}
-                    onChange={(e) => setHomeVisitReference(e.target.value)}
-                    placeholder="Ex.: próximo à escola, portão azul"
-                    icon={<MapPin className="w-5 h-5" />}
-                    className="h-14 rounded-2xl bg-background shadow-sm"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <Label className="text-sm font-semibold text-card-foreground mb-2.5 block">Motivo da Visita *</Label>
-                  <Textarea
-                    value={homeVisitReason}
-                    onChange={(e) => setHomeVisitReason(e.target.value)}
-                    placeholder="Descreva o motivo atualizado..."
-                    icon={<ClipboardList className="w-6 h-6" />}
-                    className="min-h-32 rounded-2xl bg-background shadow-sm resize-none"
-                  />
-                  {errors.homeVisitReason && (
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-red-400 text-xs font-medium mt-1.5 ml-1">{errors.homeVisitReason}</motion.p>
-                  )}
-                </div>
+              <div>
+                <Label className="text-card-foreground mb-2 block">Ponto de referência</Label>
+                <Input
+                  type="text"
+                  value={homeVisitReference}
+                  onChange={(e) => setHomeVisitReference(e.target.value)}
+                  placeholder="Ex.: próximo à escola, portão azul"
+                  icon={<MapPin className="w-4 h-4" />}
+                />
               </div>
-            </motion.div>
+
+              <div>
+                <Label className="text-card-foreground mb-2 block">Motivo da visita *</Label>
+                <Textarea
+                  value={homeVisitReason}
+                  onChange={(e) => setHomeVisitReason(e.target.value)}
+                  placeholder="Descreva o motivo da visita domiciliar"
+                  icon={<ClipboardList className="w-5 h-5" />}
+                  className="min-h-24"
+                />
+                {errors.homeVisitReason && (
+                  <p className="text-red-400 text-sm mt-1">{errors.homeVisitReason}</p>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Botões */}
-          <motion.div variants={itemVariants} className="pt-6 border-t border-border">
-            <ActionBar className="gap-4" align="between">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-4 px-6 rounded-2xl bg-secondary text-secondary-foreground font-bold hover:bg-secondary/80 transition-all touch-manipulation"
-              >
-                Cancelar
-              </button>
-              <Button 
-                type="submit" 
-                disabled={isLoading} 
-                className="flex-1 py-4 rounded-2xl font-bold touch-manipulation shadow-xl shadow-primary/20"
-              >
-                {isLoading ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
-            </ActionBar>
-          </motion.div>
+          <ActionBar className="pt-4" align="between">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3.5 px-4 rounded-xl bg-secondary text-secondary-foreground font-semibold active:bg-secondary/90 hover:bg-secondary/90 transition-colors touch-manipulation"
+            >
+              Cancelar
+            </button>
+            <Button type="submit" disabled={isLoading} className="flex-1 py-3.5 touch-manipulation">
+              {isLoading ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </ActionBar>
         </form>
-      </motion.div>
     </Modal>
   );
 };
