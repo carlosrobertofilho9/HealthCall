@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Badge, Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
+import AnatomicalMiniMap from '@/components/clinical/AnatomicalMiniMap';
 import type { WoundCase, WoundCaseStatus } from '../types';
 import { Filter, Plus, Play, Eye, CheckCircle, Lock, ListFilter } from 'lucide-react';
 
@@ -114,10 +115,15 @@ const WoundCaseList: React.FC<WoundCaseListProps> = ({
                   : 'border-border bg-background hover:border-primary/40'
               }`}
             >
-              <p className="text-sm font-semibold text-foreground">{wound.anatomical_code}</p>
-              <p className="text-xs text-muted-foreground">
-                Início: {new Date(wound.started_at).toLocaleDateString('pt-BR')}
-              </p>
+              <div className="flex items-center gap-3">
+                <AnatomicalMiniMap code={wound.anatomical_code} size={36} className="shrink-0 bg-background/50" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground leading-tight truncate">{wound.anatomical_code}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">
+                    Início: {new Date(wound.started_at).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <Badge variant={wound.status === 'encerrada' ? 'muted' : 'warning'}>{woundStatusLabels[wound.status]}</Badge>
                 {wound.closure_type && <Badge variant="outline">{wound.closure_type}</Badge>}

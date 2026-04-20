@@ -2,6 +2,7 @@ import React from 'react';
 import type { WoundCase } from '../types';
 import { Badge, Button } from '@/components/ui';
 import { FileText, History, RotateCcw } from 'lucide-react';
+import AnatomicalMiniMap from '@/components/clinical/AnatomicalMiniMap';
 
 interface WoundCaseHeaderProps {
   wound: WoundCase | null;
@@ -27,9 +28,12 @@ const WoundCaseHeader: React.FC<WoundCaseHeaderProps> = ({
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">{wound.anatomical_code}</h2>
-          <p className="text-sm text-muted-foreground">Etiologia: {wound.etiology}</p>
+        <div className="flex items-center gap-4">
+          <AnatomicalMiniMap code={wound.anatomical_code} size={42} className="shrink-0" />
+          <div>
+            <h2 className="text-lg font-bold text-foreground leading-tight">{wound.anatomical_code}</h2>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-tight">Etiologia: <span className="text-foreground">{wound.etiology}</span></p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
