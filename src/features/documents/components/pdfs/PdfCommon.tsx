@@ -257,15 +257,15 @@ export const PatientInfoBar = ({ nome, cns }: { nome?: string, cns?: string }) =
   return (
     <View style={commonStyles.patientInfoCard}>
       <View style={{ flex: 2, minWidth: 200 }}>
-        <DocLabel>Nome do Paciente</DocLabel>
-        <View style={{ borderBottomWidth: 1, borderBottomColor: pdfTheme.colors.borderDark, height: 18, justifyContent: 'center' }}>
-          <DocValue>{nome || ''}</DocValue>
+        <DocLabel style={commonStyles.patientInfoLabelEmphasis}>Nome do Paciente</DocLabel>
+        <View style={commonStyles.patientInfoValueLine}>
+          <DocValue style={commonStyles.patientInfoValueName}>{nome || ''}</DocValue>
         </View>
       </View>
       <View style={{ flex: 1, minWidth: 120 }}>
-        <DocLabel>CNS ou CPF</DocLabel>
-        <View style={{ borderBottomWidth: 1, borderBottomColor: pdfTheme.colors.borderDark, height: 18, justifyContent: 'center' }}>
-          <DocValue>{formatDocument(cns)}</DocValue>
+        <DocLabel style={commonStyles.patientInfoLabelEmphasis}>CNS ou CPF</DocLabel>
+        <View style={commonStyles.patientInfoValueLine}>
+          <DocValue style={commonStyles.patientInfoValueDocument}>{formatDocument(cns)}</DocValue>
         </View>
       </View>
     </View>
@@ -411,6 +411,27 @@ export const commonStyles = StyleSheet.create({
     fontSize: pdfTheme.fontSize.xs,
     color: pdfTheme.colors.text.light,
     marginBottom: 1,
+  },
+  patientInfoLabelEmphasis: {
+    color: pdfTheme.colors.text.secondary,
+    fontWeight: 'bold',
+  },
+  patientInfoValueLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: pdfTheme.colors.borderDark,
+    height: 20,
+    justifyContent: 'center',
+  },
+  patientInfoValueName: {
+    fontSize: pdfTheme.fontSize.base,
+    fontWeight: 'bold',
+    color: pdfTheme.colors.text.dark,
+  },
+  patientInfoValueDocument: {
+    fontSize: pdfTheme.fontSize.base,
+    fontWeight: 'bold',
+    color: pdfTheme.colors.text.dark,
+    letterSpacing: 0.8,
   },
   patientInfoItem: { // Mantido para compatibilidade, mas usar DocValue preferencialmente
     fontSize: pdfTheme.fontSize.base,

@@ -11,8 +11,14 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui';
+import { formatCPF, formatCNS } from '@/lib/utils';
 import { extractPlaceholders } from '../utils/templateUtils';
 import { fieldHints, extraFieldsByTemplate, itemListConfigByTemplate } from '../utils/mockData';
+import { DocumentDateSelector } from './DocumentDateSelector';
+import {
+  clampIsoDateToFutureRange,
+  getTodayIsoDate,
+} from '../utils/dateSequence';
 import {
   AlertCircle,
   User,
@@ -35,14 +41,6 @@ interface DynamicFieldsFormProps {
   onChange: (key: string, value: string) => void;
   templateId?: string;
 }
-
-const getTodayInputDate = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 // --- Componente para campo de lista de itens (fórmulas, etc.) ---
 interface ItemListFieldProps {
@@ -185,9 +183,25 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
       keys.includes('DATA_SOLICITACAO_CURATIVO') &&
       !values.DATA_SOLICITACAO_CURATIVO
     ) {
-      onChange('DATA_SOLICITACAO_CURATIVO', getTodayInputDate());
+      onChange('DATA_SOLICITACAO_CURATIVO', getTodayIsoDate());
     }
   }, [keys, onChange, templateId, values.DATA_SOLICITACAO_CURATIVO]);
+
+  useEffect(() => {
+    if (templateId === 'controle_pressao' && keys.includes('MAPA_DATA_INICIAL') && !values.MAPA_DATA_INICIAL) {
+      onChange('MAPA_DATA_INICIAL', getTodayIsoDate());
+    }
+
+    if (templateId === 'controle_glicemico' && keys.includes('GLICEMIA_DATA_INICIAL') && !values.GLICEMIA_DATA_INICIAL) {
+      onChange('GLICEMIA_DATA_INICIAL', getTodayIsoDate());
+    }
+  }, [
+    keys,
+    onChange,
+    templateId,
+    values.GLICEMIA_DATA_INICIAL,
+    values.MAPA_DATA_INICIAL,
+  ]);
 
   // Função para transformar CHAVE_COM_UNDERSCORE em "Chave Com Underscore"
   const humanizeKey = (key: string) => {
@@ -258,6 +272,33 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
     }
   };
 
+  const formatDocumentValueByFieldKey = useCallback((fieldKey: string, rawValue: string) => {
+    const normalizedKey = fieldKey.toUpperCase();
+    const hasCPF = normalizedKey.includes('CPF');
+    const hasCNS = normalizedKey.includes('CNS');
+    const hasDOC = normalizedKey.includes('DOC');
+
+    if (!hasCPF && !hasCNS && !hasDOC) {
+      return rawValue;
+    }
+
+    const digits = rawValue.replace(/\D/g, '');
+
+    if (hasCPF && !hasCNS) {
+      return formatCPF(digits);
+    }
+
+    if (hasCNS && !hasCPF) {
+      return formatCNS(digits);
+    }
+
+    if (digits.length <= 11) {
+      return formatCPF(digits);
+    }
+
+    return formatCNS(digits);
+  }, []);
+
   if (keys.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-secondary/15 p-8 text-primary/70">
@@ -278,6 +319,20 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
           const value = values[key] || '';
           const icon = getIcon(key, type);
 
+          if (key === 'MAPA_DATA_INICIAL' || key === 'GLICEMIA_DATA_INICIAL') {
+            return (
+              <div key={key} className="space-y-2">
+                <Label htmlFor={key} className="pl-1 text-sm font-medium text-primary">
+                  {label}
+                </Label>
+                <DocumentDateSelector
+                  value={value || getTodayIsoDate()}
+                  onChange={(nextValue) => onChange(key, clampIsoDateToFutureRange(nextValue))}
+                />
+              </div>
+            );
+          }
+
           // Renderização especial para campo de lista de itens
           if (type === 'item-list') {
             return (
@@ -296,7 +351,10 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
           // Renderização especial para campo de checkbox
           if (type === 'checkbox') {
             return (
-              <div key={key} className="flex items-center space-x-3 rounded-xl border border-border bg-secondary/25 p-3 transition-colors hover:bg-secondary/40">
+              <div
+                key={key}
+                className="flex items-center space-x-3 rounded-xl border border-border bg-secondary/25 p-3 transition-colors hover:bg-secondary/40"
+              >
                 <input
                   type="checkbox"
                   id={key}
@@ -402,7 +460,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                   <Textarea
                     id={key}
                     value={value}
-                    onChange={(e) => onChange(key, e.target.value)}
+                    onChange={(e) => onChange(key, formatDocumentValueByFieldKey(key, e.target.value))}
                     placeholder={placeholder}
                     icon={<span className="text-muted-foreground">{icon}</span>}
                     className="min-h-24 rounded-xl bg-input/70 text-sm"
@@ -413,7 +471,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                     id={key}
                     type={type}
                     value={value}
-                    onChange={(e) => onChange(key, e.target.value)}
+                    onChange={(e) => onChange(key, formatDocumentValueByFieldKey(key, e.target.value))}
                     placeholder={placeholder}
                     icon={icon}
                     className="h-11 rounded-xl bg-input/70 transition-all"

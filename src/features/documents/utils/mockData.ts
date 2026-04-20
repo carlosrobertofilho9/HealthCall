@@ -261,6 +261,8 @@ export const fieldHints: Record<string, FieldHint> = {
   NOME_PACIENTE: { label: 'Nome do Paciente', type: 'text', placeholder: 'Opcional' },
   CNS_CPF: { label: 'CNS ou CPF', type: 'text', placeholder: 'Opcional' },
   DATA_PROCEDIMENTO: { label: 'Data do Procedimento', type: 'date', placeholder: 'dd/mm/aaaa' },
+  MAPA_DATA_INICIAL: { label: 'Data inicial (MAPA)', type: 'date', placeholder: 'dd/mm/aaaa' },
+  GLICEMIA_DATA_INICIAL: { label: 'Data inicial (Controle Glicêmico)', type: 'date', placeholder: 'dd/mm/aaaa' },
   HORA_PROCEDIMENTO: { label: 'Hora', type: 'text', placeholder: 'Ex: 14:30' },
   PROFISSIONAL: { label: 'Profissional Responsável', type: 'text', placeholder: 'Nome do profissional' },
   CRM_COREN: { label: 'CRM / COREN', type: 'text', placeholder: 'Registro profissional' },
@@ -378,6 +380,8 @@ export const fieldHints: Record<string, FieldHint> = {
  * mas NÃO fazem parte do templateText (para evitar renderizar dados brutos como texto).
  */
 export const extraFieldsByTemplate: Record<string, string[]> = {
+  controle_pressao: ['MAPA_DATA_INICIAL'],
+  controle_glicemico: ['GLICEMIA_DATA_INICIAL'],
   ficha_curativos: [
     'LOCALIZACAO_LESAO', 'DATA_INICIO_LESAO', 'CLASSIFICACAO_LESAO',
     'MEDIDA_LESAO', 'COBERTURA_INICIAL', 'DOR_ESCALA', 'OBSERVACOES_PLANO',

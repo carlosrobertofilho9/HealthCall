@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
 import { HeaderIcon, tableStyles, BaseDocument, type DocumentFormData, PageHeader, PatientInfoBar, PageFooter, DocTitle, DocText, commonStyles, pdfTheme } from './PdfCommon';
 import { PdfIconBadge, type PdfIconName } from './icons';
+import { buildSequentialDayMonthDates } from '../../utils/dateSequence';
 const pressureStyles = StyleSheet.create({
   container: {
     width: '100%',
@@ -149,6 +150,7 @@ const pressureStyles = StyleSheet.create({
 interface PressureDocumentProps {
   visibleParagraphs: string[];
   formData?: DocumentFormData;
+  values?: Record<string, string>;
 }
 
 const PressureBadge = ({
@@ -171,13 +173,14 @@ const PressureBadge = ({
   />
 );
 
-export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParagraphs, formData }) => {
+export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParagraphs, formData, values }) => {
   const DAYS = 7;
   const dateColWidth = '6%';
   const morningGroupWidth = '28%';
   const afternoonGroupWidth = '28%';
   const nightGroupWidth = '28%';
   const obsColWidth = '10%';
+  const sequentialDates = buildSequentialDayMonthDates(values?.MAPA_DATA_INICIAL, DAYS);
 
   const renderTablePage = (isExample: boolean) => (
       <View style={[commonStyles.page, { paddingBottom: pdfTheme.spacing.xxl, paddingTop: pdfTheme.spacing.xl }]} wrap={false}>
@@ -293,7 +296,7 @@ export const PressureDocument: React.FC<PressureDocumentProps> = ({ visibleParag
               ];
               const showEx = isExample;
               const exData = showEx ? mockExamples[i] : null;
-              const dateTxt = showEx ? exData.date : "___/___";
+              const dateTxt = showEx ? exData.date : sequentialDates[i] || "___/___";
               const obsTxt = showEx ? exData.obs : "";
               const txtStyles = showEx ? { color: pdfTheme.colors.text.main, fontSize: 6, fontWeight: 'bold' } : { color: pdfTheme.colors.text.muted, opacity: 0.4 };
 

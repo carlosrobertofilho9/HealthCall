@@ -75,13 +75,19 @@ const styles = StyleSheet.create({
   fieldLine: {
     borderBottomWidth: 1,
     borderBottomColor: pdfTheme.colors.borderDark,
-    height: 14,
+    height: 16,
     justifyContent: 'center',
   },
   fieldValue: {
     fontSize: 9,
     color: pdfTheme.colors.text.dark,
     fontWeight: 'bold',
+  },
+  fieldValueDocument: {
+    fontSize: 9.5,
+    color: pdfTheme.colors.text.dark,
+    fontWeight: 'bold',
+    letterSpacing: 0.8,
   },
   // Type checkboxes row
   typeRow: {
@@ -195,7 +201,7 @@ export const PendingItemsDocument: React.FC<PendingItemsDocumentProps> = ({ form
                     <Text style={styles.fieldLabel}>CNS / CPF</Text>
                     <View style={styles.fieldLine}>
                       {item?.cnsCpf ? (
-                        <Text style={styles.fieldValue}>{item.cnsCpf}</Text>
+                        <Text style={styles.fieldValueDocument}>{item.cnsCpf}</Text>
                       ) : null}
                     </View>
                   </View>

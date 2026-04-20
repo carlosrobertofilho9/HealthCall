@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, View, StyleSheet } from '@react-pdf/renderer';
 import { HeaderIcon, tableStyles, BaseDocument, type DocumentFormData, PageFooter, DocTitle, commonStyles, pdfTheme } from './PdfCommon';
 import { PdfIconBadge, type PdfIconName } from './icons';
+import { buildSequentialDayMonthDates } from '../../utils/dateSequence';
 
 const glycemicStyles = StyleSheet.create({
   container: { width: '100%' },
@@ -49,7 +50,7 @@ const GlycemicBadge = ({
   />
 );
 
-export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?: DocumentFormData }> = ({ visibleParagraphs, formData }) => {
+export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?: DocumentFormData; values?: Record<string, string> }> = ({ visibleParagraphs, formData, values }) => {
   const DAYS = 16;
   const dateColWidth = '8%';
   const morningGroupWidth = '23%';
@@ -57,6 +58,7 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
   const nightGroupWidth = '23%';
   const madrugadaColWidth = '11.5%';
   const obsColWidth = '11.5%';
+  const sequentialDates = buildSequentialDayMonthDates(values?.GLICEMIA_DATA_INICIAL, DAYS);
 
   const renderTablePage = (isExample: boolean) => (
     <View style={[commonStyles.page, { paddingBottom: pdfTheme.spacing.xxl, paddingTop: pdfTheme.spacing.xl }]} wrap={false}>
@@ -172,7 +174,7 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
             ];
             
             const exData = isExample ? mockExamples[i] : null;
-            const dateTxt = isExample ? exData.date : "___/___";
+            const dateTxt = isExample ? exData.date : sequentialDates[i] || "___/___";
             const obsTxt = isExample ? exData.vals[7] : "";
             const txtStyles = isExample ? { color: pdfTheme.colors.text.main, fontSize: 8, fontWeight: 'bold' } : { color: pdfTheme.colors.text.muted, opacity: 0.4 };
             const getVal = (idx: number) => isExample ? (exData?.vals[idx] || "—") : " ";
