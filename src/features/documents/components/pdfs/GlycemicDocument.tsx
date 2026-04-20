@@ -292,7 +292,7 @@ export const GlycemicDocument: React.FC<{ visibleParagraphs: string[]; formData?
               <Text style={[glycemicStyles.listText, { fontSize: 9, color: pdfTheme.colors.warning.dark }]}>Menor que 70 mg/dL (Hipoglicemia = Apagão)</Text>
               <Text style={[glycemicStyles.listText, { fontSize: 9, marginTop: 4 }]}>Sintomas Rápidos: Fome gigante, suor super frio na nuca, tremedeira fina, visão escura repentina.</Text>
               <Text style={[glycemicStyles.listText, { fontSize: 9, marginTop: 4, fontWeight: 'bold' }]}>
-                Ação Salva-Vidas: Coma 1 colher de sopa pura e rasa de açúcar, ou beba meio copo de refri NÃO ZERO ou suco de cajinha. Depois de 15 minutos de repouso, aí o senhor(a) come algo sólido, como um pão ou biscoito.
+                Ação Salva-Vidas: Coma 1 colher de sopa pura e rasa de açúcar, ou beba meio copo de refri NÃO ZERO ou suco de caixinha. Depois de 15 minutos de repouso, aí o senhor(a) come algo sólido, como um pão ou biscoito.
               </Text>
             </View>
           </View>
