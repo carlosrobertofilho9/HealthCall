@@ -40,6 +40,7 @@ const WoundsPage: React.FC = () => {
     closeCase,
     reopenCase,
     removePhoto,
+    removePatient,
     persistDraft,
     restoreDraft,
     clearDraft,
@@ -285,6 +286,7 @@ const WoundsPage: React.FC = () => {
                 selectedPatientId={selectedPatientId}
                 onSelectPatient={setSelectedPatientId}
                 onCreatePatient={createPatient}
+                onDeletePatient={removePatient}
               />
             </aside>
 
@@ -362,6 +364,7 @@ const WoundsPage: React.FC = () => {
                 selectedPatientId={selectedPatientId}
                 onSelectPatient={setSelectedPatientId}
                 onCreatePatient={createPatient}
+                onDeletePatient={removePatient}
               />
               <WoundCaseList
                 wounds={wounds}

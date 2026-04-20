@@ -13,6 +13,7 @@ import type {
   WoundPatientWithSummary,
   WoundPhoto,
   WoundStatusEvent,
+  WoundPatient,
 } from '../types';
 
 const WOUND_STORAGE_BUCKET = 'wound-photos';
@@ -118,6 +119,36 @@ export async function createWoundPatient(input: CreateWoundPatientInput): Promis
 
   if (error) throw error;
   return data as WoundPatient;
+}
+
+export async function deleteWoundPatient(patientId: string): Promise<void> {
+  // 1. Get all photos for all wounds of this patient
+  const { data: photos, error: photosError } = await supabase
+    .from('wound_photos')
+    .select('storage_path, wound_cases!inner(patient_id)')
+    .eq('wound_cases.patient_id', patientId);
+
+  if (photosError) throw photosError;
+
+  // 2. Delete files from storage
+  if (photos && photos.length > 0) {
+    const paths = photos.map((p: any) => p.storage_path);
+    const { error: storageError } = await supabase.storage
+      .from(WOUND_STORAGE_BUCKET)
+      .remove(paths);
+
+    if (storageError) {
+      console.warn('Erro ao deletar algumas fotos do storage:', storageError);
+    }
+  }
+
+  // 3. Delete patient (cascades to wound_cases, wound_entries, wound_photos metadata)
+  const { error: deleteError } = await supabase
+    .from('wound_patients')
+    .delete()
+    .eq('id', patientId);
+
+  if (deleteError) throw deleteError;
 }
 
 export async function listWoundsByPatient(

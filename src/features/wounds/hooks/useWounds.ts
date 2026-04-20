@@ -5,6 +5,7 @@ import {
   closeWoundCase,
   createWoundCase,
   createWoundPatient,
+  deleteWoundPatient,
   deleteWoundPhoto,
   hydratePhotosWithSignedUrls,
   listPatientsWithTrackedWounds,
@@ -360,6 +361,24 @@ export function useWounds() {
       throw err;
     }
   }, [refreshWoundDetails, selectedWoundId]);
+ 
+  const removePatient = useCallback(async (patientId: string) => {
+    try {
+      await deleteWoundPatient(patientId);
+      toast.success('Paciente e todos os dados relacionados foram excluídos.');
+      
+      if (selectedPatientId === patientId) {
+        setSelectedPatientId(null);
+        setSelectedWoundId(null);
+      }
+      
+      await refreshPatients();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Falha ao excluir paciente.';
+      toast.error(message);
+      throw err;
+    }
+  }, [refreshPatients, selectedPatientId]);
 
   const persistDraft = useCallback(async (woundId: string, form: WoundFormDraft) => {
     await saveWoundDraft(woundId, form);
@@ -397,6 +416,7 @@ export function useWounds() {
     closeCase,
     reopenCase,
     removePhoto,
+    removePatient,
     persistDraft,
     restoreDraft,
     clearDraft,

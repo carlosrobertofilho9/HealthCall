@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Badge, Button, Input } from '@/components/ui';
 import type { CreateWoundPatientInput, WoundPatientWithSummary } from '../types';
-import { Search, UserPlus } from 'lucide-react';
+import { Search, UserPlus, Trash2 } from 'lucide-react';
 import {
   detectDocumentoPacienteTipo,
   formatDocumentoPaciente,
@@ -14,6 +14,7 @@ interface WoundPatientListProps {
   selectedPatientId: string | null;
   onSelectPatient: (patientId: string) => void;
   onCreatePatient: (input: CreateWoundPatientInput) => Promise<unknown>;
+  onDeletePatient?: (patientId: string) => Promise<unknown>;
 }
 
 const WoundPatientList: React.FC<WoundPatientListProps> = ({
@@ -21,6 +22,7 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
   selectedPatientId,
   onSelectPatient,
   onCreatePatient,
+  onDeletePatient,
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
@@ -76,6 +78,28 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
       setShowForm(false);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (event: React.MouseEvent, patient: WoundPatientWithSummary) => {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    // Explicitly check for window to avoid SSR issues and for clarity
+    if (typeof window === 'undefined') return;
+
+    const confirmed = window.confirm(
+      `ATENÇÃO: Você está prestes a excluir permanentemente o paciente "${patient.full_name}" e todos os registros de feridas, evoluções e fotos.\n\nEsta ação NÃO pode ser desfeita. Deseja continuar?`
+    );
+
+    if (confirmed && onDeletePatient) {
+      try {
+        await onDeletePatient(patient.id);
+      } catch (error) {
+        console.error('[WoundPatientList] Critical error deleting patient:', error);
+        // Fallback alert if toast fails or to ensure visibility
+        alert('Ocorreu um erro ao excluir o paciente. Verifique sua conexão ou permissões.');
+      }
     }
   };
 
@@ -141,27 +165,41 @@ const WoundPatientList: React.FC<WoundPatientListProps> = ({
           </p>
         ) : (
           filteredPatients.map((patient) => (
-            <button
+            <div
               key={patient.id}
-              type="button"
-              onClick={() => onSelectPatient(patient.id)}
-              className={`w-full rounded-xl border p-3 text-left transition-colors ${
+              className={`group relative w-full rounded-xl border p-3 transition-colors ${
                 selectedPatientId === patient.id
                   ? 'border-primary bg-primary/10'
                   : 'border-border bg-background hover:border-primary/40'
               }`}
             >
-              <p className="text-sm font-semibold text-foreground">{patient.full_name}</p>
-              <p className="text-xs text-muted-foreground">
-                {patient.document_type}: {formatDocumentoPaciente(patient.document_value).formatado}
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant={patient.open_wounds_count > 0 ? 'warning' : 'muted'}>
-                  Abertas: {patient.open_wounds_count}
-                </Badge>
-                <Badge variant="outline">Total: {patient.wounds.length}</Badge>
+              <div 
+                className="cursor-pointer"
+                onClick={() => onSelectPatient(patient.id)}
+              >
+                <p className="text-sm font-semibold text-foreground">{patient.full_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {patient.document_type}: {formatDocumentoPaciente(patient.document_value).formatado}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Badge variant={patient.open_wounds_count > 0 ? 'warning' : 'muted'}>
+                    Abertas: {patient.open_wounds_count}
+                  </Badge>
+                  <Badge variant="outline">Total: {patient.wounds.length}</Badge>
+                </div>
               </div>
-            </button>
+
+              {onDeletePatient && (
+                <button
+                  type="button"
+                  onClick={(e) => handleDelete(e, patient)}
+                  className="absolute right-2 top-2 z-20 rounded-lg p-2 text-muted-foreground opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                  title="Excluir paciente"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           ))
         )}
       </div>
