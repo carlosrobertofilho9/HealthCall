@@ -29,6 +29,16 @@ const panelVariants = {
   }
 };
 
+const hapticTap = {
+  scale: 0.97,
+  transition: { type: 'spring', stiffness: 600, damping: 30 }
+};
+
+const hapticHover = {
+  scale: 1.02,
+  transition: { type: 'spring', stiffness: 400, damping: 25 }
+};
+
 const emptyStateVariants = {
   hidden: { opacity: 0, scale: 0.9 },
   visible: { 
@@ -109,16 +119,19 @@ export const FormPanel: React.FC<FormPanelProps> = ({
                 </p>
                 <p className="mt-1 truncate text-xs text-muted-foreground">{selectedTemplate.description}</p>
               </div>
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <motion.div>
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   onClick={onClearForm}
-                  title="Limpar formulário"
-                  className="h-8 w-8 flex-none text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  whileTap={hapticTap}
+                  whileHover={hapticHover}
+                  className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-destructive/5 hover:text-destructive"
+                  disabled={isGenerating}
                 >
-                  <Eraser size={16} />
+                  <Eraser size={14} />
+                  Limpar
                 </Button>
               </motion.div>
             </div>
@@ -156,20 +169,19 @@ export const FormPanel: React.FC<FormPanelProps> = ({
 
             <ActionBar separated stackOnMobile className="mt-5">
               <motion.div 
-                animate={missingKeys.length > 0 && !isGenerating ? { x: [0, -4, 4, -4, 4, 0] } : {}}
-                transition={{ duration: 0.4 }}
-                whileHover={{ scale: 1.01 }} 
-                whileTap={{ scale: 0.98 }} 
                 className="w-full"
               >
                 <Button 
                   type="button" 
-                  onClick={onGenerateDocument} 
-                  disabled={isGenerating} 
+                  animate={missingKeys.length > 0 ? "shake" : "visible"}
+                  whileTap={hapticTap}
+                  whileHover={hapticHover}
+                  onClick={onGenerateDocument}
+                  disabled={!selectedTemplate || isGenerating}
                   className={cn(
-                    "w-full shadow-md transition-all hover:shadow-lg active:shadow-inner",
-                    showSuccess && "bg-green-600 hover:bg-green-700 text-white",
-                    missingKeys.length > 0 && !isGenerating && "border-destructive/50"
+                    "group relative h-11 w-full overflow-hidden rounded-xl font-semibold transition-all duration-300",
+                    showSuccess ? "bg-green-600 hover:bg-green-700 shadow-green-200/50" : "bg-primary hover:bg-primary/90 shadow-primary/20",
+                    "shadow-lg disabled:opacity-50 disabled:shadow-none"
                   )}
                 >
                   <AnimatePresence mode="wait">

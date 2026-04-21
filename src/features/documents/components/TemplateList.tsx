@@ -112,6 +112,17 @@ const itemVariants = {
   exit: { opacity: 0, scale: 0.95, transition: { duration: 0.15 } }
 };
 
+const hapticTap = {
+  scale: 0.97,
+  transition: { type: 'spring', stiffness: 600, damping: 30 }
+};
+
+const hapticHover = {
+  scale: 1.02,
+  y: -2,
+  transition: { type: 'spring', stiffness: 400, damping: 25 }
+};
+
 export const TemplateList: React.FC<TemplateListProps> = ({ 
   templates, 
   onSelect, 
@@ -196,6 +207,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
               variant="ghost"
               size="icon"
               onClick={() => setSearchTerm('')}
+              whileTap={hapticTap}
               className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 animate-in rounded-full border-0 text-muted-foreground zoom-in hover:text-foreground duration-200"
               title="Limpar busca"
             >
@@ -257,7 +269,8 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => setSearchTerm('')}
-                  className="mt-2 h-9 border-0 text-xs text-primary hover:text-primary active:scale-95"
+                  whileTap={hapticTap}
+                  className="mt-2 h-9 border-0 text-xs text-primary hover:text-primary"
                >
                   Limpar busca
                </Button>
@@ -288,12 +301,11 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                           key={template.id}
                           variants={itemVariants}
                           whileHover={{ 
-                            scale: 1.02,
+                            ...hapticHover,
                             backgroundColor: 'var(--secondary)',
-                            y: -2,
                             transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] }
                           }}
-                          whileTap={{ scale: 0.98 }}
+                          whileTap={hapticTap}
                           onClick={() => onSelect(template)}
                           className={cn(
                             "group relative flex cursor-pointer items-start gap-3 overflow-hidden rounded-xl border p-3 transition-all duration-300",

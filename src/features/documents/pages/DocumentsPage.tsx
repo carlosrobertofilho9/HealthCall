@@ -6,6 +6,7 @@ import {
   PreviewPanel,
   TemplatesPanel,
 } from '../components/DocumentsComposerPanels';
+import { MouseParallax } from '../components/MouseParallax';
 import { useDocumentsComposer } from '../hooks/useDocumentsComposer';
 import { mockTemplates, Template } from '../utils/mockData';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
@@ -113,17 +114,17 @@ const DocumentsPage: React.FC = () => {
         </Tabs>
       </div>
 
-      <div className="hidden min-h-0 xl:flex xl:h-full xl:flex-1 xl:overflow-hidden">
-        <div className="flex w-[320px] flex-col border-r border-border bg-background">
+      <div className="hidden min-h-0 xl:flex xl:h-full xl:flex-1 xl:overflow-hidden p-6 gap-6 bg-secondary/10">
+        <MouseParallax intensity={4} className="flex w-[320px] shadow-2xl rounded-2xl overflow-hidden">
           <TemplatesPanel
             templates={mockTemplates}
             selectedTemplateId={selectedTemplate?.id}
             onSelectTemplate={handleSelectTemplate}
             isLoading={isLoadingTemplates}
           />
-        </div>
+        </MouseParallax>
 
-        <div className="flex w-[420px] flex-col border-r border-border bg-background">
+        <MouseParallax intensity={3} className="flex w-[420px] shadow-2xl rounded-2xl overflow-hidden">
           <FormPanel
             selectedTemplate={selectedTemplate}
             values={fieldValues}
@@ -134,9 +135,9 @@ const DocumentsPage: React.FC = () => {
             onClearForm={clearForm}
             onGenerateDocument={handleGenerateDocument}
           />
-        </div>
+        </MouseParallax>
 
-        <div className="flex min-w-0 flex-1 flex-col bg-background">
+        <div className="flex min-w-0 flex-1 flex-col bg-background shadow-2xl rounded-2xl overflow-hidden">
           <PreviewPanel selectedTemplate={selectedTemplate} previewValues={previewValues} />
         </div>
       </div>
