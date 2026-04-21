@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { DS_COLOR, DS_RADIUS, DS_RADIUS_VARIANT } from './design-system';
 
@@ -56,7 +57,7 @@ export const Modal: React.FC<ModalProps> = ({
       ? cn('w-full border safe-area-bottom sm:max-w-md', DS_COLOR.surface.card, DS_RADIUS.surfaceTop, DS_RADIUS_VARIANT.smSurface)
       : cn('w-full border', DS_COLOR.surface.card, DS_RADIUS.surface);
 
-  return (
+  const modal = (
     <div
       className={cn(baseOverlayClassName, overlayClassName)}
       onClick={closeOnOverlayClick ? onClose : undefined}
@@ -74,6 +75,8 @@ export const Modal: React.FC<ModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 };
 
 export default Modal;

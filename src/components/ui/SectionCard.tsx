@@ -3,10 +3,12 @@ import { cn } from '@/lib/utils';
 
 interface SectionCardProps {
   title: string;
+  subtitle?: string;
   icon: React.ReactNode;
   className?: string;
   contentClassName?: string;
   headerClassName?: string;
+  headerActionsClassName?: string;
   iconClassName?: string;
   titleClassName?: string;
   children: React.ReactNode;
@@ -15,10 +17,12 @@ interface SectionCardProps {
 
 export const SectionCard: React.FC<SectionCardProps> = ({
   title,
+  subtitle,
   icon,
   className,
   contentClassName,
   headerClassName,
+  headerActionsClassName,
   iconClassName,
   titleClassName,
   children,
@@ -31,9 +35,16 @@ export const SectionCard: React.FC<SectionCardProps> = ({
           <div className={cn('flex shrink-0 items-center justify-center rounded-lg border border-border bg-secondary p-2.5 text-muted-foreground shadow-inner', iconClassName)}>
             {icon}
           </div>
-          <span className="min-w-0 truncate">{title}</span>
+          <span className="min-w-0">
+            <span className="block truncate">{title}</span>
+            {subtitle && (
+              <span className="mt-0.5 block truncate text-xs font-semibold tracking-normal text-muted-foreground">
+                {subtitle}
+              </span>
+            )}
+          </span>
         </h3>
-        {headerActions && <div className="shrink-0">{headerActions}</div>}
+        {headerActions && <div className={cn('shrink-0', headerActionsClassName)}>{headerActions}</div>}
       </div>
 
       <div className={cn('flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden p-0 lg:overflow-hidden', contentClassName)}>
