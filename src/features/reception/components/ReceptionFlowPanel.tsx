@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users2, UserRoundCheck, UserRoundX, RefreshCcw, Printer, Calendar } from 'lucide-react';
-import { Badge, Button, SectionCard } from '@/components/ui';
+import { Users2, UserRoundCheck, UserRoundX, RefreshCcw, Printer, Calendar, ChevronDown, FileText } from 'lucide-react';
+import { Badge, Button, DatePicker, SectionCard } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { printAppointmentReport } from '@/components/PatientQueue/printReportUtils';
+import { printAppointmentReport, type ReportPeriodFilter } from '@/components/PatientQueue/printReportUtils';
+import { printPatientList } from '@/components/PatientQueue/printUtils';
+import type { AppointmentSlot } from '@/types';
 
 interface Appointment {
   id: string;
@@ -23,11 +25,13 @@ interface ReceptionFlowPanelProps {
     total: number;
   };
   isLoading: boolean;
-  updateStatus: (id: string, status: string) => Promise<void>;
+  updateStatus: (id: string, status: string) => Promise<boolean>;
   getSlotLabel: (slot: number) => string;
   goToToday: () => void;
+  changeDate: (date: Date) => void;
+  selectedDate: Date;
   refresh: () => void;
-  slots: any;
+  slots: AppointmentSlot[];
   className?: string;
 }
 
@@ -38,10 +42,73 @@ export const ReceptionFlowPanel: React.FC<ReceptionFlowPanelProps> = ({
   updateStatus,
   getSlotLabel,
   goToToday,
+  changeDate,
+  selectedDate,
   refresh,
   slots,
   className,
 }) => {
+  const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
+  const reportMenuRef = useRef<HTMLDivElement>(null);
+
+  const availablePeriods = useMemo(() => {
+    const periods = new Set<ReportPeriodFilter>();
+    slots.forEach((slot) => {
+      if (slot.period === 'Manhã' || slot.period === 'Tarde') {
+        periods.add(slot.period);
+      }
+    });
+    return Array.from(periods);
+  }, [slots]);
+
+  const shouldShowPeriodMenu = availablePeriods.length > 1;
+  const selectedDateIso = selectedDate.toISOString().slice(0, 10);
+  const selectedDateLabel = selectedDate.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+
+  const handleReportPrint = (period?: ReportPeriodFilter) => {
+    printAppointmentReport(slots, period);
+    setIsReportMenuOpen(false);
+  };
+
+  const handleReportButtonClick = () => {
+    if (shouldShowPeriodMenu) {
+      setIsReportMenuOpen((prev) => !prev);
+      return;
+    }
+    handleReportPrint(availablePeriods[0]);
+  };
+
+  useEffect(() => {
+    if (!isReportMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const targetNode = event.target as Node;
+      const clickedOutsideReport = !reportMenuRef.current || !reportMenuRef.current.contains(targetNode);
+
+      if (clickedOutsideReport) {
+        setIsReportMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsReportMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isReportMenuOpen]);
+
   return (
     <SectionCard
       title="Gestão de fluxo de pacientes"
@@ -51,16 +118,48 @@ export const ReceptionFlowPanel: React.FC<ReceptionFlowPanelProps> = ({
       contentClassName="p-0 flex-1 flex flex-col min-h-0"
       headerActions={
         <div className="flex items-center gap-1.5">
+          <DatePicker
+            value={selectedDateIso}
+            onChange={(value) => {
+              const [year, month, day] = value.split('-').map(Number);
+              changeDate(new Date(year, month - 1, day, 12, 0, 0, 0));
+            }}
+          >
+            {({ open }) => (
+              <Button size="xs" variant="ghost" onClick={open} className="h-8 px-2 text-xs">
+                <Calendar className="mr-1.5 size-3.5" /> {selectedDateLabel}
+              </Button>
+            )}
+          </DatePicker>
           <Button size="xs" variant="ghost" onClick={goToToday} className="h-8 px-2 text-xs">
-            <Calendar className="mr-1.5 size-3.5" /> Hoje
+            Hoje
           </Button>
           <Button size="xs" variant="ghost" onClick={refresh} className="h-8 px-2 text-xs">
             <RefreshCcw className={cn("mr-1.5 size-3.5", isLoading && "animate-spin")} /> Atualizar
           </Button>
           <div className="mx-1 h-4 w-px bg-border/60" />
-          <Button size="xs" variant="ghost" onClick={() => printAppointmentReport(slots)} className="h-8 px-2 text-xs">
-            <Printer className="mr-1.5 size-3.5" /> Relatório do Dia
-          </Button>
+          <div ref={reportMenuRef} className="relative">
+            <Button size="xs" variant="ghost" onClick={handleReportButtonClick} className="h-8 px-2 text-xs">
+              <Printer className="mr-1.5 size-3.5" /> Relatório do Dia
+              {shouldShowPeriodMenu && <ChevronDown className="ml-1 size-3.5" />}
+            </Button>
+            {isReportMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute right-0 z-20 mt-1 min-w-[170px] rounded-lg border border-border/60 bg-background/95 p-1 shadow-xl backdrop-blur"
+              >
+                <button type="button" onClick={() => handleReportPrint()} className="w-full rounded-md px-2.5 py-2 text-left text-xs font-semibold transition-colors hover:bg-muted/70">
+                  Dia inteiro
+                </button>
+                {availablePeriods.map((period) => (
+                  <button key={period} type="button" onClick={() => handleReportPrint(period)} className="w-full rounded-md px-2.5 py-2 text-left text-xs font-semibold transition-colors hover:bg-muted/70">
+                    Turno da {period.toLowerCase()}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </div>
         </div>
       }
     >

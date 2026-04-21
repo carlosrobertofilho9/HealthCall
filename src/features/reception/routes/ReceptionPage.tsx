@@ -20,6 +20,7 @@ const ReceptionPage: React.FC = () => {
     slots,
     dayConfig,
     selectedDate,
+    changeDate,
     goToToday,
     refresh,
     updateStatus,
@@ -85,6 +86,8 @@ const ReceptionPage: React.FC = () => {
               isLoading={isLoading}
               updateStatus={updateStatus}
               getSlotLabel={getSlotLabel}
+              selectedDate={selectedDate}
+              changeDate={changeDate}
               goToToday={goToToday}
               refresh={refresh}
               slots={slots}
@@ -132,6 +135,8 @@ const ReceptionPage: React.FC = () => {
                 isLoading={isLoading}
                 updateStatus={updateStatus}
                 getSlotLabel={getSlotLabel}
+                selectedDate={selectedDate}
+                changeDate={changeDate}
                 goToToday={goToToday}
                 refresh={refresh}
                 slots={slots}
