@@ -135,6 +135,8 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
   onDeleteEntry,
 }) => {
   const [sortOrder, setSortOrder] = useState<WoundSortOrder>('desc');
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [showOverview, setShowOverview] = useState(true);
   const printableRef = useRef<HTMLDivElement>(null);
 
   const canPrint = mode === 'modal' || mode === 'page';
@@ -228,6 +230,13 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
   const latestEntryAt = sortedEntries[0]?.recorded_at ?? null;
   const oldestEntryAt = sortedEntries[sortedEntries.length - 1]?.recorded_at ?? null;
 
+  const toggleRowDetails = (entryId: string) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [entryId]: !prev[entryId],
+    }));
+  };
+
   const handlePrint = useReactToPrint({
     contentRef: printableRef,
     documentTitle: `ficha-evolucao-curativos-${new Date().toISOString().slice(0, 10)}`,
@@ -259,6 +268,15 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
           <Button
             type="button"
             size="sm"
+            variant="outline"
+            className="print-hide"
+            onClick={() => setShowOverview((prev) => !prev)}
+          >
+            {showOverview ? 'Ocultar resumo' : 'Mostrar resumo'}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
             variant="secondary"
             onClick={() => setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
           >
@@ -273,7 +291,8 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
       </div>
 
       <div ref={printableRef} className="wound-evolution-print space-y-3">
-        <section className="wound-evolution-document-header">
+        <div className={showOverview ? 'space-y-3 print:space-y-3' : 'hidden space-y-3 print:block print:space-y-3'}>
+        <section className="wound-evolution-document-header shadow-sm">
           <div className="wound-evolution-document-ribbon">
             <span className="wound-evolution-brand">HEALTHCALL</span>
             <span className="wound-evolution-ribbon-title">Ficha de Evolução de Curativos</span>
@@ -287,7 +306,7 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
           </div>
 
           <div className="wound-evolution-document-grid">
-            <article className="wound-evolution-meta-card wound-evolution-meta-card--wide">
+            <article className="wound-evolution-meta-card wound-evolution-meta-card--wide space-y-1">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <p className="wound-evolution-meta-label">Paciente</p>
@@ -308,7 +327,7 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
             </article>
 
             <article className="wound-evolution-meta-card wound-evolution-meta-card--wide">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3 print:grid-cols-3">
                 <div className="flex flex-col">
                   <p className="wound-evolution-meta-label">Localização e Início</p>
                   <p className="wound-evolution-meta-value">{wound?.anatomical_code || '-'}</p>
@@ -432,8 +451,120 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
             </div>
           </section>
         )}
+        </div>
 
-        <Table wrapperClassName="wound-evolution-table-wrapper overflow-x-auto" className="min-w-[2000px] text-xs">
+        <div className="space-y-3 md:hidden print:hidden">
+          {sortedEntries.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-muted/20 p-4 text-center text-sm text-muted-foreground">
+              Nenhum registro de evolução.
+            </div>
+          ) : (
+            sortedEntries.map((entry) => (
+              <article key={`mobile-${entry.id}`} className="rounded-xl border border-border bg-background p-3 shadow-sm">
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Data/hora do registro</p>
+                    <p className="text-sm font-semibold text-foreground">{formatDateTime(entry.recorded_at)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Responsável</p>
+                    <p className="text-xs text-foreground">{entry.profiles?.full_name || entry.professional_id}</p>
+                  </div>
+                </div>
+
+                {(onEditEntry || onDeleteEntry) && (
+                  <div className="mb-3 flex items-center justify-end gap-2 border-b border-border pb-3">
+                    {onEditEntry && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="h-8 px-3 text-xs"
+                        onClick={() => onEditEntry(entry)}
+                      >
+                        Editar
+                      </Button>
+                    )}
+                    {onDeleteEntry && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-8 px-3 text-xs"
+                        onClick={() => onDeleteEntry(entry)}
+                      >
+                        Excluir
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-3 text-xs text-foreground">
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Medidas (C x L x P)</p>
+                    <p>{entry.measure_length_cm ?? '-'} x {entry.measure_width_cm ?? '-'} x {entry.measure_depth_cm ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Aspecto do leito</p>
+                    <p>{entry.bed_aspect.join(', ') || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Bordas</p>
+                    <p>{entry.edges.join(', ') || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Exsudato</p>
+                    <p>{entry.exudate ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Odor</p>
+                    <p>{entry.odor ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Dor (0-10)</p>
+                    <p>{entry.pain_scale ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Pele perilesional</p>
+                    <p>{entry.perilesional_skin.join(', ') || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Cobertura utilizada</p>
+                    <p>{entry.dressing_type ?? '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Uso de ATB e pomada</p>
+                    <p>
+                      {entry.uses_antibiotic ? `Antibiótico: ${entry.antibiotic_type ?? 'sim'}` : 'Antibiótico: não'}
+                      {' | '}
+                      {entry.uses_ointment ? `Pomada tópica: ${entry.ointment_type ?? 'sim'}` : 'Pomada tópica: não'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Não conformidade</p>
+                    <p>
+                      {entry.non_conformity_detected
+                        ? `${entry.non_conformity_type || 'Sim'}${entry.non_conformity_description ? ` - ${entry.non_conformity_description}` : ''}`
+                        : 'Não'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Ação da não conformidade</p>
+                    <p>{entry.non_conformity_action || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Troca seguinte</p>
+                    <p>{formatDate(entry.next_change_date)}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-muted-foreground">Observações clínicas</p>
+                    <p className="whitespace-pre-wrap">{entry.observations || '-'}</p>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+
+        <Table wrapperClassName="wound-evolution-table-wrapper overflow-x-auto hidden md:block print:hidden" className="min-w-[1280px] text-xs">
           <TableHeader>
             <TableRow>
               <TableHead className="whitespace-nowrap">Data</TableHead>
@@ -446,99 +577,200 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
               </TableHead>
               <TableHead>
                 <div className="wound-evolution-head-cell">
-                  <span>Aspecto</span>
-                  <small>do Leito</small>
-                </div>
-              </TableHead>
-              <TableHead className="print-hide">Bordas</TableHead>
-              <TableHead>
-                <div className="wound-evolution-head-cell">
                   <span>Exsudato</span>
-                  <small>Tipo/Qtd</small>
+                  <small>Tipo + odor</small>
                 </div>
               </TableHead>
-              <TableHead className="print-hide">Odor</TableHead>
               <TableHead>
                 <div className="wound-evolution-head-cell">
                   <span>Dor</span>
                   <small>0-10</small>
                 </div>
               </TableHead>
-              <TableHead className="print-hide">Pele Perilesional</TableHead>
               <TableHead>
                 <div className="wound-evolution-head-cell">
                   <span>Cobertura</span>
                   <small>Utilizada</small>
                 </div>
               </TableHead>
-              <TableHead className="print-hide">ATB / Pomada</TableHead>
-              <TableHead className="print-hide">Não Conformidade</TableHead>
-              <TableHead className="print-hide">Ação NC</TableHead>
-              <TableHead className="print-observacoes">Observações</TableHead>
               <TableHead className="print-hide">Próxima Troca</TableHead>
+              <TableHead>Profissional</TableHead>
+              <TableHead className="print-hide text-right">Detalhes</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedEntries.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center text-sm text-muted-foreground">
+                  Sem evolução registrada.
+                </TableCell>
+              </TableRow>
+            ) : (
+              sortedEntries.map((entry) => {
+                const rowExpanded = Boolean(expandedRows[entry.id]);
+
+                return (
+                  <React.Fragment key={entry.id}>
+                    <TableRow className="wound-evolution-row-main">
+                      <TableCell className="align-top whitespace-nowrap">{formatDateTime(entry.recorded_at)}</TableCell>
+                      <TableCell className="align-top print-hide">
+                        <div className="flex items-center gap-1">
+                          {onEditEntry && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 p-0 text-primary hover:bg-primary/10"
+                              onClick={() => onEditEntry(entry)}
+                              title="Editar evolução"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            </Button>
+                          )}
+                          {onDeleteEntry && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
+                              onClick={() => onDeleteEntry(entry)}
+                              title="Excluir evolução"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top whitespace-nowrap">
+                        {entry.measure_length_cm ?? '-'} x {entry.measure_width_cm ?? '-'} x {entry.measure_depth_cm ?? '-'}
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <div className="flex flex-col gap-1">
+                          <span>{entry.exudate ?? '-'}</span>
+                          <span className="text-[10px] text-muted-foreground">Odor: {entry.odor ?? '-'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top">{entry.pain_scale ?? '-'}</TableCell>
+                      <TableCell className="align-top">{entry.dressing_type ?? '-'}</TableCell>
+                      <TableCell className="align-top whitespace-nowrap print-hide">{formatDate(entry.next_change_date)}</TableCell>
+                      <TableCell className="align-top text-xs">{entry.profiles?.full_name || entry.professional_id}</TableCell>
+                      <TableCell className="align-top print-hide text-right">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 px-3 text-xs"
+                          onClick={() => toggleRowDetails(entry.id)}
+                          aria-expanded={rowExpanded}
+                          aria-controls={`wound-entry-details-${entry.id}`}
+                        >
+                          {rowExpanded ? 'Ocultar' : 'Ver detalhes'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+
+                    {rowExpanded && (
+                      <TableRow id={`wound-entry-details-${entry.id}`} className="print-hide wound-evolution-row-details">
+                        <TableCell colSpan={9} className="p-0">
+                          <div className="wound-evolution-details-card">
+                            <div className="wound-evolution-details-grid">
+                              <div>
+                                <p className="wound-evolution-details-label">Aspecto do leito</p>
+                                <p className="wound-evolution-details-value">{entry.bed_aspect.join(', ') || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="wound-evolution-details-label">Bordas</p>
+                                <p className="wound-evolution-details-value">{entry.edges.join(', ') || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="wound-evolution-details-label">Pele perilesional</p>
+                                <p className="wound-evolution-details-value">{entry.perilesional_skin.join(', ') || '-'}</p>
+                              </div>
+                              <div>
+                                <p className="wound-evolution-details-label">Próxima troca</p>
+                                <p className="wound-evolution-details-value">{formatDate(entry.next_change_date)}</p>
+                              </div>
+                            </div>
+
+                            <div className="wound-evolution-details-grid mt-3">
+                              <div>
+                                <p className="wound-evolution-details-label">ATB / Pomada</p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground">
+                                    {entry.uses_antibiotic ? `ATB: ${entry.antibiotic_type ?? 'sim'}` : 'ATB: não'}
+                                  </span>
+                                  <span className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground">
+                                    {entry.uses_ointment ? `Pomada: ${entry.ointment_type ?? 'sim'}` : 'Pomada: não'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div>
+                                <p className="wound-evolution-details-label">Não conformidade</p>
+                                <p className="wound-evolution-details-value">
+                                  {entry.non_conformity_detected
+                                    ? `${entry.non_conformity_type || 'Sim'}${entry.non_conformity_description ? ` - ${entry.non_conformity_description}` : ''}`
+                                    : 'Não'}
+                                </p>
+                              </div>
+
+                              <div>
+                                <p className="wound-evolution-details-label">Ação NC</p>
+                                <p className="wound-evolution-details-value">{entry.non_conformity_action || '-'}</p>
+                              </div>
+                            </div>
+
+                            <div className="mt-3">
+                              <p className="wound-evolution-details-label">Observações clínicas</p>
+                              <p className="wound-evolution-details-value whitespace-pre-wrap">{entry.observations || '-'}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+
+                  </React.Fragment>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+
+        <Table wrapperClassName="wound-evolution-table-wrapper hidden print:block" className="text-xs">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="whitespace-nowrap">Data</TableHead>
+              <TableHead className="whitespace-nowrap">Medida</TableHead>
+              <TableHead>Exsudato / Odor</TableHead>
+              <TableHead>Bordas</TableHead>
+              <TableHead>Pele</TableHead>
+              <TableHead>Dor</TableHead>
+              <TableHead>Cobertura</TableHead>
               <TableHead>Profissional</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedEntries.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center text-sm text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-sm text-muted-foreground">
                   Sem evolução registrada.
                 </TableCell>
               </TableRow>
             ) : (
               sortedEntries.map((entry) => (
-                <TableRow key={entry.id}>
+                <TableRow key={`print-${entry.id}`}>
                   <TableCell className="align-top whitespace-nowrap">{formatDateTime(entry.recorded_at)}</TableCell>
-                  <TableCell className="align-top print-hide">
-                    <div className="flex items-center gap-1">
-                      {onEditEntry && (
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          className="h-7 w-7 p-0 text-primary hover:bg-primary/10"
-                          onClick={() => onEditEntry(entry)}
-                          title="Editar evolução"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                        </Button>
-                      )}
-                      {onDeleteEntry && (
-                        <Button
-                          variant="ghost"
-                          size="xs"
-                          className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10"
-                          onClick={() => onDeleteEntry(entry)}
-                          title="Excluir evolução"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
                   <TableCell className="align-top whitespace-nowrap">
                     {entry.measure_length_cm ?? '-'} x {entry.measure_width_cm ?? '-'} x {entry.measure_depth_cm ?? '-'}
                   </TableCell>
-                  <TableCell className="align-top">{entry.bed_aspect.join(', ') || '-'}</TableCell>
-                  <TableCell className="align-top print-hide">{entry.edges.join(', ') || '-'}</TableCell>
-                  <TableCell className="align-top">{entry.exudate ?? '-'}</TableCell>
-                  <TableCell className="align-top print-hide">{entry.odor ?? '-'}</TableCell>
+                  <TableCell className="align-top">
+                    <div className="space-y-1 leading-tight">
+                      <p><strong>Exsudato:</strong> {entry.exudate ?? '-'}</p>
+                      <p><strong>Odor:</strong> {entry.odor ?? '-'}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell className="align-top">{entry.edges.join(', ') || '-'}</TableCell>
+                  <TableCell className="align-top">{entry.perilesional_skin.join(', ') || '-'}</TableCell>
                   <TableCell className="align-top">{entry.pain_scale ?? '-'}</TableCell>
-                  <TableCell className="align-top print-hide">{entry.perilesional_skin.join(', ') || '-'}</TableCell>
                   <TableCell className="align-top">{entry.dressing_type ?? '-'}</TableCell>
-                  <TableCell className="align-top print-hide">
-                    {entry.uses_antibiotic ? `ATB: ${entry.antibiotic_type ?? 'sim'}` : 'ATB: não'}
-                    {' | '}
-                    {entry.uses_ointment ? `Pomada: ${entry.ointment_type ?? 'sim'}` : 'Pomada: não'}
-                  </TableCell>
-                  <TableCell className="align-top print-hide">
-                    {entry.non_conformity_detected
-                      ? `${entry.non_conformity_type || 'Sim'}${entry.non_conformity_description ? ` - ${entry.non_conformity_description}` : ''}`
-                      : 'Não'}
-                  </TableCell>
-                  <TableCell className="align-top print-hide">{entry.non_conformity_action || '-'}</TableCell>
-                  <TableCell className="print-observacoes max-w-[260px] whitespace-pre-wrap align-top">{entry.observations || '-'}</TableCell>
-                  <TableCell className="align-top whitespace-nowrap print-hide">{formatDate(entry.next_change_date)}</TableCell>
                   <TableCell className="align-top text-xs">{entry.profiles?.full_name || entry.professional_id}</TableCell>
                 </TableRow>
               ))

@@ -140,6 +140,20 @@ export function useWounds() {
   }, [refreshWounds, selectedPatientId]);
 
   useEffect(() => {
+    if (!selectedWoundId || patients.length === 0) {
+      return;
+    }
+
+    const ownerPatient = patients.find((patient) =>
+      patient.wounds.some((wound) => wound.id === selectedWoundId),
+    );
+
+    if (ownerPatient && ownerPatient.id !== selectedPatientId) {
+      setSelectedPatientId(ownerPatient.id);
+    }
+  }, [patients, selectedPatientId, selectedWoundId]);
+
+  useEffect(() => {
     if (!selectedWoundId) {
       setEntries([]);
       setPhotos([]);

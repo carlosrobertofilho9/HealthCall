@@ -883,6 +883,48 @@ html[data-theme="safira"] {
   background: var(--background);
 }
 
+.wound-evolution-row-main td {
+  border-top-color: color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+.wound-evolution-row-main:hover {
+  background: color-mix(in oklab, var(--muted) 55%, transparent);
+}
+
+.wound-evolution-row-details td {
+  border-top: none;
+}
+
+.wound-evolution-details-card {
+  margin: 0 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--background) 86%, transparent);
+  padding: 10px 12px;
+}
+
+.wound-evolution-details-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+.wound-evolution-details-label {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.wound-evolution-details-value {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--foreground);
+}
+
 @media (max-width: 1024px) {
   .wound-evolution-document-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -890,6 +932,10 @@ html[data-theme="safira"] {
 
   .wound-evolution-meta-card--wide {
     grid-column: span 2;
+  }
+
+  .wound-evolution-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

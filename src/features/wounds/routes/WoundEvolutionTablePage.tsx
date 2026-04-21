@@ -6,7 +6,8 @@ import WoundEvolutionTable from '../components/WoundEvolutionTable';
 import WoundEvolutionForm from '../components/WoundEvolutionForm';
 import { Modal } from '@/components/ui';
 import { useWounds } from '../hooks/useWounds';
-import type { WoundEntry } from '../types';
+import { getWoundCaseContext } from '../services/woundService';
+import type { WoundCase, WoundEntry, WoundPatient } from '../types';
 
 const WoundEvolutionTablePage: React.FC = () => {
   const { woundId } = useParams<{ woundId: string }>();
@@ -28,16 +29,52 @@ const WoundEvolutionTablePage: React.FC = () => {
   const [showDeleteEntryModal, setShowDeleteEntryModal] = React.useState(false);
   const [editingEntry, setEditingEntry] = React.useState<WoundEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = React.useState<WoundEntry | null>(null);
+  const [fallbackPatient, setFallbackPatient] = React.useState<Pick<WoundPatient, 'full_name' | 'document_type' | 'document_value'> | null>(null);
+  const [fallbackWound, setFallbackWound] = React.useState<Pick<WoundCase, 'id' | 'anatomical_code' | 'started_at' | 'classification' | 'etiology' | 'comorbidities' | 'status' | 'closure_date'> | null>(null);
 
   useEffect(() => {
     if (!woundId) return;
     setSelectedWoundId(woundId);
   }, [setSelectedWoundId, woundId]);
 
+  useEffect(() => {
+    if (!woundId) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const context = await getWoundCaseContext(woundId);
+        if (cancelled) return;
+        setFallbackPatient(context.patient);
+        setFallbackWound(context.wound);
+      } catch {
+        if (cancelled) return;
+        setFallbackPatient(null);
+        setFallbackWound(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [woundId]);
+
   const selectedPatient = useMemo(() => {
-    if (!selectedWound) return null;
-    return patients.find((patient) => patient.id === selectedWound.patient_id) ?? null;
-  }, [patients, selectedWound]);
+    if (selectedWound) {
+      const fromSelected = patients.find((patient) => patient.id === selectedWound.patient_id) ?? null;
+      if (fromSelected) return fromSelected;
+    }
+
+    if (woundId) {
+      const fromSummary = patients.find((patient) => patient.wounds.some((wound) => wound.id === woundId)) ?? null;
+      if (fromSummary) return fromSummary;
+    }
+
+    return fallbackPatient;
+  }, [fallbackPatient, patients, selectedWound, woundId]);
+
+  const resolvedWound = selectedWound ?? fallbackWound;
 
   if (!woundId) {
     return (
@@ -74,7 +111,7 @@ const WoundEvolutionTablePage: React.FC = () => {
         <div className="mt-2">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Tabela de Evolução</h1>
           <p className="text-sm text-muted-foreground">
-            Visualização completa para evolução clínica com rolagem horizontal no mobile.
+            Visualização completa para evolução clínica com cards no mobile e tabela detalhada no desktop.
           </p>
         </div>
       </header>
@@ -90,7 +127,7 @@ const WoundEvolutionTablePage: React.FC = () => {
         photos={photos}
         mode="page"
         patient={selectedPatient}
-        wound={selectedWound}
+        wound={resolvedWound}
         onEditEntry={(entry) => {
           setEditingEntry(entry);
           setShowEditEntryModal(true);

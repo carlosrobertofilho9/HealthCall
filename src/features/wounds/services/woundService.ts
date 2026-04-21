@@ -197,6 +197,35 @@ export async function listWoundsByPatient(
   return (data ?? []) as WoundCase[];
 }
 
+export async function getWoundCaseContext(woundId: string): Promise<{
+  wound: WoundCase;
+  patient: Pick<WoundPatient, 'full_name' | 'document_type' | 'document_value'>;
+}> {
+  const { data, error } = await supabase
+    .from('wound_cases')
+    .select(`
+      *,
+      wound_patients!inner(
+        full_name,
+        document_type,
+        document_value
+      )
+    `)
+    .eq('id', woundId)
+    .single();
+
+  if (error) throw error;
+
+  const row = data as WoundCase & {
+    wound_patients: Pick<WoundPatient, 'full_name' | 'document_type' | 'document_value'>;
+  };
+
+  return {
+    wound: row,
+    patient: row.wound_patients,
+  };
+}
+
 export async function createWoundCase(input: CreateWoundCaseInput): Promise<WoundCase> {
   if (!input.patient_id) {
     throw new Error('Paciente da ferida é obrigatório.');

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import WoundEvolutionTable from './WoundEvolutionTable';
 import type { WoundEntry } from '../types';
@@ -57,16 +57,18 @@ describe('WoundEvolutionTable', () => {
     expect(screen.getByText('Data')).toBeInTheDocument();
     expect(screen.getByText('Medida')).toBeInTheDocument();
     expect(screen.getByText('C x L x P')).toBeInTheDocument();
-    expect(screen.getByText('ATB / Pomada')).toBeInTheDocument();
+    expect(screen.getByText('Detalhes')).toBeInTheDocument();
     expect(screen.getByText('Próxima Troca')).toBeInTheDocument();
     expect(screen.getByText('Profissional')).toBeInTheDocument();
 
-    expect(screen.getByText('Maria Silva')).toBeInTheDocument();
-    expect(screen.getByText('profissional-sem-nome')).toBeInTheDocument();
+    expect(screen.getAllByText('Maria Silva').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('profissional-sem-nome').length).toBeGreaterThan(0);
   });
 
-  it('exibe informações clínicas completas em colunas da tabela', () => {
+  it('exibe informações clínicas completas ao expandir os detalhes da linha', () => {
     const entry = makeEntry({
+      uses_ointment: true,
+      ointment_type: 'AGE',
       non_conformity_detected: true,
       non_conformity_type: 'Sem cobertura adequada',
       non_conformity_description: 'Paciente sem cobertura primária.',
@@ -76,7 +78,12 @@ describe('WoundEvolutionTable', () => {
 
     render(<WoundEvolutionTable entries={[entry]} />);
 
+    expect(screen.queryByText(/Sem cobertura adequada - Paciente sem cobertura primária/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Ver detalhes/i }));
+
     expect(screen.getByText(/ATB: Sulfadiazina de Prata/)).toBeInTheDocument();
+    expect(screen.getByText(/Pomada: AGE/)).toBeInTheDocument();
     expect(screen.getByText(/Sem cobertura adequada - Paciente sem cobertura primária/)).toBeInTheDocument();
     expect(screen.getByText(/Realizado novo curativo e orientação/)).toBeInTheDocument();
     expect(screen.getByText(/Evolução com melhora parcial/)).toBeInTheDocument();
