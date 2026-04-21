@@ -1,9 +1,21 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
-import type { WoundCase, WoundEntry, WoundPatient, WoundPhoto, WoundSortOrder } from '../types';
+import type {
+  WoundCase,
+  WoundEntry,
+  WoundPatient,
+  WoundPhoto,
+  WoundPhotoExifMetadata,
+  WoundPhotoMetadataSource,
+  WoundSortOrder,
+} from '../types';
 import { useWoundPhotoMetadata } from '../hooks/useWoundPhotoMetadata';
 import { thumbnailizeFromUrl } from '@/lib/imageUtils';
+import {
+  isLegacyPhotoCreatedAt,
+  resolveWoundPhotoMetadataOnDemand,
+} from '../services/woundPhotoMetadataService';
 
 interface WoundEvolutionTableProps {
   entries: WoundEntry[];
@@ -14,6 +26,13 @@ interface WoundEvolutionTableProps {
   onEditEntry?: (entry: WoundEntry) => void;
   onDeleteEntry?: (entry: WoundEntry) => void;
 }
+
+export const PRINT_METADATA_WAIT_TIMEOUT_MS = 5000;
+
+type PrefetchedPhotoMetadata = {
+  metadata: WoundPhotoExifMetadata | null;
+  source: WoundPhotoMetadataSource;
+};
 
 /**
  * Componente que gera uma miniatura leve para o PDF no momento da visualização.
@@ -66,13 +85,31 @@ const PrintPhotoThumbnail: React.FC<{ url: string; alt: string }> = ({ url, alt 
   );
 };
 
-const PrintPhotoItem: React.FC<{ photo: WoundPhoto }> = ({ photo }) => {
-  // Use the hook which now prioritizes the pre-hydrated metadata from the photo object
-  const { status, metadata } = useWoundPhotoMetadata(photo);
+function getLocationOriginLabel(source: WoundPhotoMetadataSource, photoLocationSource?: WoundPhoto['location_source']): string | null {
+  if (source === 'exif_download') return 'GPS da foto';
+  if (source === 'photo_row') {
+    if (photoLocationSource === 'device') return 'GPS do dispositivo';
+    return 'GPS da foto';
+  }
+  if (photoLocationSource === 'device') return 'GPS do dispositivo';
+  if (photoLocationSource === 'exif') return 'GPS da foto';
+  return null;
+}
 
-  // Fallback to photo properties if metadata is not yet ready or empty
-  const displayAddress = metadata?.address;
-  const showLoading = status === 'loading' && !photo.metadata;
+const PrintPhotoItem: React.FC<{ photo: WoundPhoto; prefetched?: PrefetchedPhotoMetadata }> = ({ photo, prefetched }) => {
+  const { status, metadata, source } = useWoundPhotoMetadata(photo);
+
+  const effectiveMetadata = metadata ?? prefetched?.metadata ?? null;
+  const effectiveSource = source ?? prefetched?.source ?? null;
+  const displayAddress = effectiveMetadata?.address;
+  const latitude = typeof effectiveMetadata?.latitude === 'number' ? effectiveMetadata.latitude : undefined;
+  const longitude = typeof effectiveMetadata?.longitude === 'number' ? effectiveMetadata.longitude : undefined;
+  const displayCoordinates = typeof latitude === 'number' && typeof longitude === 'number'
+    ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+    : null;
+  const showLoading = status === 'loading' && !effectiveMetadata;
+  const locationOriginLabel = getLocationOriginLabel(effectiveSource, photo.location_source);
+  const isLegacy = isLegacyPhotoCreatedAt(photo.created_at);
 
   return (
     <div className="wound-evolution-photo-item border border-border p-2 rounded-lg bg-white flex flex-col gap-2">
@@ -96,12 +133,31 @@ const PrintPhotoItem: React.FC<{ photo: WoundPhoto }> = ({ photo }) => {
           <p className="text-[9px] leading-tight text-muted-foreground">
             <span className="font-bold text-primary/70">Loc: </span>
             {displayAddress}
+            {locationOriginLabel && (
+              <>
+                {' '}
+                <span className="font-semibold">({locationOriginLabel})</span>
+              </>
+            )}
+          </p>
+        )}
+
+        {!displayAddress && displayCoordinates && (
+          <p className="text-[9px] leading-tight text-muted-foreground space-y-0.5">
+            <span className="font-bold text-primary/70">GPS: </span>
+            <span>{displayCoordinates}</span>
+            {locationOriginLabel && (
+              <>
+                {' '}
+                <span className="font-semibold">({locationOriginLabel})</span>
+              </>
+            )}
           </p>
         )}
         
-        {!displayAddress && status === 'ready' && (
+        {!displayAddress && !displayCoordinates && (status === 'ready' || status === 'empty') && (
           <p className="text-[9px] leading-tight text-muted-foreground italic">
-            Localização não disponível
+            {isLegacy ? 'Localização indisponível (legado)' : 'Localização não disponível'}
           </p>
         )}
 
@@ -137,6 +193,8 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
   const [sortOrder, setSortOrder] = useState<WoundSortOrder>('desc');
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [showOverview, setShowOverview] = useState(true);
+  const [isPreparingPrint, setIsPreparingPrint] = useState(false);
+  const [prefetchedByPhotoId, setPrefetchedByPhotoId] = useState<Record<string, PrefetchedPhotoMetadata>>({});
   const printableRef = useRef<HTMLDivElement>(null);
 
   const canPrint = mode === 'modal' || mode === 'page';
@@ -237,7 +295,7 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
     }));
   };
 
-  const handlePrint = useReactToPrint({
+  const triggerPrint = useReactToPrint({
     contentRef: printableRef,
     documentTitle: `ficha-evolucao-curativos-${new Date().toISOString().slice(0, 10)}`,
     pageStyle: `
@@ -259,6 +317,57 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
       }
     `,
   });
+
+  const preloadPrintMetadata = async (): Promise<void> => {
+    if (!photos.length) return;
+
+    const nextCache: Record<string, PrefetchedPhotoMetadata> = {};
+    let timedOut = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const workers = photos.map(async (photo) => {
+      try {
+        const resolved = await resolveWoundPhotoMetadataOnDemand(photo);
+        if (!timedOut) {
+          nextCache[photo.id] = resolved;
+        }
+      } catch {
+        // Best effort: falhas individuais não devem bloquear a impressão.
+      }
+    });
+
+    await Promise.race([
+      Promise.allSettled(workers),
+      new Promise<void>((resolve) => {
+        timeoutId = setTimeout(() => {
+          timedOut = true;
+          resolve();
+        }, PRINT_METADATA_WAIT_TIMEOUT_MS);
+      }),
+    ]);
+
+    timedOut = true;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    if (Object.keys(nextCache).length > 0) {
+      setPrefetchedByPhotoId((prev) => ({ ...prev, ...nextCache }));
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!triggerPrint) return;
+
+    setIsPreparingPrint(true);
+    try {
+      await preloadPrintMetadata();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      triggerPrint();
+    } finally {
+      setIsPreparingPrint(false);
+    }
+  };
 
   return (
     <div className="wound-evolution-table space-y-3 rounded-2xl border border-border bg-card p-4">
@@ -283,8 +392,8 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
             Ordenar: {sortOrder === 'asc' ? 'Asc' : 'Desc'}
           </Button>
           {canPrint && (
-            <Button type="button" size="sm" variant="outline" onClick={handlePrint}>
-              Imprimir
+            <Button type="button" size="sm" variant="outline" onClick={() => { void handlePrint(); }} disabled={isPreparingPrint}>
+              {isPreparingPrint ? 'Preparando impressão...' : 'Imprimir'}
             </Button>
           )}
         </div>
@@ -789,7 +898,7 @@ const WoundEvolutionTable: React.FC<WoundEvolutionTableProps> = ({
               {[...photos]
                 .sort((a, b) => new Date(a.captured_at).getTime() - new Date(b.captured_at).getTime())
                 .map((photo) => (
-                  <PrintPhotoItem key={photo.id} photo={photo} />
+                  <PrintPhotoItem key={photo.id} photo={photo} prefetched={prefetchedByPhotoId[photo.id]} />
                 ))}
             </div>
           </section>

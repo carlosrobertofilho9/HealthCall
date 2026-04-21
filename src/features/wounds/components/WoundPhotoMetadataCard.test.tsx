@@ -14,6 +14,7 @@ const basePhoto = {
   wound_id: 'wound-1',
   storage_path: 'wound-1/photo-1.jpg',
   captured_at: '2026-04-20T09:00:00.000Z',
+  created_at: '2026-04-21T09:00:00.000Z',
 } as const;
 
 function mockHook(result: Partial<WoundPhotoMetadataResult>) {
@@ -32,19 +33,19 @@ describe('WoundPhotoMetadataCard', () => {
     vi.clearAllMocks();
   });
 
-  it('sempre renderiza o bloco do componente', () => {
+  it('renderiza loading no fluxo sob demanda', () => {
     mockHook({ status: 'loading' });
     render(<WoundPhotoMetadataCard photo={basePhoto} />);
 
     expect(screen.getByText(/Metadados da foto/i)).toBeInTheDocument();
-    expect(screen.getByText(/Baixando foto do Supabase/i)).toBeInTheDocument();
+    expect(screen.getByText(/Carregando metadados sob demanda/i)).toBeInTheDocument();
   });
 
-  it('renderiza estado vazio', () => {
+  it('renderiza estado vazio para foto legada', () => {
     mockHook({ status: 'empty' });
-    render(<WoundPhotoMetadataCard photo={basePhoto} />);
+    render(<WoundPhotoMetadataCard photo={{ ...basePhoto, created_at: '2026-04-20T08:00:00.000Z' }} />);
 
-    expect(screen.getByText(/Metadados indisponíveis/i)).toBeInTheDocument();
+    expect(screen.getByText(/Localização indisponível \(legado\)/i)).toBeInTheDocument();
   });
 
   it('renderiza erro e permite tentar novamente', () => {
@@ -58,9 +59,10 @@ describe('WoundPhotoMetadataCard', () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it('mostra link do Google Maps apenas com lat/lng válidos', () => {
+  it('mostra coordenadas e origem quando há GPS', () => {
     mockHook({
       status: 'ready',
+      source: 'photo_row',
       metadata: {
         make: 'Apple',
         model: 'iPhone',
@@ -69,18 +71,9 @@ describe('WoundPhotoMetadataCard', () => {
       },
     });
 
-    render(<WoundPhotoMetadataCard photo={basePhoto} />);
+    render(<WoundPhotoMetadataCard photo={{ ...basePhoto, location_source: 'device' }} />);
     const link = screen.getByRole('link', { name: /Ver no Google Maps/i });
     expect(link).toHaveAttribute('href', expect.stringContaining('-23.55,-46.63'));
-  });
-
-  it('não mostra link do Google Maps sem coordenadas', () => {
-    mockHook({
-      status: 'ready',
-      metadata: { make: 'Samsung', model: 'Galaxy' },
-    });
-
-    render(<WoundPhotoMetadataCard photo={basePhoto} />);
-    expect(screen.queryByRole('link', { name: /Ver no Google Maps/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Origem: GPS do dispositivo/i)).toBeInTheDocument();
   });
 });

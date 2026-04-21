@@ -11,14 +11,30 @@ import type {
   WoundEntry,
   WoundPatient,
   WoundPatientWithSummary,
+  WoundPhoto,
   WoundStatusEvent,
 } from '../types';
 import { getWoundPhotoCache, saveWoundPhotoCache, deleteWoundPhotoCache } from './woundOfflineStore';
-import { resolveAndCacheMetadata } from './woundPhotoMetadataService';
 import { resizeAndCompressImage } from '@/lib/imageUtils';
 
 const WOUND_STORAGE_BUCKET = 'wound-photos';
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const WEB_SAFE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const GEO_COLUMN_KEYS = ['latitude', 'longitude', 'location_source', 'location_captured_at'] as const;
+
+type WoundPhotoInsertPayload = {
+  wound_id: string;
+  entry_id: string | null;
+  storage_path: string;
+  captured_at: string;
+  display_order: number;
+  description: string | null;
+  is_primary: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  location_source?: UploadWoundPhotoInput['location_source'] | null;
+  location_captured_at?: string | null;
+};
 
 function assertImageFile(file: File): void {
   if (!file.type.startsWith('image/')) {
@@ -30,8 +46,8 @@ function assertImageFile(file: File): void {
   }
 }
 
-function buildPhotoPath(woundId: string, fileName: string): string {
-  const extension = fileName.includes('.') ? fileName.split('.').pop() : 'jpg';
+function buildPhotoPath(woundId: string, fileName: string, extensionHint?: string): string {
+  const extension = extensionHint || (fileName.includes('.') ? fileName.split('.').pop() : 'jpg');
   const safeExt = (extension?.toLowerCase().replace(/[^a-zA-Z0-9]/g, '') || 'jpg').slice(0, 5);
   
   // Use a more robust unique ID for the file path
@@ -41,6 +57,100 @@ function buildPhotoPath(woundId: string, fileName: string): string {
   
   const timestamp = Date.now();
   return `${woundId}/${timestamp}-${randomId}.${safeExt}`;
+}
+
+function normalizeCoordinates(
+  latitude?: number | null,
+  longitude?: number | null,
+): { latitude: number; longitude: number } | null {
+  if (
+    typeof latitude !== 'number' ||
+    !Number.isFinite(latitude) ||
+    Math.abs(latitude) > 90 ||
+    typeof longitude !== 'number' ||
+    !Number.isFinite(longitude) ||
+    Math.abs(longitude) > 180
+  ) {
+    return null;
+  }
+
+  return { latitude, longitude };
+}
+
+function extensionFromMimeType(mimeType: string): string {
+  if (mimeType === 'image/png') return 'png';
+  if (mimeType === 'image/webp') return 'webp';
+  return 'jpg';
+}
+
+function isMissingGeoColumnError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  const code = String((error as { code?: unknown }).code ?? '');
+  const message = String((error as { message?: unknown }).message ?? '');
+  const details = String((error as { details?: unknown }).details ?? '');
+  const text = `${message} ${details}`.toLowerCase();
+  const mentionsGeoColumn = GEO_COLUMN_KEYS.some((column) => text.includes(column));
+
+  if (!mentionsGeoColumn) return false;
+  if (code === 'PGRST204' || code === '42703') return true;
+
+  return text.includes('could not find') || text.includes('column');
+}
+
+function removeGeoColumns(payload: WoundPhotoInsertPayload): WoundPhotoInsertPayload {
+  const { latitude, longitude, location_source, location_captured_at, ...rest } = payload;
+  void latitude;
+  void longitude;
+  void location_source;
+  void location_captured_at;
+  return rest;
+}
+
+function hasGeoColumns(payload: WoundPhotoInsertPayload): boolean {
+  return GEO_COLUMN_KEYS.some((column) => column in payload);
+}
+
+async function insertWoundPhotoRowWithGeoCompatibility(payload: WoundPhotoInsertPayload) {
+  const firstAttempt = await supabase
+    .from('wound_photos')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (!firstAttempt.error) {
+    return firstAttempt;
+  }
+
+  if (!hasGeoColumns(payload) || !isMissingGeoColumnError(firstAttempt.error)) {
+    return firstAttempt;
+  }
+
+  const fallbackPayload = removeGeoColumns(payload);
+  return supabase
+    .from('wound_photos')
+    .insert(fallbackPayload)
+    .select('*')
+    .single();
+}
+
+async function normalizeUploadImage(file: File): Promise<{ blob: Blob; contentType: string; extensionHint: string }> {
+  const normalizedType = file.type.toLowerCase();
+
+  if (WEB_SAFE_IMAGE_TYPES.has(normalizedType)) {
+    return {
+      blob: file,
+      contentType: normalizedType,
+      extensionHint: extensionFromMimeType(normalizedType),
+    };
+  }
+
+  const converted = await resizeAndCompressImage(file);
+  return {
+    blob: converted,
+    contentType: 'image/jpeg',
+    extensionHint: 'jpg',
+  };
 }
 
 export async function listPatientsWithTrackedWounds(filters?: {
@@ -457,16 +567,22 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
     const item = inputs[index];
     assertImageFile(item.file);
 
-    // Redimensiona e comprime a imagem antes do upload para economizar storage e acelerar o PDF
-    const optimizedBlob = await resizeAndCompressImage(item.file);
+    const preparedImage = await normalizeUploadImage(item.file);
+    const explicitCoordinates = normalizeCoordinates(item.latitude, item.longitude);
+    const locationSource = explicitCoordinates
+      ? item.location_source ?? null
+      : null;
+    const locationCapturedAt = explicitCoordinates
+      ? item.location_captured_at ?? item.captured_at ?? new Date().toISOString()
+      : null;
 
-    const storagePath = buildPhotoPath(item.wound_id, item.file.name);
+    const storagePath = buildPhotoPath(item.wound_id, item.file.name, preparedImage.extensionHint);
 
     const { error: uploadError } = await supabase.storage
       .from(WOUND_STORAGE_BUCKET)
-      .upload(storagePath, optimizedBlob, {
+      .upload(storagePath, preparedImage.blob, {
         cacheControl: '31536000',
-        contentType: 'image/jpeg', // Sempre JPEG após compressão
+        contentType: preparedImage.contentType,
         upsert: false,
       });
 
@@ -475,19 +591,24 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
       throw uploadError;
     }
 
-    const { data: metadata, error: metadataError } = await supabase
-      .from('wound_photos')
-      .insert({
-        wound_id: item.wound_id,
-        entry_id: item.entry_id ?? null,
-        storage_path: storagePath,
-        captured_at: item.captured_at ?? new Date().toISOString(),
-        display_order: item.display_order ?? index,
-        description: item.description ?? null,
-        is_primary: item.is_primary ?? false,
-      })
-      .select('*')
-      .single();
+    const insertPayload: WoundPhotoInsertPayload = {
+      wound_id: item.wound_id,
+      entry_id: item.entry_id ?? null,
+      storage_path: storagePath,
+      captured_at: item.captured_at ?? new Date().toISOString(),
+      display_order: item.display_order ?? index,
+      description: item.description ?? null,
+      is_primary: item.is_primary ?? false,
+    };
+
+    if (explicitCoordinates) {
+      insertPayload.latitude = explicitCoordinates.latitude;
+      insertPayload.longitude = explicitCoordinates.longitude;
+      insertPayload.location_source = locationSource;
+      insertPayload.location_captured_at = locationCapturedAt;
+    }
+
+    const { data: metadata, error: metadataError } = await insertWoundPhotoRowWithGeoCompatibility(insertPayload);
 
     if (metadataError) {
       console.error('[uploadWoundPhotos] Erro ao inserir metadados no banco:', metadataError);
@@ -496,9 +617,9 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
       throw metadataError;
     }
 
-    // Cache the optimized blob locally immediately
+    // Cache local com a versão realmente enviada ao storage.
     const photo = metadata as WoundPhoto;
-    await saveWoundPhotoCache(photo.id, optimizedBlob);
+    await saveWoundPhotoCache(photo.id, preparedImage.blob);
 
     uploaded.push(photo);
   }
@@ -579,18 +700,14 @@ export async function hydratePhotosWithSignedUrls(photos: WoundPhoto[], expiresI
   const signedPhotos = await Promise.all(
     photos.map(async (photo) => {
       try {
-        // 1. Resolve and cache metadata (EXIF + Address)
-        // This is done in parallel with URL/Blob resolution
-        const metadataPromise = resolveAndCacheMetadata(photo);
-
-        // 2. Try to get photo blob from local cache
+        // 1. Try to get photo blob from local cache
         const cachedBlob = await getWoundPhotoCache(photo.id);
         
         let signed_url: string | null = null;
         if (cachedBlob) {
           signed_url = URL.createObjectURL(cachedBlob);
         } else {
-          // 3. If not in cache, get signed URL and background cache it
+          // 2. If not in cache, get signed URL and background cache it
           signed_url = await getSignedWoundPhotoUrl(photo.storage_path, expiresInSec);
           
           void fetch(signed_url)
@@ -599,20 +716,15 @@ export async function hydratePhotosWithSignedUrls(photos: WoundPhoto[], expiresI
             .catch(err => console.warn(`Falha ao cachear foto ${photo.id}:`, err));
         }
 
-        // Wait for metadata resolution
-        const metadata = await metadataPromise;
-
         return {
           ...photo,
           signed_url,
-          metadata,
         };
       } catch (err) {
         console.error(`Erro ao hidratar foto ${photo.id}:`, err);
         return {
           ...photo,
           signed_url: null,
-          metadata: null,
         };
       }
     }),

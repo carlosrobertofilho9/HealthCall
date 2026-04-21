@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as ExifReader from 'exifreader';
 import {
+  LEGACY_GEO_CUTOFF_ISO,
   clearWoundPhotoMetadataMemoryCache,
   downloadWoundPhotoBlob,
-  extractWoundPhotoMetadata,
-  loadWoundPhotoMetadataFromSupabase,
+  resolveWoundPhotoMetadataOnDemand,
 } from './woundPhotoMetadataService';
 
 const mocks = vi.hoisted(() => {
@@ -13,9 +13,12 @@ const mocks = vi.hoisted(() => {
     download: mockStorageDownload,
   }));
 
+  const mockReverseGeocode = vi.fn();
+
   return {
     mockStorageDownload,
     mockStorageFrom,
+    mockReverseGeocode,
   };
 });
 
@@ -31,10 +34,27 @@ vi.mock('exifreader', () => ({
   load: vi.fn(),
 }));
 
+vi.mock('./geocodingService', () => ({
+  reverseGeocode: mocks.mockReverseGeocode,
+}));
+
+const basePhoto = {
+  id: 'photo-1',
+  wound_id: 'wound-1',
+  storage_path: 'wound-1/photo-1.jpg',
+  captured_at: '2026-04-21T10:00:00.000Z',
+  created_at: '2026-04-21T10:00:00.000Z',
+} as const;
+
 describe('woundPhotoMetadataService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearWoundPhotoMetadataMemoryCache();
+    mocks.mockReverseGeocode.mockResolvedValue('Rua Teste, Centro, São Paulo');
+    mocks.mockStorageDownload.mockResolvedValue({
+      data: new Blob(['img'], { type: 'image/jpeg' }),
+      error: null,
+    });
   });
 
   it('faz download de blob no bucket correto', async () => {
@@ -48,7 +68,22 @@ describe('woundPhotoMetadataService', () => {
     expect(result).toBe(blob);
   });
 
-  it('converte GPS com referência S/W para coordenadas negativas', async () => {
+  it('prioriza coordenadas já presentes na linha da foto', async () => {
+    const resolved = await resolveWoundPhotoMetadataOnDemand({
+      ...basePhoto,
+      latitude: -23.55,
+      longitude: -46.63,
+      location_source: 'device',
+      location_captured_at: '2026-04-21T09:00:00.000Z',
+    });
+
+    expect(resolved.source).toBe('photo_row');
+    expect(resolved.metadata?.latitude).toBeCloseTo(-23.55, 6);
+    expect(resolved.metadata?.longitude).toBeCloseTo(-46.63, 6);
+    expect(mocks.mockStorageDownload).not.toHaveBeenCalled();
+  });
+
+  it('usa EXIF baixado quando disponível', async () => {
     vi.mocked(ExifReader.load).mockReturnValue({
       GPSLatitude: { value: [[23, 1], [30, 1], [0, 1]] },
       GPSLatitudeRef: { value: ['S'] },
@@ -58,37 +93,40 @@ describe('woundPhotoMetadataService', () => {
       Model: { description: 'iPhone 14' },
     } as never);
 
-    const metadata = await extractWoundPhotoMetadata(new Blob(['img'], { type: 'image/jpeg' }));
+    const resolved = await resolveWoundPhotoMetadataOnDemand(basePhoto);
 
-    expect(metadata?.make).toBe('Apple');
-    expect(metadata?.model).toBe('iPhone 14');
-    expect(metadata?.latitude).toBeCloseTo(-23.5, 6);
-    expect(metadata?.longitude).toBeCloseTo(-46.625, 6);
+    expect(resolved.source).toBe('exif_download');
+    expect(resolved.metadata?.make).toBe('Apple');
+    expect(resolved.metadata?.latitude).toBeCloseTo(-23.5, 6);
   });
 
-  it('retorna null quando não há EXIF útil', async () => {
+  it('retorna EXIF mesmo sem coordenadas (sem fallback de GPS do dispositivo)', async () => {
     vi.mocked(ExifReader.load).mockReturnValue({
-      ImageWidth: { description: '1000', value: 1000 },
+      Make: { description: 'Apple' },
+      Model: { description: 'iPhone 15' },
     } as never);
 
-    const metadata = await extractWoundPhotoMetadata(new Blob(['img'], { type: 'image/jpeg' }));
+    const resolved = await resolveWoundPhotoMetadataOnDemand(basePhoto);
 
-    expect(metadata).toBeNull();
+    expect(resolved.source).toBe('exif_download');
+    expect(resolved.metadata?.make).toBe('Apple');
+    expect(resolved.metadata?.latitude).toBeUndefined();
+    expect(resolved.metadata?.longitude).toBeUndefined();
   });
 
-  it('baixa do Supabase e extrai EXIF em sequência', async () => {
-    mocks.mockStorageDownload.mockResolvedValue({
-      data: new Blob(['img'], { type: 'image/jpeg' }),
-      error: null,
+  it('retorna vazio quando EXIF não possui dados úteis', async () => {
+    vi.mocked(ExifReader.load).mockReturnValue({} as never);
+
+    const resolved = await resolveWoundPhotoMetadataOnDemand({
+      ...basePhoto,
+      created_at: '2026-04-20T23:59:59.000Z',
     });
-    vi.mocked(ExifReader.load).mockReturnValue({
-      Make: { description: 'Samsung' },
-      Model: { description: 'Galaxy' },
-    } as never);
 
-    const metadata = await loadWoundPhotoMetadataFromSupabase('w1/photo.jpg');
+    expect(resolved.metadata).toBeNull();
+    expect(resolved.source).toBeNull();
+  });
 
-    expect(mocks.mockStorageDownload).toHaveBeenCalledWith('w1/photo.jpg');
-    expect(metadata).toMatchObject({ make: 'Samsung', model: 'Galaxy' });
+  it('mantém data de corte legada configurada', () => {
+    expect(LEGACY_GEO_CUTOFF_ISO).toBe('2026-04-21T00:00:00.000Z');
   });
 });

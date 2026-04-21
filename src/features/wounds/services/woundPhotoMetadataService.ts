@@ -1,18 +1,38 @@
 import * as ExifReader from 'exifreader';
 import { supabase } from '@/lib/supabaseClient';
-import type { WoundPhoto, WoundPhotoExifMetadata } from '../types';
+import type { WoundPhoto, WoundPhotoExifMetadata, WoundPhotoMetadataSource } from '../types';
 import { reverseGeocode } from './geocodingService';
-import { getWoundPhotoMetadataCache, saveWoundPhotoMetadataCache } from './woundOfflineStore';
 
 const WOUND_STORAGE_BUCKET = 'wound-photos';
+export const LEGACY_GEO_CUTOFF_ISO = '2026-04-21T00:00:00.000Z';
+const LEGACY_GEO_CUTOFF_MS = Date.parse(LEGACY_GEO_CUTOFF_ISO);
 
 const metadataMemoryCache = new Map<string, WoundPhotoExifMetadata | null>();
+const metadataSourceMemoryCache = new Map<string, WoundPhotoMetadataSource>();
 
 type ExifTagLike = {
   value?: unknown;
   computed?: unknown;
   description?: unknown;
 };
+
+type PhotoMetadataTarget = Pick<
+  WoundPhoto,
+  | 'id'
+  | 'wound_id'
+  | 'storage_path'
+  | 'captured_at'
+  | 'created_at'
+  | 'latitude'
+  | 'longitude'
+  | 'location_source'
+  | 'location_captured_at'
+>;
+
+export interface ResolveWoundPhotoMetadataResult {
+  metadata: WoundPhotoExifMetadata | null;
+  source: WoundPhotoMetadataSource;
+}
 
 function parseRational(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -112,11 +132,49 @@ function hasUsefulMetadata(metadata: WoundPhotoExifMetadata): boolean {
   );
 }
 
+function hasValidCoordinates(latitude?: number | null, longitude?: number | null): boolean {
+  return (
+    typeof latitude === 'number' &&
+    Number.isFinite(latitude) &&
+    Math.abs(latitude) <= 90 &&
+    typeof longitude === 'number' &&
+    Number.isFinite(longitude) &&
+    Math.abs(longitude) <= 180
+  );
+}
+
+function buildMetadataFromPhotoRow(photo: PhotoMetadataTarget): WoundPhotoExifMetadata | null {
+  if (!hasValidCoordinates(photo.latitude, photo.longitude)) {
+    return null;
+  }
+
+  return {
+    latitude: photo.latitude as number,
+    longitude: photo.longitude as number,
+    dateTimeOriginal: photo.location_captured_at ?? photo.captured_at,
+    address: null,
+  };
+}
+
+export function isLegacyPhotoCreatedAt(createdAt?: string | null): boolean {
+  if (!createdAt) return true;
+  const timestamp = Date.parse(createdAt);
+  if (!Number.isFinite(timestamp)) return true;
+  return timestamp < LEGACY_GEO_CUTOFF_MS;
+}
+
+async function withBestEffortAddress(metadata: WoundPhotoExifMetadata | null): Promise<WoundPhotoExifMetadata | null> {
+  if (!metadata) return null;
+
+  if (typeof metadata.latitude === 'number' && typeof metadata.longitude === 'number' && !metadata.address) {
+    metadata.address = await reverseGeocode(metadata.latitude, metadata.longitude);
+  }
+
+  return metadata;
+}
+
 export async function downloadWoundPhotoBlob(storagePath: string): Promise<Blob> {
-  const { data, error } = await supabase
-    .storage
-    .from(WOUND_STORAGE_BUCKET)
-    .download(storagePath);
+  const { data, error } = await supabase.storage.from(WOUND_STORAGE_BUCKET).download(storagePath);
 
   if (error) throw error;
   if (!data) throw new Error('Não foi possível baixar foto para extração de metadados.');
@@ -125,9 +183,7 @@ export async function downloadWoundPhotoBlob(storagePath: string): Promise<Blob>
 }
 
 export async function extractWoundPhotoMetadata(blob: Blob): Promise<WoundPhotoExifMetadata | null> {
-  const buffer = typeof blob.arrayBuffer === 'function'
-    ? await blob.arrayBuffer()
-    : await new Response(blob).arrayBuffer();
+  const buffer = typeof blob.arrayBuffer === 'function' ? await blob.arrayBuffer() : await new Response(blob).arrayBuffer();
   const tags = ExifReader.load(buffer) as Record<string, ExifTagLike> | null;
 
   if (!tags) return null;
@@ -142,11 +198,7 @@ export async function extractWoundPhotoMetadata(blob: Blob): Promise<WoundPhotoE
     address: null,
   };
 
-  // If we have GPS coordinates, try to resolve the address
-  if (typeof metadata.latitude === 'number' && typeof metadata.longitude === 'number') {
-    metadata.address = await reverseGeocode(metadata.latitude, metadata.longitude);
-  }
-
+  await withBestEffortAddress(metadata);
   return hasUsefulMetadata(metadata) ? metadata : null;
 }
 
@@ -160,60 +212,75 @@ export async function loadWoundPhotoMetadataFromSupabase(storagePath: string): P
   }
 }
 
-/**
- * High-level function to get metadata for a photo, using caches (Memory -> IndexedDB)
- * and falling back to Supabase download + extraction.
- */
+function getMemoryCacheEntry(photoId: string): ResolveWoundPhotoMetadataResult | null {
+  if (!metadataMemoryCache.has(photoId)) {
+    return null;
+  }
+
+  const source = metadataSourceMemoryCache.has(photoId)
+    ? (metadataSourceMemoryCache.get(photoId) ?? null)
+    : 'memory';
+
+  return {
+    metadata: metadataMemoryCache.get(photoId) ?? null,
+    source,
+  };
+}
+
+export async function resolveWoundPhotoMetadataOnDemand(
+  photo: PhotoMetadataTarget,
+  options?: { bypassMemoryCache?: boolean },
+): Promise<ResolveWoundPhotoMetadataResult> {
+  if (!options?.bypassMemoryCache) {
+    const cached = getMemoryCacheEntry(photo.id);
+    if (cached) return cached;
+  }
+
+  const rowMetadata = await withBestEffortAddress(buildMetadataFromPhotoRow(photo));
+  if (rowMetadata) {
+    setWoundPhotoMetadataInMemoryCache(photo.id, rowMetadata, 'photo_row');
+    return { metadata: rowMetadata, source: 'photo_row' };
+  }
+
+  const exifMetadata = await loadWoundPhotoMetadataFromSupabase(photo.storage_path);
+  if (exifMetadata && hasValidCoordinates(exifMetadata.latitude, exifMetadata.longitude)) {
+    setWoundPhotoMetadataInMemoryCache(photo.id, exifMetadata, 'exif_download');
+    return { metadata: exifMetadata, source: 'exif_download' };
+  }
+
+  if (exifMetadata) {
+    setWoundPhotoMetadataInMemoryCache(photo.id, exifMetadata, 'exif_download');
+    return { metadata: exifMetadata, source: 'exif_download' };
+  }
+
+  setWoundPhotoMetadataInMemoryCache(photo.id, null, null);
+  return { metadata: null, source: null };
+}
+
 export async function resolveAndCacheMetadata(photo: WoundPhoto): Promise<WoundPhotoExifMetadata | null> {
-  const photoId = photo.id;
-
-  // 1. Check Memory Cache
-  const cachedMemory = getWoundPhotoMetadataFromMemoryCache(photoId);
-  if (cachedMemory !== undefined) return cachedMemory;
-
-  // 2. Check IndexedDB Cache
-  try {
-    const cachedDB = await getWoundPhotoMetadataCache(photoId);
-    if (cachedDB) {
-      setWoundPhotoMetadataInMemoryCache(photoId, cachedDB.metadata);
-      return cachedDB.metadata;
-    }
-  } catch (err) {
-    console.warn('Error reading metadata from IndexedDB:', err);
-  }
-
-  // 3. Download and Extract
-  const metadata = await loadWoundPhotoMetadataFromSupabase(photo.storage_path);
-
-  // 4. Update Caches
-  setWoundPhotoMetadataInMemoryCache(photoId, metadata);
-  try {
-    await saveWoundPhotoMetadataCache({
-      photo_id: photoId,
-      wound_id: photo.wound_id,
-      storage_path: photo.storage_path,
-      captured_at: photo.captured_at,
-      metadata: metadata,
-    });
-  } catch (err) {
-    console.warn('Error saving metadata to IndexedDB:', err);
-  }
-
-  return metadata;
+  const resolved = await resolveWoundPhotoMetadataOnDemand(photo);
+  return resolved.metadata;
 }
 
 export function getWoundPhotoMetadataFromMemoryCache(photoId: string): WoundPhotoExifMetadata | null | undefined {
   return metadataMemoryCache.get(photoId);
 }
 
-export function setWoundPhotoMetadataInMemoryCache(photoId: string, metadata: WoundPhotoExifMetadata | null): void {
+export function setWoundPhotoMetadataInMemoryCache(
+  photoId: string,
+  metadata: WoundPhotoExifMetadata | null,
+  source: WoundPhotoMetadataSource = metadata ? 'memory' : null,
+): void {
   metadataMemoryCache.set(photoId, metadata);
+  metadataSourceMemoryCache.set(photoId, source);
 }
 
 export function deleteWoundPhotoMetadataFromMemoryCache(photoId: string): void {
   metadataMemoryCache.delete(photoId);
+  metadataSourceMemoryCache.delete(photoId);
 }
 
 export function clearWoundPhotoMetadataMemoryCache(): void {
   metadataMemoryCache.clear();
+  metadataSourceMemoryCache.clear();
 }

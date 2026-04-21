@@ -229,7 +229,6 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
     if (!form.measure_depth_cm) next.measure_depth_cm = 'Profundidade é obrigatória.';
     if (!form.exudate) next.exudate = 'Selecione o exsudato.';
     if (!form.odor) next.odor = 'Selecione o odor.';
-    if (!form.dressing_type) next.dressing_type = 'Selecione a cobertura utilizada.';
 
     if (form.uses_antibiotic && !form.antibiotic_type.trim()) {
       next.antibiotic_type = 'Informe o tipo de antibiótico.';
@@ -712,7 +711,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-muted-foreground ml-1">Cobertura utilizada *</label>
+            <label className="text-xs font-semibold text-muted-foreground ml-1">Cobertura utilizada</label>
             <Select 
               value={form.dressing_type || undefined} 
               onValueChange={(value) => {
@@ -962,4 +961,3 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
 };
 
 export default WoundEvolutionForm;
-

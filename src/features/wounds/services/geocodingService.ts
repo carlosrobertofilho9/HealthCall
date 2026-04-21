@@ -18,25 +18,37 @@ interface NominatimResponse {
   error?: string;
 }
 
+const NOMINATIM_TIMEOUT_MS = 2500;
+
 /**
  * Converts latitude and longitude into a readable address string.
  * Format: "Rua, Bairro, Cidade"
  */
 export async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+  const timerApi = (typeof globalThis !== 'undefined' ? globalThis : window) as Pick<
+    typeof globalThis,
+    'setTimeout' | 'clearTimeout'
+  >;
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeoutId = controller
+    ? timerApi.setTimeout(() => {
+        controller.abort();
+      }, NOMINATIM_TIMEOUT_MS)
+    : null;
+
   try {
-    // Nominatim requires a User-Agent. Using a generic one for the app.
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`,
       {
         headers: {
           'Accept-Language': 'pt-BR',
-          'User-Agent': 'HealthCall-App/1.0',
         },
+        signal: controller?.signal,
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Nominatim error: ${response.statusText}`);
+      return null;
     }
 
     const data: NominatimResponse = await response.json();
@@ -60,8 +72,11 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string |
     }
 
     return parts.join(', ');
-  } catch (error) {
-    console.error('Reverse geocoding failed:', error);
+  } catch {
     return null;
+  } finally {
+    if (timeoutId !== null) {
+      timerApi.clearTimeout(timeoutId);
+    }
   }
 }

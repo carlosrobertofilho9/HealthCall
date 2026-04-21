@@ -95,9 +95,31 @@ export interface WoundPhoto {
   created_at: string;
   deleted_at: string | null;
   deleted_by: string | null;
+  /**
+   * @deprecated Campo mantido apenas para compatibilidade durante transição.
+   * O fluxo principal de localização é resolvido sob demanda no frontend.
+   */
+  latitude?: number | null;
+  /**
+   * @deprecated Campo mantido apenas para compatibilidade durante transição.
+   * O fluxo principal de localização é resolvido sob demanda no frontend.
+   */
+  longitude?: number | null;
+  /**
+   * @deprecated Campo mantido apenas para compatibilidade durante transição.
+   * O fluxo principal de localização é resolvido sob demanda no frontend.
+   */
+  location_source?: WoundPhotoLocationSource | null;
+  /**
+   * @deprecated Campo mantido apenas para compatibilidade durante transição.
+   * O fluxo principal de localização é resolvido sob demanda no frontend.
+   */
+  location_captured_at?: string | null;
   signed_url?: string | null;
   metadata?: WoundPhotoExifMetadata | null;
 }
+
+export type WoundPhotoLocationSource = 'exif' | 'device';
 
 export interface WoundPhotoExifMetadata {
   make?: string;
@@ -111,7 +133,11 @@ export interface WoundPhotoExifMetadata {
 
 export type WoundPhotoMetadataStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
 
-export type WoundPhotoMetadataSource = 'memory' | 'indexeddb' | 'supabase' | null;
+export type WoundPhotoMetadataSource =
+  | 'memory'
+  | 'exif_download'
+  | 'photo_row'
+  | null;
 
 export interface WoundPhotoMetadataResult {
   status: WoundPhotoMetadataStatus;
@@ -214,6 +240,26 @@ export interface UploadWoundPhotoInput {
   display_order?: number;
   description?: string;
   is_primary?: boolean;
+  /**
+   * @deprecated Campo mantido apenas para compatibilidade durante transição.
+   * O fluxo principal de localização é resolvido sob demanda no frontend.
+   */
+  latitude?: number | null;
+  /**
+   * @deprecated Campo mantido apenas para compatibilidade durante transição.
+   * O fluxo principal de localização é resolvido sob demanda no frontend.
+   */
+  longitude?: number | null;
+  /**
+   * @deprecated Campo mantido apenas para compatibilidade durante transição.
+   * O fluxo principal de localização é resolvido sob demanda no frontend.
+   */
+  location_source?: WoundPhotoLocationSource | null;
+  /**
+   * @deprecated Campo mantido apenas para compatibilidade durante transição.
+   * O fluxo principal de localização é resolvido sob demanda no frontend.
+   */
+  location_captured_at?: string;
 }
 
 export type WoundSyncMutationType =

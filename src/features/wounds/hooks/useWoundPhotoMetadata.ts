@@ -1,16 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { WoundPhoto, WoundPhotoMetadataResult, WoundPhotoMetadataSource, WoundPhotoMetadataStatus } from '../types';
-import {
-  getWoundPhotoMetadataCache,
-  saveWoundPhotoMetadataCache,
-} from '../services/woundOfflineStore';
-import {
-  getWoundPhotoMetadataFromMemoryCache,
-  loadWoundPhotoMetadataFromSupabase,
-  setWoundPhotoMetadataInMemoryCache,
-} from '../services/woundPhotoMetadataService';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { WoundPhoto, WoundPhotoMetadataResult, WoundPhotoMetadataStatus } from '../types';
+import { resolveWoundPhotoMetadataOnDemand } from '../services/woundPhotoMetadataService';
 
-type PhotoInput = Pick<WoundPhoto, 'id' | 'wound_id' | 'storage_path' | 'captured_at'> | null | undefined;
+type PhotoInput =
+  | Pick<
+      WoundPhoto,
+      | 'id'
+      | 'wound_id'
+      | 'storage_path'
+      | 'captured_at'
+      | 'created_at'
+      | 'latitude'
+      | 'longitude'
+      | 'location_source'
+      | 'location_captured_at'
+      | 'metadata'
+    >
+  | null
+  | undefined;
 
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
@@ -21,8 +28,9 @@ export function useWoundPhotoMetadata(photo: PhotoInput): WoundPhotoMetadataResu
   const [status, setStatus] = useState<WoundPhotoMetadataStatus>('idle');
   const [metadata, setMetadata] = useState<WoundPhotoMetadataResult['metadata']>(null);
   const [error, setError] = useState<string | null>(null);
-  const [source, setSource] = useState<WoundPhotoMetadataSource>(null);
+  const [source, setSource] = useState<WoundPhotoMetadataResult['source']>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
+  const handledReloadNonceRef = useRef(0);
 
   const reload = useCallback(() => {
     setReloadNonce((prev) => prev + 1);
@@ -38,13 +46,17 @@ export function useWoundPhotoMetadata(photo: PhotoInput): WoundPhotoMetadataResu
     }
 
     let isMounted = true;
-    const bypassCache = reloadNonce > 0;
+    const bypassMemoryCache = reloadNonce > handledReloadNonceRef.current;
+    if (bypassMemoryCache) {
+      handledReloadNonceRef.current = reloadNonce;
+    }
 
-    // Check if metadata is already present in the photo object (hydrated by service)
-    if (!bypassCache && (photo as any)?.metadata !== undefined) {
-      setMetadata((photo as any).metadata);
+    // Se a foto já veio hidratada com metadata útil, usa imediatamente.
+    if (!bypassMemoryCache && photo.metadata) {
+      setMetadata(photo.metadata);
       setSource('memory');
-      setStatus((photo as any).metadata ? 'ready' : 'empty');
+      setStatus('ready');
+      setError(null);
       return;
     }
 
@@ -54,45 +66,12 @@ export function useWoundPhotoMetadata(photo: PhotoInput): WoundPhotoMetadataResu
       setSource(null);
 
       try {
-        if (!bypassCache) {
-          const memoryValue = getWoundPhotoMetadataFromMemoryCache(photo.id);
-          if (memoryValue !== undefined) {
-            if (!isMounted) return;
-            setMetadata(memoryValue);
-            setSource('memory');
-            setStatus(memoryValue ? 'ready' : 'empty');
-            return;
-          }
-        }
-
-        if (!bypassCache) {
-          const cached = await getWoundPhotoMetadataCache(photo.id);
-          if (cached && cached.storage_path === photo.storage_path) {
-            setWoundPhotoMetadataInMemoryCache(photo.id, cached.metadata);
-
-            if (!isMounted) return;
-            setMetadata(cached.metadata);
-            setSource('indexeddb');
-            setStatus(cached.metadata ? 'ready' : 'empty');
-            return;
-          }
-        }
-
-        const extracted = await loadWoundPhotoMetadataFromSupabase(photo.storage_path);
-        setWoundPhotoMetadataInMemoryCache(photo.id, extracted);
-
-        await saveWoundPhotoMetadataCache({
-          photo_id: photo.id,
-          wound_id: photo.wound_id,
-          storage_path: photo.storage_path,
-          captured_at: photo.captured_at,
-          metadata: extracted,
-        }).catch(() => undefined);
+        const resolved = await resolveWoundPhotoMetadataOnDemand(photo, { bypassMemoryCache });
 
         if (!isMounted) return;
-        setMetadata(extracted);
-        setSource('supabase');
-        setStatus(extracted ? 'ready' : 'empty');
+        setMetadata(resolved.metadata);
+        setSource(resolved.source);
+        setStatus(resolved.metadata ? 'ready' : 'empty');
       } catch (err) {
         if (!isMounted) return;
         setMetadata(null);

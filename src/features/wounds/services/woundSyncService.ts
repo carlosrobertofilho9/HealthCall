@@ -124,6 +124,10 @@ async function executeMutation(mutation: WoundSyncMutation): Promise<void> {
         display_order?: number;
         description?: string;
         is_primary?: boolean;
+        latitude?: number | null;
+        longitude?: number | null;
+        location_source?: 'exif' | 'device' | null;
+        location_captured_at?: string;
       };
 
       const blob = await getWoundPhotoBlob(payload.photo_blob_id);
@@ -144,6 +148,10 @@ async function executeMutation(mutation: WoundSyncMutation): Promise<void> {
           display_order: payload.display_order,
           description: payload.description,
           is_primary: payload.is_primary,
+          latitude: payload.latitude,
+          longitude: payload.longitude,
+          location_source: payload.location_source ?? null,
+          location_captured_at: payload.location_captured_at,
         },
       ]);
 

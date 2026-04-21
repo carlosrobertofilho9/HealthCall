@@ -440,4 +440,3 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
 };
 
 export default NewWoundForm;
-

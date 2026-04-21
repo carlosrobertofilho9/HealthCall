@@ -1,25 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { WoundPhotoExifMetadata } from '../types';
 import { useWoundPhotoMetadata } from './useWoundPhotoMetadata';
 
 const mocks = vi.hoisted(() => ({
-  getWoundPhotoMetadataCache: vi.fn(),
-  saveWoundPhotoMetadataCache: vi.fn(),
-  getWoundPhotoMetadataFromMemoryCache: vi.fn(),
-  loadWoundPhotoMetadataFromSupabase: vi.fn(),
-  setWoundPhotoMetadataInMemoryCache: vi.fn(),
-}));
-
-vi.mock('../services/woundOfflineStore', () => ({
-  getWoundPhotoMetadataCache: mocks.getWoundPhotoMetadataCache,
-  saveWoundPhotoMetadataCache: mocks.saveWoundPhotoMetadataCache,
+  resolveWoundPhotoMetadataOnDemand: vi.fn(),
 }));
 
 vi.mock('../services/woundPhotoMetadataService', () => ({
-  getWoundPhotoMetadataFromMemoryCache: mocks.getWoundPhotoMetadataFromMemoryCache,
-  loadWoundPhotoMetadataFromSupabase: mocks.loadWoundPhotoMetadataFromSupabase,
-  setWoundPhotoMetadataInMemoryCache: mocks.setWoundPhotoMetadataInMemoryCache,
+  resolveWoundPhotoMetadataOnDemand: mocks.resolveWoundPhotoMetadataOnDemand,
 }));
 
 const photo = {
@@ -27,55 +15,52 @@ const photo = {
   wound_id: 'wound-1',
   storage_path: 'wound-1/photo-1.jpg',
   captured_at: '2026-04-20T09:00:00.000Z',
+  created_at: '2026-04-21T10:00:00.000Z',
+} as const;
+
+const hydratedPhoto = {
+  ...photo,
+  metadata: {
+    make: 'Apple',
+    latitude: -23.55,
+    longitude: -46.63,
+  },
 } as const;
 
 describe('useWoundPhotoMetadata', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getWoundPhotoMetadataFromMemoryCache.mockReturnValue(undefined);
-    mocks.getWoundPhotoMetadataCache.mockResolvedValue(null);
-    mocks.saveWoundPhotoMetadataCache.mockResolvedValue(undefined);
-    mocks.loadWoundPhotoMetadataFromSupabase.mockResolvedValue(null);
+    mocks.resolveWoundPhotoMetadataOnDemand.mockResolvedValue({
+      metadata: null,
+      source: null,
+    });
   });
 
-  it('usa cache do IndexedDB e evita novo download', async () => {
-    const metadata: WoundPhotoExifMetadata = { make: 'Apple', model: 'iPhone' };
-    mocks.getWoundPhotoMetadataCache.mockResolvedValue({
-      id: 'photo-meta:photo-1',
-      photo_id: photo.id,
-      wound_id: photo.wound_id,
-      storage_path: photo.storage_path,
-      captured_at: photo.captured_at,
-      metadata,
-      updatedAt: Date.now(),
+  it('usa metadata já hidratado da foto sem chamar serviço', async () => {
+    const { result } = renderHook(() => useWoundPhotoMetadata(hydratedPhoto));
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    expect(result.current.source).toBe('memory');
+    expect(mocks.resolveWoundPhotoMetadataOnDemand).not.toHaveBeenCalled();
+  });
+
+  it('resolve metadata sob demanda via serviço', async () => {
+    mocks.resolveWoundPhotoMetadataOnDemand.mockResolvedValue({
+      metadata: {
+        latitude: -23.55,
+        longitude: -46.63,
+      },
+      source: 'exif_download',
     });
 
     const { result } = renderHook(() => useWoundPhotoMetadata(photo));
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
-    expect(result.current.source).toBe('indexeddb');
-    expect(mocks.loadWoundPhotoMetadataFromSupabase).not.toHaveBeenCalled();
+    expect(result.current.source).toBe('exif_download');
   });
 
-  it('em cache miss baixa/extrai e persiste no cache', async () => {
-    const metadata: WoundPhotoExifMetadata = { make: 'Samsung', latitude: -23.5, longitude: -46.6 };
-    mocks.loadWoundPhotoMetadataFromSupabase.mockResolvedValue(metadata);
-
-    const { result } = renderHook(() => useWoundPhotoMetadata(photo));
-
-    await waitFor(() => expect(result.current.status).toBe('ready'));
-    expect(result.current.source).toBe('supabase');
-    expect(mocks.saveWoundPhotoMetadataCache).toHaveBeenCalledWith({
-      photo_id: photo.id,
-      wound_id: photo.wound_id,
-      storage_path: photo.storage_path,
-      captured_at: photo.captured_at,
-      metadata,
-    });
-  });
-
-  it('expõe erro quando download/extract falha', async () => {
-    mocks.loadWoundPhotoMetadataFromSupabase.mockRejectedValue(new Error('erro de download'));
+  it('expõe erro quando resolução falha', async () => {
+    mocks.resolveWoundPhotoMetadataOnDemand.mockRejectedValue(new Error('erro de download'));
 
     const { result } = renderHook(() => useWoundPhotoMetadata(photo));
 
@@ -83,19 +68,17 @@ describe('useWoundPhotoMetadata', () => {
     expect(result.current.error).toContain('erro de download');
   });
 
-  it('reload força nova tentativa ignorando cache', async () => {
-    mocks.getWoundPhotoMetadataFromMemoryCache.mockReturnValue({ make: 'Cached Device' });
-    mocks.loadWoundPhotoMetadataFromSupabase.mockResolvedValue({ make: 'Fresh Device' });
-
+  it('reload força bypass do cache em memória do serviço', async () => {
     const { result } = renderHook(() => useWoundPhotoMetadata(photo));
 
-    await waitFor(() => expect(result.current.source).toBe('memory'));
+    await waitFor(() => expect(mocks.resolveWoundPhotoMetadataOnDemand).toHaveBeenCalledTimes(1));
+    expect(mocks.resolveWoundPhotoMetadataOnDemand).toHaveBeenLastCalledWith(photo, { bypassMemoryCache: false });
 
     act(() => {
       result.current.reload();
     });
 
-    await waitFor(() => expect(mocks.loadWoundPhotoMetadataFromSupabase).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(result.current.source).toBe('supabase'));
+    await waitFor(() => expect(mocks.resolveWoundPhotoMetadataOnDemand).toHaveBeenCalledTimes(2));
+    expect(mocks.resolveWoundPhotoMetadataOnDemand).toHaveBeenLastCalledWith(photo, { bypassMemoryCache: true });
   });
 });
