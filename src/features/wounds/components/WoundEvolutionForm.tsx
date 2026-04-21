@@ -65,6 +65,27 @@ const dressingOptions = [
   'Outra',
 ];
 
+const autoClassifyDressing = (dressing: string) => {
+  const result = {
+    uses_ointment: false,
+    ointment_type: '',
+    uses_antibiotic: false,
+    antibiotic_type: '',
+  };
+
+  if (['Hidrogel', 'Colagenase', 'Papaína'].includes(dressing)) {
+    result.uses_ointment = true;
+    result.ointment_type = dressing;
+  } else if (dressing === 'Sulfadiazina de Prata') {
+    result.uses_antibiotic = true;
+    result.antibiotic_type = dressing;
+    result.uses_ointment = true;
+    result.ointment_type = dressing;
+  }
+
+  return result;
+};
+
 const nonConformityTypes = [
   'Pomada inadequada',
   'ATB não prescrito',
@@ -588,7 +609,22 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
             <label className="text-xs font-semibold text-muted-foreground ml-1">Cobertura utilizada *</label>
             <Select 
               value={form.dressing_type || undefined} 
-              onValueChange={(value) => setForm((prev) => ({ ...prev, dressing_type: value }))}
+              onValueChange={(value) => {
+                const classification = autoClassifyDressing(value);
+                setForm((prev) => ({ 
+                  ...prev, 
+                  dressing_type: value,
+                  // Só sobrescreve se houver uma classificação automática para o novo valor
+                  ...(classification.uses_ointment ? { 
+                    uses_ointment: true, 
+                    ointment_type: classification.ointment_type 
+                  } : {}),
+                  ...(classification.uses_antibiotic ? { 
+                    uses_antibiotic: true, 
+                    antibiotic_type: classification.antibiotic_type 
+                  } : {}),
+                }));
+              }}
             >
               <SelectTrigger 
                 icon={<ShieldCheck className={cn("h-4 w-4", form.dressing_type ? "text-primary" : "text-primary/40")} />}
