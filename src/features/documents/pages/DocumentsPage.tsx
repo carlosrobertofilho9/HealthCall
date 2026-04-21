@@ -14,12 +14,14 @@ const DocumentsPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('templates');
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
   const {
     selectedTemplate,
     fieldValues,
     previewValues,
     missingKeys,
     isGenerating,
+    showSuccess,
     selectTemplate,
     setFieldValue,
     setFieldValuesBulk,
@@ -61,6 +63,12 @@ const DocumentsPage: React.FC = () => {
     navigate(location.pathname, { replace: true, state: null });
   }, [applyPreset, location.pathname, location.state, navigate, setFieldValuesBulk]);
 
+  useEffect(() => {
+    // Simulate initial loading for premium feel
+    const timer = setTimeout(() => setIsLoadingTemplates(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="flex w-full flex-col gap-4 xl:h-full xl:overflow-hidden">
       <div className="xl:hidden">
@@ -82,6 +90,7 @@ const DocumentsPage: React.FC = () => {
               templates={mockTemplates}
               selectedTemplateId={selectedTemplate?.id}
               onSelectTemplate={handleSelectTemplate}
+              isLoading={isLoadingTemplates}
             />
           </TabsContent>
 
@@ -91,6 +100,7 @@ const DocumentsPage: React.FC = () => {
               values={fieldValues}
               missingKeys={missingKeys}
               isGenerating={isGenerating}
+              showSuccess={showSuccess}
               onFieldChange={setFieldValue}
               onClearForm={clearForm}
               onGenerateDocument={handleGenerateDocument}
@@ -109,6 +119,7 @@ const DocumentsPage: React.FC = () => {
             templates={mockTemplates}
             selectedTemplateId={selectedTemplate?.id}
             onSelectTemplate={handleSelectTemplate}
+            isLoading={isLoadingTemplates}
           />
         </div>
 
@@ -118,6 +129,7 @@ const DocumentsPage: React.FC = () => {
             values={fieldValues}
             missingKeys={missingKeys}
             isGenerating={isGenerating}
+            showSuccess={showSuccess}
             onFieldChange={setFieldValue}
             onClearForm={clearForm}
             onGenerateDocument={handleGenerateDocument}

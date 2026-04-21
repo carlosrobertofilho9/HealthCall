@@ -1,5 +1,6 @@
 import React from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronRight,
   Edit,
@@ -8,6 +9,7 @@ import {
   FileCheck,
   FileText,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 
 import { ActionBar, Badge, Button, SectionCard } from '@/components/ui';
@@ -17,22 +19,47 @@ import { DocumentPdf } from './DocumentPdf';
 import { DynamicFieldsForm } from './DynamicFieldsForm';
 import { TemplateList } from './TemplateList';
 
-// SectionCard moved to @/components/ui
+// Animation Variants
+const panelVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.4, ease: [0.23, 1, 0.32, 1] }
+  }
+};
+
+const emptyStateVariants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { 
+    opacity: 1, 
+    scale: 1,
+    transition: { duration: 0.3, ease: 'easeOut' }
+  },
+  exit: { opacity: 0, scale: 0.9, transition: { duration: 0.2 } }
+};
 
 interface TemplatesPanelProps {
   templates: Template[];
   selectedTemplateId?: string;
   onSelectTemplate: (template: Template) => void;
+  isLoading?: boolean;
 }
 
 export const TemplatesPanel: React.FC<TemplatesPanelProps> = ({
   templates,
   selectedTemplateId,
   onSelectTemplate,
+  isLoading,
 }) => {
   return (
     <SectionCard title="Modelos" icon={<FileText size={18} />} className="min-h-[28rem] xl:h-full xl:min-h-0">
-      <TemplateList templates={templates} onSelect={onSelectTemplate} selectedId={selectedTemplateId} />
+      <TemplateList 
+        templates={templates} 
+        onSelect={onSelectTemplate} 
+        selectedId={selectedTemplateId} 
+        isLoading={isLoading}
+      />
     </SectionCard>
   );
 };
@@ -42,6 +69,7 @@ interface FormPanelProps {
   values: Record<string, string>;
   missingKeys: string[];
   isGenerating: boolean;
+  showSuccess?: boolean;
   onFieldChange: (key: string, value: string) => void;
   onClearForm: () => void;
   onGenerateDocument: () => void;
@@ -52,6 +80,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
   values,
   missingKeys,
   isGenerating,
+  showSuccess,
   onFieldChange,
   onClearForm,
   onGenerateDocument,
@@ -63,67 +92,148 @@ export const FormPanel: React.FC<FormPanelProps> = ({
       className="min-h-[28rem] xl:h-full xl:min-h-0"
       contentClassName="p-4 lg:p-5"
     >
-      {selectedTemplate ? (
-        <div className="flex min-h-0 flex-col xl:h-full">
-          <div className="mb-5 flex items-center justify-between gap-3 border-b border-border pb-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium leading-none text-primary">Preenchimento</p>
-              <p className="mt-1 truncate text-xs text-muted-foreground">{selectedTemplate.description}</p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={onClearForm}
-              title="Limpar formulário"
-              className="h-8 w-8 flex-none text-muted-foreground hover:text-destructive active:scale-90"
-            >
-              <Eraser size={16} />
-            </Button>
-          </div>
-
-          <div className="custom-scrollbar min-h-0 flex-1 pr-1 xl:overflow-y-auto">
-            <DynamicFieldsForm
-              templateText={selectedTemplate.templateText}
-              values={values}
-              onChange={onFieldChange}
-              templateId={selectedTemplate.id}
-            />
-
-            {missingKeys.length > 0 && (
-              <div className="mt-4 rounded-lg border border-chart-4/20 bg-chart-4/10 p-3 text-xs text-chart-4">
-                <p className="mb-1 flex items-center gap-1 font-semibold">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-chart-4" />
-                  Campos não preenchidos:
+      <AnimatePresence mode="wait">
+        {selectedTemplate ? (
+          <motion.div 
+            key={selectedTemplate.id}
+            variants={panelVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex min-h-0 flex-col xl:h-full"
+          >
+            <div className="mb-5 flex items-center justify-between gap-3 border-b border-border pb-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium leading-none text-primary flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-primary/70" />
+                  Preenchimento
                 </p>
-                <p className="pl-2.5 opacity-80">{missingKeys.join(', ')}</p>
+                <p className="mt-1 truncate text-xs text-muted-foreground">{selectedTemplate.description}</p>
               </div>
-            )}
-          </div>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClearForm}
+                  title="Limpar formulário"
+                  className="h-8 w-8 flex-none text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Eraser size={16} />
+                </Button>
+              </motion.div>
+            </div>
 
-          <ActionBar separated stackOnMobile className="mt-5">
-            <Button type="button" onClick={onGenerateDocument} disabled={isGenerating} className="w-full shadow-sm">
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Gerando...
-                </>
-              ) : (
-                <>
-                  <FileCheck className="mr-2 h-4 w-4" />
-                  Gerar documento
-                  <ChevronRight className="ml-2 h-4 w-4 opacity-70" />
-                </>
-              )}
-            </Button>
-          </ActionBar>
-        </div>
-      ) : (
-        <div className="flex h-full min-h-[16rem] flex-col items-center justify-center space-y-3 text-center text-muted-foreground opacity-75">
-          <FileText className="h-10 w-10 opacity-25" />
-          <p className="max-w-xs text-sm">Selecione um modelo para iniciar o preenchimento.</p>
-        </div>
-      )}
+            <div className="custom-scrollbar min-h-0 flex-1 pr-1 xl:overflow-y-auto">
+              <DynamicFieldsForm
+                templateText={selectedTemplate.templateText}
+                values={values}
+                onChange={onFieldChange}
+                templateId={selectedTemplate.id}
+                missingKeys={missingKeys}
+              />
+
+              <AnimatePresence>
+                {missingKeys.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0, y: 10 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: 10 }}
+                    className="mt-4 overflow-hidden rounded-lg border border-chart-4/20 bg-chart-4/10 p-3 text-xs text-chart-4"
+                  >
+                    <p className="mb-1 flex items-center gap-1 font-semibold">
+                      <motion.span 
+                        animate={{ opacity: [1, 0.4, 1] }} 
+                        transition={{ repeat: Infinity, duration: 1.5 }}
+                        className="inline-block h-1.5 w-1.5 rounded-full bg-chart-4" 
+                      />
+                      Campos não preenchidos:
+                    </p>
+                    <p className="pl-2.5 opacity-80">{missingKeys.join(', ')}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <ActionBar separated stackOnMobile className="mt-5">
+              <motion.div 
+                animate={missingKeys.length > 0 && !isGenerating ? { x: [0, -4, 4, -4, 4, 0] } : {}}
+                transition={{ duration: 0.4 }}
+                whileHover={{ scale: 1.01 }} 
+                whileTap={{ scale: 0.98 }} 
+                className="w-full"
+              >
+                <Button 
+                  type="button" 
+                  onClick={onGenerateDocument} 
+                  disabled={isGenerating} 
+                  className={cn(
+                    "w-full shadow-md transition-all hover:shadow-lg active:shadow-inner",
+                    showSuccess && "bg-green-600 hover:bg-green-700 text-white",
+                    missingKeys.length > 0 && !isGenerating && "border-destructive/50"
+                  )}
+                >
+                  <AnimatePresence mode="wait">
+                    {isGenerating ? (
+                      <motion.div 
+                        key="generating"
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="flex items-center justify-center"
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Gerando documento...
+                      </motion.div>
+                    ) : showSuccess ? (
+                      <motion.div 
+                        key="success"
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        className="flex items-center justify-center"
+                      >
+                        <FileCheck className="mr-2 h-4 w-4" />
+                        Gerado com Sucesso!
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        key="idle"
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="flex items-center justify-center"
+                      >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Gerar documento
+                        <ChevronRight className="ml-2 h-4 w-4 opacity-70" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Button>
+              </motion.div>
+            </ActionBar>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="empty-form"
+            variants={emptyStateVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="flex h-full min-h-[16rem] flex-col items-center justify-center space-y-3 text-center text-muted-foreground/60"
+          >
+            <motion.div 
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+            >
+              <FileText className="h-10 w-10 opacity-20" />
+            </motion.div>
+            <p className="max-w-[200px] text-sm font-medium leading-relaxed">
+              Selecione um modelo para iniciar o preenchimento.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </SectionCard>
   );
 };
@@ -146,32 +256,63 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
       className={cn('min-h-[28rem] xl:h-full xl:min-h-0', className)}
       contentClassName="relative bg-background/30"
     >
-      {selectedTemplate && previewValues ? (
-        <div className="h-[58vh] min-h-0 w-full overflow-hidden bg-background xl:h-full">
-          <PDFViewer width="100%" height="100%" showToolbar className="h-full w-full rounded-none border-0">
-            <DocumentPdf
-              title={selectedTemplate.title}
-              templateText={selectedTemplate.templateText}
-              values={previewValues}
-            />
-          </PDFViewer>
-        </div>
-      ) : (
-        <div className="flex h-full min-h-[18rem] flex-col items-center justify-center space-y-4 text-center text-muted-foreground">
-          <div className="rounded-full border border-border bg-secondary/30 p-4 shadow-inner">
-            <FileText className="h-8 w-8 text-primary/45" />
-          </div>
-          <div className="max-w-xs">
-            <p className="font-medium text-foreground/75">Aguardando geração</p>
-            <p className="mt-1 text-xs opacity-60">
-              Preencha os campos e clique em “Gerar documento” para visualizar o PDF.
-            </p>
-            {selectedTemplate && (
-              <Badge className="mt-3 border-primary/20 bg-primary/10 text-primary">{selectedTemplate.title}</Badge>
-            )}
-          </div>
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {selectedTemplate && previewValues ? (
+          <motion.div 
+            key={`preview-${selectedTemplate.id}`}
+            variants={panelVariants}
+            initial="hidden"
+            animate="visible"
+            className="h-[58vh] min-h-0 w-full overflow-hidden bg-background xl:h-full"
+          >
+            <PDFViewer width="100%" height="100%" showToolbar className="h-full w-full rounded-none border-0">
+              <DocumentPdf
+                title={selectedTemplate.title}
+                templateText={selectedTemplate.templateText}
+                values={previewValues}
+              />
+            </PDFViewer>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="empty-preview"
+            variants={emptyStateVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="flex h-full min-h-[18rem] flex-col items-center justify-center space-y-4 text-center text-muted-foreground"
+          >
+            <motion.div 
+              animate={{ 
+                boxShadow: ["0 0 0px var(--primary)", "0 0 15px var(--primary)", "0 0 0px var(--primary)"],
+                borderColor: ["rgba(var(--primary), 0.2)", "rgba(var(--primary), 0.5)", "rgba(var(--primary), 0.2)"]
+              }}
+              transition={{ repeat: Infinity, duration: 3 }}
+              className="rounded-full border border-border bg-secondary/30 p-4 shadow-inner"
+            >
+              <FileText className="h-8 w-8 text-primary/45" />
+            </motion.div>
+            <div className="max-w-xs">
+              <p className="font-medium text-foreground/75">Aguardando geração</p>
+              <p className="mt-1 text-xs opacity-60">
+                Preencha os campos e clique em “Gerar documento” para visualizar o PDF.
+              </p>
+              {selectedTemplate && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Badge className="mt-3 border-primary/20 bg-primary/10 text-primary shadow-sm">
+                    {selectedTemplate.title}
+                  </Badge>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </SectionCard>
   );
 };
+

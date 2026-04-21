@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 // Coordenadas aproximadas (x, y) em porcentagem para cada código anatômico
 // Baseado em uma silhueta de 100x100
@@ -50,8 +51,6 @@ interface AnatomicalMiniMapProps {
   size?: number;
 }
 
-import { motion } from 'framer-motion';
-
 export const AnatomicalMiniMap: React.FC<AnatomicalMiniMapProps> = ({ code, className, size = 48 }) => {
   const coord = useMemo(() => ANATOMICAL_COORDINATES[code] || null, [code]);
 
@@ -59,13 +58,16 @@ export const AnatomicalMiniMap: React.FC<AnatomicalMiniMapProps> = ({ code, clas
 
   return (
     <div 
-      className={cn("relative inline-flex items-center justify-center bg-secondary/10 rounded-2xl p-1.5 border border-primary/10 backdrop-blur-sm shadow-sm overflow-hidden", className)}
+      className={cn(
+        "relative inline-flex items-center justify-center bg-secondary/10 rounded-2xl p-1.5 border border-primary/10 backdrop-blur-sm shadow-sm overflow-hidden", 
+        className
+      )}
       style={{ width: size, height: size * 1.5 }}
       title={`Localização: ${code}`}
     >
       <svg
         viewBox="0 0 100 150"
-        className="w-full h-full fill-foreground/20 stroke-foreground/30"
+        className="w-full h-full"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
@@ -75,15 +77,75 @@ export const AnatomicalMiniMap: React.FC<AnatomicalMiniMapProps> = ({ code, clas
           </filter>
         </defs>
 
-        {/* Silhueta Humana Estática */}
-        <g transform="translate(0, 10) scale(0.9, 0.9) translate(5, 0)">
-          <circle cx="50" cy="15" r="12" />
-          <path d="M35 30 Q50 25 65 30 L68 75 Q50 80 32 75 Z" />
-          <path d="M32 35 L15 75 L25 80 L35 45" />
-          <path d="M68 35 L85 75 L75 80 L65 45" />
-          <path d="M35 75 L30 140 L45 140 L48 80" />
-          <path d="M65 75 L70 140 L55 140 L52 80" />
+        {/* Silhueta Humana Realista */}
+        <g className="fill-foreground/10 stroke-foreground/40" strokeWidth="1.2" strokeLinejoin="round">
+          {/* Contorno Principal do Corpo */}
+          <path d="
+            M 50,12
+            C 43,12 39,17 39,23
+            C 39,28 42,31 44,32
+            C 44,34 42,35 38,35
+            C 30,35 24,38 20,46
+            C 17,52 15,62 13,70
+            C 11,76 10,81 12,83
+            C 14,85 16,84 17,81
+            C 19,75 21,65 24,56
+            C 26,50 28,47 30,46
+            C 29,54 30,64 31,72
+            C 32,80 34,83 34,88
+            C 34,98 36,108 37,118
+            C 38,126 39,132 39,135
+            C 38,137 43,138 45,136
+            C 45,125 47,105 49,92
+            C 49.5,88 49.5,82 50,78
+            C 50.5,82 50.5,88 51,92
+            C 53,105 55,125 55,136
+            C 57,138 62,137 61,135
+            C 61,132 62,126 63,118
+            C 64,108 66,98 66,88
+            C 66,83 68,80 69,72
+            C 70,64 71,54 70,46
+            C 72,47 74,50 76,56
+            C 79,65 81,75 83,81
+            C 84,84 86,85 88,83
+            C 90,81 89,76 87,70
+            C 85,62 83,52 80,46
+            C 76,38 70,35 62,35
+            C 58,35 56,34 56,32
+            C 58,31 61,28 61,23
+            C 61,17 57,12 50,12 Z
+          " />
         </g>
+
+        {/* Detalhes Anatômicos Internos (Renderizados baseados na visão Frente/Costas) */}
+        {coord.side === 'front' && (
+          <g className="stroke-foreground/25" fill="none" strokeWidth="0.75" strokeLinecap="round">
+            {/* Clavículas */}
+            <path d="M 38,36 Q 44,38 49,37 M 62,36 Q 56,38 51,37" />
+            {/* Peitoral */}
+            <path d="M 30,46 Q 40,51 50,48 Q 60,51 70,46" />
+            {/* Linha Central / Abdômen */}
+            <path d="M 50,48 L 50,60 M 46,55 Q 50,57 54,55 M 47,63 Q 50,65 53,63" />
+            <path d="M 49,70 Q 50,71 51,70" /> {/* Umbigo */}
+            {/* Virilha */}
+            <path d="M 40,76 Q 50,85 60,76" />
+            {/* Joelhos */}
+            <path d="M 35,110 Q 37,112 39,110 M 65,110 Q 63,112 61,110" />
+          </g>
+        )}
+
+        {coord.side === 'back' && (
+          <g className="stroke-foreground/25" fill="none" strokeWidth="0.75" strokeLinecap="round">
+            {/* Coluna Vertebral */}
+            <path d="M 50,35 Q 51,55 50,75" />
+            {/* Escápulas (Omoplatas) */}
+            <path d="M 36,42 Q 41,47 37,55 M 64,42 Q 59,47 63,55" />
+            {/* Glúteos */}
+            <path d="M 35,76 Q 45,86 50,76 Q 55,86 65,76" />
+            {/* Dobra posterior do Joelho */}
+            <path d="M 35,112 Q 37,110 39,112 M 65,112 Q 63,110 61,112" />
+          </g>
+        )}
 
         {/* Ponto da Ferida com Pulsação Orgânica */}
         <g>
@@ -125,7 +187,7 @@ export const AnatomicalMiniMap: React.FC<AnatomicalMiniMapProps> = ({ code, clas
       
       {/* Indicador de Lado (Frente/Costas) */}
       {coord.side === 'back' && (
-        <div className="absolute top-1 right-1 bg-primary/90 text-primary-foreground text-[7px] font-black px-1 py-0.5 rounded-full uppercase tracking-tighter shadow-sm">
+        <div className="absolute top-1 right-1 bg-primary/90 text-primary-foreground text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-sm">
           Post
         </div>
       )}
