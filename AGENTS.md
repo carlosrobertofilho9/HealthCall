@@ -1,40 +1,58 @@
 # AGENTS.md
 
-Este documento fornece diretrizes para agentes de IA que trabalham neste repositório.
+Este documento define as diretrizes essenciais para agentes de IA que colaboram no desenvolvimento do **HealthCall**. Siga estas instruções rigorosamente para manter a consistência e a excelência do projeto.
 
-## Visão Geral do Projeto
+## 🚀 Visão Geral do Projeto
 
-Este é um aplicativo de front-end construído com React, Vite e TypeScript. Ele usa o Supabase para o backend, incluindo banco de dados e autenticação.
+O HealthCall é uma plataforma de gestão em saúde focada em alta performance e experiência do usuário (UX) premium. O objetivo é fornecer ferramentas clínicas que pareçam modernas, rápidas e extremamente confiáveis.
 
-## Configuração do Ambiente
+## 🎨 Design System e Estética (Referência: Documents Page)
 
-1.  **Instalar dependências:**
-    ```bash
-    npm install
-    ```
-2.  **Iniciar o servidor de desenvolvimento:**
-    ```bash
-    npm run dev
-    ```
+A página de referência absoluta para design e comportamento é `src/features/documents/pages/DocumentsPage.tsx`.
 
-## Arquitetura
+### 1. Layout e Estrutura
+- **Shells e Containers:** Use sempre o `PageShell` para envolver as páginas.
+- **Multi-Painéis:** No desktop, utilize layouts de múltiplos painéis (sidebars de configuração + área principal de conteúdo) usando `SectionCard`.
+- **Responsividade:** No mobile, os painéis devem ser convertidos em um sistema de `Tabs` fluido.
 
-O projeto segue uma arquitetura baseada em features. O código para cada feature está localizado em um diretório dedicado em `src/features`. Cada diretório de feature contém subdiretórios para `hooks`, `services` e `routes`.
+### 2. Estética Visual (Premium Feel)
+- **Glassmorphism:** Use fundos levemente transparentes (`bg-background/60`, `backdrop-blur`) e bordas sutis.
+- **Sombra e Profundidade:** Utilize sombras suaves e camadas bem definidas para dar profundidade à interface.
+- **Tipografia:** Foco em legibilidade com pesos de fonte bem definidos (Inter/Outfit).
+- **Cores:** Paletas sóbrias (Slate, Zinc, Purple, Primary) com badges e indicadores de status refinados.
 
-## Banco de Dados
+### 3. Micro-interações e Animações (Obrigatório)
+O HealthCall deve parecer "vivo". Integre `framer-motion` em todos os elementos interativos:
+- **Entradas:** Animações de `presence` (fade-in, slide-up) ao carregar componentes.
+- **Haptic Feedback:** Efeitos de `scale` (ex: `whileTap={{ scale: 0.97 }}`) em botões.
+- **Estados de Feedback:** Botões que tremem em caso de erro, pulsação em indicadores de progresso e transições suaves entre estados de vazio (Empty States) e conteúdo.
 
-O banco de dados é gerenciado pelo Supabase. As migrações de esquema estão localizadas em `supabase/migrations` e seguem a convenção de nomenclatura `YYYYMMDDHHMMSS_description.sql`.
+## 🛠 Stack Tecnológica
 
-Para aplicar migrações ao banco de dados remoto, use o comando:
-```bash
-npx supabase db push
-```
-**Importante:** Em ambientes não interativos, a variável de ambiente `SUPABASE_ACCESS_TOKEN` deve ser configurada.
+- **Core:** React 18, Vite, TypeScript.
+- **Estilização:** Tailwind CSS.
+- **Componentes:** shadcn/ui (customizado para o design system local).
+- **Iconografia:** Lucide React.
+- **Animações:** Framer Motion.
+- **Dados/Backend:** Supabase (Auth, Database, Storage).
+- **PDF/Documentos:** @react-pdf/renderer.
 
-## Estilo
+## 📁 Arquitetura do Código
 
-O estilo é implementado com Tailwind CSS. O projeto utiliza componentes de UI reutilizáveis localizados em `src/components/ui`, seguindo o padrão shadcn/ui.
+Siga a arquitetura baseada em **Features**:
+- `src/features/[feature-name]/`:
+  - `components/`: Componentes específicos da funcionalidade.
+  - `hooks/`: Lógica de business e estado (ex: `useDocumentsComposer`).
+  - `pages/`: Componentes de página que montam a feature.
+  - `services/`: Integração com Supabase/APIs externas.
+  - `utils/`: Helpers específicos.
 
-## Comunicação
+## ⚠️ Regras de Ouro
 
-O usuário se comunica em português. Mantenha toda a comunicação nesse idioma.
+1.  **Sem Placeholders:** Nunca use imagens de exemplo ou textos "Lorem Ipsum". Use `generate_image` para assets reais ou crie dados fictícios contextuais (Mock Data).
+2.  **UX First:** Se uma ação demora mais que 200ms, use skeletons ou estados de carregamento elegantes.
+3.  **Consistência de Idioma:** Toda a interface e comunicação com o usuário deve ser em **Português (PT-BR)**. O código (variáveis, funções, comentários técnicos) deve ser em **Inglês**.
+4.  **Acessibilidade e SEO:** Garanta tags semânticas e IDs únicos para testes automatizados.
+
+---
+*Este documento é a "alma" do projeto. Ao criar qualquer nova funcionalidade, pergunte-se: "Isso está no nível de polimento da página de Documentos?"*

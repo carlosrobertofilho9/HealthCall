@@ -9,6 +9,7 @@ import { AppointmentsPage, CapacityDashboardPage, WeeklyAppointmentsPage } from 
 import DocumentsPage from '@/features/documents/pages/DocumentsPage';
 import { PendenciasPage } from '@/features/pendencias';
 import { WoundsPage, WoundEvolutionPage, WoundEvolutionTablePage } from '@/features/wounds';
+import { ReceptionPage } from '@/features/reception';
 import LoginPage from '@/features/authentication/routes/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
       { path: 'appointments/week', element: <WeeklyAppointmentsPage /> },
       { path: 'appointments/capacity', element: <CapacityDashboardPage /> },
       { path: 'documents', element: <DocumentsPage /> },
+      { path: 'reception', element: <ReceptionPage /> },
 	{ path: 'pendencias', element: <PendenciasPage /> },
       { path: 'wounds', element: <WoundsPage /> },
       { path: 'wounds/evolution/:woundId', element: <WoundEvolutionPage /> },
