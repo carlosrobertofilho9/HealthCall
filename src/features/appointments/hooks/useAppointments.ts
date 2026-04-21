@@ -6,6 +6,7 @@ import {
   updateAppointment,
   updateAppointmentStatus,
   rescheduleAppointment,
+  bulkRescheduleAppointments,
   deleteAppointment,
   generateSlotsForDate,
   getDayConfig,
@@ -182,6 +183,23 @@ export function useAppointments() {
     }
   };
 
+  const bulkReschedule = async (targetDate: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const sourceDate = formatDateToISO(selectedDate);
+      const result = await bulkRescheduleAppointments(sourceDate, targetDate);
+      toast.success(`${result.rescheduled_count} paciente(s) reagendado(s) com sucesso!`);
+      await loadAppointments();
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao reagendar agenda';
+      toast.error(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   /**
    * Muda a data selecionada.
    * @param date - A nova data
@@ -243,6 +261,7 @@ export function useAppointments() {
     removeAppointment,
     updateStatus,
     reschedule,
+    bulkReschedule,
     changeDate,
     goToPreviousDay,
     goToNextDay,

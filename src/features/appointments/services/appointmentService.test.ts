@@ -10,6 +10,7 @@ import {
   ACTIVE_APPOINTMENT_STATUSES,
   RELEASED_APPOINTMENT_STATUSES,
   rescheduleAppointment,
+  bulkRescheduleAppointments,
   getSuggestedAvailableSlot,
   buildDaySummary,
 } from './appointmentService';
@@ -456,6 +457,54 @@ describe('rescheduleAppointment', () => {
     await expect(rescheduleAppointment('original-id', '2026-02-09', 5)).rejects.toThrow(
       'Este slot já está ocupado para esta data'
     );
+  });
+});
+
+// =============================================================================
+// bulkRescheduleAppointments — calls RPC
+// =============================================================================
+
+describe('bulkRescheduleAppointments', () => {
+  it('should call bulk_reschedule_appointments RPC with correct args', async () => {
+    const summary = {
+      rescheduled_count: 2,
+      source_date: '2026-02-02',
+      target_date: '2026-02-09',
+      moved_slots: [1, 5],
+    };
+    mocks.mockRpc.mockResolvedValue({ data: summary, error: null });
+
+    const result = await bulkRescheduleAppointments('2026-02-02', '2026-02-09');
+
+    expect(mocks.mockRpc).toHaveBeenCalledWith('bulk_reschedule_appointments', {
+      p_source_date: '2026-02-02',
+      p_target_date: '2026-02-09',
+    });
+    expect(result).toEqual(summary);
+  });
+
+  it('should throw a descriptive error if any preserved slot is already occupied', async () => {
+    mocks.mockRpc.mockResolvedValue({
+      data: null,
+      error: { code: '23505', message: 'As fichas 1, 5 já estão ocupadas no dia de destino' },
+    });
+
+    await expect(bulkRescheduleAppointments('2026-02-02', '2026-02-09')).rejects.toThrow(
+      'As fichas 1, 5 já estão ocupadas no dia de destino'
+    );
+  });
+
+  it('should normalize empty RPC data into a safe summary shape', async () => {
+    mocks.mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const result = await bulkRescheduleAppointments('2026-02-02', '2026-02-09');
+
+    expect(result).toEqual({
+      rescheduled_count: 0,
+      source_date: '2026-02-02',
+      target_date: '2026-02-09',
+      moved_slots: [],
+    });
   });
 });
 

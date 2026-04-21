@@ -11,6 +11,7 @@ interface SlotsListProps {
   onDeleteClick: (appointment: Appointment) => void;
   onStatusChange: (appointment: Appointment, status: AppointmentStatus) => void;
   onRescheduleClick: (appointment: Appointment) => void;
+  onConfirmationPdfClick: (appointment: Appointment) => void;
   isLoading: boolean;
 }
 
@@ -22,6 +23,7 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   onDeleteClick,
   onStatusChange,
   onRescheduleClick,
+  onConfirmationPdfClick,
   isLoading,
 }) => {
   const isHomeVisit = dayConfig.serviceType === 'HOME_VISIT';
@@ -80,6 +82,7 @@ export const SlotsList: React.FC<SlotsListProps> = ({
               onDeleteClick={onDeleteClick}
               onStatusChange={onStatusChange}
               onRescheduleClick={onRescheduleClick}
+              onConfirmationPdfClick={onConfirmationPdfClick}
             />
           ))}
         </PeriodSection>
@@ -105,6 +108,7 @@ export const SlotsList: React.FC<SlotsListProps> = ({
               onDeleteClick={onDeleteClick}
               onStatusChange={onStatusChange}
               onRescheduleClick={onRescheduleClick}
+              onConfirmationPdfClick={onConfirmationPdfClick}
             />
           ))}
         </PeriodSection>
@@ -130,6 +134,7 @@ export const SlotsList: React.FC<SlotsListProps> = ({
               onDeleteClick={onDeleteClick}
               onStatusChange={onStatusChange}
               onRescheduleClick={onRescheduleClick}
+              onConfirmationPdfClick={onConfirmationPdfClick}
             />
           ))}
         </PeriodSection>

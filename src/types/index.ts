@@ -71,6 +71,13 @@ export type CreateAppointmentData = {
 	status?: AppointmentStatus;
 };
 
+export type BulkRescheduleResult = {
+	rescheduled_count: number;
+	source_date: string;
+	target_date: string;
+	moved_slots: number[];
+};
+
 /**
  * Representa um slot na grade de marcações
  */

@@ -11,6 +11,7 @@ import type {
   CapacityTrendPoint,
   AppointmentDaySummary,
   AppointmentStatus,
+  BulkRescheduleResult,
   CreateAppointmentData,
   AppointmentSlot,
   DayScheduleConfig,
@@ -428,6 +429,36 @@ export async function rescheduleAppointment(
   }
 
   return data;
+}
+
+export async function bulkRescheduleAppointments(
+  sourceDate: string,
+  targetDate: string
+): Promise<BulkRescheduleResult> {
+  const { data, error } = await supabase.rpc('bulk_reschedule_appointments', {
+    p_source_date: sourceDate,
+    p_target_date: targetDate,
+  });
+
+  if (error) {
+    if (error.code === '23505') {
+      throw new Error(error.message || 'Uma ou mais fichas já estão ocupadas no dia de destino');
+    }
+
+    if (error.code === 'P0002' || error.code === '22023') {
+      throw new Error(error.message);
+    }
+
+    console.error('Erro ao reagendar agenda em massa:', error);
+    throw error;
+  }
+
+  return {
+    rescheduled_count: Number(data?.rescheduled_count ?? 0),
+    source_date: String(data?.source_date ?? sourceDate),
+    target_date: String(data?.target_date ?? targetDate),
+    moved_slots: Array.isArray(data?.moved_slots) ? data.moved_slots.map(Number) : [],
+  };
 }
 
 /**
@@ -983,23 +1014,27 @@ export function getAppointmentMessage(
     const address = appointmentData?.home_visit_address?.trim();
     const reference = appointmentData?.home_visit_reference?.trim();
     const reason = appointmentData?.home_visit_reason?.trim();
-
     return `Olá *${patientName}*,
 
-Sua visita domiciliar está agendada para:
-📅 *${dateFormatted}*
-🔢 *Ficha:* ${slotNumber}${timeStr && timeStr !== 'Reserva' ? `
-⏰ *Horário previsto:* ${timeStr}` : ''}
-${address ? `📍 *Endereço:* ${address}
-` : ''}${reference ? `📌 *Referência:* ${reference}
-` : ''}${reason ? `📝 *Motivo:* ${reason}
-` : ''}
-⚠️ *Importante:*
-- Aguarde a equipe no endereço informado.
-- Caso precise cancelar ou alterar o endereço, avise com antecedência.
+  Sua visita domiciliar está agendada para:
+  📅 *${dateFormatted}*
+  🔢 *Ficha:* ${slotNumber}
+  ⏰ *Início da rota:* 09:00 — a equipe passará pelo endereço durante o período da manhã; não é possível informar horário exato.
+  ${address ? `📍 *Endereço:* ${address}
+  ` : ''}${reference ? `📌 *Referência:* ${reference}
+  ` : ''}${reason ? `📝 *Motivo:* ${reason}
+  ` : ''}
 
-Obrigado,
-*Equipe PSF 5 Maria Lucia da Silva*`;
+  Entendemos que é importante saber um horário preciso. As visitas domiciliares, no entanto, seguem uma rota: a equipe inicia a rota às *09:00* e visita vários domicílios em sequência. O tempo necessário em cada atendimento depende da complexidade do caso, de eventual deslocamento entre endereços, condições de acesso, e do tráfego local. Por isso não conseguimos garantir um horário exato para cada residência — informar uma hora estimada poderia gerar expectativas incorretas e atrapalhar a organização do serviço.
+
+  Por favor, mantenha disponibilidade durante o período da manhã, deixe um responsável no local quando possível, e mantenha o telefone acessível para contato. Se houver necessidade de cancelar ou alterar o endereço, avise com antecedência para replanejarmos a rota.
+
+  ⚠️ *Importante:*
+  - ⚠️ *A ROTA COMEÇA ÀS 09:00:* aguarde a equipe no endereço informado durante o período da manhã.
+  - Caso precise cancelar ou alterar o endereço, avise com antecedência.
+
+  Obrigado,
+  *Equipe PSF 5 Maria Lucia da Silva*`;
   }
 
   if (timeStr === 'Reserva') {
@@ -1009,8 +1044,9 @@ Sua consulta por *Encaixe/Reserva* foi agendada para:
 📅 *${dateObj.toLocaleDateString('pt-BR')}*
 
 ⚠️ *Importante:*
-- Por favor, aguarde contato ou dirija-se à unidade conforme orientado.
-- Cancelamentos devem ser avisados com antecedência.
+ - Por favor, aguarde contato ou dirija-se à unidade conforme orientado.
+ - ⚠️ *AO CHEGAR:* dirija-se à recepção para *CONFIRMAR* sua chegada.
+ - Cancelamentos devem ser avisados com antecedência.
 
 Obrigado,
 *Equipe PSF 5 Maria Lucia da Silva*`;
@@ -1026,8 +1062,9 @@ Sua consulta está agendada para:
 ⏰ *${timeStr}*
 
 ⚠️ *Importante:*
-- Por favor, chegue com *40 minutos de antecedência*.
-- Cancelamentos devem ser avisados com até *1 dia de antecedência*.
+ - Por favor, chegue com *40 minutos de antecedência*.
+ - ⚠️ *AO CHEGAR:* dirija-se à recepção para *CONFIRMAR* sua chegada.
+ - Cancelamentos devem ser avisados com até *1 dia de antecedência*.
 
 Obrigado,
 *Equipe PSF 5 Maria Lucia da Silva*`;

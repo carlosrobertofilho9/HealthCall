@@ -7,7 +7,6 @@ import {
   Printer,
   X,
   CalendarDays,
-  TrendingUp,
   CheckCircle2,
   Circle,
   BarChart2
@@ -18,6 +17,7 @@ import SlotsList from '../components/SlotsList';
 import AddAppointmentForm from '../components/AddAppointmentForm';
 import EditAppointmentModal from '../components/EditAppointmentModal';
 import RescheduleAppointmentModal from '../components/RescheduleAppointmentModal';
+import BulkRescheduleModal from '../components/BulkRescheduleModal';
 import ConfirmDeleteAppointmentModal from '../components/ConfirmDeleteAppointmentModal';
 import PrintHeader from '../components/PrintHeader';
 import { printPatientList } from '@/components/PatientQueue/printUtils';
@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { blockDay, getAppointmentStatus, isBlockedAppointment } from '../services/appointmentService';
 import { BlockDayModal } from '../components/BlockDayModal';
 import AppointmentsNav from '../components/AppointmentsNav';
+import { printAppointmentConfirmationPdf } from '../utils/printAppointmentConfirmationPdf';
 
 const normalizeText = (text: string) =>
   text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -46,6 +47,7 @@ const AppointmentsPage: React.FC = () => {
     removeAppointment,
     updateStatus,
     reschedule,
+    bulkReschedule,
     changeDate,
     goToPreviousDay,
     goToNextDay,
@@ -58,6 +60,7 @@ const AppointmentsPage: React.FC = () => {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [deletingAppointment, setDeletingAppointment] = useState<Appointment | null>(null);
   const [reschedulingAppointment, setReschedulingAppointment] = useState<Appointment | null>(null);
+  const [isBulkRescheduleModalOpen, setIsBulkRescheduleModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isBlockDayModalOpen, setIsBlockDayModalOpen] = useState(false);
@@ -68,6 +71,13 @@ const AppointmentsPage: React.FC = () => {
   const patientListMenuRef = useRef<HTMLDivElement | null>(null);
 
   const availableSlots = slots.filter(s => s.appointment === null).map(s => s.slotNumber);
+  const bulkRescheduleAppointments = slots
+    .map(slot => slot.appointment)
+    .filter((appointment): appointment is Appointment =>
+      Boolean(appointment) &&
+      getAppointmentStatus(appointment) === 'Agendado' &&
+      !isBlockedAppointment(appointment)
+    );
 
   const filteredSlots = slots.filter(slot => {
     if (!searchQuery) return true;
@@ -120,6 +130,15 @@ const AppointmentsPage: React.FC = () => {
   };
 
   const handleRescheduleClick = (appointment: Appointment) => setReschedulingAppointment(appointment);
+
+  const handleConfirmationPdfClick = async (appointment: Appointment) => {
+    try {
+      await printAppointmentConfirmationPdf(appointment);
+    } catch (error) {
+      console.error('Erro ao gerar PDF de confirmação:', error);
+      toast.error('Erro ao gerar PDF de confirmação.');
+    }
+  };
 
   const handleConfirmDelete = async () => {
     if (deletingAppointment) {
@@ -353,6 +372,12 @@ const AppointmentsPage: React.FC = () => {
                     disabled={isLoading}
                   />
                 </div>
+                <DesktopActionButton
+                  icon={<CalendarDays className="w-4 h-4 text-amber-300" />}
+                  label="Reagendar dia"
+                  onClick={() => setIsBulkRescheduleModalOpen(true)}
+                  disabled={isLoading || bulkRescheduleAppointments.length === 0}
+                />
                 <div className="h-px bg-border my-1" />
                 {isHomeVisit ? (
                   <DesktopActionButton
@@ -491,6 +516,7 @@ const AppointmentsPage: React.FC = () => {
             onDeleteClick={handleDeleteClick}
             onStatusChange={handleStatusChange}
             onRescheduleClick={handleRescheduleClick}
+            onConfirmationPdfClick={handleConfirmationPdfClick}
             isLoading={isLoading}
           />
 
@@ -504,7 +530,7 @@ const AppointmentsPage: React.FC = () => {
         <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden print:hidden">
           {/* Blur backdrop */}
           <div className="bg-background/90 backdrop-blur-xl border-t border-border px-4 pt-3 pb-safe-or-3">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center max-w-xl mx-auto">
+            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center max-w-xl mx-auto">
               {/* Primary CTA */}
               <button
                 onClick={() => handleAddClick()}
@@ -532,6 +558,15 @@ const AppointmentsPage: React.FC = () => {
                 aria-label="Bloquear dia"
               >
                 <Ban className="w-5 h-5 text-red-400" />
+              </button>
+
+              <button
+                onClick={() => setIsBulkRescheduleModalOpen(true)}
+                disabled={isLoading || bulkRescheduleAppointments.length === 0}
+                className="w-12 h-12 flex items-center justify-center rounded-xl bg-card border border-border active:scale-95 transition-all disabled:opacity-50"
+                aria-label="Reagendar dia"
+              >
+                <CalendarDays className="w-5 h-5 text-amber-300" />
               </button>
 
               {/* Refresh */}
@@ -577,6 +612,17 @@ const AppointmentsPage: React.FC = () => {
           appointment={reschedulingAppointment}
           onConfirm={reschedule}
           onClose={() => setReschedulingAppointment(null)}
+          isLoading={isLoading}
+        />
+      )}
+
+      {isBulkRescheduleModalOpen && (
+        <BulkRescheduleModal
+          sourceDate={selectedDate}
+          sourceConfig={dayConfig}
+          appointments={bulkRescheduleAppointments}
+          onConfirm={bulkReschedule}
+          onClose={() => setIsBulkRescheduleModalOpen(false)}
           isLoading={isLoading}
         />
       )}

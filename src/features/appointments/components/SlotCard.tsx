@@ -12,7 +12,8 @@ import {
   CalendarClock,
   ChevronDown,
   ChevronUp,
-  Copy
+  Copy,
+  Printer
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AppointmentSlot, Appointment, AppointmentStatus } from '@/types';
@@ -39,6 +40,7 @@ interface SlotCardProps {
   onDeleteClick: (appointment: Appointment) => void;
   onStatusChange: (appointment: Appointment, status: AppointmentStatus) => void;
   onRescheduleClick: (appointment: Appointment) => void;
+  onConfirmationPdfClick: (appointment: Appointment) => void;
 }
 
 const STATUS_STYLES: Record<AppointmentStatus, { bg: string; text: string; border: string }> = {
@@ -56,6 +58,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
   onDeleteClick,
   onStatusChange,
   onRescheduleClick,
+  onConfirmationPdfClick,
 }) => {
   const { slotNumber, period, time, appointment } = slot;
   const [isExpanded, setIsExpanded] = useState(false);
@@ -309,6 +312,13 @@ export const SlotCard: React.FC<SlotCardProps> = ({
                 title="Remarcar"
               >
                 <CalendarClock className="w-4 h-4 text-muted-foreground hover:text-card-foreground" />
+              </button>
+              <button
+                onClick={() => onConfirmationPdfClick(appointment)}
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                title="Gerar confirmação em PDF"
+              >
+                <Printer className="w-4 h-4 text-muted-foreground hover:text-card-foreground" />
               </button>
               <button
                 onClick={() => onEditClick(appointment)}
