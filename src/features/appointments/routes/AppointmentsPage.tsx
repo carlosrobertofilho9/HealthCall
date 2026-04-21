@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search,
   Plus,
@@ -68,8 +70,12 @@ const AppointmentsPage: React.FC = () => {
   const [isBlockingDay, setIsBlockingDay] = useState(false);
   const [isReportMenuOpen, setIsReportMenuOpen] = useState(false);
   const [isPatientListMenuOpen, setIsPatientListMenuOpen] = useState(false);
+  const [reportMenuPosition, setReportMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const [patientListMenuPosition, setPatientListMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const reportMenuRef = useRef<HTMLDivElement | null>(null);
   const patientListMenuRef = useRef<HTMLDivElement | null>(null);
+  const reportPopupRef = useRef<HTMLDivElement | null>(null);
+  const patientListPopupRef = useRef<HTMLDivElement | null>(null);
 
   const availableSlots = slots.filter(s => s.appointment === null).map(s => s.slotNumber);
   const bulkRescheduleAppointments = slots
@@ -192,6 +198,13 @@ const AppointmentsPage: React.FC = () => {
 
   const handleReportButtonClick = () => {
     if (shouldShowReportMenu) {
+      const rect = reportMenuRef.current?.getBoundingClientRect();
+      if (rect) {
+        setReportMenuPosition({
+          top: rect.bottom + 8,
+          left: rect.left,
+        });
+      }
       setIsReportMenuOpen(prev => !prev);
       setIsPatientListMenuOpen(false);
       return;
@@ -209,6 +222,13 @@ const AppointmentsPage: React.FC = () => {
 
   const handlePatientListButtonClick = () => {
     if (shouldShowReportMenu) {
+      const rect = patientListMenuRef.current?.getBoundingClientRect();
+      if (rect) {
+        setPatientListMenuPosition({
+          top: rect.bottom + 8,
+          right: window.innerWidth - rect.right,
+        });
+      }
       setIsPatientListMenuOpen(prev => !prev);
       setIsReportMenuOpen(false);
       return;
@@ -223,11 +243,17 @@ const AppointmentsPage: React.FC = () => {
 
     const handleClickOutside = (event: MouseEvent) => {
       const targetNode = event.target as Node;
-      const clickedOutsideReport = !reportMenuRef.current || !reportMenuRef.current.contains(targetNode);
-      const clickedOutsidePatientList = !patientListMenuRef.current || !patientListMenuRef.current.contains(targetNode);
+      
+      const clickedOutsideReportTrigger = !reportMenuRef.current || !reportMenuRef.current.contains(targetNode);
+      const clickedOutsideReportPopup = !reportPopupRef.current || !reportPopupRef.current.contains(targetNode);
+      const clickedOutsidePatientListTrigger = !patientListMenuRef.current || !patientListMenuRef.current.contains(targetNode);
+      const clickedOutsidePatientListPopup = !patientListPopupRef.current || !patientListPopupRef.current.contains(targetNode);
 
-      if (clickedOutsideReport && clickedOutsidePatientList) {
+      if (clickedOutsideReportTrigger && clickedOutsideReportPopup) {
         setIsReportMenuOpen(false);
+      }
+      
+      if (clickedOutsidePatientListTrigger && clickedOutsidePatientListPopup) {
         setIsPatientListMenuOpen(false);
       }
     };
@@ -239,12 +265,21 @@ const AppointmentsPage: React.FC = () => {
       }
     };
 
+    const closeAll = () => {
+      setIsReportMenuOpen(false);
+      setIsPatientListMenuOpen(false);
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
+    window.addEventListener('resize', closeAll);
+    window.addEventListener('scroll', closeAll, true);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('resize', closeAll);
+      window.removeEventListener('scroll', closeAll, true);
     };
   }, [isReportMenuOpen, isPatientListMenuOpen]);
 
@@ -366,27 +401,6 @@ const AppointmentsPage: React.FC = () => {
                         label="Relatório"
                         onClick={handleReportButtonClick}
                       />
-
-                      {shouldShowReportMenu && isReportMenuOpen && (
-                        <div className="absolute right-0 z-50 mt-2 w-48 rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md">
-                          <button
-                            onClick={() => handleReportPrint()}
-                            className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
-                          >
-                            Imprimir dia inteiro
-                          </button>
-                          <div className="h-px bg-border/50 my-1 mx-1" />
-                          {reportPeriods.map(period => (
-                            <button
-                              key={period}
-                              onClick={() => handleReportPrint(period)}
-                              className="w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-popover-foreground hover:bg-accent transition-colors"
-                            >
-                              Imprimir {period.toLowerCase()}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
                     <div className="relative" ref={patientListMenuRef}>
                       <DesktopActionButton
@@ -394,27 +408,6 @@ const AppointmentsPage: React.FC = () => {
                         label="Ficha"
                         onClick={handlePatientListButtonClick}
                       />
-
-                      {shouldShowReportMenu && isPatientListMenuOpen && (
-                        <div className="absolute right-0 z-50 mt-2 w-48 rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md">
-                          <button
-                            onClick={() => handlePatientListPrint()}
-                            className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
-                          >
-                            Imprimir dia inteiro
-                          </button>
-                          <div className="h-px bg-border/50 my-1 mx-1" />
-                          {reportPeriods.map(period => (
-                            <button
-                              key={period}
-                              onClick={() => handlePatientListPrint(period)}
-                              className="w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-popover-foreground hover:bg-accent transition-colors"
-                            >
-                              Imprimir {period.toLowerCase()}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
@@ -654,6 +647,66 @@ const AppointmentsPage: React.FC = () => {
           onClose={() => setIsBlockDayModalOpen(false)}
           isLoading={isBlockingDay}
         />
+      )}
+      {createPortal(
+        <AnimatePresence>
+          {isReportMenuOpen && reportMenuPosition && (
+            <motion.div
+              ref={reportPopupRef}
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.96 }}
+              style={{ top: reportMenuPosition.top, left: reportMenuPosition.left }}
+              className="fixed z-[70] w-52 rounded-xl border border-border/80 bg-popover/95 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+            >
+              <button
+                onClick={() => handleReportPrint()}
+                className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-black uppercase tracking-wider text-primary hover:bg-primary/10 transition-all active:scale-[0.98]"
+              >
+                Imprimir dia inteiro
+              </button>
+              <div className="h-px bg-border/50 my-1 mx-1" />
+              {reportPeriods.map(period => (
+                <button
+                  key={period}
+                  onClick={() => handleReportPrint(period)}
+                  className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-popover-foreground hover:bg-accent transition-all active:scale-[0.98]"
+                >
+                  Turno da {period.toLowerCase()}
+                </button>
+              ))}
+            </motion.div>
+          )}
+
+          {isPatientListMenuOpen && patientListMenuPosition && (
+            <motion.div
+              ref={patientListPopupRef}
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.96 }}
+              style={{ top: patientListMenuPosition.top, right: patientListMenuPosition.right }}
+              className="fixed z-[70] w-52 rounded-xl border border-border/80 bg-popover/95 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+            >
+              <button
+                onClick={() => handlePatientListPrint()}
+                className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-black uppercase tracking-wider text-primary hover:bg-primary/10 transition-all active:scale-[0.98]"
+              >
+                Imprimir dia inteiro
+              </button>
+              <div className="h-px bg-border/50 my-1 mx-1" />
+              {reportPeriods.map(period => (
+                <button
+                  key={period}
+                  onClick={() => handlePatientListPrint(period)}
+                  className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-popover-foreground hover:bg-accent transition-all active:scale-[0.98]"
+                >
+                  Turno da {period.toLowerCase()}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
       )}
     </PageShell>
   );
