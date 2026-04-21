@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
 import { PENDENCIA_RESPONSAVEL_OPTIONS } from '@/constants';
@@ -49,6 +49,28 @@ const PendenciasPage: React.FC = () => {
   usePageTitle('Pendências');
 
   const { pendencias, loading, refetch } = usePendencias();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+
+    const previousRootOverflowY = root.style.overflowY;
+    const previousBodyOverflowY = body.style.overflowY;
+    const previousRootOverscrollBehavior = root.style.overscrollBehavior;
+    const previousBodyOverscrollBehavior = body.style.overscrollBehavior;
+
+    root.style.overflowY = 'hidden';
+    body.style.overflowY = 'hidden';
+    root.style.overscrollBehavior = 'none';
+    body.style.overscrollBehavior = 'none';
+
+    return () => {
+      root.style.overflowY = previousRootOverflowY;
+      body.style.overflowY = previousBodyOverflowY;
+      root.style.overscrollBehavior = previousRootOverscrollBehavior;
+      body.style.overscrollBehavior = previousBodyOverscrollBehavior;
+    };
+  }, []);
 
   const [nomePaciente, setNomePaciente] = useState('');
   const [cnsCpf, setCnsCpf] = useState('');
@@ -323,12 +345,89 @@ const PendenciasPage: React.FC = () => {
     return '';
   };
 
+  const renderListContent = () => (
+    <>
+      <PendenciasListHeader
+        openCount={openPendencias.length}
+        totalCount={pendencias.length}
+        dueTodayCount={dueTodayCount}
+        search={search}
+        statusFilter={statusFilter}
+        dueTodayOnly={dueTodayOnly}
+        isGeneratingPdf={isGeneratingPdf}
+        onSearchChange={setSearch}
+        onStatusFilterChange={setStatusFilter}
+        onDueTodayOnlyChange={setDueTodayOnly}
+        onGenerateOpenPdf={handleGenerateOpenPdf}
+      />
+
+      <div className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 lg:p-4">
+        {loading ? (
+          <div className="flex h-full min-h-64 items-center justify-center gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Carregando pendências...</span>
+          </div>
+        ) : filteredPendencias.length === 0 ? (
+          <div className="flex h-full min-h-64 items-center justify-center px-6 text-center text-muted-foreground">
+            Nenhuma pendência encontrada para os filtros atuais.
+          </div>
+        ) : (
+          <div className="space-y-3 lg:space-y-2.5">
+            {filteredPendencias.map((item) => {
+              const isEditing = editingId === item.id;
+
+              return (
+                <PendenciaListItem
+                  key={item.id}
+                  item={item}
+                  tipoOptions={TIPO_OPTIONS}
+                  isEditing={isEditing}
+                  isUpdating={isUpdating}
+                  isDeleting={isDeletingId === item.id}
+                  editNomePaciente={editNomePaciente}
+                  editCnsCpf={editCnsCpf}
+                  editTiposSelecionados={editTiposSelecionados}
+                  editTipoPersonalizado={editTipoPersonalizado}
+                  editResumo={editResumo}
+                  editPrioridade={editPrioridade}
+                  editPrazo={editPrazo}
+                  editResponsavel={editResponsavel}
+                  responsavelOptions={PENDENCIA_RESPONSAVEL_OPTIONS}
+                  onEditNomePacienteChange={setEditNomePaciente}
+                  onEditCnsCpfChange={(value) => setEditCnsCpf(formatCnsCpfForInput(value))}
+                  onToggleEditTipo={toggleEditTipo}
+                  onEditTipoPersonalizadoChange={setEditTipoPersonalizado}
+                  onEditResumoChange={setEditResumo}
+                  onEditPrioridadeChange={setEditPrioridade}
+                  onEditPrazoChange={setEditPrazo}
+                  onEditResponsavelChange={setEditResponsavel}
+                  onStatusChange={(status) => handleStatusChange(item, status)}
+                  onStartEditing={() => startEditing(item)}
+                  onCancelEditing={cancelEditing}
+                  onSaveEditing={handleUpdate}
+                  onDelete={() => handleDelete(item.id)}
+                  statusBadgeClass={statusBadgeClass}
+                  alertLevel={getAlertLevel(item)}
+                  alertLabel={getAlertLabel(item)}
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   return (
-    <PageShell mobileContained desktopContained className="flex flex-col">
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+    <PageShell
+      mobileContained
+      desktopContained
+      className="flex !h-[calc(var(--app-visual-viewport-height,100dvh)-4rem)] !min-h-0 flex-col overflow-hidden lg:!h-[var(--app-visual-viewport-height,100dvh)]"
+    >
+      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden lg:flex-row">
         <aside
           className={cn(
-            'min-h-0 w-full flex-col overflow-hidden bg-background lg:flex lg:w-[380px] lg:shrink-0 lg:border-r lg:border-border 2xl:w-[420px]',
+            'min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background lg:flex lg:h-full lg:w-[360px] lg:flex-none lg:shrink-0 lg:border-r lg:border-border 2xl:w-[390px]',
             mobileTab === 'new' ? 'flex' : 'hidden',
           )}
         >
@@ -358,78 +457,11 @@ const PendenciasPage: React.FC = () => {
 
         <section
           className={cn(
-            'min-w-0 min-h-0 flex-1 flex-col overflow-hidden bg-background lg:flex',
+            'min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background lg:flex',
             mobileTab === 'existing' ? 'flex' : 'hidden',
           )}
         >
-          <PendenciasListHeader
-            openCount={openPendencias.length}
-            totalCount={pendencias.length}
-            dueTodayCount={dueTodayCount}
-            search={search}
-            statusFilter={statusFilter}
-            dueTodayOnly={dueTodayOnly}
-            isGeneratingPdf={isGeneratingPdf}
-            onSearchChange={setSearch}
-            onStatusFilterChange={setStatusFilter}
-            onDueTodayOnlyChange={setDueTodayOnly}
-            onGenerateOpenPdf={handleGenerateOpenPdf}
-          />
-
-          <div className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-5">
-            {loading ? (
-              <div className="flex h-full min-h-[16rem] items-center justify-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Carregando pendências...</span>
-              </div>
-            ) : filteredPendencias.length === 0 ? (
-              <div className="flex h-full min-h-[16rem] items-center justify-center px-6 text-center text-muted-foreground">
-                Nenhuma pendência encontrada para os filtros atuais.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredPendencias.map((item) => {
-                  const isEditing = editingId === item.id;
-
-                  return (
-                    <PendenciaListItem
-                      key={item.id}
-                      item={item}
-                      tipoOptions={TIPO_OPTIONS}
-                      isEditing={isEditing}
-                      isUpdating={isUpdating}
-                      isDeleting={isDeletingId === item.id}
-                      editNomePaciente={editNomePaciente}
-                      editCnsCpf={editCnsCpf}
-                      editTiposSelecionados={editTiposSelecionados}
-                      editTipoPersonalizado={editTipoPersonalizado}
-                      editResumo={editResumo}
-                      editPrioridade={editPrioridade}
-                      editPrazo={editPrazo}
-                      editResponsavel={editResponsavel}
-                      responsavelOptions={PENDENCIA_RESPONSAVEL_OPTIONS}
-                      onEditNomePacienteChange={setEditNomePaciente}
-                      onEditCnsCpfChange={(value) => setEditCnsCpf(formatCnsCpfForInput(value))}
-                      onToggleEditTipo={toggleEditTipo}
-                      onEditTipoPersonalizadoChange={setEditTipoPersonalizado}
-                      onEditResumoChange={setEditResumo}
-                      onEditPrioridadeChange={setEditPrioridade}
-                      onEditPrazoChange={setEditPrazo}
-                      onEditResponsavelChange={setEditResponsavel}
-                      onStatusChange={(status) => handleStatusChange(item, status)}
-                      onStartEditing={() => startEditing(item)}
-                      onCancelEditing={cancelEditing}
-                      onSaveEditing={handleUpdate}
-                      onDelete={() => handleDelete(item.id)}
-                      statusBadgeClass={statusBadgeClass}
-                      alertLevel={getAlertLevel(item)}
-                      alertLabel={getAlertLabel(item)}
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          {renderListContent()}
         </section>
       </div>
 

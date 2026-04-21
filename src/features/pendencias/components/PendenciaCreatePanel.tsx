@@ -1,19 +1,20 @@
 import React from 'react';
 import {
-  CheckCircle2,
-  ListTodo,
+  ClipboardList,
+  Save,
   Loader2,
   UserRound,
   IdCard,
-  FileText
+  FileText,
+  CalendarDays,
+  Flag,
+  Users,
 } from 'lucide-react';
 import {
-  DS_COLOR,
-  DS_RADIUS,
+  SectionCard,
   Input,
   Button,
   Textarea,
-  FormSection,
   Badge,
   DatePicker,
   Select,
@@ -22,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui';
-import { cn } from '@/lib/utils';
 import { TipoPendenciaSelector } from './TipoPendenciaSelector';
 import { getDocumentLabel } from '../utils/pendenciasUiUtils';
 import { PENDENCIA_PRIORIDADE_LABEL, type PendenciaPrioridade } from '../types';
@@ -73,134 +73,149 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
   onResponsavelChange,
 }) => {
   return (
-    <section
-      className={cn(
-        'flex h-full min-h-0 flex-col overflow-hidden rounded-none border border-x-0 bg-card shadow-none lg:border-x-0 lg:bg-transparent lg:shadow-none',
-        DS_COLOR.border.default,
-      )}
+    <SectionCard
+      title="Nova Pendência"
+      icon={<ClipboardList size={20} />}
+      className="h-full min-h-0 min-w-0 overflow-hidden"
+      contentClassName="min-h-0 p-4 lg:p-3"
+      headerClassName="lg:p-4 lg:pb-3"
+      iconClassName="lg:p-2"
+      titleClassName="lg:text-base"
+      headerActions={
+        <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest">
+          Cadastro
+        </Badge>
+      }
     >
-      <div className="shrink-0 px-6 py-5 border-b border-border bg-secondary/30 lg:bg-transparent">
-        <h2 className="text-xl font-bold tracking-tight flex items-center gap-3">
-          <div className={cn('p-2 bg-card border', DS_COLOR.border.default, DS_RADIUS.control)}>
-            <ListTodo className="text-primary" size={20} />
+      <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+        <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto pr-1 lg:gap-3">
+          <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
+            <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Identificação do paciente</p>
+
+            <div className="space-y-3 lg:space-y-2">
+              <Input
+                value={nomePaciente}
+                onChange={(event) => onNomePacienteChange(event.target.value)}
+                placeholder="Nome do paciente"
+                icon={<UserRound className="h-4 w-4" />}
+                className="h-11 lg:h-10"
+              />
+
+              <div className="relative">
+                <Input
+                  value={cnsCpf}
+                  onChange={(event) => onCnsCpfChange(event.target.value)}
+                  placeholder="CNS ou CPF"
+                  icon={<IdCard className="h-4 w-4" />}
+                  className="h-11 pr-20 font-semibold tracking-wide lg:h-10"
+                />
+                <Badge variant="muted" className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-wider">
+                  {getDocumentLabel(cnsCpf)}
+                </Badge>
+              </div>
+            </div>
           </div>
-          Nova Pendência
-        </h2>
-        <p className="text-muted-foreground text-sm mt-1">Registre pendências e acompanhe o fluxo de resolução.</p>
-      </div>
 
-      <form onSubmit={onSubmit} className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
-        <div className={cn(DS_RADIUS.section, 'border border-border bg-secondary/20 p-4 space-y-3')}>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Identificação</p>
-          <Input
-            value={nomePaciente}
-            onChange={(event) => onNomePacienteChange(event.target.value)}
-            placeholder="Nome do paciente"
-            icon={<UserRound className="h-4 w-4" />}
-            className={cn('h-11', DS_RADIUS.section)}
-          />
-
-          <div className="relative">
-            <Input
-              value={cnsCpf}
-              onChange={(event) => onCnsCpfChange(event.target.value)}
-              placeholder="CNS ou CPF"
-              icon={<IdCard className="h-4 w-4" />}
-              className={cn('h-11 pr-20 font-semibold tracking-wide', DS_RADIUS.section)}
+          <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
+            <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Classificação</p>
+            <TipoPendenciaSelector
+              options={tipoOptions}
+              selectedTipos={selectedTipos}
+              tipoPersonalizado={tipoPersonalizado}
+              onToggleTipo={onToggleTipo}
+              onChangeTipoPersonalizado={onTipoPersonalizadoChange}
             />
-            <Badge variant="muted" className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 text-xs">
-              {getDocumentLabel(cnsCpf)}
-            </Badge>
           </div>
-        </div>
 
-        <div className={cn(DS_RADIUS.section, 'border border-border bg-secondary/20 p-4 space-y-3')}>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Tipo da pendência</p>
-          <TipoPendenciaSelector
-            options={tipoOptions}
-            selectedTipos={selectedTipos}
-            tipoPersonalizado={tipoPersonalizado}
-            onToggleTipo={onToggleTipo}
-            onChangeTipoPersonalizado={onTipoPersonalizadoChange}
-          />
-        </div>
+          <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
+            <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Descrição</p>
+            <Textarea
+              value={resumo}
+              onChange={(event) => onResumoChange(event.target.value)}
+              placeholder="Descreva os detalhes da pendência"
+              icon={<FileText className="h-4 w-4 text-muted-foreground" />}
+              className="min-h-28 lg:min-h-20"
+            />
+          </div>
 
-        <FormSection title="Descrição" className="bg-secondary/20" contentClassName="space-y-2">
-          <Textarea
-            value={resumo}
-            onChange={(event) => onResumoChange(event.target.value)}
-            placeholder="Descreva os detalhes da pendência"
-            icon={<FileText className="h-4 w-4 text-muted-foreground" />}
-            className={cn('min-h-28', DS_RADIUS.section)}
-          />
-        </FormSection>
+          <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
+            <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Planejamento</p>
 
-        <div className={cn(DS_RADIUS.section, 'border border-border bg-secondary/20 p-4 space-y-3')}>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Planejamento</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <Flag className="h-3.5 w-3.5" />
+                  Prioridade
+                </p>
+                <Select
+                  value={prioridade}
+                  onValueChange={(value) => onPrioridadeChange(value as PendenciaPrioridade)}
+                >
+                  <SelectTrigger className="h-11 lg:h-10">
+                    <SelectValue placeholder="Selecione a prioridade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="baixa">{PENDENCIA_PRIORIDADE_LABEL.baixa}</SelectItem>
+                    <SelectItem value="normal">{PENDENCIA_PRIORIDADE_LABEL.normal}</SelectItem>
+                    <SelectItem value="alta">{PENDENCIA_PRIORIDADE_LABEL.alta}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Prioridade</p>
-              <Select
-                value={prioridade}
-                onValueChange={(value) => onPrioridadeChange(value as PendenciaPrioridade)}
-              >
-                <SelectTrigger className={cn('h-11', DS_RADIUS.section)}>
-                  <SelectValue placeholder="Selecione a prioridade" />
+              <div>
+                <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  Prazo
+                </p>
+                <DatePicker
+                  value={prazo}
+                  onChange={onPrazoChange}
+                  placeholder="Selecione o prazo"
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <Users className="h-3.5 w-3.5" />
+                Responsável
+              </p>
+              <Select value={responsavel} onValueChange={onResponsavelChange}>
+                <SelectTrigger className="h-11 lg:h-10">
+                  <SelectValue placeholder="Selecione o responsável" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="baixa">{PENDENCIA_PRIORIDADE_LABEL.baixa}</SelectItem>
-                  <SelectItem value="normal">{PENDENCIA_PRIORIDADE_LABEL.normal}</SelectItem>
-                  <SelectItem value="alta">{PENDENCIA_PRIORIDADE_LABEL.alta}</SelectItem>
+                  {responsavelOptions.map((option) => (
+                    <SelectItem key={option} value={option}>{option}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Prazo</p>
-              <DatePicker
-                value={prazo}
-                onChange={onPrazoChange}
-                placeholder="Selecione o prazo"
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Responsável</p>
-            <Select value={responsavel} onValueChange={onResponsavelChange}>
-              <SelectTrigger className={cn('h-11', DS_RADIUS.section)}>
-                <SelectValue placeholder="Selecione o responsável" />
-              </SelectTrigger>
-              <SelectContent>
-                {responsavelOptions.map((option) => (
-                  <SelectItem key={option} value={option}>{option}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
-        <Button
-          type="submit"
-          size="sm"
-          disabled={isSaving}
-          className={cn('h-11', DS_RADIUS.section)}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Salvando...
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-4 w-4" />
-              Cadastrar pendência
-            </>
-          )}
-        </Button>
+        <div className="shrink-0 border-t border-border/70 bg-background/95 pt-4 shadow-[0_-12px_28px_rgba(15,23,42,0.12)] backdrop-blur lg:pt-3 lg:bg-background/90 lg:shadow-none lg:backdrop-blur-none">
+          <Button
+            type="submit"
+            size="sm"
+            disabled={isSaving}
+            className="h-11 w-full shrink-0 lg:h-10"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" />
+                Cadastrar pendência
+              </>
+            )}
+          </Button>
+        </div>
       </form>
-    </section>
+    </SectionCard>
   );
 };
