@@ -11,12 +11,12 @@ create index if not exists reception_messages_created_at_idx
 
 alter table public.reception_messages enable row level security;
 
-create policy if not exists "reception_messages_select_authenticated"
+create policy "reception_messages_select_authenticated"
   on public.reception_messages
   for select
   using (auth.role() = 'authenticated');
 
-create policy if not exists "reception_messages_insert_authenticated"
+create policy "reception_messages_insert_authenticated"
   on public.reception_messages
   for insert
   with check (auth.role() = 'authenticated');

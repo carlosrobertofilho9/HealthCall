@@ -49,7 +49,7 @@ export function useReception() {
 
   const callNextPatient = () => {
     if (!nextInQueue) {
-      toast.info('Não há paciente aguardando para chamar agora.');
+      toast.info('Não há paciente aguardando para o médico neste momento.');
       return;
     }
 
@@ -60,7 +60,7 @@ export function useReception() {
     };
 
     setLastCall(newCall);
-    toast.success(`Paciente ${nextInQueue.patient_name} chamado para atendimento.`);
+    toast.success(`Médico chamado para atender ${nextInQueue.patient_name}.`);
   };
 
   const getSlotLabel = (slotNumber: number) => getSlotTime(slotNumber, appointments.dayConfig);
