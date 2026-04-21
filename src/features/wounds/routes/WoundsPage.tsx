@@ -11,6 +11,7 @@ import WoundTimeline from '../components/WoundTimeline';
 import WoundGallery from '../components/WoundGallery';
 import WoundPhotoComparator from '../components/WoundPhotoComparator';
 import WoundEvolutionTable from '../components/WoundEvolutionTable';
+import WoundSummaryDashboard from '../components/WoundSummaryDashboard';
 import WoundEvolutionForm from '../components/WoundEvolutionForm';
 import WoundCloseModal from '../components/WoundCloseModal';
 import WoundReopenModal from '../components/WoundReopenModal';
@@ -483,6 +484,7 @@ const WoundsPage: React.FC = () => {
                       </TabsList>
 
                       <TabsContent value="summary" className="space-y-6 outline-none">
+                        <WoundSummaryDashboard entries={entries} photos={photos} wound={selectedWound} />
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                           <div className="rounded-2xl border border-border/50 bg-card/30 p-4">
                             <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Mapa Anatômico</h4>
@@ -569,7 +571,11 @@ const WoundsPage: React.FC = () => {
                       onCloseCase={() => setShowCloseModal(true)}
                       onReopenCase={() => setShowReopenModal(true)}
                     />
-                    <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
+                    <WoundSummaryDashboard entries={entries} photos={photos} wound={selectedWound} />
+                    <div className="rounded-2xl border border-border/50 bg-card/30 p-3">
+                      <h4 className="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mapa Anatômico</h4>
+                      <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
+                    </div>
                     <WoundTimeline entries={entries} photos={photos} />
                   </motion.div>
                 )}
@@ -679,9 +685,12 @@ const WoundsPage: React.FC = () => {
       <Modal
         isOpen={showComparatorModal}
         onClose={() => setShowComparatorModal(false)}
-        panelClassName="max-h-[90vh] max-w-5xl overflow-y-auto p-4 sm:p-5"
+        panelClassName="max-h-[94vh] max-w-[96vw] overflow-y-auto p-3 sm:max-w-6xl sm:p-5"
       >
-        <WoundPhotoComparator photos={photos} />
+        <WoundPhotoComparator
+          photos={photos}
+          onClose={() => setShowComparatorModal(false)}
+        />
       </Modal>
 
       <Modal
