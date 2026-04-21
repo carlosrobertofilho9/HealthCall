@@ -16,10 +16,12 @@ const buttonVariants = cva(
         glass: "bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 shadow-xl",
       },
       size: {
-        default: `${DS_RADIUS.pill} h-14 px-6 text-base`,
-        sm: `${DS_RADIUS.section} h-11 px-4 text-sm`,
+        default: `${DS_RADIUS.section} h-12 px-6 text-sm font-bold`,
+        sm: `${DS_RADIUS.section} h-10 px-4 text-xs font-semibold`,
+        xs: `${DS_RADIUS.section} h-8 px-2.5 text-[10px] uppercase tracking-wider font-bold`,
         lg: `${DS_RADIUS.pill} h-14 px-8 text-lg`,
-        icon: `h-10 w-10 ${DS_RADIUS.control} p-0`,
+        icon: `h-10 w-10 ${DS_RADIUS.section} p-0`,
+        "icon-sm": `h-8 w-8 ${DS_RADIUS.section} p-0`,
       }
     },
     defaultVariants: {

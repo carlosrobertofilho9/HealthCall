@@ -4,7 +4,17 @@ import type { ReceptionMessage } from '../types';
 export async function listReceptionMessages(): Promise<ReceptionMessage[]> {
   const { data, error } = await supabase
     .from('reception_messages')
-    .select('*')
+    .select(`
+      id,
+      sender_id,
+      sender_name,
+      content,
+      created_at,
+      profiles!sender_id (
+        avatar_url,
+        full_name
+      )
+    `)
     .order('created_at', { ascending: true })
     .limit(200);
 
