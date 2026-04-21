@@ -7,6 +7,7 @@ import {
   formatDateToISO,
   getDayConfig,
   getSlotTime,
+  isSlotAutoBlocked,
   parseISODate,
 } from '../services/appointmentService';
 
@@ -81,6 +82,14 @@ export const BulkRescheduleModal: React.FC<BulkRescheduleModalProps> = ({
 
     if (invalidSlots.length > 0) {
       return `A agenda de destino não possui as fichas ${invalidSlots.join(', ')}.`;
+    }
+
+    const blockedSlots = appointments
+      .filter(appointment => isSlotAutoBlocked(selectedTargetDate, appointment.slot_number))
+      .map(appointment => appointment.slot_number);
+
+    if (blockedSlots.length > 0) {
+      return `A agenda de destino possui as fichas ${blockedSlots.join(', ')} bloqueadas para Pré-Natal.`;
     }
 
     return null;

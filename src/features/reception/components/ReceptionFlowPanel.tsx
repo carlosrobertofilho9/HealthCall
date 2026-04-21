@@ -200,7 +200,7 @@ export const ReceptionFlowPanel: React.FC<ReceptionFlowPanelProps> = ({
     month: 'long',
   })}`;
   const handleReportPrint = (period?: ReportPeriodFilter) => {
-    printAppointmentReport(slots, period);
+    printAppointmentReport(slots, { periodFilter: period, selectedDate });
     setIsReportMenuOpen(false);
   };
 

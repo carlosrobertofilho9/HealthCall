@@ -86,6 +86,7 @@ export type AppointmentSlot = {
 	period: 'Manhã' | 'Tarde' | 'Reserva';
 	time?: string;
 	isReserve?: boolean;
+	isAutoBlocked?: boolean;
 	appointment: Appointment | null;
 };
 

@@ -11,6 +11,7 @@ import {
   RELEASED_APPOINTMENT_STATUSES,
   rescheduleAppointment,
   bulkRescheduleAppointments,
+  getAvailableSlots,
   getSuggestedAvailableSlot,
   buildDaySummary,
 } from './appointmentService';
@@ -121,6 +122,21 @@ beforeEach(() => {
 // =============================================================================
 
 describe('getDayConfig', () => {
+  it('should configure Tuesday with morning and blocked afternoon capacity', () => {
+    const tuesday = new Date(2026, 1, 3);
+    const config = getDayConfig(tuesday);
+    expect(config).toMatchObject({
+      dayName: 'Terça-feira',
+      hasService: true,
+      serviceType: 'UBS',
+      totalSlots: 30,
+      morningSlots: 11,
+      morningReserveSlots: 4,
+      afternoonSlots: 9,
+      afternoonReserveSlots: 6,
+    });
+  });
+
   it('should configure Wednesday as HOME_VISIT day with 15 total slots', () => {
     const wednesday = new Date(2026, 1, 4);
     const config = getDayConfig(wednesday);
@@ -194,6 +210,7 @@ describe('isActiveAppointment / isReleasedAppointment', () => {
 
 describe('generateSlotsForDate slot occupancy', () => {
   const monday = new Date(2026, 1, 2); // Monday = 30 slots
+  const tuesday = new Date(2026, 1, 3);
 
   it('Remarcado appointment does NOT occupy its slot', () => {
     const rescheduled = makeAppointment({ slot_number: 5, status: 'Remarcado' });
@@ -223,6 +240,20 @@ describe('generateSlotsForDate slot occupancy', () => {
     const slot6 = slots.find(s => s.slotNumber === 6)!;
     expect(slot6.appointment).not.toBeNull();
   });
+
+  it('automatically blocks Tuesday afternoon slots for Pré-Natal', () => {
+    const slots = generateSlotsForDate(tuesday, []);
+    const afternoonSlots = slots.filter(slot => slot.period === 'Tarde');
+
+    expect(slots).toHaveLength(30);
+    expect(afternoonSlots).toHaveLength(15);
+    expect(afternoonSlots.every(slot => slot.isAutoBlocked)).toBe(true);
+    expect(afternoonSlots.every(slot => slot.appointment?.document_value === 'BLOQUEIO')).toBe(true);
+    expect(afternoonSlots.every(slot => slot.appointment?.patient_name === 'Pré-Natal')).toBe(true);
+    expect(afternoonSlots.map(slot => slot.slotNumber)).toEqual(
+      Array.from({ length: 15 }, (_, index) => index + 16)
+    );
+  });
 });
 
 // =============================================================================
@@ -231,6 +262,7 @@ describe('generateSlotsForDate slot occupancy', () => {
 
 describe('buildDaySummary', () => {
   const monday = new Date(2026, 1, 2);
+  const tuesday = new Date(2026, 1, 3);
 
   it('should separate active and released appointments', () => {
     const appointments: Appointment[] = [
@@ -253,6 +285,16 @@ describe('buildDaySummary', () => {
     const summary = buildDaySummary(monday, appointments);
     expect(summary.appointments).toHaveLength(1);
     expect(summary.occupiedSlots).toBe(1);
+  });
+
+  it('counts Tuesday afternoon Pré-Natal as blocked capacity without adding real appointments', () => {
+    const summary = buildDaySummary(tuesday, []);
+
+    expect(summary.totalSlots).toBe(30);
+    expect(summary.appointments).toHaveLength(0);
+    expect(summary.blockedSlots).toBe(15);
+    expect(summary.availableSlots).toBe(15);
+    expect(summary.occupiedSlots).toBe(15);
   });
 });
 
@@ -332,6 +374,19 @@ describe('createAppointment', () => {
 
     expect(result).toEqual({ id: 'appointment-id' });
     expect(mocks.mockInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('should reject creating appointments on Tuesday afternoon Pré-Natal slots', async () => {
+    await expect(createAppointment({
+      scheduled_date: '2026-02-03',
+      slot_number: 16,
+      patient_name: 'João Silva',
+      document_type: 'CPF',
+      document_value: '12345678901',
+      acs_name: 'ACS Teste',
+    })).rejects.toThrow('Este horário está bloqueado para Pré-Natal.');
+
+    expect(mocks.mockInsert).not.toHaveBeenCalled();
   });
 });
 
@@ -427,6 +482,35 @@ describe('blockDay', () => {
     const count = await blockDay(monday, 'Reunião');
     expect(count).toBe(30);
   });
+
+  it('does not create persisted blockers for Tuesday afternoon Pré-Natal slots', async () => {
+    const tuesday = new Date(2026, 1, 3);
+    mocks.mockOrder.mockResolvedValue({ data: [], error: null });
+
+    const count = await blockDay(tuesday, 'Reunião');
+
+    expect(count).toBe(15);
+    const inserted = mocks.mockInsert.mock.calls[0][0];
+    expect(inserted).toHaveLength(15);
+    expect(inserted.map((item: { slot_number: number }) => item.slot_number)).toEqual(
+      Array.from({ length: 15 }, (_, index) => index + 1)
+    );
+  });
+});
+
+// =============================================================================
+// getAvailableSlots — virtual blocks
+// =============================================================================
+
+describe('getAvailableSlots', () => {
+  it('does not return Tuesday afternoon Pré-Natal slots', async () => {
+    const tuesday = new Date(2026, 1, 3);
+    mocks.mockOrder.mockResolvedValue({ data: [], error: null });
+
+    const slots = await getAvailableSlots(tuesday);
+
+    expect(slots).toEqual(Array.from({ length: 15 }, (_, index) => index + 1));
+  });
 });
 
 // =============================================================================
@@ -457,6 +541,14 @@ describe('rescheduleAppointment', () => {
     await expect(rescheduleAppointment('original-id', '2026-02-09', 5)).rejects.toThrow(
       'Este slot já está ocupado para esta data'
     );
+  });
+
+  it('should reject Tuesday afternoon Pré-Natal slots before calling RPC', async () => {
+    await expect(rescheduleAppointment('original-id', '2026-02-03', 16)).rejects.toThrow(
+      'Este horário está bloqueado para Pré-Natal.'
+    );
+
+    expect(mocks.mockRpc).not.toHaveBeenCalled();
   });
 });
 
@@ -589,7 +681,8 @@ describe('buildCapacityAnalyticsFromSummaries', () => {
 
     const analytics = buildCapacityAnalyticsFromSummaries(current, previous, filtersAll);
 
-    expect(analytics.current.totalSlots).toBe(45); // 30 (seg) + 15 (ter)
+    expect(analytics.current.totalSlots).toBe(60); // 30 (seg) + 30 (ter)
+    expect(analytics.current.blockedSlots).toBe(15);
     expect(analytics.current.showCount).toBe(1);
     expect(analytics.current.noShowCount).toBe(1);
     expect(analytics.current.rescheduledCount).toBe(2);

@@ -24,10 +24,13 @@ import type {
 /**
  * Configuração fixa da grade de atendimento por dia da semana.
  * Segunda: 30 slots (15 manhã + 15 tarde)
- * Terça: 15 slots (15 manhã)
+ * Terça: 30 slots (15 manhã + 15 tarde bloqueada para Pré-Natal)
  * Quarta: 15 visitas domiciliares (15 manhã)
  * Quinta a Domingo: Sem atendimento
  */
+const TUESDAY_DAY_OF_WEEK = 2;
+const PRENATAL_AUTO_BLOCK_REASON = 'Pré-Natal';
+
 export const SCHEDULE_CONFIG: Record<number, DayScheduleConfig> = {
   0: { dayOfWeek: 0, dayName: 'Domingo', hasService: false, serviceType: 'UBS', serviceLabel: 'Sem atendimento', morningSlots: 0, afternoonSlots: 0, totalSlots: 0 },
   1: { 
@@ -50,9 +53,9 @@ export const SCHEDULE_CONFIG: Record<number, DayScheduleConfig> = {
     serviceLabel: 'Atendimento na UBS',
     morningSlots: 11, 
     morningReserveSlots: 4,
-    afternoonSlots: 0, 
-    afternoonReserveSlots: 0,
-    totalSlots: 15 
+    afternoonSlots: 9, 
+    afternoonReserveSlots: 6,
+    totalSlots: 30 
   },
   3: {
     dayOfWeek: 3,
@@ -157,6 +160,45 @@ export function getSlotTime(slotNumber: number, config: DayScheduleConfig): stri
   return 'Reserva';
 }
 
+function isTuesdayPrenatalAutoBlockedSlot(slotNumber: number, config: DayScheduleConfig): boolean {
+  const morningEnd = config.morningSlots + (config.morningReserveSlots || 0);
+  return config.dayOfWeek === TUESDAY_DAY_OF_WEEK && slotNumber > morningEnd && slotNumber <= config.totalSlots;
+}
+
+export function isSlotAutoBlocked(date: Date, slotNumber: number): boolean {
+  return isTuesdayPrenatalAutoBlockedSlot(slotNumber, getDayConfig(date));
+}
+
+function assertSlotIsNotAutoBlocked(date: Date, slotNumber: number): void {
+  if (isSlotAutoBlocked(date, slotNumber)) {
+    throw new Error('Este horário está bloqueado para Pré-Natal.');
+  }
+}
+
+function buildPrenatalAutoBlock(date: Date, slotNumber: number): Appointment {
+  const dateStr = formatDateToISO(date);
+  const timestamp = `${dateStr}T00:00:00.000Z`;
+
+  return {
+    id: `auto-block-prenatal-${dateStr}-${slotNumber}`,
+    scheduled_date: dateStr,
+    slot_number: slotNumber,
+    patient_name: PRENATAL_AUTO_BLOCK_REASON,
+    document_type: 'CPF',
+    document_value: 'BLOQUEIO',
+    acs_name: 'Administração',
+    home_visit_address: null,
+    home_visit_reference: null,
+    home_visit_reason: null,
+    status: 'Agendado',
+    status_updated_at: timestamp,
+    rescheduled_from_id: null,
+    rescheduled_to_id: null,
+    created_at: timestamp,
+    updated_at: timestamp,
+  };
+}
+
 export function generateSlotsForDate(date: Date, appointments: Appointment[]): AppointmentSlot[] {
   const config = getDayConfig(date);
   
@@ -172,28 +214,46 @@ export function generateSlotsForDate(date: Date, appointments: Appointment[]): A
     appointmentsBySlot.set(apt.slot_number, apt);
   });
 
+  const getSlotAppointment = (slotNumber: number) => {
+    const appointment = appointmentsBySlot.get(slotNumber);
+
+    if (appointment) {
+      return { appointment, isAutoBlocked: false };
+    }
+
+    if (isTuesdayPrenatalAutoBlockedSlot(slotNumber, config)) {
+      return { appointment: buildPrenatalAutoBlock(date, slotNumber), isAutoBlocked: true };
+    }
+
+    return { appointment: null, isAutoBlocked: false };
+  };
+
   const morningReserves = config.morningReserveSlots || 0;
   const afternoonReserves = config.afternoonReserveSlots || 0;
 
   // 1. Gerar slots da manhã Normal
   for (let i = 1; i <= config.morningSlots; i++) {
+    const slotState = getSlotAppointment(i);
     slots.push({
       slotNumber: i,
       period: 'Manhã',
       time: getSlotTime(i, config),
       isReserve: false,
-      appointment: appointmentsBySlot.get(i) || null,
+      isAutoBlocked: slotState.isAutoBlocked,
+      appointment: slotState.appointment,
     });
   }
 
   // 2. Gerar slots de Reserva da Manhã
   for (let i = config.morningSlots + 1; i <= config.morningSlots + morningReserves; i++) {
+    const slotState = getSlotAppointment(i);
     slots.push({
       slotNumber: i,
       period: 'Manhã',
       time: 'Reserva',
       isReserve: true,
-      appointment: appointmentsBySlot.get(i) || null,
+      isAutoBlocked: slotState.isAutoBlocked,
+      appointment: slotState.appointment,
     });
   }
 
@@ -202,24 +262,28 @@ export function generateSlotsForDate(date: Date, appointments: Appointment[]): A
   const afternoonEnd = afternoonStart + config.afternoonSlots - 1;
   
   for (let i = afternoonStart; i <= afternoonEnd; i++) {
+    const slotState = getSlotAppointment(i);
     slots.push({
       slotNumber: i,
       period: 'Tarde',
       time: getSlotTime(i, config),
       isReserve: false,
-      appointment: appointmentsBySlot.get(i) || null,
+      isAutoBlocked: slotState.isAutoBlocked,
+      appointment: slotState.appointment,
     });
   }
 
   // 4. Gerar slots de Reserva da Tarde
   const finalReserveStart = afternoonEnd + 1;
   for (let i = finalReserveStart; i <= config.totalSlots; i++) {
+    const slotState = getSlotAppointment(i);
     slots.push({
       slotNumber: i,
       period: 'Tarde',
       time: 'Reserva',
       isReserve: true,
-      appointment: appointmentsBySlot.get(i) || null,
+      isAutoBlocked: slotState.isAutoBlocked,
+      appointment: slotState.appointment,
     });
   }
 
@@ -302,6 +366,7 @@ export async function createAppointment(appointmentData: CreateAppointmentData):
     if (!appointmentData.acs_name.trim()) {
       throw new Error('ACS é obrigatório');
     }
+    assertSlotIsNotAutoBlocked(parseISODate(appointmentData.scheduled_date), appointmentData.slot_number);
     validateHomeVisitFields(appointmentData);
 
     const payload: CreateAppointmentData = {
@@ -414,6 +479,8 @@ export async function rescheduleAppointment(
   scheduledDate: string,
   slotNumber: number
 ): Promise<Appointment | null> {
+  assertSlotIsNotAutoBlocked(parseISODate(scheduledDate), slotNumber);
+
   const { data, error } = await supabase.rpc('reschedule_appointment', {
     p_original_id: originalId,
     p_scheduled_date: scheduledDate,
@@ -523,18 +590,9 @@ export async function getAvailableSlots(date: Date): Promise<number[]> {
 
   const dateStr = formatDateToISO(date);
   const appointments = await getAppointmentsByDate(dateStr);
-  const occupiedSlots = new Set(
-    appointments.filter(isActiveAppointment).map(a => a.slot_number)
-  );
-  
-  const availableSlots: number[] = [];
-  for (let i = 1; i <= config.totalSlots; i++) {
-    if (!occupiedSlots.has(i)) {
-      availableSlots.push(i);
-    }
-  }
-
-  return availableSlots;
+  return generateSlotsForDate(date, appointments)
+    .filter(slot => !slot.appointment)
+    .map(slot => slot.slotNumber);
 }
 
 // =============================================================================
@@ -1092,7 +1150,9 @@ export async function blockDay(
   const dateStr = formatDateToISO(date);
   const existingAppointments = await getAppointmentsByDate(dateStr);
   const occupiedSlots = new Set(
-    existingAppointments.filter(isActiveAppointment).map(a => a.slot_number)
+    generateSlotsForDate(date, existingAppointments)
+      .filter(slot => slot.appointment)
+      .map(slot => slot.slotNumber)
   );
 
   const newAppointments: CreateAppointmentData[] = [];

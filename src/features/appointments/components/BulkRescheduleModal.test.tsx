@@ -102,7 +102,7 @@ describe('BulkRescheduleModal', () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
-  it('impede confirmação quando a data de destino não possui a ficha preservada', () => {
+  it('impede confirmação quando a ficha preservada está bloqueada para Pré-Natal', () => {
     const onConfirm = vi.fn().mockResolvedValue(true);
 
     render(
@@ -116,7 +116,7 @@ describe('BulkRescheduleModal', () => {
       />
     );
 
-    expect(screen.getByText(/não possui as fichas 20/i)).toBeInTheDocument();
+    expect(screen.getByText(/fichas 20 bloqueadas para Pré-Natal/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Confirmar reagendamento/i })).toBeDisabled();
   });
 });

@@ -185,7 +185,7 @@ const AppointmentsPage: React.FC = () => {
   const shouldShowReportMenu = reportPeriods.length > 1;
 
   const handleReportPrint = (period?: ReportPeriodFilter) => {
-    printAppointmentReport(slots, period);
+    printAppointmentReport(slots, { periodFilter: period, selectedDate });
     setIsReportMenuOpen(false);
     setIsPatientListMenuOpen(false);
   };
@@ -352,13 +352,72 @@ const AppointmentsPage: React.FC = () => {
             {/* Actions – desktop only */}
             {dayConfig.hasService && (
               <div className="hidden lg:flex flex-col gap-2">
-                <DesktopActionButton
-                  icon={<Plus className="w-4 h-4" />}
-                  label={isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
-                  onClick={() => handleAddClick()}
-                  disabled={availableSlots.length === 0 || isLoading}
-                  primary
-                />
+                {isHomeVisit ? (
+                  <DesktopActionButton
+                    icon={<Printer className="w-4 h-4" />}
+                    label="Imprimir Roteiro"
+                    onClick={() => printHomeVisitRoute(slots, selectedDate)}
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative" ref={reportMenuRef}>
+                      <DesktopActionButton
+                        icon={<Printer className="w-4 h-4" />}
+                        label="Relatório"
+                        onClick={handleReportButtonClick}
+                      />
+
+                      {shouldShowReportMenu && isReportMenuOpen && (
+                        <div className="absolute right-0 z-50 mt-2 w-48 rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md">
+                          <button
+                            onClick={() => handleReportPrint()}
+                            className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            Imprimir dia inteiro
+                          </button>
+                          <div className="h-px bg-border/50 my-1 mx-1" />
+                          {reportPeriods.map(period => (
+                            <button
+                              key={period}
+                              onClick={() => handleReportPrint(period)}
+                              className="w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-popover-foreground hover:bg-accent transition-colors"
+                            >
+                              Imprimir {period.toLowerCase()}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="relative" ref={patientListMenuRef}>
+                      <DesktopActionButton
+                        icon={<Printer className="w-4 h-4" />}
+                        label="Ficha"
+                        onClick={handlePatientListButtonClick}
+                      />
+
+                      {shouldShowReportMenu && isPatientListMenuOpen && (
+                        <div className="absolute right-0 z-50 mt-2 w-48 rounded-xl border border-border bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md">
+                          <button
+                            onClick={() => handlePatientListPrint()}
+                            className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            Imprimir dia inteiro
+                          </button>
+                          <div className="h-px bg-border/50 my-1 mx-1" />
+                          {reportPeriods.map(period => (
+                            <button
+                              key={period}
+                              onClick={() => handlePatientListPrint(period)}
+                              className="w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-popover-foreground hover:bg-accent transition-colors"
+                            >
+                              Imprimir {period.toLowerCase()}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   <DesktopActionButton
                     icon={<Ban className="w-4 h-4 text-red-400" />}
@@ -380,64 +439,13 @@ const AppointmentsPage: React.FC = () => {
                   disabled={isLoading || bulkRescheduleAppointments.length === 0}
                 />
                 <div className="h-px bg-border my-1" />
-                {isHomeVisit ? (
-                  <DesktopActionButton
-                    icon={<Printer className="w-4 h-4" />}
-                    label="Imprimir Roteiro"
-                    onClick={() => printHomeVisitRoute(slots, selectedDate)}
-                  />
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="relative" ref={reportMenuRef}>
-                      <DesktopActionButton
-                        icon={<Printer className="w-4 h-4" />}
-                        label="Relatório"
-                        onClick={handleReportButtonClick}
-                      />
-
-                      {shouldShowReportMenu && isReportMenuOpen && (
-                        <div className="absolute right-0 z-50 mt-2 w-40 rounded-xl border border-border bg-popover p-1 shadow-lg">
-                          <button
-                            onClick={() => handleReportPrint('Manhã')}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-popover-foreground hover:bg-accent transition-colors"
-                          >
-                            Imprimir manhã
-                          </button>
-                          <button
-                            onClick={() => handleReportPrint('Tarde')}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-popover-foreground hover:bg-accent transition-colors"
-                          >
-                            Imprimir tarde
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="relative" ref={patientListMenuRef}>
-                      <DesktopActionButton
-                        icon={<Printer className="w-4 h-4" />}
-                        label="Ficha"
-                        onClick={handlePatientListButtonClick}
-                      />
-
-                      {shouldShowReportMenu && isPatientListMenuOpen && (
-                        <div className="absolute right-0 z-50 mt-2 w-40 rounded-xl border border-border bg-popover p-1 shadow-lg">
-                          <button
-                            onClick={() => handlePatientListPrint('Manhã')}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-popover-foreground hover:bg-accent transition-colors"
-                          >
-                            Imprimir manhã
-                          </button>
-                          <button
-                            onClick={() => handlePatientListPrint('Tarde')}
-                            className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-popover-foreground hover:bg-accent transition-colors"
-                          >
-                            Imprimir tarde
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <DesktopActionButton
+                  icon={<Plus className="w-4 h-4" />}
+                  label={isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
+                  onClick={() => handleAddClick()}
+                  disabled={availableSlots.length === 0 || isLoading}
+                  primary
+                />
               </div>
             )}
           </div>

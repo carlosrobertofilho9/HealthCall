@@ -60,7 +60,7 @@ export const SlotCard: React.FC<SlotCardProps> = ({
   onRescheduleClick,
   onConfirmationPdfClick,
 }) => {
-  const { slotNumber, period, time, appointment } = slot;
+  const { slotNumber, period, time, appointment, isAutoBlocked } = slot;
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleCopy = async (text: string, label: string) => {
@@ -118,34 +118,50 @@ export const SlotCard: React.FC<SlotCardProps> = ({
   const isBlocked = appointment.document_value === 'BLOQUEIO';
 
   if (isBlocked) {
+    const blockedContainerClass = isAutoBlocked
+      ? 'border-pink-400/30 bg-pink-500/10 print:bg-pink-50 print:border-pink-200'
+      : 'border-red-900/30 bg-red-950/15 print:bg-white print:border-gray-300';
+    const blockedBadgeClass = isAutoBlocked
+      ? 'border-pink-400/30 bg-pink-500/15 text-pink-200 print:bg-pink-100 print:text-pink-800 print:border-pink-200'
+      : 'border-red-900/30 bg-red-950/20 text-red-300';
+    const blockedTimeClass = isAutoBlocked
+      ? 'text-pink-200/80'
+      : 'text-red-400/70';
+    const blockedIconClass = isAutoBlocked
+      ? 'text-pink-300'
+      : 'text-red-500';
+    const blockedTitleClass = isAutoBlocked
+      ? 'text-pink-100 print:text-pink-900'
+      : 'text-red-200';
+
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-red-900/30 bg-red-950/15
-        px-4 py-3.5 print:bg-white print:border-gray-300">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-          border border-red-900/30 bg-red-950/20 text-red-300 text-xs font-bold">
+      <div className={`flex items-center gap-3 rounded-xl border px-4 py-3.5 ${blockedContainerClass}`}>
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${blockedBadgeClass}`}>
           {slotNumber}
         </span>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
-            <Clock className="w-3 h-3 text-red-400/50 shrink-0 print:hidden" />
-            <p className="text-xs text-red-400/70 font-medium">{time || period}</p>
+            <Clock className={`w-3 h-3 shrink-0 print:hidden ${isAutoBlocked ? 'text-pink-300/70' : 'text-red-400/50'}`} />
+            <p className={`text-xs font-medium ${blockedTimeClass}`}>{time || period}</p>
           </div>
           <div className="flex items-center gap-2">
-            <Ban className="w-3.5 h-3.5 text-red-500 shrink-0" />
-            <p className="text-sm font-bold text-red-200 truncate">
-              BLOQUEADO: {appointment.patient_name}
+            <Ban className={`w-3.5 h-3.5 shrink-0 ${blockedIconClass}`} />
+            <p className={`text-sm font-bold truncate ${blockedTitleClass}`}>
+              {isAutoBlocked ? appointment.patient_name : `BLOQUEADO: ${appointment.patient_name}`}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={() => onDeleteClick(appointment)}
-          className="p-2.5 rounded-xl hover:bg-red-900/30 transition-colors shrink-0 print:hidden"
-          title="Desbloquear"
-        >
-          <Trash2 className="w-4 h-4 text-red-400" />
-        </button>
+        {!isAutoBlocked && (
+          <button
+            onClick={() => onDeleteClick(appointment)}
+            className="p-2.5 rounded-xl hover:bg-red-900/30 transition-colors shrink-0 print:hidden"
+            title="Desbloquear"
+          >
+            <Trash2 className="w-4 h-4 text-red-400" />
+          </button>
+        )}
       </div>
     );
   }
