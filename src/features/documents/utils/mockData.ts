@@ -115,18 +115,6 @@ CNS ou CPF: {{CNS_CPF}}`,
     icon: ControlePressaoIcon
   },
   {
-    id: 'ficha_curativos',
-    title: 'Ficha de Evolução de Curativos',
-    category: 'Monitoramento',
-    description: 'Ficha para acompanhamento de feridas crônicas com registro fotográfico e medidas.',
-    tags: ['ferida', 'curativo', 'enfermagem', 'lesão'],
-    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`,
-    icon: FichaCurativosIcon
-  },
-
-  // --- PROTOCOLOS E TERMOS ---
-  {
     id: 'lavagem_ouvido',
     title: 'Protocolo de Lavagem de Ouvido',
     category: 'Protocolos e Termos',
@@ -187,26 +175,6 @@ CNS ou CPF: {{CNS_CPF}}`,
 CNS ou CPF: {{CNS_CPF}}`,
     icon: SolicitacaoCurativoIcon
   },
-  {
-    id: 'referencia_ubs_curativo',
-    title: 'Referência UBS - Curativo',
-    category: 'Administrativo',
-    description: 'Referência clínica para continuidade do cuidado na UBS após encerramento do acompanhamento.',
-    tags: ['ubs', 'curativo', 'referência', 'continuidade'],
-    templateText: `Nome do Paciente: {{NOME_PACIENTE}}
-CNS ou CPF: {{CNS_CPF}}`,
-    icon: SolicitacaoCurativoIcon
-  },
-  {
-    id: 'folha_pendencias',
-    title: 'Folha de Pendências',
-    category: 'Administrativo',
-    description: 'Registro de pendências semanais (encaminhamentos, laudos, etc).',
-    tags: ['organização', 'administrativo', 'secretaria', 'espera'],
-    templateText: ``,
-    icon: FolhaPendenciasIcon
-  },
-
   // --- ORIENTAÇÕES E CAPAS ---
   {
     id: 'capa_caderneta',
@@ -333,58 +301,6 @@ export const fieldHints: Record<string, FieldHint> = {
   DATA_SOLICITACAO_CURATIVO: { label: 'Data da Solicitação', type: 'date', placeholder: 'dd/mm/aaaa' },
   OUTROS_MATERIAIS_CURATIVO: { label: 'Quais outros materiais?', type: 'textarea', placeholder: 'Descreva outros materiais necessários...' },
   OBSERVACOES_CURATIVO: { label: 'Observações da solicitação', type: 'textarea', placeholder: 'Ex: frequência de troca, quantidade estimada ou justificativa clínica...' },
-  TIPO_FECHAMENTO: { label: 'Tipo de Fechamento', type: 'text', placeholder: 'Ex: Curativo na UBS' },
-  DATA_FECHAMENTO: { label: 'Data do Fechamento', type: 'date', placeholder: 'dd/mm/aaaa' },
-  MOTIVO_ENCERRAMENTO: { label: 'Motivo do Encerramento', type: 'textarea', placeholder: 'Descreva o motivo...' },
-  ULTIMA_MEDIDA: { label: 'Última Medida', type: 'text', placeholder: 'Ex: 2 x 1 x 0.2 cm' },
-  ULTIMA_COBERTURA: { label: 'Última Cobertura', type: 'text', placeholder: 'Ex: Hidrogel' },
-  ULTIMA_OBSERVACAO: { label: 'Última Observação Clínica', type: 'textarea', placeholder: 'Resumo clínico da última evolução' },
-  ORIENTACOES_UBS: { label: 'Orientações para UBS', type: 'textarea', placeholder: 'Orientações de continuidade do cuidado' },
-
-  // --- Folha de Pendências ---
-  // Pendência 1
-  NOME_PACIENTE_1: { label: 'Nome do Paciente (1)', type: 'text', placeholder: 'Nome completo' },
-  CNS_CPF_1: { label: 'CNS ou CPF (1)', type: 'text', placeholder: 'Documento' },
-  TIPO_PENDENCIA_1: {
-    label: 'Tipo de Pendência (1)',
-    type: 'select',
-    options: ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'],
-    placeholder: 'Selecione o tipo'
-  },
-  RESUMO_PENDENCIA_1: { label: 'Resumo da Pendência (1)', type: 'textarea', placeholder: 'Descreva o que está pendente...' },
-
-  // Pendência 2
-  NOME_PACIENTE_2: { label: 'Nome do Paciente (2)', type: 'text', placeholder: 'Nome completo (opcional)' },
-  CNS_CPF_2: { label: 'CNS ou CPF (2)', type: 'text', placeholder: 'Documento (opcional)' },
-  TIPO_PENDENCIA_2: {
-    label: 'Tipo de Pendência (2)',
-    type: 'select',
-    options: ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'],
-    placeholder: 'Selecione o tipo (opcional)'
-  },
-  RESUMO_PENDENCIA_2: { label: 'Resumo da Pendência (2)', type: 'textarea', placeholder: 'Descreva o que está pendente (opcional)...' },
-
-  // Pendência 3
-  NOME_PACIENTE_3: { label: 'Nome do Paciente (3)', type: 'text', placeholder: 'Nome completo (opcional)' },
-  CNS_CPF_3: { label: 'CNS ou CPF (3)', type: 'text', placeholder: 'Documento (opcional)' },
-  TIPO_PENDENCIA_3: {
-    label: 'Tipo de Pendência (3)',
-    type: 'select',
-    options: ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'],
-    placeholder: 'Selecione o tipo (opcional)'
-  },
-  RESUMO_PENDENCIA_3: { label: 'Resumo da Pendência (3)', type: 'textarea', placeholder: 'Descreva o que está pendente (opcional)...' },
-
-  // Pendência 4
-  NOME_PACIENTE_4: { label: 'Nome do Paciente (4)', type: 'text', placeholder: 'Nome completo (opcional)' },
-  CNS_CPF_4: { label: 'CNS ou CPF (4)', type: 'text', placeholder: 'Documento (opcional)' },
-  TIPO_PENDENCIA_4: {
-    label: 'Tipo de Pendência (4)',
-    type: 'select',
-    options: ['Encaminhamento', 'Fisioterapia', 'Laudo', 'Medicamento', 'Outro'],
-    placeholder: 'Selecione o tipo (opcional)'
-  },
-  RESUMO_PENDENCIA_4: { label: 'Resumo da Pendência (4)', type: 'textarea', placeholder: 'Descreva o que está pendente (opcional)...' },
 
   // --- Capa de Caderneta ---
   RECEITA_SIMPLES: { label: 'Receita Simples (Verde)', type: 'checkbox' },
@@ -399,11 +315,6 @@ export const fieldHints: Record<string, FieldHint> = {
 export const extraFieldsByTemplate: Record<string, string[]> = {
   controle_pressao: ['MAPA_DATA_INICIAL'],
   controle_glicemico: ['GLICEMIA_DATA_INICIAL'],
-  ficha_curativos: [
-    'LOCALIZACAO_LESAO', 'DATA_INICIO_LESAO', 'CLASSIFICACAO_LESAO',
-    'MEDIDA_LESAO', 'COBERTURA_INICIAL', 'DOR_ESCALA', 'OBSERVACOES_PLANO',
-    'FOTO_LESAO',
-  ],
   lavagem_ouvido: [
     'DATA_PROCEDIMENTO', 'HORA_PROCEDIMENTO',
     'QUEIXA_PRINCIPAL', 'PROFISSIONAL', 'CRM_COREN',
@@ -438,26 +349,6 @@ export const extraFieldsByTemplate: Record<string, string[]> = {
     'MATERIAL_CURATIVO_RAYON', 'MATERIAL_CURATIVO_OUTROS',
     'OUTROS_MATERIAIS_CURATIVO', 'OBSERVACOES_CURATIVO',
     'PROFISSIONAL', 'CRM_COREN',
-  ],
-  referencia_ubs_curativo: [
-    'NOME_PACIENTE',
-    'CNS_CPF',
-    'LOCALIZACAO_LESAO',
-    'DATA_INICIO_LESAO',
-    'CLASSIFICACAO_LESAO',
-    'TIPO_FECHAMENTO',
-    'DATA_FECHAMENTO',
-    'MOTIVO_ENCERRAMENTO',
-    'ULTIMA_MEDIDA',
-    'ULTIMA_COBERTURA',
-    'ULTIMA_OBSERVACAO',
-    'ORIENTACOES_UBS',
-  ],
-  folha_pendencias: [
-    'NOME_PACIENTE_1', 'CNS_CPF_1', 'TIPO_PENDENCIA_1', 'RESUMO_PENDENCIA_1',
-    'NOME_PACIENTE_2', 'CNS_CPF_2', 'TIPO_PENDENCIA_2', 'RESUMO_PENDENCIA_2',
-    'NOME_PACIENTE_3', 'CNS_CPF_3', 'TIPO_PENDENCIA_3', 'RESUMO_PENDENCIA_3',
-    'NOME_PACIENTE_4', 'CNS_CPF_4', 'TIPO_PENDENCIA_4', 'RESUMO_PENDENCIA_4',
   ],
   capa_caderneta: [
     'NOME_PACIENTE', 'CNS_CPF', 'RECEITA_SIMPLES', 'RECEITA_CONTROLE_ESPECIAL', 'RECEITA_AZUL'

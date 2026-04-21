@@ -13,6 +13,7 @@ const WoundEvolutionPage: React.FC = () => {
   const {
     selectedWound,
     patients,
+    entries,
     createEntryWithPhotos,
     persistDraft,
     restoreDraft,
@@ -51,6 +52,8 @@ const WoundEvolutionPage: React.FC = () => {
     if (!selectedWound || !patients.length) return null;
     return patients.find(p => p.id === selectedWound.patient_id) || null;
   }, [patients, selectedWound]);
+
+  const lastEntry = useMemo(() => entries[0] ?? null, [entries]);
 
   const handleEvolutionSubmit = async (input: Parameters<typeof createEntryWithPhotos>[0], files: File[]) => {
     await createEntryWithPhotos(input, files);
@@ -112,6 +115,7 @@ const WoundEvolutionPage: React.FC = () => {
       <div className="mx-auto w-full max-w-4xl">
         <WoundEvolutionForm
           woundId={woundId}
+          lastEntry={lastEntry}
           initialDraft={draft}
           onSubmit={handleEvolutionSubmit}
           onDraftChange={handleDraftChange}

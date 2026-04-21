@@ -1,7 +1,7 @@
 import React from 'react';
 import type { WoundCase } from '../types';
 import { Badge, Button } from '@/components/ui';
-import { PencilLine, ScrollText, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { PencilLine, RefreshCw, CheckCircle2 } from 'lucide-react';
 import AnatomicalMiniMap from '@/components/clinical/AnatomicalMiniMap';
 
 import { cn } from '@/lib/utils';
@@ -11,7 +11,6 @@ interface WoundCaseHeaderProps {
   onEditCase: () => void;
   onCloseCase: () => void;
   onReopenCase: () => void;
-  onGenerateUbsDocument: () => void;
 }
 
 const WoundCaseHeader: React.FC<WoundCaseHeaderProps> = ({
@@ -19,7 +18,6 @@ const WoundCaseHeader: React.FC<WoundCaseHeaderProps> = ({
   onEditCase,
   onCloseCase,
   onReopenCase,
-  onGenerateUbsDocument,
 }) => {
   if (!wound) return null;
 
@@ -79,18 +77,10 @@ const WoundCaseHeader: React.FC<WoundCaseHeaderProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/50">
         <div className="flex flex-wrap gap-2">
           {wound.status === 'encerrada' && (
-            <>
-              <Button type="button" variant="secondary" size="sm" onClick={onReopenCase} className="h-8 text-xs font-semibold">
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                Reabrir ferida
-              </Button>
-              {wound.closure_type === 'ubs' && (
-                <Button type="button" variant="outline" size="sm" onClick={onGenerateUbsDocument} className="h-8 text-xs font-semibold">
-                  <ScrollText className="mr-1.5 h-3.5 w-3.5" />
-                  Gerar referência UBS
-                </Button>
-              )}
-            </>
+            <Button type="button" variant="secondary" size="sm" onClick={onReopenCase} className="h-8 text-xs font-semibold">
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+              Reabrir ferida
+            </Button>
           )}
         </div>
 

@@ -46,6 +46,7 @@ const etiologyOptions = [
   'Úlcera de pressão',
   'Pós-cirúrgica',
   'Traumática',
+  'Queimadura',
   'Outra',
 ];
 

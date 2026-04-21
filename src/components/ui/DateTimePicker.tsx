@@ -78,6 +78,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const calendarRef = useRef<HTMLDivElement | null>(null);
+  const wasOpenRef = useRef(false);
 
   const safeMinuteStep = Math.min(Math.max(minuteStep, 1), 30);
   const parsedValue = useMemo(() => parseLocalDateTime(value), [value]);
@@ -95,16 +96,21 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   }, [parsedValue, safeMinuteStep]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen && wasOpenRef.current) {
       buttonRef.current?.focus();
-      return;
+    } else if (isOpen) {
+      const frame = window.requestAnimationFrame(() => {
+        calendarRef.current?.focus();
+      });
+
+      return () => window.cancelAnimationFrame(frame);
     }
 
-    const frame = window.requestAnimationFrame(() => {
-      calendarRef.current?.focus();
-    });
+    return undefined;
+  }, [isOpen]);
 
-    return () => window.cancelAnimationFrame(frame);
+  useEffect(() => {
+    wasOpenRef.current = isOpen;
   }, [isOpen]);
 
   const handleSelectDate = (date: Date) => {

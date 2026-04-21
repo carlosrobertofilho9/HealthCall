@@ -21,7 +21,7 @@ const WoundSyncIndicator: React.FC<WoundSyncIndicatorProps> = ({
   className,
 }) => {
   return (
-    <div className={cn("flex items-center gap-1.5 p-1 rounded-full border border-border bg-background shadow-sm min-w-fit h-9", className)}>
+    <div className={cn("flex max-w-full items-center gap-1.5 rounded-2xl border border-border bg-background p-1 shadow-sm sm:h-9 sm:max-w-none sm:rounded-full", className)}>
       {/* Status de Conexão */}
       <div className={cn(
         "flex items-center gap-1.5 px-3 rounded-full text-[10px] font-bold uppercase tracking-wider h-7",
@@ -54,7 +54,7 @@ const WoundSyncIndicator: React.FC<WoundSyncIndicatorProps> = ({
         onClick={onSyncNow}
         disabled={isSyncing}
         className={cn(
-          "h-7 rounded-full px-4 text-[10px] font-black uppercase tracking-widest transition-all",
+          "h-7 min-w-0 rounded-full px-3 text-[10px] font-black uppercase tracking-widest transition-all sm:px-4",
           isOnline ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20" : "bg-muted text-muted-foreground"
         )}
       >

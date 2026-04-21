@@ -11,8 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  Modal,
 } from '@/components/ui';
-import type { CreateWoundEntryInput, WoundExudate, WoundOdor } from '../types';
+import type { CreateWoundEntryInput, WoundEntry, WoundExudate, WoundOdor } from '../types';
 import { validateWoundImageFiles } from '../utils/woundFileValidation';
 import { cn } from '@/lib/utils';
 import { 
@@ -34,11 +35,14 @@ import {
   ShieldPlus,
   StickyNote,
   User,
-  Activity
+  Activity,
+  Copy,
+  Repeat,
 } from 'lucide-react';
 
 interface WoundEvolutionFormProps {
   woundId: string | null;
+  lastEntry?: WoundEntry | null;
   initialDraft?: Record<string, unknown> | null;
   initialEntry?: WoundEntry | null;
   onSubmit: (input: CreateWoundEntryInput, files: File[]) => Promise<void>;
@@ -96,6 +100,7 @@ const nonConformityTypes = [
 
 const exudateOptions: WoundExudate[] = ['ausente', 'seroso', 'sanguinolento', 'serossanguinolento', 'purulento'];
 const odorOptions: WoundOdor[] = ['ausente', 'discreto', 'fetido'];
+const painScaleOptions = Array.from({ length: 11 }, (_, index) => index);
 
 const exudateIcons: Record<WoundExudate, React.ReactNode> = {
   ausente: <Droplets className="h-3.5 w-3.5 text-muted-foreground opacity-40" />,
@@ -163,6 +168,7 @@ const populateStateFromEntry = (entry: WoundEntry) => ({
 
 const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
   woundId,
+  lastEntry,
   initialDraft,
   onSubmit,
   onDraftChange,
@@ -174,7 +180,10 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
   const [files, setFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [isCopyConfirmOpen, setIsCopyConfirmOpen] = useState(false);
   const onDraftChangeRef = useRef(onDraftChange);
+  const requiresPhoto = !initialEntry;
 
   useEffect(() => {
     onDraftChangeRef.current = onDraftChange;
@@ -247,6 +256,55 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
   );
 
   const uploadLocked = hasErrors || !woundId;
+  const photoRequiredError = requiresPhoto && files.length === 0 ? 'Anexe ao menos uma foto da lesão para concluir a evolução.' : null;
+
+  const applyLastDressing = () => {
+    if (!lastEntry) return;
+
+    setForm((prev) => ({
+      ...prev,
+      dressing_type: lastEntry.dressing_type || '',
+      uses_ointment: !!lastEntry.uses_ointment,
+      ointment_type: lastEntry.ointment_type || '',
+      uses_antibiotic: !!lastEntry.uses_antibiotic,
+      antibiotic_type: lastEntry.antibiotic_type || '',
+      dressing_notes: lastEntry.dressing_notes || '',
+      next_change_date: lastEntry.next_change_date || prev.next_change_date,
+    }));
+  };
+
+  const applyLastAssessment = () => {
+    if (!lastEntry) return;
+
+    setForm((prev) => ({
+      ...prev,
+      measure_length_cm: lastEntry.measure_length_cm?.toString() || '',
+      measure_width_cm: lastEntry.measure_width_cm?.toString() || '',
+      measure_depth_cm: lastEntry.measure_depth_cm?.toString() || '',
+      bed_aspect: lastEntry.bed_aspect || [],
+      edges: lastEntry.edges || [],
+      perilesional_skin: lastEntry.perilesional_skin || [],
+      exudate: (lastEntry.exudate as WoundExudate) || '',
+      odor: (lastEntry.odor as WoundOdor) || '',
+      pain_scale: lastEntry.pain_scale || 0,
+      uses_antibiotic: !!lastEntry.uses_antibiotic,
+      antibiotic_type: lastEntry.antibiotic_type || '',
+      uses_ointment: !!lastEntry.uses_ointment,
+      ointment_type: lastEntry.ointment_type || '',
+      dressing_type: lastEntry.dressing_type || '',
+      dressing_notes: lastEntry.dressing_notes || '',
+    }));
+  };
+
+  const openCopyConfirmation = () => {
+    if (!lastEntry) return;
+    setIsCopyConfirmOpen(true);
+  };
+
+  const handleConfirmCopy = () => {
+    applyLastAssessment();
+    setIsCopyConfirmOpen(false);
+  };
 
   const toggleInList = (key: 'bed_aspect' | 'edges' | 'perilesional_skin', value: string) => {
     setForm((prev) => {
@@ -260,7 +318,8 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!woundId || hasErrors || fileError) return;
+    setSubmitAttempted(true);
+    if (!woundId || hasErrors || fileError || photoRequiredError) return;
 
     const payload: CreateWoundEntryInput = {
       wound_id: woundId,
@@ -322,6 +381,43 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
       </div>
 
       <form className="space-y-6" onSubmit={handleSubmit}>
+        {!initialEntry && (
+          <div className="rounded-2xl border border-border bg-secondary/10 p-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs font-semibold text-muted-foreground">Ações rápidas</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={applyLastDressing}
+                  disabled={!lastEntry}
+                  className="justify-start sm:justify-center"
+                >
+                  <Repeat className="mr-1.5 h-3.5 w-3.5" />
+                  Repetir último curativo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={openCopyConfirmation}
+                  disabled={!lastEntry}
+                  className="justify-start sm:justify-center"
+                >
+                  <Copy className="mr-1.5 h-3.5 w-3.5" />
+                  Usar dados da última evolução
+                </Button>
+              </div>
+            </div>
+            {!lastEntry && (
+              <p className="mt-2 text-[10px] text-muted-foreground">
+                Ainda não há evolução anterior para preencher automaticamente.
+              </p>
+            )}
+          </div>
+        )}
+
         {errorMessages.length > 0 && (
           <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive animate-in fade-in slide-in-from-top-2">
             <p className="font-bold mb-1 flex items-center gap-1">
@@ -533,14 +629,24 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
                 {form.pain_scale}
               </span>
             </div>
-            <input
-              type="range"
-              min={0}
-              max={10}
-              value={form.pain_scale}
-              onChange={(event) => setForm((prev) => ({ ...prev, pain_scale: Number(event.target.value) }))}
-              className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
-            />
+            <div className="grid grid-cols-6 gap-2 sm:grid-cols-11">
+              {painScaleOptions.map((value) => {
+                const isActive = form.pain_scale === value;
+
+                return (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={isActive ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setForm((prev) => ({ ...prev, pain_scale: value }))}
+                    className="h-10 px-0 font-black"
+                  >
+                    {value}
+                  </Button>
+                );
+              })}
+            </div>
             <div className="flex justify-between text-[10px] text-muted-foreground font-bold px-1">
               <span>SEM DOR</span>
               <span>MODERADA</span>
@@ -793,6 +899,9 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
                 </label>
               </div>
               {fileError && <p className="text-[10px] text-destructive font-bold ml-1">{fileError}</p>}
+              {!fileError && submitAttempted && photoRequiredError && (
+                <p className="text-[10px] text-destructive font-bold ml-1">{photoRequiredError}</p>
+              )}
               {!fileError && uploadLocked && (
                 <p className="text-[10px] text-muted-foreground ml-1 italic">Complete os campos obrigatórios (*) para liberar as fotos.</p>
               )}
@@ -804,7 +913,7 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
           <Button 
             type="submit" 
             size="lg" 
-            disabled={isSubmitting || hasErrors || !!fileError || !woundId}
+            disabled={isSubmitting || hasErrors || !!fileError || !woundId || !!photoRequiredError}
             className="w-full rounded-2xl h-14 text-base font-bold shadow-xl shadow-primary/20"
           >
             {isSubmitting ? (
@@ -827,6 +936,27 @@ const WoundEvolutionForm: React.FC<WoundEvolutionFormProps> = ({
           )}
         </div>
       </form>
+
+      <Modal
+        isOpen={isCopyConfirmOpen}
+        onClose={() => setIsCopyConfirmOpen(false)}
+        panelClassName="max-w-md p-5"
+      >
+        <div className="space-y-4">
+          <h3 className="text-base font-bold text-foreground">Confirmar preenchimento automático</h3>
+          <p className="text-sm text-muted-foreground">
+            Isso irá substituir os campos de avaliação e tratamento pelos dados da última evolução.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setIsCopyConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleConfirmCopy}>
+              Confirmar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </Card>
   );
 };

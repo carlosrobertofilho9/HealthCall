@@ -65,21 +65,27 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const calendarRef = useRef<HTMLDivElement | null>(null);
+  const wasOpenRef = useRef(false);
 
   const parsedValue = useMemo(() => parseLocalDate(value), [value]);
   const dateValue = parsedValue ?? new Date();
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen && wasOpenRef.current) {
       buttonRef.current?.focus();
-      return;
+    } else if (isOpen) {
+      const frame = window.requestAnimationFrame(() => {
+        calendarRef.current?.focus();
+      });
+
+      return () => window.cancelAnimationFrame(frame);
     }
 
-    const frame = window.requestAnimationFrame(() => {
-      calendarRef.current?.focus();
-    });
+    return undefined;
+  }, [isOpen]);
 
-    return () => window.cancelAnimationFrame(frame);
+  useEffect(() => {
+    wasOpenRef.current = isOpen;
   }, [isOpen]);
 
   const handleSelect = (date: Date) => {

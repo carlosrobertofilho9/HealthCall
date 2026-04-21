@@ -3,7 +3,6 @@ import { Page, Document } from '@react-pdf/renderer';
 import { renderTemplate } from '../utils/templateUtils';
 import { GlycemicDocument } from './pdfs/GlycemicDocument';
 import { PressureDocument } from './pdfs/PressureDocument';
-import { WoundCareDocument } from './pdfs/WoundCareDocument';
 import { ProcedureDocument } from './pdfs/ProcedureDocument';
 import { EarWashDocument } from './pdfs/EarWashDocument';
 import { AdverseReactionDocument } from './pdfs/AdverseReactionDocument';
@@ -11,14 +10,12 @@ import { FormulaRequestDocument } from './pdfs/FormulaRequestDocument';
 import type { FormulaItem } from './pdfs/FormulaRequestDocument';
 import { InjectableMedDocument } from './pdfs/InjectableMedDocument';
 import { StandardDocument } from './pdfs/StandardDocument';
-import { PendingItemsDocument } from './pdfs/PendingItemsDocument';
 import { CapaCadernetaDocument } from './pdfs/CapaCadernetaDocument';
 import { HASLifestyleDocument } from './pdfs/HASLifestyleDocument';
 import { DMLifestyleDocument } from './pdfs/DMLifestyleDocument';
 import { DyslipidemiaDocument } from './pdfs/DyslipidemiaDocument';
 import { MentalHealthDocument } from './pdfs/MentalHealthDocument';
 import { DressingRequestDocument } from './pdfs/DressingRequestDocument';
-import { WoundUbsReferralDocument } from './pdfs/WoundUbsReferralDocument';
 
 /** Estrutura para itens de pendência */
 export interface PendingItem {
@@ -136,15 +133,12 @@ const specialDocuments: Record<string, {
   'Controle Glicêmico': { component: GlycemicDocument, landscape: true },
   'Controle de Pressão Arterial (MRPA)': { component: PressureDocument, landscape: true, multiPage: true },
   'Controle de Pressão Arterial (MAPA)': { component: PressureDocument, landscape: true, multiPage: true },
-  'Ficha de Evolução de Curativos': { component: WoundCareDocument, landscape: true, multiPage: true },
   'Protocolo de Procedimento': { component: ProcedureDocument, multiPage: true },
   'Protocolo de Lavagem de Ouvido': { component: EarWashDocument, multiPage: true },
   'Termo de Administração de Medicamento / Vacina': { component: AdverseReactionDocument, multiPage: true },
   'Relatório de Medicação Injetável': { component: InjectableMedDocument, multiPage: true },
   'Solicitação de Fórmula Láctea': { component: FormulaRequestDocument },
   'Solicitação de Curativo': { component: DressingRequestDocument },
-  'Referência UBS - Curativo': { component: WoundUbsReferralDocument },
-  'Folha de Pendências': { component: PendingItemsDocument },
   'Capa de Caderneta': { component: CapaCadernetaDocument as any, landscape: true },
   'Guia de Estilo de Vida (HAS)': { component: HASLifestyleDocument as any },
   'Guia de Estilo de Vida (Diabetes)': { component: DMLifestyleDocument as any },
