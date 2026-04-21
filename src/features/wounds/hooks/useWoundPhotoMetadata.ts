@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { WoundPhoto, WoundPhotoMetadataResult, WoundPhotoMetadataStatus } from '../types';
 import { resolveWoundPhotoMetadataOnDemand } from '../services/woundPhotoMetadataService';
+import { reverseGeocode } from '../services/geocodingService';
 
 type PhotoInput =
   | Pick<
@@ -22,6 +23,15 @@ type PhotoInput =
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
   return 'Falha ao extrair metadados da foto.';
+}
+
+function hasCoordinatesWithoutAddress(metadata: WoundPhoto['metadata']): metadata is NonNullable<WoundPhoto['metadata']> {
+  return (
+    !!metadata &&
+    typeof metadata.latitude === 'number' &&
+    typeof metadata.longitude === 'number' &&
+    !metadata.address
+  );
 }
 
 export function useWoundPhotoMetadata(photo: PhotoInput): WoundPhotoMetadataResult {
@@ -57,6 +67,22 @@ export function useWoundPhotoMetadata(photo: PhotoInput): WoundPhotoMetadataResu
       setSource('memory');
       setStatus('ready');
       setError(null);
+
+      // Enriquecimento preguiçoso para converter coordenadas em endereço legível.
+      if (hasCoordinatesWithoutAddress(photo.metadata)) {
+        void reverseGeocode(photo.metadata.latitude, photo.metadata.longitude)
+          .then((address) => {
+            if (!isMounted || !address) return;
+            setMetadata((current) => {
+              if (!current || current.address) return current;
+              return { ...current, address };
+            });
+          })
+          .catch(() => {
+            // Falha de geocoding não deve quebrar o fluxo principal dos metadados.
+          });
+      }
+
       return;
     }
 

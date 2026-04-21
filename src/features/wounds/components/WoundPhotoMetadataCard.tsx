@@ -51,6 +51,7 @@ const WoundPhotoMetadataCard: React.FC<WoundPhotoMetadataCardProps> = ({ photo }
   const latitude = typeof metadata?.latitude === 'number' ? metadata.latitude : undefined;
   const longitude = typeof metadata?.longitude === 'number' ? metadata.longitude : undefined;
   const hasGps = typeof latitude === 'number' && typeof longitude === 'number';
+  const displayAddress = metadata?.address;
   const mapUrl = hasGps ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}` : null;
   const locationSource = normalizeDisplaySource(source, photo?.location_source);
   const isLegacy = isLegacyPhotoCreatedAt(photo?.created_at ?? null);
@@ -120,9 +121,13 @@ const WoundPhotoMetadataCard: React.FC<WoundPhotoMetadataCardProps> = ({ photo }
                   Ver no Google Maps
                 </a>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                {latitude.toFixed(6)}, {longitude.toFixed(6)}
-              </p>
+              {displayAddress ? (
+                <p className="text-[11px] text-muted-foreground">{displayAddress}</p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground">
+                  {latitude.toFixed(6)}, {longitude.toFixed(6)}
+                </p>
+              )}
               {locationSource && (
                 <p className="text-[11px] text-muted-foreground">
                   Origem: {locationSource === 'photo' ? 'GPS da foto' : 'GPS do dispositivo'}

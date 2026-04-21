@@ -59,7 +59,7 @@ describe('WoundPhotoMetadataCard', () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it('mostra coordenadas e origem quando há GPS', () => {
+  it('mostra endereço e origem quando há GPS com geocodificação', () => {
     mockHook({
       status: 'ready',
       source: 'photo_row',
@@ -68,12 +68,14 @@ describe('WoundPhotoMetadataCard', () => {
         model: 'iPhone',
         latitude: -23.55,
         longitude: -46.63,
+        address: 'Av. Paulista, Bela Vista, São Paulo',
       },
     });
 
     render(<WoundPhotoMetadataCard photo={{ ...basePhoto, location_source: 'device' }} />);
     const link = screen.getByRole('link', { name: /Ver no Google Maps/i });
     expect(link).toHaveAttribute('href', expect.stringContaining('-23.55,-46.63'));
+    expect(screen.getByText(/Av. Paulista, Bela Vista, São Paulo/i)).toBeInTheDocument();
     expect(screen.getByText(/Origem: GPS do dispositivo/i)).toBeInTheDocument();
   });
 });

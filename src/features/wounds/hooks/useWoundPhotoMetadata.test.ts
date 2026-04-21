@@ -4,10 +4,15 @@ import { useWoundPhotoMetadata } from './useWoundPhotoMetadata';
 
 const mocks = vi.hoisted(() => ({
   resolveWoundPhotoMetadataOnDemand: vi.fn(),
+  reverseGeocode: vi.fn(),
 }));
 
 vi.mock('../services/woundPhotoMetadataService', () => ({
   resolveWoundPhotoMetadataOnDemand: mocks.resolveWoundPhotoMetadataOnDemand,
+}));
+
+vi.mock('../services/geocodingService', () => ({
+  reverseGeocode: mocks.reverseGeocode,
 }));
 
 const photo = {
@@ -34,6 +39,7 @@ describe('useWoundPhotoMetadata', () => {
       metadata: null,
       source: null,
     });
+    mocks.reverseGeocode.mockResolvedValue(null);
   });
 
   it('usa metadata já hidratado da foto sem chamar serviço', async () => {
@@ -41,6 +47,17 @@ describe('useWoundPhotoMetadata', () => {
 
     await waitFor(() => expect(result.current.status).toBe('ready'));
     expect(result.current.source).toBe('memory');
+    expect(mocks.resolveWoundPhotoMetadataOnDemand).not.toHaveBeenCalled();
+  });
+
+  it('enriquece metadata hidratado com endereço quando só há coordenadas', async () => {
+    mocks.reverseGeocode.mockResolvedValue('Av. Paulista, Bela Vista, São Paulo');
+    const { result } = renderHook(() => useWoundPhotoMetadata(hydratedPhoto));
+
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    await waitFor(() =>
+      expect(result.current.metadata?.address).toBe('Av. Paulista, Bela Vista, São Paulo'),
+    );
     expect(mocks.resolveWoundPhotoMetadataOnDemand).not.toHaveBeenCalled();
   });
 
