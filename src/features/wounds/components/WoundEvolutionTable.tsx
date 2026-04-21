@@ -3,6 +3,7 @@ import { useReactToPrint } from 'react-to-print';
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui';
 import type { WoundCase, WoundEntry, WoundPatient, WoundPhoto, WoundSortOrder } from '../types';
 import { useWoundPhotoMetadata } from '../hooks/useWoundPhotoMetadata';
+import { thumbnailizeFromUrl } from '@/lib/imageUtils';
 
 interface WoundEvolutionTableProps {
   entries: WoundEntry[];
@@ -14,39 +15,97 @@ interface WoundEvolutionTableProps {
   onDeleteEntry?: (entry: WoundEntry) => void;
 }
 
+/**
+ * Componente que gera uma miniatura leve para o PDF no momento da visualização.
+ * Isso resolve o problema de PDFs gigantes (80MB+) mesmo para fotos antigas de alta resolução.
+ */
+const PrintPhotoThumbnail: React.FC<{ url: string; alt: string }> = ({ url, alt }) => {
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    thumbnailizeFromUrl(url, 600, 0.7)
+      .then(result => {
+        if (isMounted) setThumbUrl(result);
+      })
+      .catch(err => {
+        console.warn('[PrintPhotoThumbnail] Falha ao processar miniatura:', err);
+        if (isMounted) setError(true);
+      });
+    return () => { isMounted = false; };
+  }, [url]);
+
+  if (error) {
+    return (
+      <img
+        src={url}
+        alt={alt}
+        className="h-full w-full object-cover"
+        crossOrigin="anonymous"
+      />
+    );
+  }
+
+  if (!thumbUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-muted/30">
+        <div className="h-4 w-4 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={thumbUrl}
+      alt={alt}
+      className="h-full w-full object-cover"
+      // @ts-ignore
+      decoding="sync"
+    />
+  );
+};
+
 const PrintPhotoItem: React.FC<{ photo: WoundPhoto }> = ({ photo }) => {
+  // Use the hook which now prioritizes the pre-hydrated metadata from the photo object
   const { status, metadata } = useWoundPhotoMetadata(photo);
+
+  // Fallback to photo properties if metadata is not yet ready or empty
+  const displayAddress = metadata?.address;
+  const showLoading = status === 'loading' && !photo.metadata;
 
   return (
     <div className="wound-evolution-photo-item border border-border p-2 rounded-lg bg-white flex flex-col gap-2">
       <div className="aspect-square w-full rounded overflow-hidden bg-muted flex items-center justify-center">
         {photo.signed_url ? (
-          <img
-            src={photo.signed_url}
-            alt={photo.description || 'Foto da ferida'}
-            className="h-full w-full object-cover"
+          <PrintPhotoThumbnail 
+            url={photo.signed_url} 
+            alt={photo.description || 'Foto da ferida'} 
           />
         ) : (
-          <span className="text-[10px] text-muted-foreground uppercase font-bold">Sem URL</span>
+          <span className="text-[10px] text-muted-foreground uppercase font-bold text-center p-2">Sem imagem disponível</span>
         )}
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 min-h-[40px]">
         <div className="flex items-center justify-between text-[10px] font-bold text-foreground">
-          <span>{new Date(photo.captured_at).toLocaleDateString('pt-BR')}</span>
-          <span>{new Date(photo.captured_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span>{photo.captured_at ? new Date(photo.captured_at).toLocaleDateString('pt-BR') : '-'}</span>
+          <span>{photo.captured_at ? new Date(photo.captured_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
         </div>
-        {status === 'ready' && metadata?.address && (
+        
+        {displayAddress && (
           <p className="text-[9px] leading-tight text-muted-foreground">
-            <span className="font-bold">Loc: </span>
-            {metadata.address}
+            <span className="font-bold text-primary/70">Loc: </span>
+            {displayAddress}
           </p>
         )}
-        {status === 'ready' && !metadata?.address && (
+        
+        {!displayAddress && status === 'ready' && (
           <p className="text-[9px] leading-tight text-muted-foreground italic">
             Localização não disponível
           </p>
         )}
-        {status === 'loading' && (
+
+        {showLoading && (
           <p className="text-[9px] leading-tight text-muted-foreground animate-pulse">
             Carregando localização...
           </p>

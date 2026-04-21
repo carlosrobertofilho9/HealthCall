@@ -1,7 +1,8 @@
 import * as ExifReader from 'exifreader';
 import { supabase } from '@/lib/supabaseClient';
-import type { WoundPhotoExifMetadata } from '../types';
+import type { WoundPhoto, WoundPhotoExifMetadata } from '../types';
 import { reverseGeocode } from './geocodingService';
+import { getWoundPhotoMetadataCache, saveWoundPhotoMetadataCache } from './woundOfflineStore';
 
 const WOUND_STORAGE_BUCKET = 'wound-photos';
 
@@ -150,8 +151,55 @@ export async function extractWoundPhotoMetadata(blob: Blob): Promise<WoundPhotoE
 }
 
 export async function loadWoundPhotoMetadataFromSupabase(storagePath: string): Promise<WoundPhotoExifMetadata | null> {
-  const blob = await downloadWoundPhotoBlob(storagePath);
-  return extractWoundPhotoMetadata(blob);
+  try {
+    const blob = await downloadWoundPhotoBlob(storagePath);
+    return extractWoundPhotoMetadata(blob);
+  } catch (error) {
+    console.error(`Failed to load metadata from Supabase for ${storagePath}:`, error);
+    return null;
+  }
+}
+
+/**
+ * High-level function to get metadata for a photo, using caches (Memory -> IndexedDB)
+ * and falling back to Supabase download + extraction.
+ */
+export async function resolveAndCacheMetadata(photo: WoundPhoto): Promise<WoundPhotoExifMetadata | null> {
+  const photoId = photo.id;
+
+  // 1. Check Memory Cache
+  const cachedMemory = getWoundPhotoMetadataFromMemoryCache(photoId);
+  if (cachedMemory !== undefined) return cachedMemory;
+
+  // 2. Check IndexedDB Cache
+  try {
+    const cachedDB = await getWoundPhotoMetadataCache(photoId);
+    if (cachedDB) {
+      setWoundPhotoMetadataInMemoryCache(photoId, cachedDB.metadata);
+      return cachedDB.metadata;
+    }
+  } catch (err) {
+    console.warn('Error reading metadata from IndexedDB:', err);
+  }
+
+  // 3. Download and Extract
+  const metadata = await loadWoundPhotoMetadataFromSupabase(photo.storage_path);
+
+  // 4. Update Caches
+  setWoundPhotoMetadataInMemoryCache(photoId, metadata);
+  try {
+    await saveWoundPhotoMetadataCache({
+      photo_id: photoId,
+      wound_id: photo.wound_id,
+      storage_path: photo.storage_path,
+      captured_at: photo.captured_at,
+      metadata: metadata,
+    });
+  } catch (err) {
+    console.warn('Error saving metadata to IndexedDB:', err);
+  }
+
+  return metadata;
 }
 
 export function getWoundPhotoMetadataFromMemoryCache(photoId: string): WoundPhotoExifMetadata | null | undefined {

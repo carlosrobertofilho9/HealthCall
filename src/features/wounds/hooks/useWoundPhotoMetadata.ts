@@ -40,6 +40,14 @@ export function useWoundPhotoMetadata(photo: PhotoInput): WoundPhotoMetadataResu
     let isMounted = true;
     const bypassCache = reloadNonce > 0;
 
+    // Check if metadata is already present in the photo object (hydrated by service)
+    if (!bypassCache && (photo as any)?.metadata !== undefined) {
+      setMetadata((photo as any).metadata);
+      setSource('memory');
+      setStatus((photo as any).metadata ? 'ready' : 'empty');
+      return;
+    }
+
     const run = async () => {
       setStatus('loading');
       setError(null);

@@ -127,6 +127,7 @@ const WoundTimeline: React.FC<WoundTimelineProps> = ({ entries, photos }) => {
                           src={item.photos[0].signed_url || item.photos[0].storage_path} 
                           alt="Evolução"
                           className="relative z-10 h-16 w-16 rounded-2xl object-cover border-2 border-background shadow-xl group-hover/photo:scale-110 transition-all duration-300" 
+                          decoding="async"
                         />
                         <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-primary/20 opacity-0 group-hover/photo:opacity-100 transition-opacity">
                           <Activity className="h-5 w-5 text-white" />

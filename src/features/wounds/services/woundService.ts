@@ -14,6 +14,8 @@ import type {
   WoundStatusEvent,
 } from '../types';
 import { getWoundPhotoCache, saveWoundPhotoCache, deleteWoundPhotoCache } from './woundOfflineStore';
+import { resolveAndCacheMetadata } from './woundPhotoMetadataService';
+import { resizeAndCompressImage } from '@/lib/imageUtils';
 
 const WOUND_STORAGE_BUCKET = 'wound-photos';
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -426,13 +428,16 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
     const item = inputs[index];
     assertImageFile(item.file);
 
+    // Redimensiona e comprime a imagem antes do upload para economizar storage e acelerar o PDF
+    const optimizedBlob = await resizeAndCompressImage(item.file);
+
     const storagePath = buildPhotoPath(item.wound_id, item.file.name);
 
     const { error: uploadError } = await supabase.storage
       .from(WOUND_STORAGE_BUCKET)
-      .upload(storagePath, item.file, {
+      .upload(storagePath, optimizedBlob, {
         cacheControl: '31536000',
-        contentType: item.file.type || undefined,
+        contentType: 'image/jpeg', // Sempre JPEG após compressão
         upsert: false,
       });
 
@@ -462,9 +467,9 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
       throw metadataError;
     }
 
-    // Cache the blob locally immediately
+    // Cache the optimized blob locally immediately
     const photo = metadata as WoundPhoto;
-    await saveWoundPhotoCache(photo.id, item.file);
+    await saveWoundPhotoCache(photo.id, optimizedBlob);
 
     uploaded.push(photo);
   }
@@ -545,35 +550,40 @@ export async function hydratePhotosWithSignedUrls(photos: WoundPhoto[], expiresI
   const signedPhotos = await Promise.all(
     photos.map(async (photo) => {
       try {
-        // 1. Try to get from local cache first
+        // 1. Resolve and cache metadata (EXIF + Address)
+        // This is done in parallel with URL/Blob resolution
+        const metadataPromise = resolveAndCacheMetadata(photo);
+
+        // 2. Try to get photo blob from local cache
         const cachedBlob = await getWoundPhotoCache(photo.id);
+        
+        let signed_url: string | null = null;
         if (cachedBlob) {
-          return {
-            ...photo,
-            signed_url: URL.createObjectURL(cachedBlob),
-          };
+          signed_url = URL.createObjectURL(cachedBlob);
+        } else {
+          // 3. If not in cache, get signed URL and background cache it
+          signed_url = await getSignedWoundPhotoUrl(photo.storage_path, expiresInSec);
+          
+          void fetch(signed_url)
+            .then(res => res.blob())
+            .then(blob => saveWoundPhotoCache(photo.id, blob))
+            .catch(err => console.warn(`Falha ao cachear foto ${photo.id}:`, err));
         }
 
-        // 2. If not in cache, get signed URL and download to cache
-        const signedUrl = await getSignedWoundPhotoUrl(photo.storage_path, expiresInSec);
-        
-        // Background fetch the blob to cache it for next time
-        // We don't await this to avoid blocking the initial render, 
-        // but we return the signedUrl for immediate use.
-        void fetch(signedUrl)
-          .then(res => res.blob())
-          .then(blob => saveWoundPhotoCache(photo.id, blob))
-          .catch(err => console.warn(`Falha ao cachear foto ${photo.id}:`, err));
+        // Wait for metadata resolution
+        const metadata = await metadataPromise;
 
         return {
           ...photo,
-          signed_url: signedUrl,
+          signed_url,
+          metadata,
         };
       } catch (err) {
         console.error(`Erro ao hidratar foto ${photo.id}:`, err);
         return {
           ...photo,
           signed_url: null,
+          metadata: null,
         };
       }
     }),

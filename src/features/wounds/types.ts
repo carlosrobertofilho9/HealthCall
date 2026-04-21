@@ -96,6 +96,7 @@ export interface WoundPhoto {
   deleted_at: string | null;
   deleted_by: string | null;
   signed_url?: string | null;
+  metadata?: WoundPhotoExifMetadata | null;
 }
 
 export interface WoundPhotoExifMetadata {
