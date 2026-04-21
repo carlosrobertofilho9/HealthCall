@@ -700,16 +700,22 @@ export const printAppointmentReport = (
           .col-status { width: 14%; }
 
           .slot-stack {
-            display: flex;
+            --slot-badge-size: 20px;
+            display: grid;
+            grid-template-columns: var(--slot-badge-size) minmax(0, 1fr);
             align-items: center;
             gap: 6px;
             min-width: 0;
           }
 
+          .report-page.dense .slot-stack {
+            --slot-badge-size: 17px;
+          }
+
           .slot-stack strong {
-            width: 20px;
-            height: 20px;
-            display: inline-flex;
+            width: var(--slot-badge-size);
+            height: var(--slot-badge-size);
+            display: grid;
             align-items: center;
             justify-content: center;
             flex: 0 0 auto;
@@ -719,12 +725,12 @@ export const printAppointmentReport = (
             color: #0f766e;
             font-size: 9px;
             font-weight: 900;
+            line-height: 1;
+            text-align: center;
             font-variant-numeric: tabular-nums;
           }
 
           .report-page.dense .slot-stack strong {
-            width: 17px;
-            height: 17px;
             font-size: 7.7px;
           }
 

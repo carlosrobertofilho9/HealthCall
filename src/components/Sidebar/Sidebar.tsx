@@ -105,12 +105,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
   const navItems = [
     { to: '/', icon: Users, label: 'Fila', end: true },
     { to: '/appointments', icon: CalendarRange, label: 'Marcações' },
-    { to: '/display', icon: MonitorSmartphone, label: 'Display' },
     { to: '/documents', icon: Files, label: 'Documentos' },
     { to: '/reception', icon: ConciergeBell, label: 'Recepção' },
     { to: '/wounds', icon: Bandage, label: 'Curativos' },
-    { to: '/warnings', icon: BellRing, label: 'Avisos' },
     { to: '/pendencias', icon: ClipboardCheck, label: 'Pendências' },
+    { to: '/warnings', icon: BellRing, label: 'Avisos' },
+    { to: '/display', icon: MonitorSmartphone, label: 'Display' },
     { to: '/settings', icon: SlidersHorizontal, label: 'Ajustes' },
   ];
 
