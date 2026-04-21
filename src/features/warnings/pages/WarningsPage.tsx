@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { PageShell } from '@/components/layout';
 import { Button, Badge } from '@/components/ui';
 import { WarningForm } from '../components/WarningForm';
 import { useWarnings } from '../hooks/useWarnings';
@@ -59,8 +60,8 @@ const WarningsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-4 lg:flex-row lg:gap-0 lg:h-full lg:overflow-hidden lg:bg-background">
-      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:w-[320px] xl:w-[360px] lg:shrink-0 lg:rounded-none lg:border-0 lg:border-r lg:shadow-none lg:bg-transparent lg:h-full lg:overflow-hidden">
+    <PageShell desktopContained className="flex flex-col gap-4 lg:flex-row lg:gap-0">
+      <div className="flex min-w-0 flex-col overflow-x-hidden rounded-2xl border border-border bg-card shadow-sm lg:h-full lg:w-[320px] lg:shrink-0 lg:overflow-hidden lg:rounded-none lg:border-0 lg:border-r lg:bg-transparent lg:shadow-none xl:w-[360px]">
         <div className="p-6 pb-4 border-b border-border">
           <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -153,7 +154,7 @@ const WarningsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:w-[320px] xl:w-[360px] lg:shrink-0 lg:rounded-none lg:border-0 lg:border-r lg:shadow-none lg:bg-transparent lg:h-full lg:overflow-hidden">
+      <div className="flex min-w-0 flex-col overflow-x-hidden rounded-2xl border border-border bg-card shadow-sm lg:h-full lg:w-[320px] lg:shrink-0 lg:overflow-hidden lg:rounded-none lg:border-0 lg:border-r lg:bg-transparent lg:shadow-none xl:w-[360px]">
         <div className="p-6 pb-4 border-b border-border">
           <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
             <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -275,8 +276,8 @@ const WarningsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col min-h-0 lg:h-full lg:flex-1 lg:overflow-hidden">
-        <div className="bg-card rounded-2xl shadow-sm border border-border flex flex-col overflow-visible lg:h-full lg:rounded-none lg:border-0 lg:shadow-none lg:bg-transparent lg:overflow-hidden">
+      <div className="flex min-h-0 min-w-0 flex-col lg:h-full lg:flex-1 lg:overflow-hidden">
+        <div className="flex min-w-0 flex-col overflow-x-hidden rounded-2xl border border-border bg-card shadow-sm lg:h-full lg:overflow-hidden lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none">
           <div className="p-6 pb-4 border-b border-border">
             <h2 className="text-card-foreground text-xl font-bold tracking-tight flex items-center gap-3">
               <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
@@ -327,7 +328,7 @@ const WarningsPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

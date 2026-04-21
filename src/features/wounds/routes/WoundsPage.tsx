@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Modal, Tabs, TabsContent, TabsList, TabsTrigger, SectionCard } from '@/components/ui';
+import { PageShell } from '@/components/layout';
 import { Users, List, History, ClipboardList, ShieldAlert, PlusCircle, Plus, Camera, Bandage, Stethoscope, Activity, TableProperties, Table, UserPlus } from 'lucide-react';
 import BodyDiagram from '@/components/clinical/BodyDiagram';
 import WoundPatientList from '../components/WoundPatientList';
@@ -291,7 +292,7 @@ const WoundsPage: React.FC = () => {
   };
 
   return (
-    <div className="flex w-full flex-col overflow-x-hidden xl:h-full xl:overflow-hidden">
+    <PageShell className="flex flex-col xl:h-full xl:overflow-hidden">
       <div className="px-4 py-3 xl:hidden">
         <WoundSyncIndicator
           className="w-full justify-between"
@@ -758,7 +759,7 @@ const WoundsPage: React.FC = () => {
       />
 
       {loading && <p className="text-xs text-muted-foreground">Carregando dados de curativos...</p>}
-    </div>
+    </PageShell>
   );
 };
 

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { PageShell } from '@/components/layout';
 import WoundEvolutionTable from '../components/WoundEvolutionTable';
 import WoundEvolutionForm from '../components/WoundEvolutionForm';
 import { Modal } from '@/components/ui';
@@ -78,10 +79,10 @@ const WoundEvolutionTablePage: React.FC = () => {
 
   if (!woundId) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
+      <PageShell className="flex flex-col items-center justify-center p-8 text-center">
         <p className="mb-4 text-destructive">ID da ferida não fornecido.</p>
         <Button onClick={() => navigate('/wounds')}>Voltar para Curativos</Button>
-      </div>
+      </PageShell>
     );
   }
 
@@ -100,7 +101,7 @@ const WoundEvolutionTablePage: React.FC = () => {
   };
 
   return (
-    <div className="flex w-full flex-col gap-4 p-4 lg:h-full lg:overflow-y-auto">
+    <PageShell className="flex flex-col gap-4 p-4">
       <header className="flex flex-col gap-2 border-b border-border pb-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate('/wounds')} className="-ml-2">
@@ -169,7 +170,7 @@ const WoundEvolutionTablePage: React.FC = () => {
       </Modal>
 
       {loading && <p className="text-xs text-muted-foreground">Carregando dados de curativos...</p>}
-    </div>
+    </PageShell>
   );
 };
 

@@ -27,7 +27,7 @@ export interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
 const Tabs = ({ value, onValueChange, className, children, ...props }: TabsProps) => {
   return (
     <TabsContext.Provider value={{ value, onValueChange }}>
-      <div className={cn('w-full', className)} {...props}>
+      <div className={cn('w-full min-w-0 max-w-full', className)} {...props}>
         {children}
       </div>
     </TabsContext.Provider>
@@ -41,7 +41,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(({ className, .
     <div
       ref={ref}
       role="tablist"
-      className={cn('inline-flex items-center border p-1 shadow-sm gap-1', DS_COLOR.surface.card, DS_RADIUS.pill, className)}
+      className={cn('inline-flex max-w-full items-center gap-1 border p-1 shadow-sm', DS_COLOR.surface.card, DS_RADIUS.pill, className)}
       {...props}
     />
   );
@@ -65,7 +65,7 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
         aria-selected={isActive}
         data-state={isActive ? 'active' : 'inactive'}
         className={cn(
-          'inline-flex min-h-11 items-center justify-center gap-2 px-3 text-sm font-semibold transition-colors',
+          'inline-flex min-h-11 min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden px-3 text-sm font-semibold transition-colors',
           DS_RADIUS.pill,
           isActive
             ? DS_COLOR.interactive.active

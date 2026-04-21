@@ -3,6 +3,7 @@ import BodyDiagram from '@/components/clinical/BodyDiagram';
 import {
   Button,
   Card,
+  DatePicker,
   Input,
   Select,
   SelectContent,
@@ -201,13 +202,13 @@ const NewWoundForm: React.FC<NewWoundFormProps> = ({
                   <Calendar className="h-3 w-3" />
                   Data de início *
                 </label>
-                <Input
-                  type="date"
+                <DatePicker
                   icon={<Calendar className="h-4 w-4" />}
                   value={startedAt}
-                  onChange={(event) => setStartedAt(event.target.value)}
+                  onChange={setStartedAt}
                   required
                   className="font-medium"
+                  placeholder="Selecione a data"
                 />
               </div>
 

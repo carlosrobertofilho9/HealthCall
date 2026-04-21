@@ -101,7 +101,7 @@ const ItemListField: React.FC<ItemListFieldProps> = ({ fieldKey, label, template
   };
 
   return (
-    <div key={fieldKey} className="space-y-3">
+    <div key={fieldKey} className="min-w-0 space-y-3">
       <Label className="flex items-center gap-2 pl-1 text-sm font-medium text-primary">
         <List size={16} className="text-primary/70" />
         {config?.label || label}
@@ -118,14 +118,14 @@ const ItemListField: React.FC<ItemListFieldProps> = ({ fieldKey, label, template
               animate="visible"
               exit="exit"
               layout
-              className="group flex items-center gap-3 rounded-lg border border-border bg-secondary/30 px-3 py-2 transition-all hover:bg-secondary/50"
-            >
-              <span className="w-5 text-xs font-bold text-primary/70">{index + 1}.</span>
-              <span className="flex-1 text-sm text-foreground">{item.name}</span>
+            className="group flex min-w-0 items-center gap-3 rounded-lg border border-border bg-secondary/30 px-3 py-2 transition-all hover:bg-secondary/50"
+          >
+            <span className="w-5 text-xs font-bold text-primary/70">{index + 1}.</span>
+              <span className="min-w-0 flex-1 truncate text-sm text-foreground">{item.name}</span>
               <Badge className="border-chart-3/20 bg-chart-3/10 text-chart-3 shadow-xs">
                 {item.quantity} {config?.qtyUnit || 'un.'}
               </Badge>
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <motion.div whileTap={{ scale: 0.9 }}>
                 <Button
                   type="button"
                   variant="ghost"
@@ -142,8 +142,8 @@ const ItemListField: React.FC<ItemListFieldProps> = ({ fieldKey, label, template
         </AnimatePresence>
       </div>
 
-      <div className="flex gap-2 items-end">
-        <div className="flex-1">
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="min-w-0 flex-1">
           <Label className="mb-1 block pl-1 text-xs text-muted-foreground">{config?.itemLabel || 'Item'}</Label>
           <div className="relative">
             <Input
@@ -165,7 +165,7 @@ const ItemListField: React.FC<ItemListFieldProps> = ({ fieldKey, label, template
             )}
           </div>
         </div>
-        <div className="w-24">
+        <div className="min-w-0 sm:w-24">
           <Label className="mb-1 block pl-1 text-xs text-muted-foreground">{config?.qtyLabel || 'Qtd'}</Label>
           <Input
             type="number"
@@ -178,13 +178,13 @@ const ItemListField: React.FC<ItemListFieldProps> = ({ fieldKey, label, template
             className="h-10 rounded-lg bg-input/70 text-center text-sm focus:bg-input transition-all"
           />
         </div>
-        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
+        <motion.div whileTap={{ scale: 0.95 }}>
           <Button
             type="button"
             size="sm"
             onClick={handleAdd}
             disabled={!newName.trim()}
-            className="h-10 rounded-lg px-3 shadow-sm hover:shadow-md"
+            className="h-10 w-full rounded-lg px-3 shadow-sm hover:shadow-md sm:w-auto"
           >
             <Plus size={16} />
             <span className="text-sm">Adicionar</span>
@@ -356,7 +356,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6 overflow-x-hidden">
       <motion.div 
         initial="hidden"
         animate="visible"
@@ -367,7 +367,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
             }
           }
         }}
-        className="grid gap-5"
+        className="grid min-w-0 gap-5"
       >
         {keys.map((key) => {
           const hint = fieldHints[key];
@@ -395,9 +395,9 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                     })()}
                   >
                     {({ open, value: val }) => (
-                      <div className="rounded-xl border border-border bg-secondary/20 p-3 transition-colors hover:bg-secondary/30">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
+                  <div className="min-w-0 rounded-xl border border-border bg-secondary/20 p-3 transition-colors hover:bg-secondary/30">
+                        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
                             <p className="text-xs font-medium text-muted-foreground">Data inicial do monitoramento</p>
                             <p className="text-sm font-semibold text-foreground">
                               {val ? new Date(val + 'T12:00:00').toLocaleDateString('pt-BR', {
@@ -407,7 +407,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                               }) : '___/___'}
                             </p>
                           </div>
-                          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <motion.div whileTap={{ scale: 0.95 }}>
                             <Button
                               type="button"
                               variant="secondary"
@@ -446,7 +446,7 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
               return (
                 <motion.div
                   key={key}
-                  whileHover={{ scale: 1.01, backgroundColor: 'rgba(var(--secondary), 0.5)' }}
+                  whileHover={{ backgroundColor: 'rgba(var(--secondary), 0.5)' }}
                   className="flex items-center space-x-3 rounded-xl border border-border bg-secondary/25 p-3 transition-all"
                 >
                   <input
@@ -485,7 +485,6 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
                             className="h-40 w-full bg-background/40 object-contain"
                           />
                           <motion.div 
-                            whileHover={{ scale: 1.1 }} 
                             whileTap={{ scale: 0.9 }} 
                             className="absolute right-2 top-2"
                           >
@@ -618,4 +617,3 @@ export const DynamicFieldsForm: React.FC<DynamicFieldsFormProps> = ({
     </div>
   );
 };
-

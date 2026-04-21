@@ -35,7 +35,6 @@ const hapticTap = {
 };
 
 const hapticHover = {
-  scale: 1.02,
   transition: { type: 'spring', stiffness: 400, damping: 25 }
 };
 
@@ -63,7 +62,7 @@ export const TemplatesPanel: React.FC<TemplatesPanelProps> = ({
   isLoading,
 }) => {
   return (
-    <SectionCard title="Modelos" icon={<FileText size={20} />} className="min-h-[28rem] lg:h-full lg:min-h-0">
+    <SectionCard title="Modelos" icon={<FileText size={20} />} className="min-h-[28rem] min-w-0 lg:h-full lg:min-h-0">
       <TemplateList 
         templates={templates} 
         onSelect={onSelectTemplate} 
@@ -99,7 +98,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
     <SectionCard
       title={selectedTemplate?.title || 'Preenchimento'}
       icon={<Edit size={20} />}
-      className="min-h-[28rem] lg:h-full lg:min-h-0"
+      className="min-h-[28rem] min-w-0 lg:h-full lg:min-h-0"
       contentClassName="p-4 lg:p-5"
     >
       <AnimatePresence mode="wait">
@@ -111,7 +110,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
             animate="visible"
             className="flex min-h-0 flex-col lg:h-full"
           >
-            <div className="mb-5 flex items-center justify-between gap-3 border-b border-border pb-3">
+            <div className="mb-5 flex min-w-0 items-center justify-between gap-3 border-b border-border pb-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium leading-none text-primary flex items-center gap-1.5">
                   <Sparkles size={14} className="text-primary/70" />
@@ -127,7 +126,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
                   onClick={onClearForm}
                   whileTap={hapticTap}
                   whileHover={hapticHover}
-                  className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-destructive/5 hover:text-destructive"
+                  className="h-8 shrink-0 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-destructive/5 hover:text-destructive"
                   disabled={isGenerating}
                 >
                   <Eraser size={14} />
@@ -136,7 +135,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
               </motion.div>
             </div>
 
-            <div className="custom-scrollbar min-h-0 flex-1 pr-1 lg:overflow-y-auto">
+            <div className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-x-hidden pr-1 lg:overflow-y-auto">
               <DynamicFieldsForm
                 templateText={selectedTemplate.templateText}
                 values={values}
@@ -265,7 +264,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     <SectionCard
       title="Visualização"
       icon={<Eye size={20} />}
-      className={cn('min-h-[28rem] lg:h-full lg:min-h-0', className)}
+      className={cn('min-h-[28rem] min-w-0 lg:h-full lg:min-h-0', className)}
       contentClassName="relative bg-background/30"
     >
       <AnimatePresence mode="wait">
@@ -275,7 +274,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             variants={panelVariants}
             initial="hidden"
             animate="visible"
-            className="h-[58vh] min-h-0 w-full overflow-hidden bg-background lg:h-full"
+            className="h-[58vh] min-h-0 w-full min-w-0 overflow-hidden bg-background lg:h-full"
           >
             <PDFViewer width="100%" height="100%" showToolbar className="h-full w-full rounded-none border-0">
               <DocumentPdf
@@ -327,4 +326,3 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
     </SectionCard>
   );
 };
-

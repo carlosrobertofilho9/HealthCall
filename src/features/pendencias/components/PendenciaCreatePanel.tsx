@@ -15,6 +15,7 @@ import {
   Textarea,
   FormSection,
   Badge,
+  DatePicker,
   Select,
   SelectContent,
   SelectItem,
@@ -157,11 +158,11 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
 
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Prazo</p>
-              <input
-                type="date"
+              <DatePicker
                 value={prazo}
-                onChange={(event) => onPrazoChange(event.target.value)}
-                className={cn('h-11 w-full border border-input bg-input px-4 text-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none', DS_RADIUS.section)}
+                onChange={onPrazoChange}
+                placeholder="Selecione o prazo"
+                className="w-full"
               />
             </div>
           </div>

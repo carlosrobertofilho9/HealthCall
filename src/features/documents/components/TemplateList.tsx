@@ -118,7 +118,6 @@ const hapticTap = {
 };
 
 const hapticHover = {
-  scale: 1.02,
   y: -2,
   transition: { type: 'spring', stiffness: 400, damping: 25 }
 };
@@ -172,9 +171,9 @@ export const TemplateList: React.FC<TemplateListProps> = ({
   );
 
   return (
-    <div className="flex flex-col lg:h-full">
+    <div className="flex min-w-0 max-w-full flex-col overflow-x-hidden lg:h-full">
       <div className="space-y-3 border-b border-border p-4 pb-3 pt-5">
-        <div className="flex items-center justify-between px-1">
+        <div className="flex min-w-0 items-center justify-between gap-3 px-1">
              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Buscar Modelos
              </span>
@@ -185,7 +184,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -10 }}
-                    className="text-xs font-medium text-primary"
+                    className="shrink-0 text-xs font-medium text-primary"
                    >
                       {totalResults} {totalResults === 1 ? 'resultado' : 'resultados'}
                    </motion.span>
@@ -217,7 +216,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
         </div>
       </div>
 
-      <div className="custom-scrollbar flex-1 space-y-6 p-4 lg:overflow-y-auto">
+      <div className="custom-scrollbar min-w-0 flex-1 space-y-6 overflow-x-hidden p-4 lg:overflow-y-auto">
         <AnimatePresence mode="popLayout">
           {isLoading ? (
             <motion.div 
@@ -308,9 +307,9 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                           whileTap={hapticTap}
                           onClick={() => onSelect(template)}
                           className={cn(
-                            "group relative flex cursor-pointer items-start gap-3 overflow-hidden rounded-xl border p-3 transition-all duration-300",
+                            "group relative flex min-w-0 cursor-pointer items-start gap-3 overflow-hidden rounded-xl border p-3 transition-all duration-300",
                             isSelected
-                              ? "border-primary/40 bg-secondary shadow-lg shadow-primary/5 ring-1 ring-primary/20 scale-[1.01]"
+                              ? "border-primary/40 bg-secondary shadow-lg shadow-primary/5 ring-1 ring-primary/20"
                               : "border-transparent bg-card hover:border-primary/10"
                           )}
                         >
@@ -324,14 +323,14 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                           <div className={cn(
                             "mt-0.5 shrink-0 rounded-lg border p-2.5 transition-all duration-300",
                             isSelected 
-                              ? "border-primary/20 bg-background/50 text-primary shadow-inner scale-110"
+                              ? "border-primary/20 bg-background/50 text-primary shadow-inner"
                               : "border-border bg-background/30 text-muted-foreground group-hover:border-primary/20 group-hover:text-primary group-hover:bg-background/50"
                           )}>
                             {template.icon ? <template.icon size={18} /> : <FileText size={18} />}
                           </div>
 
                           <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-                            <div className="flex justify-between items-start gap-2">
+                            <div className="flex min-w-0 items-start justify-between gap-2">
                               <HighlightedText 
                                 text={template.title} 
                                 searchTerm={searchTerm}
@@ -394,4 +393,3 @@ export const TemplateList: React.FC<TemplateListProps> = ({
     </div>
   );
 };
-

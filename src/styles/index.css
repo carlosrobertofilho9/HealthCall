@@ -525,18 +525,27 @@ html[data-theme="safira"] {
 
   html {
     background: var(--background);
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-background text-foreground;
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
+    overflow-x: hidden;
     font-family: "Spline Sans", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
+    width: 100%;
+    max-width: 100%;
     min-height: 100vh;
+    overflow-x: hidden;
   }
 
   html[data-scroll-mode="document"],
@@ -548,6 +557,17 @@ html[data-theme="safira"] {
   html[data-scroll-mode="document"] body {
     overflow-x: hidden;
     overflow-y: auto;
+  }
+}
+
+@media (max-width: 1023px) {
+  input,
+  textarea,
+  select,
+  button[role="combobox"],
+  .form-input,
+  .form-textarea {
+    font-size: 16px !important;
   }
 }
 

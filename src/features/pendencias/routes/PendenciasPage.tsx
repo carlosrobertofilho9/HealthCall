@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
 import { PENDENCIA_RESPONSAVEL_OPTIONS } from '@/constants';
+import { PageShell } from '@/components/layout';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { cn, isValidCNS, isValidCPF } from '@/lib/utils';
@@ -323,7 +324,7 @@ const PendenciasPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(var(--app-visual-viewport-height,100dvh)-4rem)] min-h-0 w-full flex-col overflow-hidden bg-background lg:h-full">
+    <PageShell mobileContained desktopContained className="flex flex-col">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
         <aside
           className={cn(
@@ -437,20 +438,20 @@ const PendenciasPage: React.FC = () => {
           value={mobileTab}
           onValueChange={(value) => setMobileTab(value as 'new' | 'existing')}
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="new">
+          <TabsList className="grid w-full min-w-0 grid-cols-2">
+            <TabsTrigger value="new" className="min-w-0">
               <CirclePlus className="h-4 w-4 shrink-0" />
               Nova
             </TabsTrigger>
 
-            <TabsTrigger value="existing">
+            <TabsTrigger value="existing" className="min-w-0">
               <ListTodo className="h-4 w-4 shrink-0" />
               Pendências
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

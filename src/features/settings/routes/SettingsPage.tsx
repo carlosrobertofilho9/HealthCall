@@ -3,6 +3,7 @@ import { useSettings as useLocalSettings } from '@/features/settings/hooks/useSe
 import { ThemeSelector } from '@/features/settings/components/ThemeSelector';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import { UserProfileSection } from '@/features/settings/components/UserProfileSection';
+import { PageShell } from '@/components/layout';
 import {
   Tabs,
   TabsList,
@@ -29,8 +30,8 @@ const SettingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState('perfil');
 
   return (
-    <div className="w-full h-full overflow-y-auto p-4 lg:p-6">
-      <div className="space-y-6">
+    <PageShell className="p-4 lg:p-6">
+      <div className="min-w-0 space-y-6">
         <header className="space-y-1">
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Configurações
@@ -41,12 +42,12 @@ const SettingsPage: React.FC = () => {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-8 w-fit bg-secondary/50 p-1.5 border-none shadow-none">
-            <TabsTrigger value="perfil" className="px-6 py-2.5 data-[state=active]:shadow-lg transition-all duration-300">
+          <TabsList className="mb-8 w-full min-w-0 border-none bg-secondary/50 p-1.5 shadow-none sm:w-fit">
+            <TabsTrigger value="perfil" className="min-w-0 flex-1 px-4 py-2.5 transition-all duration-300 data-[state=active]:shadow-lg sm:flex-none sm:px-6">
               <UserCircle2 size={18} className="mr-2" />
               Perfil
             </TabsTrigger>
-            <TabsTrigger value="aparencia" className="px-6 py-2.5 data-[state=active]:shadow-lg transition-all duration-300">
+            <TabsTrigger value="aparencia" className="min-w-0 flex-1 px-4 py-2.5 transition-all duration-300 data-[state=active]:shadow-lg sm:flex-none sm:px-6">
               <Palette size={18} className="mr-2" />
               Aparência
             </TabsTrigger>
@@ -75,7 +76,7 @@ const SettingsPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

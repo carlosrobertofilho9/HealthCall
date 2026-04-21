@@ -9,6 +9,7 @@ import { usePatientQueue } from '@/features/dashboard/hooks/usePatientQueue';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import AppointmentsColumn from '@/features/dashboard/components/AppointmentsColumn';
 import { updateAppointmentStatus } from '@/features/appointments/services/appointmentService';
+import { PageShell } from '@/components/layout';
 import { Activity, CheckCircle2, Clock3, Users } from 'lucide-react';
 
 /**
@@ -102,10 +103,10 @@ const HomePage: React.FC = () => {
 
        await updateAppointmentStatus(appointment.id, 'Compareceu');
        return true;
-    };
+	};
 
 	return (
-		<div className="flex flex-col gap-4 pb-4 lg:pb-0 lg:h-full lg:overflow-hidden lg:gap-0 lg:bg-background">
+		<PageShell desktopContained className="flex flex-col gap-4 pb-4 lg:gap-0 lg:pb-0">
 			<header className="rounded-2xl border border-border bg-card p-4 shadow-sm lg:rounded-none lg:border-0 lg:border-b lg:shadow-none lg:bg-transparent lg:shrink-0">
 				<div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
 					<div>
@@ -211,7 +212,7 @@ const HomePage: React.FC = () => {
 					patientName="toda a fila"
 				/>
 			)}
-		</div>
+		</PageShell>
 	);
 };
 

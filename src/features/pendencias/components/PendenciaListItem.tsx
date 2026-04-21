@@ -17,6 +17,7 @@ import {
   Badge,
   Textarea,
   ActionBar,
+  DatePicker,
   Select,
   SelectContent,
   SelectItem,
@@ -169,11 +170,11 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                   </SelectContent>
                 </Select>
 
-                <input
-                  type="date"
+                <DatePicker
                   value={editPrazo}
-                  onChange={(event) => onEditPrazoChange(event.target.value)}
-                  className={cn('h-10 w-full border border-input bg-input px-4 text-foreground focus:ring-2 focus:ring-ring transition-all focus:outline-none', DS_RADIUS.section)}
+                  onChange={onEditPrazoChange}
+                  placeholder="Prazo"
+                  className="w-full"
                 />
               </div>
 

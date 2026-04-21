@@ -6,9 +6,9 @@ import {
   PreviewPanel,
   TemplatesPanel,
 } from '../components/DocumentsComposerPanels';
-import { MouseParallax } from '../components/MouseParallax';
 import { useDocumentsComposer } from '../hooks/useDocumentsComposer';
 import { mockTemplates, Template } from '../utils/mockData';
+import { PageShell } from '@/components/layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
 
 const DocumentsPage: React.FC = () => {
@@ -71,18 +71,18 @@ const DocumentsPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex w-full flex-col gap-4 lg:flex-row lg:gap-0 lg:h-full lg:overflow-hidden lg:bg-background">
+    <PageShell desktopContained className="flex flex-col gap-4 lg:flex-row lg:gap-0">
       {/* Mobile View */}
-      <div className="lg:hidden p-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="w-full justify-between">
-            <TabsTrigger value="templates" className="flex-1">
+      <div className="min-w-0 overflow-x-hidden p-3 sm:p-4 lg:hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 space-y-4">
+          <TabsList className="w-full min-w-0 justify-between">
+            <TabsTrigger value="templates" className="min-w-0 flex-1 px-2">
               Modelos
             </TabsTrigger>
-            <TabsTrigger value="form" className="flex-1">
+            <TabsTrigger value="form" className="min-w-0 flex-1 px-2">
               Preencher
             </TabsTrigger>
-            <TabsTrigger value="preview" className="flex-1">
+            <TabsTrigger value="preview" className="min-w-0 flex-1 px-2">
               Visualizar
             </TabsTrigger>
           </TabsList>
@@ -145,7 +145,7 @@ const DocumentsPage: React.FC = () => {
           className="lg:border-0 lg:shadow-none lg:rounded-none"
         />
       </div>
-    </div>
+    </PageShell>
   );
 };
 

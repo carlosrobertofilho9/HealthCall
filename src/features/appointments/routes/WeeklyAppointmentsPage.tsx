@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui';
+import { PageShell } from '@/components/layout';
 import AppointmentsNav from '../components/AppointmentsNav';
 import {
   addDays,
@@ -146,15 +147,15 @@ const WeeklyAppointmentsPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-full mx-auto space-y-6 lg:flex lg:flex-col lg:h-full lg:overflow-hidden lg:space-y-0 lg:bg-background">
+    <PageShell desktopContained className="mx-auto space-y-6 lg:flex lg:flex-col lg:space-y-0">
       {/* ══════════════ TOP NAV ══════════════ */}
-      <div className="lg:-mx-2 lg:px-6 lg:py-4 lg:bg-card lg:border-b lg:border-border lg:shrink-0">
-        <div className="lg:w-full lg:mx-auto">
+      <div className="bg-card px-4 py-4 mb-4 md:mb-0 md:py-6 lg:mb-0 lg:-mx-2 lg:px-6 border-b border-border shrink-0 print:hidden">
+        <div className="w-full mx-auto">
           <AppointmentsNav />
         </div>
       </div>
 
-      <div className="lg:flex-1 lg:overflow-y-auto custom-scrollbar lg:pt-6 lg:px-6">
+      <div className="min-w-0 lg:flex-1 lg:overflow-y-auto custom-scrollbar lg:pt-6 lg:px-6">
       {/* Week Header */}
       <section className="rounded-2xl bg-card border border-border p-4 sm:p-6 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:p-0 lg:mb-6 lg:max-w-7xl lg:mx-auto">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -227,7 +228,7 @@ const WeeklyAppointmentsPage: React.FC = () => {
         onClose={() => setSelectedSummary(null)}
         onStatusChange={handleAppointmentStatusUpdated}
       />
-    </div>
+    </PageShell>
   );
 };
 

@@ -19,18 +19,18 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   headerActions,
 }) => {
   return (
-    <div className={cn('flex flex-col flex-1 lg:h-full lg:overflow-hidden bg-background lg:bg-transparent rounded-xl border border-border shadow-sm lg:border-0 lg:shadow-none lg:rounded-none', className)}>
-      <div className="shrink-0 border-b border-border p-6 pb-4 flex items-center justify-between gap-4">
-        <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight text-card-foreground">
-          <div className="p-2.5 bg-secondary rounded-lg border border-border shadow-inner flex items-center justify-center text-muted-foreground">
+    <div className={cn('flex min-w-0 max-w-full flex-1 flex-col overflow-x-hidden rounded-xl border border-border bg-background shadow-sm lg:h-full lg:overflow-hidden lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none', className)}>
+      <div className="flex min-w-0 shrink-0 items-center justify-between gap-4 border-b border-border p-6 pb-4">
+        <h3 className="flex min-w-0 items-center gap-3 text-xl font-bold tracking-tight text-card-foreground">
+          <div className="flex shrink-0 items-center justify-center rounded-lg border border-border bg-secondary p-2.5 text-muted-foreground shadow-inner">
             {icon}
           </div>
-          {title}
+          <span className="min-w-0 truncate">{title}</span>
         </h3>
-        {headerActions && <div>{headerActions}</div>}
+        {headerActions && <div className="shrink-0">{headerActions}</div>}
       </div>
 
-      <div className={cn('flex min-h-0 flex-1 flex-col p-0 lg:overflow-hidden', contentClassName)}>
+      <div className={cn('flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-x-hidden p-0 lg:overflow-hidden', contentClassName)}>
         {children}
       </div>
     </div>

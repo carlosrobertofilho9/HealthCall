@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui';
+import { PageShell } from '@/components/layout';
 import { ChevronLeft } from 'lucide-react';
 import WoundEvolutionForm from '../components/WoundEvolutionForm';
 import { useWounds } from '../hooks/useWounds';
@@ -74,15 +75,15 @@ const WoundEvolutionPage: React.FC = () => {
 
   if (!woundId) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
+      <PageShell className="flex flex-col items-center justify-center p-8 text-center">
         <p className="mb-4 text-destructive">ID da ferida não fornecido.</p>
         <Button onClick={() => navigate('/wounds')}>Voltar para Curativos</Button>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="flex w-full flex-col gap-4 p-4 lg:h-full lg:overflow-y-auto">
+    <PageShell className="flex flex-col gap-4 p-4">
       <header className="flex flex-col gap-2 border-b border-border pb-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate('/wounds')} className="-ml-2">
@@ -112,7 +113,7 @@ const WoundEvolutionPage: React.FC = () => {
         }}
       />
 
-      <div className="mx-auto w-full max-w-4xl">
+      <div className="mx-auto w-full min-w-0 max-w-4xl">
         <WoundEvolutionForm
           woundId={woundId}
           lastEntry={lastEntry}
@@ -123,7 +124,7 @@ const WoundEvolutionPage: React.FC = () => {
           onCancel={() => navigate('/wounds')}
         />
       </div>
-    </div>
+    </PageShell>
   );
 };
 

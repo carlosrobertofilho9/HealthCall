@@ -27,13 +27,14 @@ import { toast } from 'sonner';
 import type { CapacityAnalyticsFilters, CapacityStatusFilter } from '@/types';
 import {
   Button,
-  Input,
+  DatePicker,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
 } from '@/components/ui';
+import { PageShell } from '@/components/layout';
 import AppointmentsNav from '../components/AppointmentsNav';
 import { addDays, getCapacityAnalyticsForDateRange, getWeekStart } from '../services/appointmentService';
 import {
@@ -141,16 +142,16 @@ const CapacityDashboardPage: React.FC = () => {
   }, [analytics]);
 
   return (
-    <div className="w-full mx-auto space-y-6 lg:flex lg:flex-col lg:h-full lg:overflow-hidden lg:space-y-0 lg:bg-background">
+    <PageShell desktopContained className="flex flex-col h-full lg:flex-col">
       {/* ══════════════ TOP NAV ══════════════ */}
-      <div className="lg:-mx-2 lg:px-6 lg:py-4 lg:bg-card lg:border-b lg:border-border lg:shrink-0">
-        <div className="lg:w-full lg:mx-auto">
+      <div className="bg-card px-4 py-4 md:py-6 lg:mb-0 lg:-mx-2 lg:px-6 border-b border-border shrink-0 print:hidden">
+        <div className="w-full mx-auto">
           <AppointmentsNav />
         </div>
       </div>
 
-      <div className="lg:flex-1 lg:overflow-y-auto custom-scrollbar lg:pt-6 lg:px-6">
-      <section className="rounded-2xl bg-card border border-border p-4 sm:p-6 space-y-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:p-0 lg:max-w-7xl lg:mx-auto">
+      <div className="flex min-w-0 flex-1 flex-col gap-6 overflow-y-auto p-4 custom-scrollbar lg:p-6 lg:pt-6">
+        <section className="rounded-2xl bg-card border border-border p-4 sm:p-6 space-y-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:p-0 w-full lg:max-w-7xl lg:mx-auto">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="text-sm font-medium text-primary">Dashboard de capacidade analítica</p>
@@ -175,24 +176,24 @@ const CapacityDashboardPage: React.FC = () => {
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="min-w-0">
-            <Input
-              type="date"
+            <DatePicker
               value={formatInputDate(rangeStart)}
-              onChange={event => setRangeStart(parseInputDate(event.target.value))}
+              onChange={value => setRangeStart(parseInputDate(value))}
               className="h-11 min-w-0"
               icon={<CalendarDays className="h-4 w-4" />}
-              aria-label="Data inicial"
+              placeholder="Data inicial"
+              allowClear={false}
             />
           </div>
 
           <div className="min-w-0">
-            <Input
-              type="date"
+            <DatePicker
               value={formatInputDate(rangeEnd)}
-              onChange={event => setRangeEnd(parseInputDate(event.target.value))}
+              onChange={value => setRangeEnd(parseInputDate(value))}
               className="h-11 min-w-0"
               icon={<CalendarDays className="h-4 w-4" />}
-              aria-label="Data final"
+              placeholder="Data final"
+              allowClear={false}
             />
           </div>
 
@@ -238,13 +239,13 @@ const CapacityDashboardPage: React.FC = () => {
       </section>
 
       {isLoading ? (
-        <div className="rounded-2xl bg-card border border-border p-12 text-center lg:max-w-7xl lg:mx-auto">
+        <div className="rounded-2xl bg-card border border-border p-12 text-center w-full lg:max-w-7xl lg:mx-auto">
           <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Carregando capacidade analítica...</p>
         </div>
       ) : analytics ? (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 lg:max-w-7xl lg:mx-auto lg:mb-6">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 w-full lg:max-w-7xl lg:mx-auto">
             <KpiCard
               icon={<BarChart3 className="h-5 w-5 text-primary" />}
               label="Taxa de ocupação"
@@ -279,7 +280,7 @@ const CapacityDashboardPage: React.FC = () => {
             />
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-2 lg:max-w-7xl lg:mx-auto lg:mb-6">
+          <section className="grid gap-6 xl:grid-cols-2 w-full lg:max-w-7xl lg:mx-auto">
             <ChartCard title="Evolução diária (ocupação x comparecimento)">
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={analytics.trend}>
@@ -308,7 +309,7 @@ const CapacityDashboardPage: React.FC = () => {
             </ChartCard>
           </section>
 
-          <section className="grid items-start gap-6 xl:grid-cols-[1.35fr_0.65fr] lg:max-w-7xl lg:mx-auto lg:mb-6 lg:pb-6">
+          <section className="grid items-start gap-6 xl:grid-cols-[1.35fr_0.65fr] w-full lg:max-w-7xl lg:mx-auto">
             <div className="space-y-6">
               <ChartCard title="Distribuição por turno">
                 <ResponsiveContainer width="100%" height={300}>
@@ -377,12 +378,12 @@ const CapacityDashboardPage: React.FC = () => {
           </section>
         </>
       ) : (
-        <div className="rounded-2xl bg-card border border-border p-10 text-center text-sm text-muted-foreground lg:max-w-7xl lg:mx-auto">
+        <div className="rounded-2xl bg-card border border-border p-10 text-center text-sm text-muted-foreground w-full lg:max-w-7xl lg:mx-auto">
           Não há dados para o período informado.
         </div>
       )}
       </div>
-    </div>
+    </PageShell>
   );
 };
 

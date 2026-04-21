@@ -23,6 +23,7 @@ import PrintHeader from '../components/PrintHeader';
 import { printPatientList } from '@/components/PatientQueue/printUtils';
 import { printAppointmentReport, type ReportPeriodFilter } from '@/components/PatientQueue/printReportUtils';
 import { printHomeVisitRoute } from '@/components/PatientQueue/printHomeVisitRouteUtils';
+import { PageShell } from '@/components/layout';
 import { Badge } from '@/components/ui';
 import type { Appointment, AppointmentStatus } from '@/types';
 import { toast } from 'sonner';
@@ -248,19 +249,19 @@ const AppointmentsPage: React.FC = () => {
   }, [isReportMenuOpen, isPatientListMenuOpen]);
 
   return (
-    <div className="w-full mx-auto print:max-w-none lg:flex lg:flex-col lg:h-full lg:overflow-hidden lg:bg-background">
+    <PageShell desktopContained className="mx-auto print:max-w-none lg:flex lg:flex-col">
       {/* Print header */}
       <PrintHeader selectedDate={selectedDate} dayConfig={dayConfig} slotStats={slotStats} />
 
       {/* ══════════════ TOP NAV ══════════════ */}
-      <div className="mb-4 print:hidden lg:mb-0 lg:-mx-2 lg:px-6 lg:py-4 lg:bg-card lg:border-b lg:border-border lg:shrink-0">
-        <div className="lg:w-full lg:mx-auto">
+      <div className="bg-card px-4 py-4 mb-4 md:py-6 lg:mb-0 lg:-mx-2 lg:px-6 border-b border-border shrink-0 print:hidden">
+        <div className="w-full mx-auto">
           <AppointmentsNav />
         </div>
       </div>
 
       {/* ══════════════ MAIN LAYOUT ══════════════ */}
-      <div className="flex flex-col lg:flex-row gap-4 print:block lg:flex-1 lg:overflow-hidden lg:gap-0 lg:w-full">
+      <div className="flex min-w-0 flex-col gap-4 print:block lg:w-full lg:flex-1 lg:flex-row lg:gap-0 lg:overflow-hidden">
 
         {/* ── LEFT PANEL (sticky on desktop) ── */}
         <aside className="w-full lg:w-[320px] xl:w-[360px] shrink-0 print:hidden lg:flex lg:flex-col lg:h-full lg:border-r lg:border-border lg:bg-transparent">
@@ -451,7 +452,7 @@ const AppointmentsPage: React.FC = () => {
               <div className="lg:hidden">
                 {isSearchOpen ? (
                   <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
+                    <div className="relative min-w-0 flex-1">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <input
                         autoFocus
@@ -459,7 +460,7 @@ const AppointmentsPage: React.FC = () => {
                         placeholder="Buscar paciente, CPF, ACS..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-3 rounded-xl bg-card border border-border text-card-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:border-primary transition-colors"
+                        className="w-full rounded-xl border border-border bg-card py-3 pl-9 pr-4 text-card-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none"
                       />
                     </div>
                     <button
@@ -472,10 +473,10 @@ const AppointmentsPage: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => setIsSearchOpen(true)}
-                    className="flex items-center gap-2 w-full px-4 py-3 rounded-xl bg-card border border-border text-muted-foreground text-sm hover:border-primary transition-colors"
+                    className="flex w-full min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-muted-foreground transition-colors hover:border-primary"
                   >
                     <Search className="w-4 h-4" />
-                    <span>Buscar paciente, CPF ou ACS...</span>
+                    <span className="min-w-0 truncate">Buscar paciente, CPF ou ACS...</span>
                     {searchQuery && (
                       <span className="ml-auto text-primary font-semibold text-xs">
                         {filteredSlots.filter(s => s.appointment).length} resultado(s)
@@ -493,7 +494,7 @@ const AppointmentsPage: React.FC = () => {
                   placeholder="Buscar paciente, CPF ou ACS..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-card border border-border text-card-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:border-primary transition-colors"
+                  className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-card-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none"
                 />
                 {searchQuery && (
                   <button
@@ -646,7 +647,7 @@ const AppointmentsPage: React.FC = () => {
           isLoading={isBlockingDay}
         />
       )}
-    </div>
+    </PageShell>
   );
 };
 
