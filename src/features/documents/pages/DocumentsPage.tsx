@@ -71,8 +71,9 @@ const DocumentsPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex w-full flex-col gap-4 xl:h-full xl:overflow-hidden">
-      <div className="xl:hidden">
+    <div className="flex w-full flex-col gap-4 lg:flex-row lg:gap-0 lg:h-full lg:overflow-hidden lg:bg-background">
+      {/* Mobile View */}
+      <div className="lg:hidden p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="w-full justify-between">
             <TabsTrigger value="templates" className="flex-1">
@@ -114,32 +115,35 @@ const DocumentsPage: React.FC = () => {
         </Tabs>
       </div>
 
-      <div className="hidden min-h-0 xl:flex xl:h-full xl:flex-1 xl:overflow-hidden p-6 gap-6 bg-secondary/10">
-        <MouseParallax intensity={4} className="flex w-[320px] shadow-2xl rounded-2xl overflow-hidden">
-          <TemplatesPanel
-            templates={mockTemplates}
-            selectedTemplateId={selectedTemplate?.id}
-            onSelectTemplate={handleSelectTemplate}
-            isLoading={isLoadingTemplates}
-          />
-        </MouseParallax>
+      {/* Desktop Multi-Pane View */}
+      <div className="hidden lg:flex lg:w-[320px] xl:w-[360px] lg:shrink-0 lg:border-r lg:border-border lg:h-full lg:overflow-hidden">
+        <TemplatesPanel
+          templates={mockTemplates}
+          selectedTemplateId={selectedTemplate?.id}
+          onSelectTemplate={handleSelectTemplate}
+          isLoading={isLoadingTemplates}
+        />
+      </div>
 
-        <MouseParallax intensity={3} className="flex w-[420px] shadow-2xl rounded-2xl overflow-hidden">
-          <FormPanel
-            selectedTemplate={selectedTemplate}
-            values={fieldValues}
-            missingKeys={missingKeys}
-            isGenerating={isGenerating}
-            showSuccess={showSuccess}
-            onFieldChange={setFieldValue}
-            onClearForm={clearForm}
-            onGenerateDocument={handleGenerateDocument}
-          />
-        </MouseParallax>
+      <div className="hidden lg:flex lg:w-[380px] xl:w-[420px] lg:shrink-0 lg:border-r lg:border-border lg:h-full lg:overflow-hidden">
+        <FormPanel
+          selectedTemplate={selectedTemplate}
+          values={fieldValues}
+          missingKeys={missingKeys}
+          isGenerating={isGenerating}
+          showSuccess={showSuccess}
+          onFieldChange={setFieldValue}
+          onClearForm={clearForm}
+          onGenerateDocument={handleGenerateDocument}
+        />
+      </div>
 
-        <div className="flex min-w-0 flex-1 flex-col bg-background shadow-2xl rounded-2xl overflow-hidden">
-          <PreviewPanel selectedTemplate={selectedTemplate} previewValues={previewValues} />
-        </div>
+      <div className="hidden lg:flex lg:min-w-0 lg:flex-1 lg:h-full lg:overflow-hidden">
+        <PreviewPanel 
+          selectedTemplate={selectedTemplate} 
+          previewValues={previewValues}
+          className="lg:border-0 lg:shadow-none lg:rounded-none"
+        />
       </div>
     </div>
   );

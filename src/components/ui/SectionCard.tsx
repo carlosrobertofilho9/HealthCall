@@ -19,18 +19,18 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   headerActions,
 }) => {
   return (
-    <div className={cn('flex flex-col flex-1 xl:h-full xl:overflow-hidden bg-background xl:bg-transparent rounded-xl border border-border shadow-sm xl:border-0 xl:shadow-none xl:rounded-none', className)}>
-      <div className="shrink-0 border-b border-border bg-background/50 p-4 pb-3 lg:p-5 lg:pb-4 flex items-center justify-between gap-4">
-        <h3 className="flex items-center gap-2.5 text-base font-semibold tracking-tight text-foreground lg:text-lg">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-secondary text-primary shadow-inner">
+    <div className={cn('flex flex-col flex-1 lg:h-full lg:overflow-hidden bg-background lg:bg-transparent rounded-xl border border-border shadow-sm lg:border-0 lg:shadow-none lg:rounded-none', className)}>
+      <div className="shrink-0 border-b border-border p-6 pb-4 flex items-center justify-between gap-4">
+        <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight text-card-foreground">
+          <div className="p-2.5 bg-secondary rounded-lg border border-border shadow-inner flex items-center justify-center text-muted-foreground">
             {icon}
-          </span>
+          </div>
           {title}
         </h3>
         {headerActions && <div>{headerActions}</div>}
       </div>
 
-      <div className={cn('flex min-h-0 flex-1 flex-col p-0 xl:overflow-hidden', contentClassName)}>
+      <div className={cn('flex min-h-0 flex-1 flex-col p-0 lg:overflow-hidden', contentClassName)}>
         {children}
       </div>
     </div>

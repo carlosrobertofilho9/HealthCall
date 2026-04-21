@@ -63,7 +63,7 @@ export const TemplatesPanel: React.FC<TemplatesPanelProps> = ({
   isLoading,
 }) => {
   return (
-    <SectionCard title="Modelos" icon={<FileText size={18} />} className="min-h-[28rem] xl:h-full xl:min-h-0">
+    <SectionCard title="Modelos" icon={<FileText size={20} />} className="min-h-[28rem] lg:h-full lg:min-h-0">
       <TemplateList 
         templates={templates} 
         onSelect={onSelectTemplate} 
@@ -98,8 +98,8 @@ export const FormPanel: React.FC<FormPanelProps> = ({
   return (
     <SectionCard
       title={selectedTemplate?.title || 'Preenchimento'}
-      icon={<Edit size={18} />}
-      className="min-h-[28rem] xl:h-full xl:min-h-0"
+      icon={<Edit size={20} />}
+      className="min-h-[28rem] lg:h-full lg:min-h-0"
       contentClassName="p-4 lg:p-5"
     >
       <AnimatePresence mode="wait">
@@ -109,7 +109,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
             variants={panelVariants}
             initial="hidden"
             animate="visible"
-            className="flex min-h-0 flex-col xl:h-full"
+            className="flex min-h-0 flex-col lg:h-full"
           >
             <div className="mb-5 flex items-center justify-between gap-3 border-b border-border pb-3">
               <div className="min-w-0">
@@ -136,7 +136,7 @@ export const FormPanel: React.FC<FormPanelProps> = ({
               </motion.div>
             </div>
 
-            <div className="custom-scrollbar min-h-0 flex-1 pr-1 xl:overflow-y-auto">
+            <div className="custom-scrollbar min-h-0 flex-1 pr-1 lg:overflow-y-auto">
               <DynamicFieldsForm
                 templateText={selectedTemplate.templateText}
                 values={values}
@@ -264,8 +264,8 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
   return (
     <SectionCard
       title="Visualização"
-      icon={<Eye size={18} />}
-      className={cn('min-h-[28rem] xl:h-full xl:min-h-0', className)}
+      icon={<Eye size={20} />}
+      className={cn('min-h-[28rem] lg:h-full lg:min-h-0', className)}
       contentClassName="relative bg-background/30"
     >
       <AnimatePresence mode="wait">
@@ -275,7 +275,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
             variants={panelVariants}
             initial="hidden"
             animate="visible"
-            className="h-[58vh] min-h-0 w-full overflow-hidden bg-background xl:h-full"
+            className="h-[58vh] min-h-0 w-full overflow-hidden bg-background lg:h-full"
           >
             <PDFViewer width="100%" height="100%" showToolbar className="h-full w-full rounded-none border-0">
               <DocumentPdf
