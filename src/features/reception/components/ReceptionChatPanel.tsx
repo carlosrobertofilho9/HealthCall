@@ -129,7 +129,7 @@ export const ReceptionChatPanel: React.FC<ReceptionChatPanelProps> = ({
                     'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm border transition-shadow',
                     isMine 
                       ? 'bg-primary text-primary-foreground border-primary/20' 
-                      : 'bg-background border-border/60 text-foreground',
+                      : 'bg-muted/80 text-foreground border-border/40 shadow-sm',
                     isMine && showHeader && 'rounded-tr-none',
                     !isMine && showHeader && 'rounded-tl-none'
                   )}>
