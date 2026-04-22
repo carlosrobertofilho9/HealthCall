@@ -19,16 +19,24 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--secondary, #264532);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary, #38e07b);
+  background: color-mix(in srgb, var(--primary, #00bb94) 34%, transparent);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ring, #2dae60);
+  background: color-mix(in srgb, var(--primary, #00bb94) 58%, transparent);
+}
+
+.custom-scrollbar {
+  scrollbar-width: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Animações customizadas */
@@ -116,8 +124,53 @@
 }
 
 :root,
-html[data-theme="floresta"] {
+html[data-theme="healthcall"] {
   --radius: 0.625rem;
+  --background: #f4f6f8;
+  --foreground: #001b3d;
+  --card: #ffffff;
+  --card-foreground: #001b3d;
+  --popover: #ffffff;
+  --popover-foreground: #001b3d;
+  --primary: #00bb94;
+  --primary-foreground: #ffffff;
+  --secondary: #e6f7f2;
+  --secondary-foreground: #001b3d;
+  --muted: #e9edf1;
+  --muted-foreground: #64748b;
+  --accent: #eaf3ff;
+  --accent-foreground: #001b3d;
+  --destructive: #d9474f;
+  --destructive-foreground: #ffffff;
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #001b3d;
+  --border: #dce5ee;
+  --input: #ffffff;
+  --ring: #00bb94;
+  --chart-1: #00bb94;
+  --chart-2: #1466f5;
+  --chart-3: #001b3d;
+  --chart-4: #f59e0b;
+  --chart-5: #22c55e;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #001b3d;
+  --sidebar-primary: #00bb94;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e6f7f2;
+  --sidebar-accent-foreground: #001b3d;
+  --sidebar-border: #dce5ee;
+  --sidebar-ring: #00bb94;
+  color-scheme: light;
+}
+
+/* =============================================================================
+   Temas da Aplicação
+   ============================================================================= */
+
+/* ── Floresta ── */
+html[data-theme="floresta"] {
   --background: #122118;
   --foreground: #f3fff8;
   --card: #1a2c22;
@@ -156,10 +209,6 @@ html[data-theme="floresta"] {
   --sidebar-ring: oklch(0.708 0 0);
   color-scheme: dark;
 }
-
-/* =============================================================================
-   Temas da Aplicação
-   ============================================================================= */
 
 /* ── Oceano ── */
 html[data-theme="oceano"] {
@@ -536,7 +585,7 @@ html[data-theme="safira"] {
     max-width: 100%;
     min-height: 100vh;
     overflow-x: hidden;
-    font-family: "Spline Sans", sans-serif;
+    font-family: "Inter", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

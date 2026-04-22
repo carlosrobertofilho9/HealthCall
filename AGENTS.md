@@ -1,58 +1,328 @@
-# AGENTS.md
+# Design System Prompt — HealthCall
 
-Este documento define as diretrizes essenciais para agentes de IA que colaboram no desenvolvimento do **HealthCall**. Siga estas instruções rigorosamente para manter a consistência e a excelência do projeto.
+Você está trabalhando no HealthCall, um sistema operacional clínico para APS/UBS.  
+Toda interface criada, ajustada ou refinada deve seguir este sistema de design com consistência rigorosa.
 
-## 🚀 Visão Geral do Projeto
+## Essência da marca
 
-O HealthCall é uma plataforma de gestão em saúde focada em alta performance e experiência do usuário (UX) premium. O objetivo é fornecer ferramentas clínicas que pareçam modernas, rápidas e extremamente confiáveis.
+O HealthCall não deve parecer apenas “um sistema médico”.  
+Ele deve transmitir a sensação de:
 
-## 🎨 Design System e Estética (Referência: Documents Page)
+- operação clínica em tempo real
+- confiança institucional
+- organização silenciosa
+- fluidez operacional
+- clareza visual para ambientes de alta demanda
+- tecnologia aplicada à realidade da atenção primária
 
-A página de referência absoluta para design e comportamento é `src/features/documents/pages/DocumentsPage.tsx`.
+A interface deve equilibrar:
 
-### 1. Layout e Estrutura
-- **Shells e Containers:** Use sempre o `PageShell` para envolver as páginas.
-- **Multi-Painéis:** No desktop, utilize layouts de múltiplos painéis (sidebars de configuração + área principal de conteúdo) usando `SectionCard`.
-- **Responsividade:** No mobile, os painéis devem ser convertidos em um sistema de `Tabs` fluido.
+- **solidez clínica**
+- **leveza operacional**
+- **sofisticação discreta**
+- **alta legibilidade**
+- **baixa fricção cognitiva**
 
-### 2. Estética Visual (Premium Feel)
-- **Glassmorphism:** Use fundos levemente transparentes (`bg-background/60`, `backdrop-blur`) e bordas sutis.
-- **Sombra e Profundidade:** Utilize sombras suaves e camadas bem definidas para dar profundidade à interface.
-- **Tipografia:** Foco em legibilidade com pesos de fonte bem definidos (Inter/Outfit).
-- **Cores:** Paletas sóbrias (Slate, Zinc, Purple, Primary) com badges e indicadores de status refinados.
-
-### 3. Micro-interações e Animações (Obrigatório)
-O HealthCall deve parecer "vivo". Integre `framer-motion` em todos os elementos interativos:
-- **Entradas:** Animações de `presence` (fade-in, slide-up) ao carregar componentes.
-- **Haptic Feedback:** Efeitos de `scale` (ex: `whileTap={{ scale: 0.97 }}`) em botões.
-- **Estados de Feedback:** Botões que tremem em caso de erro, pulsação em indicadores de progresso e transições suaves entre estados de vazio (Empty States) e conteúdo.
-
-## 🛠 Stack Tecnológica
-
-- **Core:** React 18, Vite, TypeScript.
-- **Estilização:** Tailwind CSS.
-- **Componentes:** shadcn/ui (customizado para o design system local).
-- **Iconografia:** Lucide React.
-- **Animações:** Framer Motion.
-- **Dados/Backend:** Supabase (Auth, Database, Storage).
-- **PDF/Documentos:** @react-pdf/renderer.
-
-## 📁 Arquitetura do Código
-
-Siga a arquitetura baseada em **Features**:
-- `src/features/[feature-name]/`:
-  - `components/`: Componentes específicos da funcionalidade.
-  - `hooks/`: Lógica de business e estado (ex: `useDocumentsComposer`).
-  - `pages/`: Componentes de página que montam a feature.
-  - `services/`: Integração com Supabase/APIs externas.
-  - `utils/`: Helpers específicos.
-
-## ⚠️ Regras de Ouro
-
-1.  **Sem Placeholders:** Nunca use imagens de exemplo ou textos "Lorem Ipsum". Use `generate_image` para assets reais ou crie dados fictícios contextuais (Mock Data).
-2.  **UX First:** Se uma ação demora mais que 200ms, use skeletons ou estados de carregamento elegantes.
-3.  **Consistência de Idioma:** Toda a interface e comunicação com o usuário deve ser em **Português (PT-BR)**. O código (variáveis, funções, comentários técnicos) deve ser em **Inglês**.
-4.  **Acessibilidade e SEO:** Garanta tags semânticas e IDs únicos para testes automatizados.
+O resultado visual deve parecer um **sistema clínico premium**, moderno, humano e confiável, pensado para uso contínuo em unidades de saúde reais.
 
 ---
-*Este documento é a "alma" do projeto. Ao criar qualquer nova funcionalidade, pergunte-se: "Isso está no nível de polimento da página de Documentos?"*
+
+## Direção visual
+
+A linguagem visual do HealthCall deve seguir estes princípios:
+
+- visual limpo, respirado e modular
+- aparência premium, mas sem exagero estético
+- sensação de dashboard clínico contemporâneo
+- prioridade para legibilidade e hierarquia
+- uso de cards grandes, bem definidos e com cantos amplamente arredondados
+- contraste suave, evitando aparência agressiva ou “tech demais”
+- composição baseada em blocos organizados, não em telas poluídas
+- interface com estética próxima de software operacional moderno, não de app genérico de hospital antigo
+
+---
+
+## Personalidade da interface
+
+A UI do HealthCall deve ser percebida como:
+
+- clara
+- calma
+- segura
+- profissional
+- acolhedora
+- inteligente
+- eficiente
+- institucional sem parecer burocrática
+
+Evite qualquer visual que pareça:
+
+- datado
+- hospitalar demais
+- excessivamente frio
+- genérico
+- carregado
+- com cara de template comum
+- neon futurista
+- escuro opressivo sem contraste funcional
+
+---
+
+## Paleta de cores
+
+Use a paleta da marca como base principal.
+
+### Cores principais
+- Azul profundo institucional
+- Azul médio tecnológico
+- Verde/teal clínico
+- Tons claros frios para superfícies de apoio
+- Branco ou off-white para respiro visual
+
+### Intenção cromática
+- **Azul:** confiança, sistema, inteligência, estabilidade
+- **Verde/teal:** saúde, fluxo, confirmação, cuidado
+- **Fundos claros ou claros-tintados:** clareza e leveza
+- **Cores semânticas:** devem ser elegantes, nunca gritantes
+
+### Regras
+- verde vivo deve ser usado para CTA principal, sucesso e destaques de ação
+- azul profundo deve sustentar branding, títulos fortes e áreas institucionais
+- teal e azul claro devem aparecer como apoio visual em ícones, métricas e estados
+- evite excesso de saturação
+- evite vermelho agressivo
+- evite grandes massas escuras sem função clara
+
+---
+
+## Tipografia
+
+A tipografia deve ser moderna, altamente legível e neutra.
+
+### Direção tipográfica
+- fonte sem serifa contemporânea
+- aparência limpa e profissional
+- excelente leitura em mobile e desktop
+- títulos fortes e curtos
+- textos de apoio com ótima respirabilidade
+
+### Hierarquia
+- títulos grandes, firmes e com peso semibold ou bold
+- subtítulos claros, com menor contraste que o título
+- labels objetivos e simples
+- números de métricas com forte destaque
+- textos auxiliares discretos, porém legíveis
+
+### Regras
+- nunca usar tipografia ornamental
+- nunca usar pesos excessivamente finos em contextos clínicos
+- priorizar clareza acima de estilo
+- evitar blocos longos com pouco espaçamento
+
+---
+
+## Layout e composição
+
+Toda tela deve ser construída como um sistema de blocos operacionais.
+
+### Estrutura esperada
+- header funcional e limpo
+- hero operacional ou bloco principal de contexto
+- cards de métricas ou resumo
+- bloco principal de ação
+- blocos secundários de suporte
+- navegação claramente separada do conteúdo
+
+### Regras de composição
+- trabalhar com bastante espaçamento
+- evitar agrupamentos apertados
+- usar grids simples e previsíveis
+- reforçar hierarquia com tamanho, peso, cor e espaçamento
+- cada bloco deve parecer intencional
+- sempre deixar claro o que é:
+  - contexto
+  - status
+  - ação principal
+  - ação secundária
+  - apoio informacional
+
+---
+
+## Estilo dos componentes
+
+### Cards
+- grandes
+- arredondados
+- premium
+- com bordas suaves ou contraste delicado
+- sensação de superfície organizada e modular
+- devem parecer blocos operacionais confiáveis
+
+### Botões
+- CTA principal largo, dominante e muito claro
+- visual sólido, simples e extremamente legível
+- cantos arredondados
+- ícone opcional à esquerda
+- alto contraste com o fundo
+- devem parecer “ação segura e direta”
+
+### Inputs
+- visual limpo, alto conforto de leitura
+- bordas suaves ou preenchimento sutil
+- ícones discretos e úteis
+- labels acima do campo quando necessário
+- placeholder claro, nunca com contraste excessivamente baixo
+- foco visual elegante e perceptível
+
+### Métricas e KPIs
+- números grandes
+- contexto sempre visível
+- ícone de apoio opcional
+- organização em cards curtos e fáceis de escanear
+- leitura imediata em poucos segundos
+
+### Ícones
+- outline moderno ou duotone discreto
+- traço limpo
+- sem excesso de detalhe
+- aparência coerente com software clínico contemporâneo
+
+---
+
+## Experiência mobile
+
+No mobile, o HealthCall deve parecer um produto nativo e refinado, não uma adaptação apertada do desktop.
+
+### Princípios
+- priorizar leitura rápida
+- toque confortável
+- spacing generoso
+- blocos bem separados
+- CTA principal sempre evidente
+- navegação simples
+- conteúdo com forte escaneabilidade
+
+### Regras
+- evitar excesso de elementos por dobra
+- evitar cards pequenos demais
+- evitar texto excessivamente denso
+- usar seções com hierarquia muito clara
+- métricas devem ser lidas instantaneamente
+- formulários devem parecer leves e rápidos
+
+---
+
+## Hierarquia de informação
+
+Sempre priorizar esta ordem:
+
+1. contexto da tela
+2. estado atual ou resumo operacional
+3. ação principal
+4. ações complementares
+5. conteúdo de apoio
+6. navegação secundária
+
+Ao desenhar qualquer interface, o usuário deve entender em poucos segundos:
+
+- onde ele está
+- o que está acontecendo
+- o que exige atenção
+- qual a próxima ação recomendada
+
+---
+
+## Microinterações
+
+As microinterações devem ser discretas, elegantes e funcionais.
+
+### Devem transmitir
+- resposta imediata
+- fluidez
+- precisão
+- segurança
+
+### Exemplos esperados
+- hover suave
+- focus states claros
+- transições curtas
+- feedback visual em toque/press
+- mudanças de estado sem brusquidão
+
+### Evitar
+- animações chamativas
+- efeitos exagerados
+- delays desnecessários
+- comportamento ornamental sem função
+
+---
+
+## Estados visuais
+
+Todo componente deve prever estados consistentes:
+
+- default
+- hover
+- active
+- focus
+- disabled
+- loading
+- success
+- warning
+- error
+- empty
+
+### Regras
+- estados devem ser visíveis, mas elegantes
+- feedback deve ser imediato
+- erro deve orientar, não assustar
+- sucesso deve ser claro e calmo
+- loading deve transmitir progresso sem poluição
+
+---
+
+## Semântica visual do produto
+
+O HealthCall deve comunicar visualmente:
+
+- fluxo
+- triagem
+- organização de atendimento
+- presença e chamada
+- suporte clínico
+- operação em tempo real
+- confiabilidade de sistema
+- inteligência aplicada à rotina
+
+Não criar interfaces que pareçam:
+- landing page de startup genérica
+- app fitness
+- app de banco
+- software hospitalar ultrapassado
+- painel futurista abstrato sem utilidade prática
+
+---
+
+## Regras de ouro
+
+1. Clareza sempre vem antes de decoração.
+2. A interface deve parecer operacional, não promocional.
+3. Toda tela precisa ter uma ação principal óbvia.
+4. O sistema deve respirar visualmente.
+5. O usuário deve escanear a tela em segundos.
+6. O visual deve parecer premium, mas realista para APS/UBS.
+7. Tudo deve reforçar confiança, fluidez e organização.
+8. O HealthCall deve ter consistência entre branding, produto e operação clínica.
+
+---
+
+## Instrução final para qualquer agente
+
+Ao criar telas, componentes, fluxos ou refinamentos visuais para o HealthCall:
+
+- preserve a identidade clínica premium da marca
+- mantenha consistência entre cor, tipografia, espaçamento e componentes
+- priorize legibilidade, hierarquia e eficiência operacional
+- desenhe como se fosse um sistema central da unidade de saúde
+- faça a interface parecer moderna, humana e extremamente confiável
+- toda decisão visual deve melhorar o entendimento, a rapidez e a segurança de uso

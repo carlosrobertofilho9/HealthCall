@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
 export type ThemeId =
+  | 'healthcall'
   | 'floresta'
   | 'oceano'
   | 'eclipse'
@@ -30,6 +31,16 @@ export interface ThemeDefinition {
 }
 
 export const THEMES: ThemeDefinition[] = [
+  // --- Marca HealthCall ---
+  {
+    id: 'healthcall',
+    name: 'HealthCall',
+    description: 'Clínico, claro e institucional',
+    type: 'light',
+    previewPrimary: '#001B3D',
+    previewBackground: '#F4F6F8',
+    previewAccent: '#00BB94',
+  },
   // --- Escuros ---
   {
     id: 'floresta',
@@ -143,7 +154,7 @@ export const THEMES: ThemeDefinition[] = [
 ];
 
 const STORAGE_KEY = 'healthcall-theme';
-const DEFAULT_THEME: ThemeId = 'floresta';
+const DEFAULT_THEME: ThemeId = 'healthcall';
 const THEME_IDS = THEMES.map(theme => theme.id);
 
 // ─── Contexto ─────────────────────────────────────────────────────────────────

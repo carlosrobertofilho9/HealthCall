@@ -52,7 +52,7 @@ const DisplayPage: React.FC = () => {
   const room = calledPatient?.destination || '-';
 
   return (
-    <div className={DISPLAY_CLASS.page} style={{ fontFamily: '"Spline Sans", "Noto Sans", sans-serif' }}>
+    <div className={DISPLAY_CLASS.page} style={{ fontFamily: '"Inter", "Noto Sans", sans-serif' }}>
       <WarningPlayer enabled={showWarnings} paused={isCalling || !showWarnings} />
 
       <div className="relative z-10 flex flex-col min-h-screen">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, AlertTriangle, Siren, CalendarX } from 'lucide-react';
+import { Sun, Moon, AlertTriangle, Siren, CalendarX, Loader2 } from 'lucide-react';
 import type { AppointmentSlot, Appointment, AppointmentStatus, DayScheduleConfig } from '@/types';
 import SlotCard from './SlotCard';
 
@@ -31,10 +31,12 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   /* ── Sem atendimento ── */
   if (!dayConfig.hasService) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-10 text-center print:bg-white print:border-gray-300">
-        <CalendarX className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-bold text-card-foreground mb-1 print:text-black">Sem agenda neste dia</h3>
-        <p className="text-sm text-muted-foreground print:text-gray-600">
+      <div className="rounded-[1.25rem] border border-[#DCE5EE] bg-white p-10 text-center shadow-[0_12px_32px_rgba(0,27,61,0.05)] print:border-gray-300 print:bg-white">
+        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-[1rem] bg-[#F8FAFC] text-[#64748B]">
+          <CalendarX className="size-7" />
+        </div>
+        <h3 className="mb-1 text-lg font-extrabold text-[#001B3D] print:text-black">Sem agenda neste dia</h3>
+        <p className="text-sm font-medium text-[#64748B] print:text-gray-600">
           {dayConfig.dayName} não possui atendimento agendado.{' '}
           <br className="hidden sm:block" />
           Selecione uma Segunda, Terça ou Quarta-feira.
@@ -46,9 +48,11 @@ export const SlotsList: React.FC<SlotsListProps> = ({
   /* ── Carregando ── */
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-10 text-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-muted-foreground">Carregando marcações...</p>
+      <div className="rounded-[1.25rem] border border-[#DCE5EE] bg-white p-10 text-center shadow-[0_12px_32px_rgba(0,27,61,0.05)]">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-[1rem] bg-[#E6F7F2] text-[#007A65]">
+          <Loader2 className="size-6 animate-spin" />
+        </div>
+        <p className="font-semibold text-[#64748B]">Carregando marcações...</p>
       </div>
     );
   }
@@ -65,12 +69,13 @@ export const SlotsList: React.FC<SlotsListProps> = ({
       {/* Manhã */}
       {morningSlots.length > 0 && (
         <PeriodSection
-          icon={<Sun className="w-4 h-4 text-yellow-400" />}
+          icon={<Sun className="w-4 h-4 text-[#F59E0B]" />}
           title={isHomeVisit ? 'Visitas – Manhã' : 'Manhã'}
           occupied={morningSlots.filter(s => s.appointment !== null).length}
           total={morningSlots.length}
           label={occupancyLabel}
-          accentClass="border-yellow-400/20 bg-yellow-400/5"
+          accentClass="border-[#FFE4B8] bg-[#FFF8E8]"
+          progressClass="bg-[#F59E0B]"
         >
           {morningSlots.map(slot => (
             <SlotCard
@@ -91,12 +96,13 @@ export const SlotsList: React.FC<SlotsListProps> = ({
       {/* Tarde */}
       {afternoonSlots.length > 0 && (
         <PeriodSection
-          icon={<Moon className="w-4 h-4 text-indigo-400" />}
+          icon={<Moon className="w-4 h-4 text-[#1466F5]" />}
           title="Tarde"
           occupied={afternoonSlots.filter(s => s.appointment !== null).length}
           total={afternoonSlots.length}
           label={occupancyLabel}
-          accentClass="border-indigo-400/20 bg-indigo-400/5"
+          accentClass="border-[#D5E6FF] bg-[#EAF3FF]"
+          progressClass="bg-[#1466F5]"
         >
           {afternoonSlots.map(slot => (
             <SlotCard
@@ -117,12 +123,13 @@ export const SlotsList: React.FC<SlotsListProps> = ({
       {/* Reserva / Emergência */}
       {reserveSlots.length > 0 && (
         <PeriodSection
-          icon={<Siren className="w-4 h-4 text-red-400" />}
+          icon={<Siren className="w-4 h-4 text-[#D9474F]" />}
           title="Reserva / Emergência"
           occupied={reserveSlots.filter(s => s.appointment !== null).length}
           total={reserveSlots.length}
           label={occupancyLabel}
-          accentClass="border-red-400/20 bg-red-400/5"
+          accentClass="border-[#FFD6DA] bg-[#FFF4F5]"
+          progressClass="bg-[#D9474F]"
         >
           {reserveSlots.map(slot => (
             <SlotCard
@@ -142,9 +149,9 @@ export const SlotsList: React.FC<SlotsListProps> = ({
 
       {/* Resultado vazio da busca */}
       {slots.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-10 text-center">
-          <AlertTriangle className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">Nenhum resultado encontrado para esta busca.</p>
+        <div className="rounded-[1.25rem] border border-dashed border-[#BFD2E5] bg-[#F8FAFC] p-10 text-center">
+          <AlertTriangle className="mx-auto mb-3 size-8 text-[#64748B]" />
+          <p className="text-sm font-semibold text-[#64748B]">Nenhum resultado encontrado para esta busca.</p>
         </div>
       )}
     </div>
@@ -160,6 +167,7 @@ interface PeriodSectionProps {
   total: number;
   label: string;
   accentClass: string;
+  progressClass: string;
   children: React.ReactNode;
 }
 
@@ -170,41 +178,40 @@ const PeriodSection: React.FC<PeriodSectionProps> = ({
   total,
   label,
   accentClass,
+  progressClass,
   children,
 }) => {
   const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
 
   return (
-    <section>
-      {/* Section header */}
-      <div className={`flex items-center gap-3 mb-3 rounded-xl border px-4 py-2.5 ${accentClass} print:hidden`}>
-        {icon}
-        <h3 className="text-sm font-bold text-card-foreground print:text-black flex-1">{title}</h3>
+    <section className="overflow-hidden rounded-[1.2rem] border border-[#DCE5EE] bg-white shadow-[0_12px_32px_rgba(0,27,61,0.05)] print:border-0 print:bg-white print:shadow-none">
+      <div className={`flex items-center gap-3 border-b px-4 py-3 ${accentClass} print:hidden`}>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-[0.85rem] bg-white/80 shadow-[0_8px_18px_rgba(0,27,61,0.05)]">
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base font-extrabold text-[#001B3D] print:text-black">{title}</h3>
+          <p className="text-xs font-semibold text-[#64748B]">{occupied}/{total} {label} em uso</p>
+        </div>
 
-        {/* Mini progress */}
-        <div className="flex items-center gap-2 print:hidden">
-          <div className="hidden sm:flex items-center gap-1.5">
-            <div className="w-14 h-1.5 rounded-full bg-secondary overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary/60 transition-all"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
+        <div className="hidden min-w-28 items-center gap-2 sm:flex print:hidden">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/80">
+            <div
+              className={`h-full rounded-full transition-all ${progressClass}`}
+              style={{ width: `${pct}%` }}
+            />
           </div>
-          <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
-            {occupied}/{total} {label}
-          </span>
+          <span className="w-9 text-right text-xs font-extrabold text-[#001B3D]">{pct}%</span>
         </div>
       </div>
 
       {/* Print-only header */}
-      <div className="hidden print:flex items-center gap-2 mb-3">
+      <div className="hidden items-center gap-2 mb-3 print:flex">
         <h3 className="font-bold text-black">{title}</h3>
         <span className="text-gray-500 text-sm">({occupied}/{total} {label})</span>
       </div>
 
-      {/* Slots */}
-      <div className="space-y-2">
+      <div className="space-y-2 p-3 sm:p-4 print:p-0">
         {children}
       </div>
     </section>

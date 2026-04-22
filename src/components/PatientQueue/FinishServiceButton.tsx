@@ -2,6 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { PatientStatus } from '@/types';
 import { CheckCircle, ArrowRight, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Tooltip } from '@/components/ui';
 
 interface FinishServiceButtonProps {
   patientId: string;
@@ -62,44 +64,46 @@ const FinishServiceButton: React.FC<FinishServiceButtonProps> = ({
 
   return (
     <div className="relative" ref={menuRef}>
-      <button
-        className={`
-          flex items-center justify-center rounded-md h-9 w-9 transition-all active:scale-95
-          ${isFinished
-            ? 'text-green-400/50 cursor-not-allowed'
-            : 'text-green-400 hover:bg-green-500/20 hover:text-green-300'
-          }
-        `}
-        title="Finalizar/Encaminhar"
-        onClick={handleToggle}
-        disabled={isFinished}
-        aria-label="Finalizar ou Encaminhar"
-        aria-expanded={isOpen}
-      >
-        <CheckCircle size={18} />
-      </button>
+      <Tooltip content="Finalizar ou encaminhar">
+        <button
+          className={cn(
+            'inline-flex size-9 items-center justify-center rounded-xl border transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-55',
+            isFinished
+              ? 'border-[#E2E8F0] bg-[#F1F5F9] text-[#94A3B8]'
+              : 'border-[#BFECE1] bg-white text-[#007A65] hover:bg-[#E6F7F2]'
+          )}
+          onClick={handleToggle}
+          disabled={isFinished}
+          aria-label="Finalizar ou encaminhar"
+          aria-expanded={isOpen}
+        >
+          <CheckCircle className="size-4" />
+        </button>
+      </Tooltip>
 
       {isOpen && (
-        <div className="absolute right-0 bottom-full mb-2 z-50 w-64 rounded-xl bg-popover border border-border shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-bottom-right">
-            <div className="p-2 border-b border-border flex items-center justify-between text-xs text-muted-foreground font-medium uppercase tracking-wider bg-secondary/30">
+        <div className="absolute right-0 top-full z-50 mt-2 w-72 origin-top-right overflow-hidden rounded-[1.35rem] border border-[#DCE5EE] bg-white shadow-[0_24px_70px_rgba(0,27,61,0.16)] animate-in fade-in zoom-in-95 duration-200 sm:bottom-full sm:top-auto sm:mb-2 sm:mt-0 sm:origin-bottom-right">
+            <div className="flex items-center justify-between border-b border-[#E5ECF3] bg-[#F8FAFC] p-3 text-xs font-extrabold uppercase tracking-[0.14em] text-[#64748B]">
                 <span>Ações</span>
-                <button onClick={() => setIsOpen(false)} className="hover:text-popover-foreground"><X size={14}/></button>
+                <button type="button" onClick={() => setIsOpen(false)} className="rounded-full p-1 transition-colors hover:bg-[#EAF3FF] hover:text-[#1466F5]">
+                  <X className="size-4" />
+                </button>
             </div>
           <ul className="py-1 max-h-64 overflow-y-auto custom-scrollbar">
             {options.map((option, idx) => (
               <li
                 key={idx}
                 className={`
-                    group flex items-center gap-2 text-sm text-popover-foreground/90 cursor-pointer select-none relative py-2.5 px-3 
-                    hover:bg-accent hover:text-accent-foreground transition-colors
-                    ${option.action === 'finish' ? 'border-b border-border mb-1 pb-3 text-green-400 font-medium hover:text-green-300' : ''}
+                    group relative flex cursor-pointer select-none items-center gap-2 px-3 py-3 text-sm font-semibold text-[#001B3D]
+                    transition-colors hover:bg-[#EAF3FF]
+                    ${option.action === 'finish' ? 'mb-1 border-b border-[#E5ECF3] pb-3 text-[#007A65]' : ''}
                 `}
                 onClick={() => handleSelect(option.action, option.destination)}
               >
                 {option.action === 'finish' ? (
-                    <CheckCircle size={16} className="text-green-500" />
+                    <CheckCircle className="size-4 text-[#00A885]" />
                 ) : (
-                    <ArrowRight size={14} className="text-muted-foreground group-hover:text-accent-foreground transition-colors" />
+                    <ArrowRight className="size-4 text-[#64748B] transition-colors group-hover:text-[#1466F5]" />
                 )}
                 <span>{option.label}</span>
               </li>

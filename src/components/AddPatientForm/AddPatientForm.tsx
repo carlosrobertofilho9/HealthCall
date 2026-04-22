@@ -10,7 +10,7 @@ import {
   Button,
   Label
 } from '@/components/ui';
-import { Loader2, UserPlus, User, DoorOpen, Plus } from 'lucide-react';
+import { DoorOpen, Loader2, Plus, Sparkles, User, UserPlus } from 'lucide-react';
 
 /**
  * A form component for adding a new patient to the queue.
@@ -49,19 +49,22 @@ const AddPatientForm: React.FC<{
   }, [defaultDestination]);
 
   return (
-    <div className="lg:col-span-1 bg-card rounded-2xl p-6 shadow-sm border border-border h-fit xl:rounded-none xl:border-0 xl:shadow-none xl:bg-transparent">
-      <div className="flex flex-col gap-2 mb-6">
-      <h2 className="text-card-foreground text-2xl font-bold leading-tight flex items-center gap-3">
-        <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
-          <UserPlus className="text-muted-foreground" size={24} />
-            </div>
-            Adicionar Paciente
-        </h2>
-      <p className="text-muted-foreground text-sm pl-1">Insira os dados para adicionar à fila.</p>
+    <section className="rounded-[1.75rem] border border-white/80 bg-white p-5 shadow-[0_20px_55px_rgba(0,27,61,0.08)]">
+      <div className="mb-6 flex items-start gap-3">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#E6F7F2] text-[#00A885]">
+          <UserPlus className="size-6" />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-extrabold leading-tight text-[#001B3D]">Entrada rápida</h2>
+            <Sparkles className="size-4 text-[#1466F5]" />
+          </div>
+          <p className="mt-1 text-sm font-medium leading-6 text-[#64748B]">Adicionar paciente à fila operacional.</p>
+        </div>
       </div>
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
-          <Label htmlFor="patient-name" className="text-card-foreground font-medium mb-2 block">
+          <Label htmlFor="patient-name" className="mb-2 block text-sm font-bold text-[#001B3D]">
             Nome do Paciente
           </Label>
           <Input
@@ -72,19 +75,21 @@ const AddPatientForm: React.FC<{
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            icon={<User className="h-4 w-4" />}
+            icon={<User className="size-4 text-[#00A885]" />}
+            className="h-[52px] rounded-2xl border-[#DCE5EE] bg-[#F8FAFC] text-[15px] font-semibold text-[#001B3D] placeholder:text-[#94A3B8] focus:border-[#00BB94] focus:bg-white focus:ring-[#00BB94]/20"
           />
         </div>
         <div>
-          <Label htmlFor="destination-room" className="text-card-foreground font-medium mb-2 block">
+          <Label htmlFor="destination-room" className="mb-2 block text-sm font-bold text-[#001B3D]">
             Sala de Destino
           </Label>
           <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground z-10">
-                <DoorOpen size={20} />
-            </div>
             <Select onValueChange={setDestination} value={destination}>
-              <SelectTrigger id="destination-room" className="pl-12">
+              <SelectTrigger
+                id="destination-room"
+                icon={<DoorOpen className="size-4 text-[#1466F5]" />}
+                className="h-[52px] rounded-2xl border-[#DCE5EE] bg-[#F8FAFC] text-[15px] font-semibold text-[#001B3D] focus:border-[#00BB94] focus:bg-white focus:ring-[#00BB94]/20"
+              >
                 <SelectValue placeholder="Selecione a sala" />
               </SelectTrigger>
               <SelectContent>
@@ -96,17 +101,21 @@ const AddPatientForm: React.FC<{
           </div>
         </div>
         <div className="pt-2">
-          <Button type="submit" disabled={isAddingPatient} className="w-full">
+          <Button
+            type="submit"
+            disabled={isAddingPatient}
+            className="h-14 w-full rounded-2xl bg-[#00BB94] text-base font-extrabold text-white shadow-[0_16px_35px_rgba(0,187,148,0.24)] hover:bg-[#00A885] focus-visible:ring-[#00BB94]/50"
+          >
             {isAddingPatient ? (
-              <Loader2 className="animate-spin mr-2" />
+              <Loader2 className="mr-1 size-5 animate-spin" />
             ) : (
-              <Plus className="mr-2" size={20} />
+              <Plus className="mr-1 size-5" />
             )}
             <span className="truncate">{isAddingPatient ? 'Adicionando...' : 'Adicionar à Fila'}</span>
           </Button>
         </div>
       </form>
-    </div>
+    </section>
   );
 };
 

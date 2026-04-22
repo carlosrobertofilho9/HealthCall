@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Calendar, CalendarClock } from 'lucide-react';
-import { DS_RADIUS, DatePicker } from '@/components/ui';
+import { DatePicker } from '@/components/ui';
 import { getDayConfig } from '../services/appointmentService';
 import type { DayScheduleConfig } from '@/types';
 
@@ -52,14 +52,22 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
   const isoValue = selectedDate.toISOString().slice(0, 10);
 
   return (
-    <div className={`${DS_RADIUS.surface} border border-border bg-card p-4 sm:p-5 print:border-gray-300 print:bg-white`}>
-      <div className="flex flex-col gap-4">
-        <div className={`${DS_RADIUS.section} bg-card p-3 sm:p-4`}>
+    <div className="overflow-hidden rounded-[1.35rem] border border-white/80 bg-white shadow-[0_16px_44px_rgba(0,27,61,0.06)] print:border-gray-300 print:bg-white">
+      <div className="border-b border-[#EEF3F7] px-4 py-4">
+        <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#007A65]">
+          <CalendarClock className="size-4" />
+          Controle da data
+        </div>
+        <p className="mt-1 text-sm font-semibold text-[#64748B]">Selecione o dia operacional da agenda.</p>
+      </div>
+
+      <div className="flex flex-col gap-4 p-4 sm:p-5">
+        <div className="rounded-[1.15rem] border border-[#DCE5EE] bg-[#F8FAFC] p-3 sm:p-4">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onPreviousDay}
-              className={`w-auto shrink-0 ${DS_RADIUS.section} bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden`}
+              className="w-auto shrink-0 rounded-[0.9rem] bg-white p-2.5 text-[#001B3D] shadow-[0_8px_18px_rgba(0,27,61,0.05)] transition-colors hover:bg-[#E6F7F2] print:hidden"
               aria-label="Dia anterior"
             >
               <ChevronLeft className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
@@ -78,7 +86,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
                   <div className="flex flex-col items-center">
                     <span className="text-base">{date.getDate()}</span>
                     {hasService && !isSelected && (
-                      <span className={`w-1.5 h-1.5 ${DS_RADIUS.pill} bg-primary mt-0.5`} />
+                      <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-[#00BB94]" />
                     )}
                   </div>
                 );
@@ -88,15 +96,15 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
                 <button
                   type="button"
                   onClick={open}
-                  className={`${DS_RADIUS.section} bg-transparent px-3 py-3 text-center transition-colors hover:bg-secondary/30 print:bg-transparent w-full`}
+                  className="w-full rounded-[1rem] bg-white px-3 py-4 text-center shadow-[0_10px_24px_rgba(0,27,61,0.04)] transition-colors hover:bg-[#FDFEFF] print:bg-transparent"
                 >
-                  <p className="text-xs font-semibold uppercase tracking-wide text-primary sm:text-sm">
+                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#007A65] sm:text-sm">
                     {formatWeekday(selectedDate)}
                   </p>
-                  <h2 className="mt-1 text-2xl font-bold text-card-foreground sm:text-3xl print:text-black">
+                  <h2 className="mt-1 text-2xl font-extrabold text-[#001B3D] sm:text-3xl print:text-black">
                     {selectedDate.getDate()} de {MONTHS[selectedDate.getMonth()]}
                   </h2>
-                  <p className={`mt-1 text-xs font-medium sm:text-sm ${dayConfig.hasService ? 'text-muted-foreground' : 'text-red-400'} print:text-gray-500`}>
+                  <p className={`mt-1 text-xs font-semibold sm:text-sm ${dayConfig.hasService ? 'text-[#64748B]' : 'text-[#B42318]'} print:text-gray-500`}>
                     {serviceSummary}
                   </p>
                 </button>
@@ -106,7 +114,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             <button
               type="button"
               onClick={onNextDay}
-              className={`w-auto shrink-0 ${DS_RADIUS.section} bg-transparent p-2.5 text-card-foreground transition-colors hover:bg-secondary/40 print:hidden`}
+              className="w-auto shrink-0 rounded-[0.9rem] bg-white p-2.5 text-[#001B3D] shadow-[0_8px_18px_rgba(0,27,61,0.05)] transition-colors hover:bg-[#E6F7F2] print:hidden"
               aria-label="Próximo dia"
             >
               <ChevronRight className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
@@ -114,7 +122,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
           </div>
 
           <div className="mt-3 flex items-center justify-center">
-            <span className={`${DS_RADIUS.pill} border px-3 py-1 text-xs font-semibold ${isTodayValue() ? 'border-primary bg-primary/20 text-primary' : 'border-border bg-secondary/60 text-muted-foreground'}`}>
+            <span className={`rounded-full border px-3 py-1 text-xs font-extrabold ${isTodayValue() ? 'border-[#CFEDE6] bg-[#E6F7F2] text-[#007A65]' : 'border-[#DCE5EE] bg-white text-[#64748B]'}`}>
               {isTodayValue() ? 'Hoje' : 'Dia selecionado'}
             </span>
           </div>
@@ -134,7 +142,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
                 <div className="flex flex-col items-center">
                   <span className="text-base">{date.getDate()}</span>
                   {hasService && !isSelected && (
-                    <span className={`w-1.5 h-1.5 ${DS_RADIUS.pill} bg-primary mt-0.5`} />
+                    <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-[#00BB94]" />
                   )}
                 </div>
               );
@@ -144,7 +152,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
               <button
                 type="button"
                 onClick={open}
-                className={`inline-flex h-11 items-center justify-center gap-2 ${DS_RADIUS.section} border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-secondary/90 w-full`}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] px-4 text-sm font-extrabold text-[#001B3D] transition-colors hover:border-[#BFD2E5] hover:bg-white"
               >
                 <Calendar className="h-4 w-4" />
                 <span>Calendário</span>
@@ -156,7 +164,7 @@ export const DateSelector: React.FC<DateSelectorProps> = ({
             type="button"
             onClick={onToday}
             disabled={isTodayValue()}
-            className={`h-11 ${DS_RADIUS.section} bg-primary px-4 text-sm font-bold text-primary-foreground transition-opacity disabled:cursor-not-allowed disabled:opacity-60`}
+            className="h-11 rounded-[0.95rem] bg-[#00BB94] px-4 text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(0,187,148,0.18)] transition-opacity hover:bg-[#00A885] disabled:cursor-not-allowed disabled:opacity-60"
           >
             Ir para Hoje
           </button>

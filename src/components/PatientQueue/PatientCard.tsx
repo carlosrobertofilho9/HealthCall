@@ -2,14 +2,17 @@ import React from 'react';
 import type { Patient, PatientStatus } from '@/types';
 import FinishServiceButton from './FinishServiceButton';
 import {
+  CheckCircle2,
+  Clock,
+  Edit,
+  GripVertical,
+  MapPin,
   Megaphone,
   Play,
-  Edit,
   Trash2,
-  MapPin,
-  Clock
 } from 'lucide-react';
-import { Badge } from '@/components/ui';
+import { Tooltip } from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 interface PatientCardProps {
   patient: Patient;
@@ -17,168 +20,206 @@ interface PatientCardProps {
   onEdit: (patient: Patient) => void;
   onCall: (id: string, destination: string) => void;
   onUpdateStatus: (id: string, status: PatientStatus) => void;
-  onRemove: (id: string) => void;
+  onRemove: () => void;
   onUpdateDestination: (id: string, destination: string) => void;
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
 }
 
-const statusConfig: Record<PatientStatus, { color: string; bg: string; border: string; icon: any }> = {
-  // ... (keep existing config if not redeclared, but here I am redeclaring purely for context in replacement if needed, 
-  // actually I can just leave the interface and component definition start)
-  'Aguardando': { 
-    color: 'text-yellow-400', 
-    bg: 'bg-yellow-500/10', 
-    border: 'border-yellow-500/50',
-    icon: Clock 
-  },
-  'Chamado': { 
-    color: 'text-blue-400', 
-    bg: 'bg-blue-500/10', 
-    border: 'border-blue-500/50',
-    icon: Megaphone
-  },
-  'Em Atendimento': { 
-    color: 'text-green-400', 
-    bg: 'bg-green-500/10', 
-    border: 'border-green-500/50',
-    icon: Play
-  },
-  'Atendimento Finalizado': { 
-    color: 'text-gray-400', 
-    bg: 'bg-gray-500/10', 
-    border: 'border-gray-500/30',
-    icon: Clock
+const statusConfig: Record<
+  PatientStatus,
+  {
+    card: string;
+    rail: string;
+    badge: string;
+    dot: string;
+    icon: React.ElementType;
+    label: string;
   }
+> = {
+  Aguardando: {
+    card: 'border-[#F0D799] bg-[#FFFDF7]',
+    rail: 'bg-[#F59E0B]',
+    badge: 'border-[#F0D799] bg-[#FFF4D8] text-[#875A00]',
+    dot: 'bg-[#F59E0B]',
+    icon: Clock,
+    label: 'Aguardando',
+  },
+  Chamado: {
+    card: 'border-[#BFD8FF] bg-[#F7FAFF] ring-1 ring-[#1466F5]/12',
+    rail: 'bg-[#1466F5]',
+    badge: 'border-[#BFD8FF] bg-[#EAF3FF] text-[#0F5AD8]',
+    dot: 'bg-[#1466F5]',
+    icon: Megaphone,
+    label: 'Chamado',
+  },
+  'Em Atendimento': {
+    card: 'border-[#BFECE1] bg-[#F7FCFA]',
+    rail: 'bg-[#00BB94]',
+    badge: 'border-[#BFECE1] bg-[#E6F7F2] text-[#007A65]',
+    dot: 'bg-[#00BB94]',
+    icon: Play,
+    label: 'Em atendimento',
+  },
+  'Atendimento Finalizado': {
+    card: 'border-[#E2E8F0] bg-[#F8FAFC]',
+    rail: 'bg-[#94A3B8]',
+    badge: 'border-[#CBD5E1] bg-[#F1F5F9] text-[#64748B]',
+    dot: 'bg-[#94A3B8]',
+    icon: CheckCircle2,
+    label: 'Finalizado',
+  },
 };
 
-const PatientCard: React.FC<PatientCardProps> = ({ 
-  patient, 
+const actionButtonBase =
+  'flex size-9 items-center justify-center rounded-xl border transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-55';
+
+const PatientCard: React.FC<PatientCardProps> = ({
+  patient,
   position,
-  onEdit, 
-  onCall, 
-  onUpdateStatus, 
-  onRemove, 
-  onUpdateDestination 
+  onEdit,
+  onCall,
+  onUpdateStatus,
+  onRemove,
+  onUpdateDestination,
+  dragHandleProps,
 }) => {
   const isFinished = patient.status === 'Atendimento Finalizado';
   const canStartService = patient.status !== 'Atendimento Finalizado' && patient.status !== 'Em Atendimento';
-  const statusStyles = statusConfig[patient.status] || statusConfig['Aguardando'];
+  const statusStyles = statusConfig[patient.status] || statusConfig.Aguardando;
   const StatusIcon = statusStyles.icon;
+  const callTooltip = patient.status === 'Aguardando' ? 'Chamar paciente' : 'Chamar novamente';
 
   return (
-    <div
-      className={`
-        relative rounded-xl border border-border bg-card/70 backdrop-blur-sm p-4 
-        transition-all duration-300 hover:bg-card hover:shadow-lg hover:border-border/90 hover:z-50 group
-        ${patient.status === 'Chamado' ? 'ring-2 ring-blue-500/30 ring-offset-2 ring-offset-transparent' : ''}
-        ${isFinished ? 'opacity-60 grayscale-[0.5]' : ''}
-      `}
+    <article
+      className={cn(
+        'group relative overflow-visible rounded-[1.25rem] border px-3 py-2.5 shadow-[0_8px_22px_rgba(0,27,61,0.05)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_12px_28px_rgba(0,27,61,0.09)]',
+        statusStyles.card,
+        isFinished && 'opacity-70',
+      )}
     >
-      {/* Decorative Status Bar on Left */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${statusStyles.bg.replace('/10', '/80')} ${patient.status === 'Chamado' ? 'animate-pulse' : ''}`} />
+      <div className={cn('absolute inset-y-3 left-0 w-1 rounded-r-full', statusStyles.rail)} aria-hidden="true" />
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pl-3">
-        
-        {/* Position Indicator */}
-        <div className="hidden sm:flex flex-col items-center justify-center shrink-0 w-8">
-            <span className="text-2xl font-bold text-muted-foreground/40 font-mono leading-none">
-                {String(position).padStart(2, '0')}
-            </span>
-        </div>
-        {/* Main Info */}
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
-            <h3 className="text-xl font-bold text-card-foreground tracking-tight">{patient.name}</h3>
-            {patient.callCount > 0 && (
-              <Badge className="gap-1.5 bg-blue-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-300">
-                <Megaphone size={10} className="stroke-3" />
-                {patient.callCount}ª chamada
-              </Badge>
-            )}
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <MapPin size={14} className="text-muted-foreground" />
-              <span className="text-muted-foreground font-medium">{patient.destination}</span>
-            </div>
-            <div className={`flex items-center gap-1.5 font-medium ${statusStyles.color}`}>
-               <StatusIcon size={14} className={patient.status === 'Chamado' ? 'animate-bounce' : ''} />
-               <span>{patient.status}</span>
-            </div>
+      <div className="grid min-w-0 gap-2 pl-1 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
+        <div className="flex items-center gap-2 sm:flex-col sm:gap-1.5">
+          <Tooltip content="Mover na fila" side="right">
+            <button
+              type="button"
+              {...dragHandleProps}
+              aria-label={`Mover ${patient.name} na fila`}
+              className={cn(
+                'flex size-8 shrink-0 items-center justify-center rounded-xl border border-[#DCE5EE] bg-white text-[#94A3B8] shadow-sm transition-colors hover:border-[#BFD8FF] hover:text-[#1466F5] active:scale-95',
+                dragHandleProps?.className,
+              )}
+            >
+              <GripVertical className="size-4" />
+            </button>
+          </Tooltip>
+          <div className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded-xl bg-[#001B3D] px-2 text-xs font-extrabold text-white">
+            {String(position).padStart(2, '0')}
           </div>
         </div>
 
-        {/* Actions - Grouped */}
-        <div className="flex items-center gap-3 self-end sm:self-center">
-          
-          {/* Primary Actions Group */}
-          <div className="flex items-center gap-1 bg-secondary/20 p-1 rounded-lg border border-border">
-            <button
-              className={`
-                flex items-center justify-center rounded-md h-9 w-9 transition-all active:scale-95
-                ${isFinished 
-                  ? 'text-gray-500 cursor-not-allowed' 
-                  : 'text-blue-400 hover:bg-blue-500/20 hover:text-blue-300'}
-              `}
-              title={patient.status === 'Aguardando' ? 'Chamar Paciente' : 'Chamar Novamente'}
-              onClick={() => onCall(patient.id, patient.destination)}
-              disabled={isFinished}
-            >
-              <Megaphone size={18} className={patient.status === 'Chamado' ? 'animate-pulse' : ''} />
-            </button>
+        <div className="min-w-0">
+          <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-start gap-2">
+                <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', statusStyles.dot)} aria-hidden="true" />
+                <h3 className="min-w-0 text-[15px] font-extrabold leading-snug text-[#001B3D] line-clamp-2">
+                  {patient.name}
+                </h3>
+              </div>
 
-            <button
-              className={`
-                flex items-center justify-center rounded-md h-9 w-9 transition-all active:scale-95
-                ${canStartService
-                  ? 'text-green-400 hover:bg-green-500/20 hover:text-green-300'
-                  : 'text-gray-600 cursor-not-allowed'}
-              `}
-              title="Iniciar Atendimento"
-              onClick={() => onUpdateStatus(patient.id, 'Em Atendimento')}
-              disabled={!canStartService}
-            >
-              <Play size={18} />
-            </button>
+              <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-xs font-bold">
+                <div className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#DCE5EE] bg-white/80 px-2 py-1 text-[#475569]">
+                  <MapPin className="size-3.5 shrink-0 text-[#00A885]" />
+                  <span className="truncate">{patient.destination}</span>
+                </div>
+                <div className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-1', statusStyles.badge)}>
+                  <StatusIcon className="size-3.5" />
+                  <span>{statusStyles.label}</span>
+                </div>
+                {patient.callCount > 0 && (
+                  <div className="inline-flex items-center gap-1 rounded-full border border-[#BFD8FF] bg-[#EAF3FF] px-2 py-1 text-[#0F5AD8]">
+                    <Megaphone className="size-3.5" />
+                    <span>{patient.callCount}ª chamada</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
-            {/* Injected Finish Button - Wrapper to make it fit if needed, but the component itself manages styles. 
-                Ideally we should pass a prop to FinishServiceButton to match this style, 
-                but for now we'll assume it renders its own button.
-            */}
-            <FinishServiceButton
-              patientId={patient.id}
-              isFinished={isFinished}
-              onUpdateStatus={onUpdateStatus}
-              onUpdateDestination={onUpdateDestination}
-            />
-          </div>
+            <div className="flex shrink-0 items-center gap-1.5 lg:justify-end">
+              <Tooltip content={callTooltip}>
+                <button
+                  className={cn(
+                    actionButtonBase,
+                    isFinished
+                      ? 'border-[#E2E8F0] bg-[#F1F5F9] text-[#94A3B8]'
+                      : 'border-[#1466F5] bg-[#1466F5] text-white shadow-[0_8px_18px_rgba(20,102,245,0.18)] hover:bg-[#0F5AD8]',
+                  )}
+                  aria-label={patient.status === 'Aguardando' ? `Chamar ${patient.name}` : `Chamar novamente ${patient.name}`}
+                  onClick={() => onCall(patient.id, patient.destination)}
+                  disabled={isFinished}
+                >
+                  <Megaphone className="size-4" />
+                </button>
+              </Tooltip>
 
-          {/* Secondary Actions Group (Edit/Remove) */}
-          <div className="flex items-center gap-1">
-             <button
-              className={`
-                flex items-center justify-center rounded-full h-8 w-8 transition-colors
-                ${isFinished
-                  ? 'text-gray-600 cursor-not-allowed'
-                  : 'text-muted-foreground hover:bg-yellow-500/10 hover:text-yellow-400'}
-              `}
-              title="Editar"
-              onClick={() => onEdit(patient)}
-              disabled={isFinished}
-            >
-              <Edit size={16} />
-            </button>
-            <button
-              className="flex items-center justify-center rounded-full h-8 w-8 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-colors"
-              title="Remover da Fila"
-              onClick={() => onRemove(patient.id)}
-            >
-              <Trash2 size={16} />
-            </button>
+              <Tooltip content="Iniciar atendimento">
+                <button
+                  className={cn(
+                    actionButtonBase,
+                    canStartService
+                      ? 'border-[#BFECE1] bg-[#E6F7F2] text-[#007A65] hover:bg-[#D8F2EB]'
+                      : 'border-[#E2E8F0] bg-[#F1F5F9] text-[#94A3B8]',
+                  )}
+                  aria-label={`Iniciar atendimento de ${patient.name}`}
+                  onClick={() => onUpdateStatus(patient.id, 'Em Atendimento')}
+                  disabled={!canStartService}
+                >
+                  <Play className="size-4" />
+                </button>
+              </Tooltip>
+
+              <FinishServiceButton
+                patientId={patient.id}
+                isFinished={isFinished}
+                onUpdateStatus={onUpdateStatus}
+                onUpdateDestination={onUpdateDestination}
+              />
+
+              <Tooltip content="Editar">
+                <button
+                  className={cn(
+                    actionButtonBase,
+                    isFinished
+                      ? 'border-[#E2E8F0] bg-[#F1F5F9] text-[#CBD5E1]'
+                      : 'border-[#DCE5EE] bg-white text-[#64748B] hover:border-[#BFD8FF] hover:text-[#1466F5]',
+                  )}
+                  aria-label={`Editar ${patient.name}`}
+                  onClick={() => onEdit(patient)}
+                  disabled={isFinished}
+                >
+                  <Edit className="size-4" />
+                </button>
+              </Tooltip>
+
+              <Tooltip content="Remover da fila">
+                <button
+                  className={cn(
+                    actionButtonBase,
+                    'border-[#F3D6D8] bg-white text-[#B4232D] hover:bg-[#FFF1F2] hover:text-[#8F1B24]',
+                  )}
+                  aria-label={`Remover ${patient.name} da fila`}
+                  onClick={onRemove}
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </Tooltip>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 

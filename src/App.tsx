@@ -30,7 +30,7 @@ const App: React.FC = () => {
         <main 
           className={cn(
             "min-w-0 flex-1 overflow-x-hidden pt-16 transition-all duration-300 ease-in-out lg:overflow-y-auto lg:pt-0",
-            isSidebarCollapsed ? "lg:ml-20" : "lg:ml-70"
+            isSidebarCollapsed ? "lg:ml-[5.5rem]" : "lg:ml-[19rem]"
           )}
         >
           <div className="mx-auto min-h-0 w-full min-w-0 max-w-full overflow-x-hidden animate-in fade-in duration-700 lg:h-full">

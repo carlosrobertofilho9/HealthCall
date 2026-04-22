@@ -5,29 +5,20 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
+  "background_color": "#F4F6F8",
+  "theme_color": "#001B3D",
   "icons": [
     {
-      "src": "/healthcall-icon.png",
+      "src": "/pwa-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/healthcall-icon.png",
+      "src": "/pwa-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "/healthcall-logo-header.png",
-      "sizes": "540x720",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
   ]
 }
-

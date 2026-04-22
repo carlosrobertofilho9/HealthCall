@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Svg, Path, Circle, View, Text } from '@react-pdf/renderer';
+import { StyleSheet, Svg, Path, View, Text } from '@react-pdf/renderer';
 import type { DocumentFormData } from '../DocumentPdf';
 import { formatCPF, formatCNS } from '@/lib/utils';
 import { PdfIcon, type PdfIconName } from './icons';
@@ -211,9 +211,11 @@ export const HeaderIcon = ({ icon, color = pdfTheme.colors.primary }: { icon: Pd
 
 export const HealthLogo = () => (
   <Svg width={36} height={36} viewBox="0 0 40 40">
-    <Circle cx="20" cy="20" r="19" fill={pdfTheme.colors.primaryDark} stroke={pdfTheme.colors.primary} strokeWidth={1} />
-    <Path d="M15 12h10v6h6v10h-6v6H15v-6H9V18h6z" fill={pdfTheme.colors.text.white} />
-    <Path d="M9 23h4l2-4 3 8 2-4h4" stroke={pdfTheme.colors.primaryDark} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M7 16v-3a6 6 0 0 1 6-6h5" stroke="#00A8A8" strokeWidth={4.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M22 7h5a6 6 0 0 1 6 6v3" stroke="#00A8A8" strokeWidth={4.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M7 24v3a6 6 0 0 0 6 6h5" stroke="#1466F5" strokeWidth={4.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M22 33h5a6 6 0 0 0 6-6v-3" stroke="#1466F5" strokeWidth={4.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M13 12h5v7h4v-7h5v16h-5v-7h-4v7h-5z" fill="#001B3D" />
   </Svg>
 );
 

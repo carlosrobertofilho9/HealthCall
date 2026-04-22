@@ -1,8 +1,13 @@
-const CACHE_NAME = 'healthcall-static-v3.0.0';
+const CACHE_NAME = 'healthcall-static-v3.1.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png',
+  '/apple-touch-icon.png',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
   '/healthcall-icon.png',
   '/healthcall-logo.png',
   '/healthcall-logo-header.png',

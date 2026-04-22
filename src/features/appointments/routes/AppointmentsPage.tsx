@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  Activity,
   Search,
   Plus,
   RefreshCw,
@@ -10,8 +11,14 @@ import {
   X,
   CalendarDays,
   CheckCircle2,
-  Circle,
-  BarChart2
+  Clock3,
+  FileText,
+  Route,
+  ShieldCheck,
+  Stethoscope,
+  TrendingUp,
+  Users,
+  Zap
 } from 'lucide-react';
 import { useAppointments } from '../hooks/useAppointments';
 import DateSelector from '../components/DateSelector';
@@ -76,6 +83,7 @@ const AppointmentsPage: React.FC = () => {
   const patientListMenuRef = useRef<HTMLDivElement | null>(null);
   const reportPopupRef = useRef<HTMLDivElement | null>(null);
   const patientListPopupRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const availableSlots = slots.filter(s => s.appointment === null).map(s => s.slotNumber);
   const bulkRescheduleAppointments = slots
@@ -177,6 +185,35 @@ const AppointmentsPage: React.FC = () => {
     ? Math.round((slotStats.occupied / slotStats.total) * 100)
     : 0;
   const isHomeVisit = dayConfig.serviceType === 'HOME_VISIT';
+  const occupiedPatientSlots = slots.filter(slot =>
+    slot.appointment && !isBlockedAppointment(slot.appointment)
+  );
+  const blockedSlotsCount = slots.filter(slot =>
+    slot.appointment && isBlockedAppointment(slot.appointment)
+  ).length;
+  const attendedCount = occupiedPatientSlots.filter(slot =>
+    slot.appointment && getAppointmentStatus(slot.appointment) === 'Compareceu'
+  ).length;
+  const scheduledCount = occupiedPatientSlots.filter(slot =>
+    slot.appointment && getAppointmentStatus(slot.appointment) === 'Agendado'
+  ).length;
+  const serviceLabel = dayConfig.hasService
+    ? dayConfig.serviceType === 'HOME_VISIT'
+      ? 'Visitas domiciliares'
+      : 'Atendimento na UBS'
+    : 'Sem atendimento';
+  const selectedDateLabel = selectedDate.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+  });
+  const nextAvailableSlot = availableSlots.length > 0
+    ? slots.find(slot => slot.slotNumber === availableSlots[0])
+    : undefined;
+  const nextAvailableLabel = nextAvailableSlot
+    ? `Ficha ${nextAvailableSlot.slotNumber}${nextAvailableSlot.time ? ` · ${nextAvailableSlot.time}` : ''}`
+    : 'Agenda completa';
+  const visibleResultsCount = filteredSlots.filter(slot => slot.appointment && !isBlockedAppointment(slot.appointment)).length;
 
   const reportPeriods = useMemo(() => {
     const periods = new Set<ReportPeriodFilter>();
@@ -238,6 +275,14 @@ const AppointmentsPage: React.FC = () => {
     handlePatientListPrint(singlePeriod);
   };
 
+  const focusSearchInput = () => {
+    setIsSearchOpen(true);
+    window.setTimeout(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 0);
+  };
+
   useEffect(() => {
     if (!isReportMenuOpen && !isPatientListMenuOpen) return;
 
@@ -284,113 +329,154 @@ const AppointmentsPage: React.FC = () => {
   }, [isReportMenuOpen, isPatientListMenuOpen]);
 
   return (
-    <PageShell desktopContained className="mx-auto print:max-w-none lg:flex lg:flex-col">
+    <PageShell
+      desktopContained
+      className="flex flex-col gap-5 bg-[linear-gradient(180deg,#F4F6F8_0%,#EFF8F6_100%)] px-4 py-4 pb-[13rem] print:max-w-none md:pb-28 lg:h-full lg:!overflow-y-auto lg:px-5 lg:py-5 lg:pb-5 xl:!overflow-hidden"
+    >
       {/* Print header */}
       <PrintHeader selectedDate={selectedDate} dayConfig={dayConfig} slotStats={slotStats} />
 
-      {/* ══════════════ TOP NAV ══════════════ */}
-      <div className="bg-card px-4 py-4 mb-4 md:py-6 lg:mb-0 lg:-mx-2 lg:px-6 border-b border-border shrink-0 print:hidden">
-        <div className="w-full mx-auto">
-          <AppointmentsNav />
-        </div>
+      {/* ══════════════ STICKY SUBNAV ══════════════ */}
+      <div className="contents md:sticky md:top-16 md:z-30 md:-mx-4 md:-mt-2 md:block md:bg-[#F4F6F8]/92 md:px-4 md:py-2 md:backdrop-blur-xl lg:top-0 lg:-mx-5 lg:px-5 print:hidden">
+        <AppointmentsNav />
       </div>
 
-      {/* ══════════════ MAIN LAYOUT ══════════════ */}
-      <div className="flex min-w-0 flex-col gap-4 print:block lg:w-full lg:flex-1 lg:flex-row lg:gap-0 lg:overflow-hidden">
+      {/* ══════════════ OPERATION HEADER ══════════════ */}
+      <header className="relative shrink-0 overflow-hidden rounded-[1.6rem] border border-white/80 bg-white px-5 py-5 shadow-[0_18px_48px_rgba(0,27,61,0.07)] print:hidden lg:px-6">
+        <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#1466F5_0%,#00BB94_100%)]" aria-hidden="true" />
+        <div className="relative grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,0.95fr)] xl:items-center">
+          <div className="min-w-0">
+            <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-[#CFEDE6] bg-[#E6F7F2] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#007A65]">
+              <span className="size-2 rounded-full bg-[#00BB94]" />
+              Agenda APS em tempo real
+            </div>
+            <h1 className="text-3xl font-extrabold leading-tight tracking-normal text-[#001B3D] lg:text-[2.25rem]">
+              Marcações
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm font-medium leading-5 text-[#64748B]">
+              Controle de fichas, visitas, presença e remarcações com leitura rápida para a rotina da unidade.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm font-semibold text-[#334155]">
+              <StatusChip icon={<Stethoscope className="size-4 text-[#00A885]" />} label={serviceLabel} />
+              <StatusChip icon={<ShieldCheck className="size-4 text-[#1466F5]" />} label={selectedDateLabel} />
+              {dayConfig.hasService && (
+                <StatusChip
+                  icon={availableSlots.length > 0
+                    ? <Zap className="size-4 text-[#00A885]" />
+                    : <CheckCircle2 className="size-4 text-[#F59E0B]" />
+                  }
+                  label={`Próxima livre: ${nextAvailableLabel}`}
+                />
+              )}
+            </div>
+          </div>
 
-        {/* ── LEFT PANEL (sticky on desktop) ── */}
-        <aside className="w-full lg:w-[320px] xl:w-[360px] shrink-0 print:hidden lg:flex lg:flex-col lg:h-full lg:border-r lg:border-border lg:bg-transparent">
-          <div className="lg:sticky lg:top-4 flex flex-col gap-4 lg:p-6 lg:h-full lg:overflow-y-auto custom-scrollbar lg:static">
-
-            {/* Date selector */}
-            <DateSelector
-              selectedDate={selectedDate}
-              dayConfig={dayConfig}
-              onPreviousDay={goToPreviousDay}
-              onNextDay={goToNextDay}
-              onToday={goToToday}
-              onDateChange={changeDate}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:gap-3">
+            <MetricCard
+              label={isHomeVisit ? 'Visitas' : 'Fichas'}
+              value={dayConfig.hasService ? slotStats.total : 0}
+              helper={dayConfig.hasService ? 'capacidade do dia' : 'sem agenda'}
+              icon={<Users className="size-4 text-[#1466F5]" />}
+              tone="blue"
             />
+            <MetricCard
+              label="Ocupação"
+              value={`${occupancyPct}%`}
+              helper={`${slotStats.occupied}/${slotStats.total || 0} em uso`}
+              icon={<TrendingUp className="size-4 text-[#00A885]" />}
+              tone="green"
+            />
+            <MetricCard
+              label="Livres"
+              value={dayConfig.hasService ? slotStats.available : 0}
+              helper={dayConfig.hasService ? nextAvailableLabel : 'indisponível'}
+              icon={<Clock3 className="size-4 text-[#0F5AD8]" />}
+              tone="softBlue"
+            />
+            <MetricCard
+              label="Compareceu"
+              value={attendedCount}
+              helper={`${scheduledCount} agendado(s)`}
+              icon={<Activity className="size-4 text-[#007A65]" />}
+              tone="neutral"
+            />
+          </div>
+        </div>
 
-            {/* Stats card – only when service */}
-            {dayConfig.hasService && (
-              <div className="rounded-2xl bg-card border border-border p-5 space-y-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:p-0">
-                {/* Occupancy header */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <BarChart2 className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold text-card-foreground">Ocupação do dia</span>
+        <div className="relative mt-5 flex flex-col gap-3 border-t border-[#EEF3F7] pt-4 lg:flex-row lg:items-center lg:justify-end">
+          {dayConfig.hasService && (
+            <button
+              onClick={() => handleAddClick()}
+              disabled={availableSlots.length === 0 || isLoading}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[1rem] bg-[#00BB94] px-6 text-sm font-extrabold text-white shadow-[0_14px_28px_rgba(0,187,148,0.22)] transition-all hover:bg-[#00A885] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 lg:min-w-48"
+            >
+              <Plus className="size-5" />
+              {isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* ══════════════ MAIN LAYOUT ══════════════ */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 print:block xl:grid-cols-[minmax(300px,0.78fr)_minmax(520px,1.42fr)] xl:overflow-hidden">
+
+        {/* ── CONTROLS ── */}
+        <aside className="space-y-4 print:hidden xl:min-h-0 xl:overflow-y-auto xl:pr-1 custom-scrollbar">
+          <DateSelector
+            selectedDate={selectedDate}
+            dayConfig={dayConfig}
+            onPreviousDay={goToPreviousDay}
+            onNextDay={goToNextDay}
+            onToday={goToToday}
+            onDateChange={changeDate}
+          />
+
+          {dayConfig.hasService && (
+            <section className="overflow-hidden rounded-[1.35rem] border border-white/80 bg-white shadow-[0_16px_44px_rgba(0,27,61,0.06)]">
+              <div className="border-b border-[#EEF3F7] px-4 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-extrabold text-[#001B3D]">Resumo operacional</h2>
+                    <p className="mt-1 text-xs font-semibold text-[#64748B]">
+                      Status do dia e ações de apoio
+                    </p>
                   </div>
-                  <span className={`text-lg font-bold ${
-                    occupancyPct >= 90 ? 'text-red-400' :
-                    occupancyPct >= 60 ? 'text-amber-400' : 'text-primary'
-                  }`}>{occupancyPct}%</span>
+                  <span className={`rounded-full px-3 py-1 text-xs font-extrabold ${
+                    occupancyPct >= 90
+                      ? 'bg-[#FFF1F2] text-[#B42318]'
+                      : occupancyPct >= 60
+                        ? 'bg-[#FFF7E6] text-[#9A5A00]'
+                        : 'bg-[#E6F7F2] text-[#007A65]'
+                  }`}>
+                    {occupancyPct}%
+                  </span>
                 </div>
-
-                {/* Progress bar */}
-                <div className="h-2.5 rounded-full bg-secondary overflow-hidden">
+                <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#E9EDF1]">
                   <div
                     className={`h-full rounded-full transition-all duration-700 ${
-                      occupancyPct >= 90 ? 'bg-red-400' :
-                      occupancyPct >= 60 ? 'bg-amber-400' : 'bg-primary'
+                      occupancyPct >= 90
+                        ? 'bg-[#D9474F]'
+                        : occupancyPct >= 60
+                          ? 'bg-[#F59E0B]'
+                          : 'bg-[#00BB94]'
                     }`}
                     style={{ width: `${occupancyPct}%` }}
                   />
                 </div>
-
-                {/* Stat pills */}
-                <div className="grid grid-cols-3 gap-2">
-                  <StatPill
-                    label={isHomeVisit ? 'Visitas' : 'Total'}
-                    value={slotStats.total}
-                    color="neutral"
-                  />
-                  <StatPill
-                    label="Ocupadas"
-                    value={slotStats.occupied}
-                    color="green"
-                  />
-                  <StatPill
-                    label="Livres"
-                    value={slotStats.available}
-                    color="blue"
-                  />
-                </div>
-
-                {/* Quick status breakdown */}
-                <div className="space-y-2 pt-1 border-t border-border">
-                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-                    Próxima vaga livre
-                  </p>
-                  {availableSlots.length > 0 ? (
-                    <div className="flex items-center gap-2">
-                      <Circle className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-sm font-semibold text-card-foreground">
-                        Ficha {availableSlots[0]}
-                        {slots[availableSlots[0] - 1]?.time
-                          ? ` · ${slots[availableSlots[0] - 1].time}`
-                          : ''}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="text-sm text-amber-300 font-medium">
-                        Agenda completa
-                      </span>
-                    </div>
-                  )}
-                </div>
               </div>
-            )}
 
-            {/* Actions – desktop only */}
-            {dayConfig.hasService && (
-              <div className="hidden lg:flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2 p-4">
+                <StatPill label="Pacientes" value={occupiedPatientSlots.length} color="green" />
+                <StatPill label="Livres" value={slotStats.available} color="blue" />
+                <StatPill label="Bloqueios" value={blockedSlotsCount} color="warning" />
+                <StatPill label="Remarcadas" value={releasedAppointments.length} color="neutral" />
+              </div>
+
+              <div className="grid gap-2 border-t border-[#EEF3F7] p-4">
                 {isHomeVisit ? (
                   <DesktopActionButton
-                    icon={<Printer className="w-4 h-4" />}
-                    label="Imprimir Roteiro"
+                    icon={<Route className="w-4 h-4" />}
+                    label="Imprimir roteiro"
                     onClick={() => printHomeVisitRoute(slots, selectedDate)}
                   />
                 ) : (
@@ -404,7 +490,7 @@ const AppointmentsPage: React.FC = () => {
                     </div>
                     <div className="relative" ref={patientListMenuRef}>
                       <DesktopActionButton
-                        icon={<Printer className="w-4 h-4" />}
+                        icon={<FileText className="w-4 h-4" />}
                         label="Ficha"
                         onClick={handlePatientListButtonClick}
                       />
@@ -413,7 +499,7 @@ const AppointmentsPage: React.FC = () => {
                 )}
                 <div className="grid grid-cols-2 gap-2">
                   <DesktopActionButton
-                    icon={<Ban className="w-4 h-4 text-red-400" />}
+                    icon={<Ban className="w-4 h-4 text-[#D9474F]" />}
                     label="Bloquear"
                     onClick={() => setIsBlockDayModalOpen(true)}
                     disabled={isLoading}
@@ -426,163 +512,131 @@ const AppointmentsPage: React.FC = () => {
                   />
                 </div>
                 <DesktopActionButton
-                  icon={<CalendarDays className="w-4 h-4 text-amber-300" />}
+                  icon={<CalendarDays className="w-4 h-4 text-[#F59E0B]" />}
                   label="Reagendar dia"
                   onClick={() => setIsBulkRescheduleModalOpen(true)}
                   disabled={isLoading || bulkRescheduleAppointments.length === 0}
                 />
-                <div className="h-px bg-border my-1" />
-                <DesktopActionButton
-                  icon={<Plus className="w-4 h-4" />}
-                  label={isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
-                  onClick={() => handleAddClick()}
-                  disabled={availableSlots.length === 0 || isLoading}
-                  primary
-                />
               </div>
-            )}
-          </div>
+            </section>
+          )}
         </aside>
 
-        {/* ── RIGHT PANEL: slots ── */}
-        <main className="flex-1 min-w-0 pb-28 lg:pb-0 lg:h-full lg:overflow-y-auto custom-scrollbar lg:pt-6 lg:px-6">
-          {/* Search bar */}
-          {dayConfig.hasService && (
-            <div className="mb-4 print:hidden lg:mb-6">
-              {/* Mobile: collapsible search */}
-              <div className="lg:hidden">
-                {isSearchOpen ? (
-                  <div className="flex items-center gap-2">
-                    <div className="relative min-w-0 flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <input
-                        autoFocus
-                        type="text"
-                        placeholder="Buscar paciente, CPF, ACS..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-card py-3 pl-9 pr-4 text-card-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none"
-                      />
+        {/* ── AGENDA ── */}
+        <main className="min-w-0 pb-4 print:pb-0 xl:min-h-0 xl:overflow-y-auto custom-scrollbar">
+          <section className="min-h-full rounded-[1.35rem] border border-white/80 bg-white/86 p-3 shadow-[0_16px_44px_rgba(0,27,61,0.06)] backdrop-blur sm:p-4 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
+            {dayConfig.hasService && (
+              <div className="mb-4 rounded-[1.1rem] border border-[#DCE5EE] bg-white p-3 shadow-[0_10px_28px_rgba(0,27,61,0.04)] print:hidden">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#007A65]">
+                      <span className="size-2 rounded-full bg-[#00BB94]" />
+                      Agenda do dia
                     </div>
-                    <button
-                      onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
-                      className="p-3 rounded-xl bg-card border border-border text-muted-foreground"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                    <h2 className="mt-1 text-xl font-extrabold text-[#001B3D]">
+                      {isHomeVisit ? 'Visitas programadas' : 'Fichas de atendimento'}
+                    </h2>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => setIsSearchOpen(true)}
-                    className="flex w-full min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-muted-foreground transition-colors hover:border-primary"
-                  >
-                    <Search className="w-4 h-4" />
-                    <span className="min-w-0 truncate">Buscar paciente, CPF ou ACS...</span>
+
+                  <div className="w-full lg:max-w-md">
+                    <div className="relative">
+                      <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#64748B]" />
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Buscar paciente, CPF, CNS ou ACS..."
+                        value={searchQuery}
+                        onFocus={() => setIsSearchOpen(true)}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="h-12 w-full rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] py-3 pl-10 pr-10 text-sm font-semibold text-[#001B3D] placeholder:text-[#64748B] transition-colors focus:border-[#00BB94] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#00BB94]/10"
+                      />
+                      {(searchQuery || isSearchOpen) && (
+                        <button
+                          onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
+                          className="absolute right-3 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-[#64748B] transition-colors hover:bg-[#E9EDF1] hover:text-[#001B3D]"
+                          aria-label="Limpar busca"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      )}
+                    </div>
                     {searchQuery && (
-                      <span className="ml-auto text-primary font-semibold text-xs">
-                        {filteredSlots.filter(s => s.appointment).length} resultado(s)
-                      </span>
+                      <p className="mt-2 text-xs font-semibold text-[#64748B]">
+                        {visibleResultsCount} resultado(s) na agenda ativa
+                      </p>
                     )}
-                  </button>
-                )}
+                  </div>
+                </div>
               </div>
+            )}
 
-              {/* Desktop: always visible */}
-              <div className="hidden lg:block relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Buscar paciente, CPF ou ACS..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-card-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+            <SlotsList
+              slots={filteredSlots}
+              dayConfig={dayConfig}
+              onAddClick={handleAddClick}
+              onEditClick={handleEditClick}
+              onDeleteClick={handleDeleteClick}
+              onStatusChange={handleStatusChange}
+              onRescheduleClick={handleRescheduleClick}
+              onConfirmationPdfClick={handleConfirmationPdfClick}
+              isLoading={isLoading}
+            />
 
-          {/* Slots list */}
-          <SlotsList
-            slots={filteredSlots}
-            dayConfig={dayConfig}
-            onAddClick={handleAddClick}
-            onEditClick={handleEditClick}
-            onDeleteClick={handleDeleteClick}
-            onStatusChange={handleStatusChange}
-            onRescheduleClick={handleRescheduleClick}
-            onConfirmationPdfClick={handleConfirmationPdfClick}
-            isLoading={isLoading}
-          />
-
-          {/* Released section */}
-          <ReleasedAppointmentsSection appointments={filteredReleasedAppointments} />
+            <ReleasedAppointmentsSection appointments={filteredReleasedAppointments} />
+          </section>
         </main>
       </div>
 
       {/* ══════════════ MOBILE BOTTOM TOOLBAR ══════════════ */}
       {dayConfig.hasService && (
-        <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden print:hidden">
-          {/* Blur backdrop */}
-          <div className="bg-background/90 backdrop-blur-xl border-t border-border px-4 pt-3 pb-safe-or-3">
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] z-[60] md:hidden print:hidden">
+          <div className="border-t border-[#CFEDE6] bg-[#EFF8F6]/96 px-4 pb-3 pt-3 shadow-[0_-18px_44px_rgba(0,27,61,0.14)] backdrop-blur-xl">
             <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center max-w-xl mx-auto">
-              {/* Primary CTA */}
               <button
                 onClick={() => handleAddClick()}
                 disabled={availableSlots.length === 0 || isLoading}
-                className="flex items-center justify-center gap-2 h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 active:scale-95 transition-all"
+                className="flex h-12 items-center justify-center gap-2 rounded-[0.95rem] bg-[#00BB94] text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(0,187,148,0.22)] transition-all active:scale-95 disabled:opacity-50"
               >
                 <Plus className="w-5 h-5" />
                 {isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
               </button>
 
-              {/* Search toggle */}
               <button
-                onClick={() => { setIsSearchOpen(v => !v); }}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-card border border-border active:scale-95 transition-all"
+                onClick={focusSearchInput}
+                className="flex h-12 w-12 items-center justify-center rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] transition-all active:scale-95"
                 aria-label="Buscar"
               >
-                <Search className={`w-5 h-5 ${isSearchOpen ? 'text-primary' : 'text-muted-foreground'}`} />
+                <Search className={`w-5 h-5 ${isSearchOpen ? 'text-[#00A885]' : 'text-[#64748B]'}`} />
               </button>
 
-              {/* Block */}
               <button
                 onClick={() => setIsBlockDayModalOpen(true)}
                 disabled={isLoading}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-card border border-border active:scale-95 transition-all disabled:opacity-50"
+                className="flex h-12 w-12 items-center justify-center rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] transition-all active:scale-95 disabled:opacity-50"
                 aria-label="Bloquear dia"
               >
-                <Ban className="w-5 h-5 text-red-400" />
+                <Ban className="w-5 h-5 text-[#D9474F]" />
               </button>
 
               <button
                 onClick={() => setIsBulkRescheduleModalOpen(true)}
                 disabled={isLoading || bulkRescheduleAppointments.length === 0}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-card border border-border active:scale-95 transition-all disabled:opacity-50"
+                className="flex h-12 w-12 items-center justify-center rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] transition-all active:scale-95 disabled:opacity-50"
                 aria-label="Reagendar dia"
               >
-                <CalendarDays className="w-5 h-5 text-amber-300" />
+                <CalendarDays className="w-5 h-5 text-[#F59E0B]" />
               </button>
 
-              {/* Refresh */}
               <button
                 onClick={refresh}
                 disabled={isLoading}
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-card border border-border active:scale-95 transition-all disabled:opacity-50"
+                className="flex h-12 w-12 items-center justify-center rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] transition-all active:scale-95 disabled:opacity-50"
                 aria-label="Atualizar"
               >
-                <RefreshCw className={`w-5 h-5 text-muted-foreground ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 text-[#64748B] ${isLoading ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
-            {/* Safe area for home indicator */}
             <div className="pb-1" />
           </div>
         </div>
@@ -657,20 +711,20 @@ const AppointmentsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.96 }}
               style={{ top: reportMenuPosition.top, left: reportMenuPosition.left }}
-              className="fixed z-[70] w-52 rounded-xl border border-border/80 bg-popover/95 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+              className="fixed z-[70] w-56 rounded-[1rem] border border-[#DCE5EE] bg-white/95 p-1.5 shadow-[0_20px_50px_rgba(0,27,61,0.16)] backdrop-blur-xl"
             >
               <button
                 onClick={() => handleReportPrint()}
-                className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-black uppercase tracking-wider text-primary hover:bg-primary/10 transition-all active:scale-[0.98]"
+                className="w-full rounded-[0.8rem] px-3 py-2.5 text-left text-xs font-black uppercase tracking-wider text-[#007A65] transition-all hover:bg-[#E6F7F2] active:scale-[0.98]"
               >
                 Imprimir dia inteiro
               </button>
-              <div className="h-px bg-border/50 my-1 mx-1" />
+              <div className="h-px bg-[#EEF3F7] my-1 mx-1" />
               {reportPeriods.map(period => (
                 <button
                   key={period}
                   onClick={() => handleReportPrint(period)}
-                  className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-popover-foreground hover:bg-accent transition-all active:scale-[0.98]"
+                  className="w-full rounded-[0.8rem] px-3 py-2 text-left text-xs font-bold text-[#001B3D] transition-all hover:bg-[#EAF3FF] active:scale-[0.98]"
                 >
                   Turno da {period.toLowerCase()}
                 </button>
@@ -685,20 +739,20 @@ const AppointmentsPage: React.FC = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.96 }}
               style={{ top: patientListMenuPosition.top, right: patientListMenuPosition.right }}
-              className="fixed z-[70] w-52 rounded-xl border border-border/80 bg-popover/95 p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+              className="fixed z-[70] w-56 rounded-[1rem] border border-[#DCE5EE] bg-white/95 p-1.5 shadow-[0_20px_50px_rgba(0,27,61,0.16)] backdrop-blur-xl"
             >
               <button
                 onClick={() => handlePatientListPrint()}
-                className="w-full rounded-lg px-3 py-2.5 text-left text-xs font-black uppercase tracking-wider text-primary hover:bg-primary/10 transition-all active:scale-[0.98]"
+                className="w-full rounded-[0.8rem] px-3 py-2.5 text-left text-xs font-black uppercase tracking-wider text-[#007A65] transition-all hover:bg-[#E6F7F2] active:scale-[0.98]"
               >
                 Imprimir dia inteiro
               </button>
-              <div className="h-px bg-border/50 my-1 mx-1" />
+              <div className="h-px bg-[#EEF3F7] my-1 mx-1" />
               {reportPeriods.map(period => (
                 <button
                   key={period}
                   onClick={() => handlePatientListPrint(period)}
-                  className="w-full rounded-lg px-3 py-2 text-left text-xs font-bold text-popover-foreground hover:bg-accent transition-all active:scale-[0.98]"
+                  className="w-full rounded-[0.8rem] px-3 py-2 text-left text-xs font-bold text-[#001B3D] transition-all hover:bg-[#EAF3FF] active:scale-[0.98]"
                 >
                   Turno da {period.toLowerCase()}
                 </button>
@@ -712,6 +766,53 @@ const AppointmentsPage: React.FC = () => {
   );
 };
 
+/* ─── Header Helpers ───────────────────────────────────────────────────── */
+
+const StatusChip = ({
+  icon,
+  label,
+}: {
+  icon: React.ReactNode;
+  label: string;
+}) => (
+  <div className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-[#DCE5EE] bg-[#F8FAFC] px-3 py-1.5">
+    <span className="shrink-0">{icon}</span>
+    <span className="truncate">{label}</span>
+  </div>
+);
+
+const MetricCard = ({
+  label,
+  value,
+  helper,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  helper: string;
+  icon: React.ReactNode;
+  tone: 'blue' | 'softBlue' | 'green' | 'neutral';
+}) => {
+  const toneClass = {
+    blue: 'border-[#D5E6FF] bg-[#EAF3FF] text-[#0F5AD8] shadow-[0_10px_28px_rgba(20,102,245,0.06)]',
+    softBlue: 'border-[#DCE5EE] bg-[#F8FAFC] text-[#0F5AD8] shadow-[0_10px_28px_rgba(0,27,61,0.04)]',
+    green: 'border-[#CFEDE6] bg-[#E6F7F2] text-[#007A65] shadow-[0_10px_28px_rgba(0,187,148,0.06)]',
+    neutral: 'border-[#DCE5EE] bg-[#F8FAFC] text-[#334155] shadow-[0_10px_28px_rgba(0,27,61,0.04)]',
+  }[tone];
+
+  return (
+    <div className={`rounded-[1.15rem] border p-3 ${toneClass}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-[0.12em]">{label}</span>
+        {icon}
+      </div>
+      <p className="mt-2 text-2xl font-extrabold leading-none text-[#001B3D]">{value}</p>
+      <p className="mt-1 truncate text-xs font-semibold text-[#64748B]">{helper}</p>
+    </div>
+  );
+};
+
 /* ─── Stat Pill ─────────────────────────────────────────────────────────── */
 
 const StatPill = ({
@@ -721,17 +822,18 @@ const StatPill = ({
 }: {
   label: string;
   value: number;
-  color: 'neutral' | 'green' | 'blue';
+  color: 'neutral' | 'green' | 'blue' | 'warning';
 }) => {
   const valueClass =
-    color === 'green' ? 'text-primary' :
-    color === 'blue'  ? 'text-blue-300' :
-    'text-card-foreground';
+    color === 'green' ? 'text-[#007A65]' :
+    color === 'blue' ? 'text-[#0F5AD8]' :
+    color === 'warning' ? 'text-[#9A5A00]' :
+    'text-[#001B3D]';
 
   return (
-    <div className="rounded-xl bg-background border border-border py-3 text-center">
+    <div className="rounded-[1rem] border border-[#DCE5EE] bg-[#F8FAFC] py-3 text-center">
       <p className={`text-xl font-bold ${valueClass}`}>{value}</p>
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mt-0.5">{label}</p>
+      <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#64748B]">{label}</p>
     </div>
   );
 };
@@ -755,11 +857,11 @@ const DesktopActionButton = ({
     onClick={onClick}
     disabled={disabled}
     className={`
-      flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl
-      font-semibold text-sm transition-all active:scale-95 disabled:opacity-50
+      flex w-full items-center justify-center gap-2 rounded-[0.95rem] px-4 py-3
+      text-sm font-extrabold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50
       ${primary
-        ? 'bg-primary text-primary-foreground hover:brightness-110'
-        : 'bg-card border border-border text-card-foreground hover:bg-secondary'
+        ? 'bg-[#00BB94] text-white shadow-[0_10px_24px_rgba(0,187,148,0.18)] hover:bg-[#00A885]'
+        : 'border border-[#DCE5EE] bg-[#F8FAFC] text-[#001B3D] hover:border-[#BFD2E5] hover:bg-white'
       }
     `}
   >
@@ -774,38 +876,38 @@ const ReleasedAppointmentsSection = ({ appointments }: { appointments: Appointme
   if (appointments.length === 0) return null;
 
   return (
-    <section className="mt-6 rounded-2xl border border-border bg-card overflow-hidden print:hidden">
-      <div className="flex items-center justify-between p-4 border-b border-border">
+    <section className="mt-5 overflow-hidden rounded-[1.2rem] border border-[#DCE5EE] bg-white shadow-[0_12px_32px_rgba(0,27,61,0.05)] print:hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-[#EEF3F7] p-4">
         <div>
-          <h3 className="font-bold text-card-foreground">Remarcadas</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Mantidas no histórico sem ocupar ficha no dia original.</p>
+          <h3 className="font-extrabold text-[#001B3D]">Remarcadas</h3>
+          <p className="mt-0.5 text-xs font-semibold text-[#64748B]">Histórico preservado sem ocupar ficha no dia original.</p>
         </div>
-        <Badge className="px-3 py-1 text-sm font-bold">
+        <Badge className="border-[#CFEDE6] bg-[#E6F7F2] px-3 py-1 text-sm font-extrabold text-[#007A65]">
           {appointments.length}
         </Badge>
       </div>
 
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-[#EEF3F7]">
         {appointments.map(appointment => (
           <div
             key={appointment.id}
-            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 hover:bg-background/40 transition-colors"
+            className="flex flex-col gap-2 p-4 transition-colors hover:bg-[#F8FAFC] sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <Badge className="py-0.5 font-bold text-primary">
+                <Badge className="border-[#CFEDE6] bg-[#E6F7F2] py-0.5 font-extrabold text-[#007A65]">
                   Ficha {appointment.slot_number}
                 </Badge>
-                <Badge className="border-purple-500/20 bg-purple-500/15 py-0.5 font-bold text-purple-300">
+                <Badge className="border-[#E9D5FF] bg-[#F5EDFF] py-0.5 font-extrabold text-[#6D28D9]">
                   {getAppointmentStatus(appointment)}
                 </Badge>
               </div>
-              <p className="font-semibold text-card-foreground truncate">{appointment.patient_name}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="truncate font-bold text-[#001B3D]">{appointment.patient_name}</p>
+              <p className="text-sm font-medium text-[#64748B]">
                 {appointment.document_value} · ACS: {appointment.acs_name}
               </p>
             </div>
-            <p className="text-xs text-muted-foreground shrink-0">
+            <p className="shrink-0 text-xs font-semibold text-[#64748B]">
               {new Date(appointment.status_updated_at || appointment.updated_at).toLocaleString('pt-BR', {
                 day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
               })}

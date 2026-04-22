@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useAppointments } from '@/features/appointments/hooks/useAppointments';
 import {
   Calendar,
+  CalendarCheck2,
   UserPlus,
   CheckCircle2,
   Clock,
@@ -9,7 +10,7 @@ import {
   ChevronRight,
   MapPin
 } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, Tooltip } from '@/components/ui';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { Appointment, Patient } from '@/types';
@@ -33,7 +34,6 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
     goToPreviousDay, 
     goToNextDay,
     selectedDate,
-    refresh,
   } = useAppointments();
 
   // Ensuring we are looking at today when the component mounts
@@ -80,100 +80,111 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
 
   const handleCheckIn = async (appointment: Appointment) => {
     try {
-      const success = await onCheckIn(appointment);
-      if (success) {
-        await refresh();
-      }
+      await onCheckIn(appointment);
     } catch (error) {
       console.error('Erro ao fazer check-in da marcação:', error);
-      toast.error('Paciente entrou na fila, mas o status da marcação não foi atualizado.');
+      toast.error('Não foi possível adicionar o paciente à fila.');
     }
   };
 
 
   return (
-    <div className="bg-card rounded-2xl p-6 shadow-sm border border-border flex flex-col h-auto xl:h-full xl:max-h-full xl:rounded-none xl:border-0 xl:shadow-none xl:bg-transparent">
-      {/* Header */}
-      <div className="flex flex-col gap-4 mb-6 pb-4 border-b border-border xl:mb-4">
-        <div className="space-y-2">
-            <h2 className="text-card-foreground text-2xl font-bold tracking-tight flex items-center gap-3">
-              <div className="p-2 bg-secondary rounded-lg border border-border shadow-inner">
-                 <Calendar className="text-muted-foreground" size={20} />
-              </div>
-              {isHomeVisitDay ? 'Visitas domiciliares' : 'Agendamentos'}
-            </h2>
-            <p className="text-muted-foreground text-sm pl-1">
+    <section className="flex h-auto flex-col rounded-[2rem] border border-white/80 bg-white/95 shadow-[0_24px_70px_rgba(0,27,61,0.08)] xl:h-full xl:min-h-0">
+      <div className="border-b border-[#E5ECF3] p-5 lg:p-6">
+        <div className="mb-5 flex items-start gap-3">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#E6F7F2] text-[#00A885]">
+               <CalendarCheck2 className="size-6" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-2xl font-extrabold tracking-normal text-[#001B3D]">
+                {isHomeVisitDay ? 'Visitas domiciliares' : 'Agendamentos'}
+              </h2>
+              <p className="mt-1 text-sm font-medium leading-6 text-[#64748B]">
               {isHomeVisitDay
                 ? `Visitas domiciliares de hoje (${dayConfig.dayName}).`
                 : `Pacientes agendados para hoje (${dayConfig.hasService ? dayConfig.dayName : 'Sem atendimento'}).`}
-            </p>
+              </p>
+            </div>
         </div>
 
-        {/* Date Navigation Toolbar */}
-        <div className="flex items-center justify-between bg-secondary/40 border border-border rounded-xl p-1.5 h-14 w-full">
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-10 w-10 text-muted-foreground hover:text-foreground rounded-lg active:scale-95 transition-all" 
+        <div className="flex h-14 w-full items-center justify-between rounded-2xl border border-[#DCE5EE] bg-[#F8FAFC] p-1.5">
+            <Tooltip content="Dia anterior">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-xl border-0 bg-transparent text-[#64748B] shadow-none transition-all hover:bg-white hover:text-[#1466F5] active:scale-95"
                 onClick={goToPreviousDay}
-            >
-                <ChevronLeft size={20} />
-            </Button>
+                aria-label="Dia anterior"
+              >
+                <ChevronLeft className="size-5" />
+              </Button>
+            </Tooltip>
             
-            <div 
+            <Tooltip content="Voltar para hoje" className="flex flex-1">
+              <div
                 className="flex flex-col items-center justify-center cursor-pointer group flex-1 py-1" 
                 onClick={goToToday}
-                title="Voltar para Hoje"
-            >
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    goToToday();
+                  }
+                }}
+              >
                 <span className={cn(
-                    "text-base font-bold tracking-wide transition-colors",
-                    isToday ? "text-white" : "text-yellow-500 group-hover:text-yellow-400"
+                    "text-base font-extrabold tracking-normal transition-colors",
+                    isToday ? "text-[#001B3D]" : "text-[#B77900] group-hover:text-[#875A00]"
                 )}>
                     {formattedDate}
                 </span>
                 {!isToday && (
-                    <span className="text-[10px] uppercase tracking-wider font-semibold text-yellow-500/70 group-hover:text-yellow-400 transition-colors whitespace-nowrap mt-0.5">
+                    <span className="mt-0.5 whitespace-nowrap text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#B77900] transition-colors group-hover:text-[#875A00]">
                         Voltar para hoje
                     </span>
                 )}
-            </div>
+              </div>
+            </Tooltip>
 
-            <Button 
-                variant="ghost" 
-                size="icon" 
-              className="h-10 w-10 text-muted-foreground hover:text-foreground rounded-lg active:scale-95 transition-all" 
+            <Tooltip content="Próximo dia">
+              <Button
+                variant="ghost"
+                size="icon"
+              className="h-10 w-10 rounded-xl border-0 bg-transparent text-[#64748B] shadow-none transition-all hover:bg-white hover:text-[#1466F5] active:scale-95"
                 onClick={goToNextDay}
-            >
-                <ChevronRight size={20} />
-            </Button>
+                aria-label="Próximo dia"
+              >
+                <ChevronRight className="size-5" />
+              </Button>
+            </Tooltip>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 lg:overflow-y-auto custom-scrollbar pr-2 space-y-6">
+      <div className="custom-scrollbar flex-1 space-y-6 p-5 lg:overflow-y-auto">
         {isLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+          <div className="flex h-48 items-center justify-center">
+            <div className="size-9 animate-spin rounded-full border-2 border-[#DCE5EE] border-t-[#00BB94]" />
           </div>
         ) : (
           <>
-             {/* Empty State */}
              {visibleSlots.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-                    <Calendar className="w-12 h-12 mb-2 opacity-20" />
-                    <p className="text-center">
+                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-5 py-10 text-center">
+                    <div className="mb-3 flex size-14 items-center justify-center rounded-2xl bg-[#EAF3FF] text-[#1466F5]">
+                      <Calendar className="size-7" />
+                    </div>
+                    <p className="text-sm font-bold leading-6 text-[#001B3D]">
                         {isHomeVisitDay ? 'Nenhuma visita domiciliar para' : 'Nenhum agendamento para'} <br/> {dayConfig.dayName}.
                     </p>
-                    {!dayConfig.hasService && <p className="text-xs opacity-50 mt-1">(Dia sem expediente)</p>}
-                    {isHomeVisitDay && <p className="text-xs opacity-50 mt-1">(Sem visitas domiciliares marcadas)</p>}
+                    {!dayConfig.hasService && <p className="mt-2 text-xs font-semibold text-[#64748B]">(Dia sem expediente)</p>}
+                    {isHomeVisitDay && <p className="mt-2 text-xs font-semibold text-[#64748B]">(Sem visitas domiciliares marcadas)</p>}
                 </div>
              )}
 
-             {/* Morning Slots */}
              {visibleSlots.filter(s => s.period === 'Manhã').length > 0 && (
                  <div>
-                    <h3 className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-2 flex items-center gap-2 pl-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                    <h3 className="mb-3 flex items-center gap-2 pl-1 text-xs font-extrabold uppercase tracking-[0.16em] text-[#64748B]">
+                        <span className="size-2 rounded-full bg-[#F59E0B]"></span>
                         {isHomeVisitDay ? 'Visitas da manhã' : 'Manhã'}
                     </h3>
                     <div className="space-y-3">
@@ -185,7 +196,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
                                     key={apt.id} 
                                     apt={apt} 
                                     inQueue={inQueue} 
-                                    onCheckIn={onCheckIn} 
+                                    onCheckIn={handleCheckIn}
                                     handleCopyName={handleCopyName} 
                                     handleCopyDoc={handleCopyDoc} 
                                     isHomeVisitDay={isHomeVisitDay}
@@ -199,8 +210,8 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
              {/* Afternoon Slots */}
              {visibleSlots.filter(s => s.period === 'Tarde').length > 0 && (
                  <div>
-                    <h3 className="text-muted-foreground font-medium text-xs uppercase tracking-wider mb-2 mt-2 flex items-center gap-2 pl-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    <h3 className="mb-3 mt-2 flex items-center gap-2 pl-1 text-xs font-extrabold uppercase tracking-[0.16em] text-[#64748B]">
+                        <span className="size-2 rounded-full bg-[#1466F5]"></span>
                         Tarde
                     </h3>
                     <div className="space-y-3">
@@ -212,7 +223,7 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
                                     key={apt.id} 
                                     apt={apt} 
                                     inQueue={inQueue} 
-                                    onCheckIn={onCheckIn} 
+                                    onCheckIn={handleCheckIn}
                                     handleCopyName={handleCopyName} 
                                     handleCopyDoc={handleCopyDoc} 
                                     isHomeVisitDay={isHomeVisitDay}
@@ -226,17 +237,16 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
         )}
       </div>
       
-      {/* Footer / Stats */}
-      <div className="pt-4 mt-2 border-t border-border flex justify-between items-center text-xs text-muted-foreground">
+      <div className="flex items-center justify-between border-t border-[#E5ECF3] px-5 py-4 text-xs font-bold text-[#64748B]">
           <div className="flex items-center gap-1.5">
-            <Clock size={12} />
+            <Clock className="size-3.5" />
             <span>{isHomeVisitDay ? 'Dia' : 'Turno'}: {dayConfig.dayName}</span>
           </div>
           <div>
             Total: {visibleSlots.length}
           </div>
       </div>
-    </div>
+    </section>
   );
 };
 
@@ -244,61 +254,64 @@ const AppointmentsColumn: React.FC<AppointmentsColumnProps> = ({ onCheckIn, queu
 const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDoc, isHomeVisitDay }: any) => (
     <div 
     className={cn(
-        "p-3 rounded-xl border transition-all duration-200 group relative overflow-hidden",
+        "group relative overflow-hidden rounded-[1.35rem] border p-3.5 transition-all duration-200",
         inQueue 
-      ? "bg-secondary/20 border-green-500/20 opacity-60 hover:opacity-100" 
-      : "bg-card/80 border-border hover:bg-card hover:border-border/90 hover:shadow-lg"
+      ? "border-[#BFECE1] bg-[#E6F7F2] opacity-80 hover:opacity-100"
+      : "border-[#DCE5EE] bg-[#F8FAFC] hover:border-[#BFD8FF] hover:bg-white hover:shadow-[0_18px_42px_rgba(0,27,61,0.08)]"
     )}
     >
     <div className="flex flex-col gap-3 relative z-10">
         
-        {/* Info Row */}
         <div className="flex justify-between items-start">
         <div className="min-w-0 w-full">
             <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono font-bold text-muted-foreground bg-secondary px-2 py-0.5 rounded border border-border">
+            <span className="rounded-xl border border-[#DCE5EE] bg-white px-2.5 py-1 text-xs font-extrabold text-[#001B3D]">
                 {String(apt.slot_number).padStart(2, '0')}
             </span>
             <div className="flex-1 min-w-0">
-                <h3 
-                className="font-semibold text-card-foreground truncate text-sm leading-tight cursor-pointer hover:text-primary transition-colors" 
-                    title="Clique para copiar o nome"
+              <Tooltip content="Copiar nome" className="block max-w-full">
+                <button
+                    type="button"
+                    className="block max-w-full truncate text-left text-sm font-extrabold leading-tight text-[#001B3D] transition-colors hover:text-[#1466F5]"
                     onClick={() => handleCopyName(apt.patient_name)}
                 >
                     {apt.patient_name}
-                </h3>
-                <p 
-                className="text-xs text-muted-foreground truncate font-mono mt-0.5 cursor-pointer hover:text-primary transition-colors"
-                    title="Clique para copiar o documento"
+                </button>
+              </Tooltip>
+              <Tooltip content="Copiar documento" className="mt-0.5 block max-w-full">
+                <button
+                    type="button"
+                    className="block max-w-full truncate text-left text-xs font-semibold text-[#64748B] transition-colors hover:text-[#1466F5]"
                     onClick={() => handleCopyDoc(apt.document_value)}
                 >
                     {apt.document_value}
-                </p>
+                </button>
+              </Tooltip>
                 {isHomeVisitDay && apt.home_visit_address && (
-                    <p
-                      className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground truncate cursor-pointer hover:text-primary transition-colors"
-                        title="Clique para copiar o endereço"
+                  <Tooltip content="Copiar endereço" className="mt-1 block max-w-full">
+                    <button
+                      type="button"
+                      className="flex max-w-full items-center gap-1.5 truncate text-left text-xs font-semibold text-[#64748B] transition-colors hover:text-[#1466F5]"
                         onClick={() => {
                             navigator.clipboard.writeText(apt.home_visit_address);
                             toast.success('Endereço copiado!');
                         }}
                     >
-                        <MapPin size={12} className="shrink-0" />
+                        <MapPin className="size-3.5 shrink-0" />
                         <span className="truncate">{apt.home_visit_address}</span>
-                    </p>
+                    </button>
+                  </Tooltip>
                 )}
             </div>
             </div>
         </div>
         </div>
 
-        {/* Actions Row */}
         <div className="flex items-center gap-2">
         
-        {/* Check-in Button */}
         {isHomeVisitDay ? (
-        <div className="h-8 flex-1 rounded-lg border border-border bg-secondary/40 px-3 text-xs font-medium text-muted-foreground flex items-center gap-2">
-            <MapPin size={14} />
+        <div className="flex h-9 flex-1 items-center gap-2 rounded-xl border border-[#DCE5EE] bg-white px-3 text-xs font-bold text-[#64748B]">
+            <MapPin className="size-4" />
             Visita domiciliar
         </div>
         ) : (
@@ -308,20 +321,20 @@ const AppointmentCard = ({ apt, inQueue, onCheckIn, handleCopyName, handleCopyDo
             disabled={inQueue}
             onClick={() => onCheckIn(apt)}
             className={cn(
-            "h-8 flex-1 text-xs gap-2 font-medium transition-all duration-200 rounded-lg",
+            "h-9 flex-1 gap-2 rounded-xl text-xs font-extrabold transition-all duration-200",
             inQueue 
-                ? "bg-transparent text-gray-500 border border-transparent cursor-not-allowed justify-start px-0" 
-              : "bg-secondary text-muted-foreground border border-border hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-primary/20 shadow-sm"
+                ? "cursor-not-allowed justify-start border border-transparent bg-transparent px-0 text-[#007A65]"
+              : "border border-[#CFEDE6] bg-[#E6F7F2] text-[#007A65] shadow-none hover:border-[#00BB94] hover:bg-[#00BB94] hover:text-white"
             )}
         >
             {inQueue ? (
                 <>
-                <CheckCircle2 size={14} />
+                <CheckCircle2 className="size-4" />
                 <span className="opacity-70">Já na fila</span>
                 </>
             ) : (
                 <>
-                <UserPlus size={14} />
+                <UserPlus className="size-4" />
                 Check-in
                 </>
             )}
