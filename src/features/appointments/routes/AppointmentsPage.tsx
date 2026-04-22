@@ -275,14 +275,6 @@ const AppointmentsPage: React.FC = () => {
     handlePatientListPrint(singlePeriod);
   };
 
-  const focusSearchInput = () => {
-    setIsSearchOpen(true);
-    window.setTimeout(() => {
-      searchInputRef.current?.focus();
-      searchInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 0);
-  };
-
   useEffect(() => {
     if (!isReportMenuOpen && !isPatientListMenuOpen) return;
 
@@ -331,8 +323,10 @@ const AppointmentsPage: React.FC = () => {
   return (
     <PageShell
       desktopContained
-      className="flex flex-col gap-5 bg-[linear-gradient(180deg,#F4F6F8_0%,#EFF8F6_100%)] px-4 py-4 pb-[13rem] print:max-w-none md:pb-28 lg:h-full lg:!overflow-y-auto lg:px-5 lg:py-5 lg:pb-5 xl:!overflow-hidden"
+      className="flex flex-col gap-5 bg-[linear-gradient(180deg,#F4F6F8_0%,#EFF8F6_100%)] px-4 py-4 pb-6 print:max-w-none md:pb-8 lg:h-full lg:!overflow-y-auto lg:px-5 lg:py-5 lg:pb-5 xl:!overflow-hidden"
     >
+      <AppointmentsNav showDesktop={false} />
+
       {/* Print header */}
       <PrintHeader selectedDate={selectedDate} dayConfig={dayConfig} slotStats={slotStats} />
 
@@ -399,7 +393,7 @@ const AppointmentsPage: React.FC = () => {
         </div>
 
         <div className="relative mt-5 flex flex-col gap-3 border-t border-[#EEF3F7] pt-4 md:flex-row md:items-center md:justify-between">
-          <AppointmentsNav />
+          <AppointmentsNav showMobile={false} />
           {dayConfig.hasService && (
             <button
               onClick={() => handleAddClick()}
@@ -582,61 +576,6 @@ const AppointmentsPage: React.FC = () => {
           </section>
         </main>
       </div>
-
-      {/* ══════════════ MOBILE BOTTOM TOOLBAR ══════════════ */}
-      {dayConfig.hasService && (
-        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] z-[60] md:hidden print:hidden">
-          <div className="border-t border-[#CFEDE6] bg-[#EFF8F6]/96 px-4 pb-3 pt-3 shadow-[0_-18px_44px_rgba(0,27,61,0.14)] backdrop-blur-xl">
-            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-2 items-center max-w-xl mx-auto">
-              <button
-                onClick={() => handleAddClick()}
-                disabled={availableSlots.length === 0 || isLoading}
-                className="flex h-12 items-center justify-center gap-2 rounded-[0.95rem] bg-[#00BB94] text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(0,187,148,0.22)] transition-all active:scale-95 disabled:opacity-50"
-              >
-                <Plus className="w-5 h-5" />
-                {isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
-              </button>
-
-              <button
-                onClick={focusSearchInput}
-                className="flex h-12 w-12 items-center justify-center rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] transition-all active:scale-95"
-                aria-label="Buscar"
-              >
-                <Search className={`w-5 h-5 ${isSearchOpen ? 'text-[#00A885]' : 'text-[#64748B]'}`} />
-              </button>
-
-              <button
-                onClick={() => setIsBlockDayModalOpen(true)}
-                disabled={isLoading}
-                className="flex h-12 w-12 items-center justify-center rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] transition-all active:scale-95 disabled:opacity-50"
-                aria-label="Bloquear dia"
-              >
-                <Ban className="w-5 h-5 text-[#D9474F]" />
-              </button>
-
-              <button
-                onClick={() => setIsBulkRescheduleModalOpen(true)}
-                disabled={isLoading || bulkRescheduleAppointments.length === 0}
-                className="flex h-12 w-12 items-center justify-center rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] transition-all active:scale-95 disabled:opacity-50"
-                aria-label="Reagendar dia"
-              >
-                <CalendarDays className="w-5 h-5 text-[#F59E0B]" />
-              </button>
-
-              <button
-                onClick={refresh}
-                disabled={isLoading}
-                className="flex h-12 w-12 items-center justify-center rounded-[0.95rem] border border-[#DCE5EE] bg-[#F8FAFC] transition-all active:scale-95 disabled:opacity-50"
-                aria-label="Atualizar"
-              >
-                <RefreshCw className={`w-5 h-5 text-[#64748B] ${isLoading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-
-            <div className="pb-1" />
-          </div>
-        </div>
-      )}
 
       {/* ══════════════ MODALS ══════════════ */}
       {isAddFormOpen && (

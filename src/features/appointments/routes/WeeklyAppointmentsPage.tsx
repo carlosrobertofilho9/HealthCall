@@ -147,7 +147,7 @@ const WeeklyAppointmentsPage: React.FC = () => {
   }, []);
 
   return (
-    <PageShell desktopContained className="mx-auto space-y-6 pb-24 lg:flex lg:flex-col lg:space-y-0 lg:pb-0">
+    <PageShell desktopContained className="mx-auto space-y-6 pb-6 lg:flex lg:flex-col lg:space-y-0 lg:pb-0">
       {/* ══════════════ TOP NAV ══════════════ */}
       <div className="contents md:sticky md:top-16 md:z-30 md:block md:bg-[#F4F6F8]/92 md:px-4 md:py-2 md:backdrop-blur-xl md:mb-0 lg:top-0 lg:mb-0 lg:-mx-2 lg:px-6 print:hidden">
         <div className="w-full mx-auto">

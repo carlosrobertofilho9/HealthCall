@@ -7,6 +7,7 @@ export * from './FormSection';
 export * from './Input';
 export * from './Label';
 export * from './Modal';
+export * from './MobileStickyTabs';
 export * from './Select';
 export * from './Table';
 export * from './Tabs';

@@ -19,7 +19,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex min-h-[var(--app-visual-viewport-height,100dvh)] w-full min-w-0 overflow-x-hidden bg-background text-foreground lg:h-[var(--app-visual-viewport-height,100dvh)] lg:overflow-hidden">
+    <div className="flex min-h-[var(--app-layout-viewport-height,100dvh)] w-full min-w-0 overflow-x-hidden bg-background text-foreground lg:h-[var(--app-visual-viewport-height,100dvh)] lg:overflow-hidden">
       <Toaster position="top-center" />
       
       {/* Sidebar */}

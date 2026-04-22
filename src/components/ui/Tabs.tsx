@@ -18,15 +18,29 @@ const useTabsContext = () => {
 };
 
 export interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
-  value: string;
-  onValueChange: (value: string) => void;
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
   className?: string;
   children?: React.ReactNode;
 }
 
-const Tabs = ({ value, onValueChange, className, children, ...props }: TabsProps) => {
+const Tabs = ({ value, defaultValue = '', onValueChange, className, children, ...props }: TabsProps) => {
+  const [internalValue, setInternalValue] = React.useState(defaultValue);
+  const currentValue = value ?? internalValue;
+
+  const handleValueChange = React.useCallback(
+    (nextValue: string) => {
+      if (value === undefined) {
+        setInternalValue(nextValue);
+      }
+      onValueChange?.(nextValue);
+    },
+    [onValueChange, value],
+  );
+
   return (
-    <TabsContext.Provider value={{ value, onValueChange }}>
+    <TabsContext.Provider value={{ value: currentValue, onValueChange: handleValueChange }}>
       <div className={cn('w-full min-w-0 max-w-full', className)} {...props}>
         {children}
       </div>

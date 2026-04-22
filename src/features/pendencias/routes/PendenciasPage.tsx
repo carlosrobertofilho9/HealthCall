@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
 import { PENDENCIA_RESPONSAVEL_OPTIONS } from '@/constants';
 import { PageShell } from '@/components/layout';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui';
+import { MobileStickyTabs } from '@/components/ui';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { cn, isValidCNS, isValidCPF } from '@/lib/utils';
 import {
@@ -49,28 +49,6 @@ const PendenciasPage: React.FC = () => {
   usePageTitle('Pendências');
 
   const { pendencias, loading, refetch } = usePendencias();
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-
-    const previousRootOverflowY = root.style.overflowY;
-    const previousBodyOverflowY = body.style.overflowY;
-    const previousRootOverscrollBehavior = root.style.overscrollBehavior;
-    const previousBodyOverscrollBehavior = body.style.overscrollBehavior;
-
-    root.style.overflowY = 'hidden';
-    body.style.overflowY = 'hidden';
-    root.style.overscrollBehavior = 'none';
-    body.style.overscrollBehavior = 'none';
-
-    return () => {
-      root.style.overflowY = previousRootOverflowY;
-      body.style.overflowY = previousBodyOverflowY;
-      root.style.overscrollBehavior = previousRootOverscrollBehavior;
-      body.style.overscrollBehavior = previousBodyOverscrollBehavior;
-    };
-  }, []);
 
   const [nomePaciente, setNomePaciente] = useState('');
   const [cnsCpf, setCnsCpf] = useState('');
@@ -361,7 +339,7 @@ const PendenciasPage: React.FC = () => {
         onGenerateOpenPdf={handleGenerateOpenPdf}
       />
 
-      <div className="custom-scrollbar min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-3 lg:p-4">
+      <div className="custom-scrollbar min-w-0 flex-1 overflow-x-hidden p-3 lg:min-h-0 lg:overflow-y-auto lg:p-4">
         {loading ? (
           <div className="flex h-full min-h-64 items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -420,14 +398,32 @@ const PendenciasPage: React.FC = () => {
 
   return (
     <PageShell
-      mobileContained
       desktopContained
-      className="flex !h-[calc(var(--app-visual-viewport-height,100dvh)-4rem)] !min-h-0 flex-col overflow-hidden lg:!h-[var(--app-visual-viewport-height,100dvh)]"
+      className="flex min-h-0 flex-col bg-background lg:h-full lg:overflow-hidden"
     >
-      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden lg:flex-row">
+      <MobileStickyTabs
+        value={mobileTab}
+        onValueChange={(value) => setMobileTab(value as 'new' | 'existing')}
+        ariaLabel="Navegação de pendências"
+        items={[
+          {
+            value: 'new',
+            label: 'Nova',
+            icon: <CirclePlus className="h-4 w-4" />,
+          },
+          {
+            value: 'existing',
+            label: 'Pendências',
+            icon: <ListTodo className="h-4 w-4" />,
+            badge: openPendencias.length,
+          },
+        ]}
+      />
+
+      <div className="flex min-w-0 flex-1 lg:min-h-0 lg:overflow-hidden lg:flex-row">
         <aside
           className={cn(
-            'min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background lg:flex lg:h-full lg:w-[360px] lg:flex-none lg:shrink-0 lg:border-r lg:border-border 2xl:w-[390px]',
+            'min-w-0 flex-1 flex-col bg-background pb-4 lg:flex lg:h-full lg:min-h-0 lg:w-[360px] lg:flex-none lg:shrink-0 lg:overflow-hidden lg:border-r lg:border-border lg:pb-0 2xl:w-[390px]',
             mobileTab === 'new' ? 'flex' : 'hidden',
           )}
         >
@@ -457,7 +453,7 @@ const PendenciasPage: React.FC = () => {
 
         <section
           className={cn(
-            'min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background lg:flex',
+            'min-w-0 flex-1 flex-col bg-background pb-4 lg:flex lg:min-h-0 lg:overflow-hidden lg:pb-0',
             mobileTab === 'existing' ? 'flex' : 'hidden',
           )}
         >
@@ -465,24 +461,6 @@ const PendenciasPage: React.FC = () => {
         </section>
       </div>
 
-      <div className="shrink-0 border-t border-border bg-card px-2 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] lg:hidden">
-        <Tabs
-          value={mobileTab}
-          onValueChange={(value) => setMobileTab(value as 'new' | 'existing')}
-        >
-          <TabsList className="grid w-full min-w-0 grid-cols-2">
-            <TabsTrigger value="new" className="min-w-0">
-              <CirclePlus className="h-4 w-4 shrink-0" />
-              Nova
-            </TabsTrigger>
-
-            <TabsTrigger value="existing" className="min-w-0">
-              <ListTodo className="h-4 w-4 shrink-0" />
-              Pendências
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
     </PageShell>
   );
 };

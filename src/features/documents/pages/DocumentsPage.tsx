@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Eye, FileText, ListChecks } from 'lucide-react';
 
 import {
   FormPanel,
@@ -9,7 +10,7 @@ import {
 import { useDocumentsComposer } from '../hooks/useDocumentsComposer';
 import { mockTemplates, Template } from '../utils/mockData';
 import { PageShell } from '@/components/layout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui';
+import { MobileStickyTabs, Tabs, TabsContent } from '@/components/ui';
 
 const DocumentsPage: React.FC = () => {
   const location = useLocation();
@@ -73,45 +74,58 @@ const DocumentsPage: React.FC = () => {
   return (
     <PageShell desktopContained className="flex flex-col gap-4 lg:flex-row lg:gap-0">
       {/* Mobile View */}
-      <div className="min-w-0 overflow-x-hidden p-3 sm:p-4 lg:hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 space-y-4">
-          <TabsList className="w-full min-w-0 justify-between">
-            <TabsTrigger value="templates" className="min-w-0 flex-1 px-2">
-              Modelos
-            </TabsTrigger>
-            <TabsTrigger value="form" className="min-w-0 flex-1 px-2">
-              Preencher
-            </TabsTrigger>
-            <TabsTrigger value="preview" className="min-w-0 flex-1 px-2">
-              Visualizar
-            </TabsTrigger>
-          </TabsList>
+      <div className="min-w-0 overflow-x-hidden lg:hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
+          <MobileStickyTabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            ariaLabel="Navegação de documentos"
+            items={[
+              {
+                value: 'templates',
+                label: 'Modelos',
+                icon: <FileText className="h-4 w-4" />,
+              },
+              {
+                value: 'form',
+                label: 'Preencher',
+                icon: <ListChecks className="h-4 w-4" />,
+              },
+              {
+                value: 'preview',
+                label: 'Visualizar',
+                icon: <Eye className="h-4 w-4" />,
+              },
+            ]}
+          />
 
-          <TabsContent value="templates">
-            <TemplatesPanel
-              templates={mockTemplates}
-              selectedTemplateId={selectedTemplate?.id}
-              onSelectTemplate={handleSelectTemplate}
-              isLoading={isLoadingTemplates}
-            />
-          </TabsContent>
+          <div className="min-w-0 space-y-4 p-3 sm:p-4">
+            <TabsContent value="templates">
+              <TemplatesPanel
+                templates={mockTemplates}
+                selectedTemplateId={selectedTemplate?.id}
+                onSelectTemplate={handleSelectTemplate}
+                isLoading={isLoadingTemplates}
+              />
+            </TabsContent>
 
-          <TabsContent value="form">
-            <FormPanel
-              selectedTemplate={selectedTemplate}
-              values={fieldValues}
-              missingKeys={missingKeys}
-              isGenerating={isGenerating}
-              showSuccess={showSuccess}
-              onFieldChange={setFieldValue}
-              onClearForm={clearForm}
-              onGenerateDocument={handleGenerateDocument}
-            />
-          </TabsContent>
+            <TabsContent value="form">
+              <FormPanel
+                selectedTemplate={selectedTemplate}
+                values={fieldValues}
+                missingKeys={missingKeys}
+                isGenerating={isGenerating}
+                showSuccess={showSuccess}
+                onFieldChange={setFieldValue}
+                onClearForm={clearForm}
+                onGenerateDocument={handleGenerateDocument}
+              />
+            </TabsContent>
 
-          <TabsContent value="preview">
-            <PreviewPanel selectedTemplate={selectedTemplate} previewValues={previewValues} />
-          </TabsContent>
+            <TabsContent value="preview">
+              <PreviewPanel selectedTemplate={selectedTemplate} previewValues={previewValues} />
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
 

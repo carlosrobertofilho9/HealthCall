@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { History, ListChecks, MessageSquareText } from 'lucide-react';
 import { PageShell } from '@/components/layout';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MobileStickyTabs, Tabs, TabsContent } from '@/components/ui';
 import { useReception } from '../hooks/useReception';
 
 import { ReceptionChatPanel } from '../components/ReceptionChatPanel';
@@ -14,6 +15,7 @@ const ReceptionPage: React.FC = () => {
   usePageTitle('Recepção');
   const { profile } = useUserProfile();
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'flow' | 'calls'>('flow');
   const [firstMessageEffectKey, setFirstMessageEffectKey] = useState(0);
   const hasLoadedMessagesRef = useRef(false);
   const previousMessageCountRef = useRef(0);
@@ -160,12 +162,30 @@ const ReceptionPage: React.FC = () => {
 
         {/* Layout Mobile/Tablet (Tabs) */}
         <div className="lg:hidden flex-1 min-h-0 overflow-hidden">
-          <Tabs defaultValue="flow" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3 rounded-none border-b border-border/40 bg-background/40">
-              <TabsTrigger value="chat" className="text-xs font-bold">CHAT</TabsTrigger>
-              <TabsTrigger value="flow" className="text-xs font-bold">FLUXO</TabsTrigger>
-              <TabsTrigger value="calls" className="text-xs font-bold">HISTÓRICO</TabsTrigger>
-            </TabsList>
+          <Tabs value={mobileTab} onValueChange={(value) => setMobileTab(value as 'chat' | 'flow' | 'calls')} className="h-full flex flex-col">
+            <MobileStickyTabs
+              value={mobileTab}
+              onValueChange={(value) => setMobileTab(value as 'chat' | 'flow' | 'calls')}
+              ariaLabel="Navegação da recepção"
+              items={[
+                {
+                  value: 'chat',
+                  label: 'Chat',
+                  icon: <MessageSquareText className="h-4 w-4" />,
+                  badge: messages.length || undefined,
+                },
+                {
+                  value: 'flow',
+                  label: 'Fluxo',
+                  icon: <ListChecks className="h-4 w-4" />,
+                },
+                {
+                  value: 'calls',
+                  label: 'Histórico',
+                  icon: <History className="h-4 w-4" />,
+                },
+              ]}
+            />
             
             <TabsContent value="chat" className="flex-1 min-h-0 mt-0 data-[state=active]:flex flex-col">
             <ReceptionChatPanel 

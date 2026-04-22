@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Modal, Tabs, TabsContent, TabsList, TabsTrigger, SectionCard } from '@/components/ui';
+import { Button, Modal, MobileStickyTabs, Tabs, TabsContent, TabsList, TabsTrigger, SectionCard } from '@/components/ui';
 import { PageShell } from '@/components/layout';
 import { Users, PlusCircle, Plus, Camera, Bandage, Stethoscope, Activity, TableProperties, Table, UserPlus } from 'lucide-react';
 import WoundPatientList from '../components/WoundPatientList';
@@ -292,19 +292,6 @@ const WoundsPage: React.FC = () => {
 
   return (
     <PageShell className="flex flex-col xl:h-full xl:overflow-hidden">
-      <div className="px-4 py-3 xl:hidden">
-        <WoundSyncIndicator
-          className="w-full justify-between"
-          isOnline={isOnline}
-          isSyncing={isSyncing}
-          pendingCount={summary.pendingCount}
-          conflictCount={summary.conflictCount}
-          onSyncNow={() => {
-            void syncNow();
-          }}
-        />
-      </div>
-
       {conflicts.length > 0 && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
           Existem conflitos de sincronização pendentes ({conflicts.length}). Revise antes de fechar/reabrir novas feridas.
@@ -515,86 +502,112 @@ const WoundsPage: React.FC = () => {
         </main>
       </div>
       ) : (
-        <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-28 xl:hidden">
+        <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto pb-28 xl:hidden">
           <Tabs
             value={mobileTab}
             onValueChange={handleMobileTabChange}
-            className="min-w-0 space-y-4"
+            className="min-w-0"
           >
-            <TabsList className="w-full min-w-0 justify-between">
-              <TabsTrigger value="patients" aria-label="Pacientes" className="min-w-0 flex-1 px-2 sm:px-3">
-                <Users className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Pacientes</span>
-              </TabsTrigger>
-              <TabsTrigger value="summary" aria-label="Resumo" className="min-w-0 flex-1 px-2 sm:px-3">
-                <Activity className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Resumo</span>
-              </TabsTrigger>
-              <TabsTrigger value="photos" aria-label="Fotos" className="min-w-0 flex-1 px-2 sm:px-3">
-                <Camera className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Fotos</span>
-              </TabsTrigger>
-              <TabsTrigger value="table" aria-label="Tabela" className="min-w-0 flex-1 px-2 sm:px-3">
-                <Table className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Tabela</span>
-              </TabsTrigger>
-            </TabsList>
+            <MobileStickyTabs
+              value={mobileTab}
+              onValueChange={handleMobileTabChange}
+              ariaLabel="Navegação de curativos"
+              items={[
+                {
+                  value: 'patients',
+                  label: 'Pacientes',
+                  icon: <Users className="h-4 w-4" />,
+                },
+                {
+                  value: 'summary',
+                  label: 'Resumo',
+                  icon: <Activity className="h-4 w-4" />,
+                  disabled: !selectedWoundId,
+                },
+                {
+                  value: 'photos',
+                  label: 'Fotos',
+                  icon: <Camera className="h-4 w-4" />,
+                  disabled: !selectedWoundId,
+                  badge: photos.length || undefined,
+                },
+                {
+                  value: 'table',
+                  label: 'Tabela',
+                  icon: <Table className="h-4 w-4" />,
+                  disabled: !selectedWoundId,
+                },
+              ]}
+            />
 
-            <TabsContent value="patients" className="space-y-3">
-              <WoundPatientList
-                patients={patients}
-                selectedPatientId={selectedPatientId}
-                onSelectPatient={handlePatientSelect}
-                onCreatePatient={createPatient}
-                onUpdatePatient={updatePatient}
-                onDeletePatient={removePatient}
+            <div className="min-w-0 space-y-3 px-4 pt-3">
+              <WoundSyncIndicator
+                className="w-full justify-between"
+                isOnline={isOnline}
+                isSyncing={isSyncing}
+                pendingCount={summary.pendingCount}
+                conflictCount={summary.conflictCount}
+                onSyncNow={() => {
+                  void syncNow();
+                }}
               />
-            </TabsContent>
 
-            <TabsContent value="summary" className="space-y-3 outline-none">
-              <AnimatePresence mode="wait">
-                {!selectedWound ? (
-                  <WoundEmptyState type="wound" />
-                ) : (
-                  <motion.div
-                    key={selectedWoundId}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
-                  >
-                    <WoundCaseHeader
-                      wound={selectedWound}
-                      onEditCase={() => setShowEditWoundModal(true)}
-                      onCloseCase={() => setShowCloseModal(true)}
-                      onReopenCase={() => setShowReopenModal(true)}
-                    />
-                    <WoundSummaryDashboard
-                      entries={entries}
-                      photos={photos}
-                      wound={selectedWound}
-                      relatedAnatomicalCodes={selectedCodes}
-                    />
-                    <WoundTimeline entries={entries} photos={photos} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </TabsContent>
+              <TabsContent value="patients" className="space-y-3">
+                <WoundPatientList
+                  patients={patients}
+                  selectedPatientId={selectedPatientId}
+                  onSelectPatient={handlePatientSelect}
+                  onCreatePatient={createPatient}
+                  onUpdatePatient={updatePatient}
+                  onDeletePatient={removePatient}
+                />
+              </TabsContent>
 
-            <TabsContent value="photos" className="space-y-3">
-              <WoundGallery photos={photos} onDeletePhoto={removePhoto} />
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowComparatorModal(true)}
-                disabled={photos.length < 2}
-              >
-                Comparar fotos
-              </Button>
-            </TabsContent>
+              <TabsContent value="summary" className="space-y-3 outline-none">
+                <AnimatePresence mode="wait">
+                  {!selectedWound ? (
+                    <WoundEmptyState type="wound" />
+                  ) : (
+                    <motion.div
+                      key={selectedWoundId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4"
+                    >
+                      <WoundCaseHeader
+                        wound={selectedWound}
+                        onEditCase={() => setShowEditWoundModal(true)}
+                        onCloseCase={() => setShowCloseModal(true)}
+                        onReopenCase={() => setShowReopenModal(true)}
+                      />
+                      <WoundSummaryDashboard
+                        entries={entries}
+                        photos={photos}
+                        wound={selectedWound}
+                        relatedAnatomicalCodes={selectedCodes}
+                      />
+                      <WoundTimeline entries={entries} photos={photos} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </TabsContent>
+
+              <TabsContent value="photos" className="space-y-3">
+                <WoundGallery photos={photos} onDeletePhoto={removePhoto} />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowComparatorModal(true)}
+                  disabled={photos.length < 2}
+                >
+                  Comparar fotos
+                </Button>
+              </TabsContent>
+            </div>
           </Tabs>
 
-          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2 backdrop-blur xl:hidden">
+          <div className="app-keyboard-compact-hide fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2 backdrop-blur transition-all duration-200 xl:hidden">
             <Button
               type="button"
               size="sm"

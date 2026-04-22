@@ -610,6 +610,58 @@ html[data-theme="safira"] {
 }
 
 @media (max-width: 1023px) {
+  :root {
+    --app-mobile-tabs-height: 3.5rem;
+  }
+
+  .app-mobile-contained-shell {
+    min-height: calc(var(--app-layout-viewport-height, 100dvh) - 4rem);
+    height: calc(var(--app-layout-viewport-height, 100dvh) - 4rem);
+    overflow-y: hidden;
+  }
+
+  html[data-keyboard-open="true"] .app-mobile-contained-shell {
+    height: auto;
+    min-height: calc(var(--app-layout-viewport-height, 100dvh) - 4rem);
+    overflow-y: visible;
+  }
+
+  .app-mobile-document-shell {
+    min-height: calc(var(--app-layout-viewport-height, 100dvh) - 4rem);
+    overflow-y: visible;
+  }
+
+  .app-mobile-tabs-anchor {
+    height: var(--app-mobile-tabs-height);
+  }
+
+  .app-mobile-sticky-tabs {
+    top: 4rem;
+    min-height: var(--app-mobile-tabs-height);
+    padding-bottom: 0.5rem;
+    padding-top: 0.5rem;
+  }
+
+  .app-mobile-sticky-tab {
+    min-height: 2.5rem;
+  }
+
+  html[data-keyboard-open="true"] .app-mobile-sticky-tabs {
+    min-height: 3.2rem;
+    padding-bottom: 0.35rem;
+    padding-top: 0.35rem;
+  }
+
+  html[data-keyboard-open="true"] .app-mobile-sticky-tab {
+    min-height: 2.25rem;
+  }
+
+  html[data-keyboard-open="true"] .app-keyboard-compact-hide {
+    pointer-events: none;
+    transform: translateY(calc(100% + env(safe-area-inset-bottom, 0px)));
+    opacity: 0;
+  }
+
   input,
   textarea,
   select,

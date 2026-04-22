@@ -76,8 +76,8 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
     <SectionCard
       title="Nova Pendência"
       icon={<ClipboardList size={20} />}
-      className="h-full min-h-0 min-w-0 overflow-hidden"
-      contentClassName="min-h-0 p-4 lg:p-3"
+      className="min-w-0 overflow-hidden lg:h-full lg:min-h-0"
+      contentClassName="p-4 lg:min-h-0 lg:p-3"
       headerClassName="lg:p-4 lg:pb-3"
       iconClassName="lg:p-2"
       titleClassName="lg:text-base"
@@ -87,8 +87,8 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
         </Badge>
       }
     >
-      <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
-        <div className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto pr-1 lg:gap-3">
+      <form onSubmit={onSubmit} className="flex flex-col lg:min-h-0 lg:flex-1">
+        <div className="custom-scrollbar flex flex-col gap-4 overflow-x-hidden pr-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:gap-3">
           <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
             <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Identificação do paciente</p>
 
@@ -195,7 +195,7 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-border/70 bg-background/95 pt-4 shadow-[0_-12px_28px_rgba(15,23,42,0.12)] backdrop-blur lg:pt-3 lg:bg-background/90 lg:shadow-none lg:backdrop-blur-none">
+        <div className="mt-4 shrink-0 border-t border-border/70 bg-background/95 pt-4 shadow-[0_-12px_28px_rgba(15,23,42,0.12)] backdrop-blur lg:mt-0 lg:bg-background/90 lg:pt-3 lg:shadow-none lg:backdrop-blur-none">
           <Button
             type="submit"
             size="sm"

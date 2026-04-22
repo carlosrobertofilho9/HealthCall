@@ -15,8 +15,8 @@ export const PageShell = React.forwardRef<HTMLDivElement, PageShellProps>(
         className={cn(
           'w-full min-w-0 max-w-full overflow-x-hidden bg-background',
           mobileContained
-            ? 'h-[calc(var(--app-visual-viewport-height,100dvh)-4rem)] min-h-0 overflow-y-hidden'
-            : 'min-h-[calc(var(--app-visual-viewport-height,100dvh)-4rem)] overflow-y-visible',
+            ? 'app-mobile-contained-shell min-h-0'
+            : 'app-mobile-document-shell',
           desktopContained ? 'lg:h-full lg:min-h-0 lg:overflow-hidden' : 'lg:min-h-0 lg:overflow-y-auto',
           bottomInset && 'pb-28 lg:pb-0',
           className,

@@ -142,7 +142,7 @@ const CapacityDashboardPage: React.FC = () => {
   }, [analytics]);
 
   return (
-    <PageShell desktopContained className="flex h-full flex-col pb-24 lg:flex-col lg:pb-0">
+    <PageShell desktopContained className="flex h-full flex-col pb-6 lg:flex-col lg:pb-0">
       {/* ══════════════ TOP NAV ══════════════ */}
       <div className="contents md:sticky md:top-16 md:z-30 md:block md:shrink-0 md:bg-[#F4F6F8]/92 md:px-4 md:py-2 md:backdrop-blur-xl lg:top-0 lg:mb-0 lg:-mx-2 lg:px-6 print:hidden">
         <div className="w-full mx-auto">
