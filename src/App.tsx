@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { useAppViewport } from '@/hooks/useAppViewport';
 import { Toaster } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { ensureReceptionChatDailyReset } from '@/features/reception/services/receptionService';
 
 const App: React.FC = () => {
   usePageTitle();
   useAppViewport();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+  useEffect(() => {
+    ensureReceptionChatDailyReset().catch((error) => {
+      console.warn('Não foi possível executar a limpeza diária do chat da recepção:', error);
+    });
+  }, []);
 
   return (
     <div className="flex min-h-[var(--app-visual-viewport-height,100dvh)] w-full min-w-0 overflow-x-hidden bg-background text-foreground lg:h-[var(--app-visual-viewport-height,100dvh)] lg:overflow-hidden">

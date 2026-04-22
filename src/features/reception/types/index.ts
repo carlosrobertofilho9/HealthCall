@@ -1,5 +1,3 @@
-import type { Appointment } from '@/types';
-
 export type ReceptionMessage = {
   id: string;
   sender_id: string | null;
@@ -8,12 +6,11 @@ export type ReceptionMessage = {
   created_at: string;
 };
 
-export type ReceptionCall = {
+export type ReceptionCallHistoryItem = {
+  id: string;
+  patientId: string;
   patientName: string;
-  slotNumber: number;
-  calledAt: number;
-};
-
-export type ReceptionQueueItem = Appointment & {
-  waitMinutes: number;
+  destination: string;
+  callCount: number;
+  calledAt: string;
 };

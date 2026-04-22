@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BellRing, MessageCircle } from 'lucide-react';
+import { BellRing, ChevronDown, MessageCircle } from 'lucide-react';
 import { Button, Input, SectionCard } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +25,8 @@ interface ReceptionChatPanelProps {
   userId?: string;
   isLoading: boolean;
   avatarUrl?: string | null;
+  isCollapsed: boolean;
+  onToggleCollapsed: () => void;
   className?: string;
 }
 
@@ -37,6 +39,8 @@ export const ReceptionChatPanel: React.FC<ReceptionChatPanelProps> = ({
   userId,
   avatarUrl,
   isLoading,
+  isCollapsed,
+  onToggleCollapsed,
   className,
 }) => {
   const [draftMessage, setDraftMessage] = useState('');
@@ -58,12 +62,44 @@ export const ReceptionChatPanel: React.FC<ReceptionChatPanelProps> = ({
   return (
     <SectionCard
       title="Chat interno"
+      subtitle={messages.length === 0 ? 'Sem mensagens no momento' : `${messages.length} mensagem${messages.length === 1 ? '' : 's'} hoje`}
       icon={<MessageCircle className="size-5" />}
       className={cn("flex h-full flex-col border-0 shadow-none rounded-none bg-transparent", className)}
       headerClassName="border-border/60 px-4 py-3 shrink-0"
       contentClassName="p-0 flex-1 flex flex-col min-h-0"
     >
-      <div className="flex h-full flex-col bg-background/20 relative">
+      <div className="relative flex h-full flex-col bg-background/20">
+        <AnimatePresence initial={false}>
+          {isCollapsed ? (
+            <motion.button
+              key="collapsed-chat"
+              type="button"
+              onClick={onToggleCollapsed}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="m-2 flex min-h-[84px] flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-border/60 bg-background/45 px-2 py-3 text-center shadow-sm backdrop-blur-sm transition-all hover:border-primary/35 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+              <div className="relative flex size-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-inner">
+                <ChevronDown className="-rotate-90 size-5" />
+                {messages.length > 0 && (
+                  <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-black text-primary-foreground shadow-sm">
+                    {Math.min(messages.length, 9)}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground [writing-mode:vertical-rl]">
+                Chat
+              </span>
+            </motion.button>
+          ) : (
+            <motion.div
+              key="expanded-chat"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="flex min-h-0 flex-1 flex-col"
+            >
         <div className="flex items-center gap-3 border-b border-border/60 bg-muted/30 px-4 py-2.5 shrink-0">
           <div className="relative">
             {avatarUrl ? (
@@ -83,6 +119,15 @@ export const ReceptionChatPanel: React.FC<ReceptionChatPanelProps> = ({
             <p className="truncate text-sm font-bold tracking-tight">{profileName}</p>
             <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Equipe de Recepção</p>
           </div>
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.94 }}
+            onClick={onToggleCollapsed}
+            className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-background/55 text-muted-foreground shadow-sm transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            aria-label="Colapsar chat interno"
+          >
+            <ChevronDown className="size-4 rotate-90" />
+          </motion.button>
         </div>
 
         <div 
@@ -160,6 +205,9 @@ export const ReceptionChatPanel: React.FC<ReceptionChatPanelProps> = ({
             <BellRing className="size-4 mr-1.5" /> Enviar
           </Button>
         </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </SectionCard>
   );

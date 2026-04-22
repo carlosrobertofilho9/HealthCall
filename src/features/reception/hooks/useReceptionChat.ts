@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
-import { listReceptionMessages, sendReceptionMessage } from '../services/receptionService';
+import { ensureReceptionChatDailyReset, listReceptionMessages, sendReceptionMessage } from '../services/receptionService';
 import type { ReceptionMessage } from '../types';
 
 export function useReceptionChat() {
@@ -23,7 +23,21 @@ export function useReceptionChat() {
   }, []);
 
   useEffect(() => {
-    loadMessages();
+    let isMounted = true;
+
+    const initializeMessages = async () => {
+      try {
+        await ensureReceptionChatDailyReset();
+      } catch (error) {
+        console.warn('Não foi possível confirmar a limpeza diária do chat da recepção:', error);
+      }
+
+      if (isMounted) {
+        await loadMessages();
+      }
+    };
+
+    initializeMessages();
 
     const channel = supabase
       .channel('reception-messages-realtime')
@@ -31,6 +45,7 @@ export function useReceptionChat() {
       .subscribe();
 
     return () => {
+      isMounted = false;
       supabase.removeChannel(channel);
     };
   }, [loadMessages]);
