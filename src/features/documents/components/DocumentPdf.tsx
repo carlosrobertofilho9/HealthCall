@@ -62,6 +62,8 @@ export interface DocumentFormData {
   // Pendências
   pendencias?: PendingItem[];
   // Capa Caderneta
+  dataNascimento?: string;
+  endereco?: string;
   receitaSimples?: string;
   receitaControleEspecial?: string;
   receitaAzul?: string;
@@ -117,6 +119,8 @@ function extractFormData(values: Record<string, string>): DocumentFormData {
     coberturaInicial: values['COBERTURA_INICIAL'] || undefined,
     dorEscala: values['DOR_ESCALA'] || undefined,
     observacoesPlano: values['OBSERVACOES_PLANO'] || undefined,
+    dataNascimento: values['DATA_NASCIMENTO'] || undefined,
+    endereco: values['ENDERECO'] || undefined,
     receitaSimples: values['RECEITA_SIMPLES'] || undefined,
     receitaControleEspecial: values['RECEITA_CONTROLE_ESPECIAL'] || undefined,
     receitaAzul: values['RECEITA_AZUL'] || undefined,

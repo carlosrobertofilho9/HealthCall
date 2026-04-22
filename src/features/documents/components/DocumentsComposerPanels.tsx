@@ -118,14 +118,12 @@ export const FormPanel: React.FC<FormPanelProps> = ({
                 </p>
                 <p className="mt-1 truncate text-xs text-muted-foreground">{selectedTemplate.description}</p>
               </div>
-              <motion.div>
+              <motion.div whileTap={hapticTap} whileHover={hapticHover}>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={onClearForm}
-                  whileTap={hapticTap}
-                  whileHover={hapticHover}
                   className="h-8 shrink-0 gap-1.5 px-2.5 text-xs text-muted-foreground hover:bg-destructive/5 hover:text-destructive"
                   disabled={isGenerating}
                 >
@@ -167,14 +165,15 @@ export const FormPanel: React.FC<FormPanelProps> = ({
             </div>
 
             <ActionBar separated stackOnMobile className="mt-5">
-              <motion.div 
+              <motion.div
+                animate={missingKeys.length > 0 ? { x: [0, -2, 2, -2, 2, 0] } : { x: 0 }}
+                transition={missingKeys.length > 0 ? { duration: 0.4 } : undefined}
+                whileTap={hapticTap}
+                whileHover={hapticHover}
                 className="w-full"
               >
                 <Button 
                   type="button" 
-                  animate={missingKeys.length > 0 ? "shake" : "visible"}
-                  whileTap={hapticTap}
-                  whileHover={hapticHover}
                   onClick={onGenerateDocument}
                   disabled={!selectedTemplate || isGenerating}
                   className={cn(

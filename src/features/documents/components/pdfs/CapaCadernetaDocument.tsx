@@ -1,14 +1,18 @@
 import React from 'react';
-import { Page, View, Text, StyleSheet, Svg, Path, G, Rect } from '@react-pdf/renderer';
+import { View, Text, StyleSheet, Svg, Path, G, Rect } from '@react-pdf/renderer';
 import type { DocumentFormData } from '../DocumentPdf';
 import { formatCPF, formatCNS } from '@/lib/utils';
+import { buildCode128BarcodeLayout } from '../../utils/code128Barcode';
 
 const styles = StyleSheet.create({
-  page: { padding: 0, backgroundColor: '#ffffff' },
   container: { display: 'flex', position: 'relative', width: '100%', height: '100%' },
   textOverlay: { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%' },
-  nomeText: { position: 'absolute', left: '58.5%', top: '53.3%', fontSize: 13, fontFamily: 'Helvetica', color: '#000000' },
-  susText: { position: 'absolute', left: '66.5%', top: '42.9%', fontSize: 13, fontFamily: 'Helvetica', color: '#064B87' },
+  nomeText: { position: 'absolute', left: '58.65%', top: '51.85%', width: '31%', fontSize: 13, fontFamily: 'Helvetica', color: '#000000' },
+  susText: { position: 'absolute', left: '66.7%', top: '42.9%', width: '23%', fontSize: 13, fontFamily: 'Helvetica', color: '#064B87' },
+  birthDayText: { position: 'absolute', left: '59.9%', top: '56.3%', width: '3%', fontSize: 13, fontFamily: 'Helvetica', color: '#000000', textAlign: 'center' },
+  birthMonthText: { position: 'absolute', left: '64.3%', top: '56.3%', width: '3%', fontSize: 13, fontFamily: 'Helvetica', color: '#000000', textAlign: 'center' },
+  birthYearText: { position: 'absolute', left: '68.85%', top: '56.3%', width: '5%', fontSize: 13, fontFamily: 'Helvetica', color: '#000000', textAlign: 'center' },
+  enderecoText: { position: 'absolute', left: '59.4%', top: '59.85%', width: '32%', fontSize: 10.5, fontFamily: 'Helvetica', color: '#000000' },
 });
 
 interface CapaCadernetaDocumentProps {
@@ -16,24 +20,56 @@ interface CapaCadernetaDocumentProps {
   visibleParagraphs: string[];
 }
 
+const truncatePdfText = (value: string | undefined, maxLength: number): string => {
+  const trimmed = (value || '').trim();
+
+  if (trimmed.length <= maxLength) {
+    return trimmed;
+  }
+
+  return trimmed.slice(0, Math.max(0, maxLength - 3)).trimEnd() + '...';
+};
+
+const getBirthDateParts = (value: string | undefined) => {
+  const trimmed = (value || '').trim();
+  const isoDate = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (isoDate) {
+    return { day: isoDate[3], month: isoDate[2], year: isoDate[1] };
+  }
+
+  const brDate = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+
+  if (brDate) {
+    return {
+      day: brDate[1].padStart(2, '0'),
+      month: brDate[2].padStart(2, '0'),
+      year: brDate[3],
+    };
+  }
+
+  return { day: '', month: '', year: '' };
+};
+
 export const CapaCadernetaDocument: React.FC<CapaCadernetaDocumentProps> = ({ formData }) => {
   const receitaAzul = formData?.receitaAzul === 'true';
   const receitaControleEspecial = formData?.receitaControleEspecial === 'true';
   const receitaSimples = formData?.receitaSimples === 'true';
-
   const rawDocument = (formData?.cnsCpf || '').replace(/\D/g, '');
+  const birthDate = getBirthDateParts(formData?.dataNascimento);
+  const barcodeLayout = buildCode128BarcodeLayout(rawDocument, { x: 710, width: 290 });
   let documentLabel = '';
+
   if (rawDocument.length === 11) {
-    documentLabel = `CPF: ${formatCPF(rawDocument)}`;
+    documentLabel = 'CPF: ' + formatCPF(rawDocument);
   } else if (rawDocument.length === 15) {
-    documentLabel = `CNS: ${formatCNS(rawDocument)}`;
+    documentLabel = 'CNS: ' + formatCNS(rawDocument);
   } else if (formData?.cnsCpf) {
-    documentLabel = `DOC: ${formData.cnsCpf}`;
+    documentLabel = 'DOC: ' + formData.cnsCpf;
   }
 
   return (
     <View style={styles.container}>
-      {/* SVG Background */}
       <Svg viewBox="0 0 1142 787" width="100%" height="100%">
 <G id="Frame 1">
 <Rect width="1141.41" height="786.14" fill="white"/>
@@ -75,14 +111,24 @@ export const CapaCadernetaDocument: React.FC<CapaCadernetaDocumentProps> = ({ fo
 </G>
 )}
 </G>
+{barcodeLayout.bars.length > 0 && (
+<G id="Barcode">
+{barcodeLayout.bars.map((bar, index) => (
+<Rect key={`barcode-${index}`} x={bar.x} y={575} width={bar.width} height={41} fill="#111111" />
+))}
+</G>
+)}
 </G>
 </Svg>
 
 
-      {/* Text overlays mapped directly over where the paths were */}
       <View style={styles.textOverlay}>
         <Text style={styles.susText}>{documentLabel}</Text>
-        <Text style={styles.nomeText}>{formData?.nomePaciente || ''}</Text>
+        <Text style={styles.nomeText}>{truncatePdfText(formData?.nomePaciente, 42)}</Text>
+        <Text style={styles.birthDayText}>{birthDate.day}</Text>
+        <Text style={styles.birthMonthText}>{birthDate.month}</Text>
+        <Text style={styles.birthYearText}>{birthDate.year}</Text>
+        <Text style={styles.enderecoText}>{truncatePdfText(formData?.endereco, 68)}</Text>
       </View>
     </View>
   );

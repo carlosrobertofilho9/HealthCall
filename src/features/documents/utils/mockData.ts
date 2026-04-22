@@ -238,6 +238,8 @@ export const fieldHints: Record<string, FieldHint> = {
   // --- Campos comuns ---
   NOME_PACIENTE: { label: 'Nome do Paciente', type: 'text', placeholder: 'Opcional' },
   CNS_CPF: { label: 'CNS ou CPF', type: 'text', placeholder: 'Opcional' },
+  DATA_NASCIMENTO: { label: 'Data de Nascimento', type: 'date', placeholder: 'dd/mm/aaaa' },
+  ENDERECO: { label: 'Endereço', type: 'text', placeholder: 'Rua, número, bairro' },
   DATA_PROCEDIMENTO: { label: 'Data do Procedimento', type: 'date', placeholder: 'dd/mm/aaaa' },
   MAPA_DATA_INICIAL: { label: 'Data inicial (MAPA)', type: 'date', placeholder: 'dd/mm/aaaa' },
   GLICEMIA_DATA_INICIAL: { label: 'Data inicial (Controle Glicêmico)', type: 'date', placeholder: 'dd/mm/aaaa' },
@@ -351,7 +353,8 @@ export const extraFieldsByTemplate: Record<string, string[]> = {
     'PROFISSIONAL', 'CRM_COREN',
   ],
   capa_caderneta: [
-    'NOME_PACIENTE', 'CNS_CPF', 'RECEITA_SIMPLES', 'RECEITA_CONTROLE_ESPECIAL', 'RECEITA_AZUL'
+    'NOME_PACIENTE', 'CNS_CPF', 'DATA_NASCIMENTO', 'ENDERECO',
+    'RECEITA_SIMPLES', 'RECEITA_CONTROLE_ESPECIAL', 'RECEITA_AZUL'
   ],
 };
 

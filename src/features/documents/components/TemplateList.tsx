@@ -206,8 +206,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
               variant="ghost"
               size="icon"
               onClick={() => setSearchTerm('')}
-              whileTap={hapticTap}
-              className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 animate-in rounded-full border-0 text-muted-foreground zoom-in hover:text-foreground duration-200"
+              className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 animate-in rounded-full border-0 text-muted-foreground zoom-in transition-transform duration-200 hover:text-foreground active:scale-95"
               title="Limpar busca"
             >
               <X size={14} />
@@ -268,8 +267,7 @@ export const TemplateList: React.FC<TemplateListProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => setSearchTerm('')}
-                  whileTap={hapticTap}
-                  className="mt-2 h-9 border-0 text-xs text-primary hover:text-primary"
+                  className="mt-2 h-9 border-0 text-xs text-primary transition-transform hover:text-primary active:scale-95"
                >
                   Limpar busca
                </Button>
