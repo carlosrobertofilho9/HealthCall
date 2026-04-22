@@ -18,6 +18,11 @@ const WoundTimeline: React.FC<WoundTimelineProps> = ({ entries, photos }) => {
 
   const alerts = useMemo(() => buildTimelineAlerts(entries), [entries]);
 
+  const getProfessionalName = (entry: WoundEntry): string => {
+    const profileName = entry.profiles?.full_name?.trim();
+    return profileName || 'Profissional sem nome cadastrado';
+  };
+
   const timelineItems = useMemo(() => {
     // Sort ascending to calculate indicators properly
     const chronological = [...entries].sort(
@@ -157,7 +162,7 @@ const WoundTimeline: React.FC<WoundTimelineProps> = ({ entries, photos }) => {
                         </p>
                         <p className="mt-0.5 text-[9px] font-black text-muted-foreground/80 uppercase tracking-widest flex items-center gap-1.5">
                           <span className="h-1 w-1 rounded-full bg-primary/30" />
-                          Doc: {item.profiles?.full_name?.split(' ')[0] || item.professional_id.slice(0, 8)}
+                          Profissional: {getProfessionalName(item)}
                         </p>
                       </div>
 

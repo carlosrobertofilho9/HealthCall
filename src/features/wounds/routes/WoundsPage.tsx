@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Modal, Tabs, TabsContent, TabsList, TabsTrigger, SectionCard } from '@/components/ui';
 import { PageShell } from '@/components/layout';
-import { Users, List, History, ClipboardList, ShieldAlert, PlusCircle, Plus, Camera, Bandage, Stethoscope, Activity, TableProperties, Table, UserPlus } from 'lucide-react';
-import BodyDiagram from '@/components/clinical/BodyDiagram';
+import { Users, PlusCircle, Plus, Camera, Bandage, Stethoscope, Activity, TableProperties, Table, UserPlus } from 'lucide-react';
 import WoundPatientList from '../components/WoundPatientList';
 import WoundCaseList from '../components/WoundCaseList';
 import WoundCaseHeader from '../components/WoundCaseHeader';
@@ -485,16 +484,13 @@ const WoundsPage: React.FC = () => {
                       </TabsList>
 
                       <TabsContent value="summary" className="space-y-6 outline-none">
-                        <WoundSummaryDashboard entries={entries} photos={photos} wound={selectedWound} />
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                          <div className="rounded-2xl border border-border/50 bg-card/30 p-4">
-                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Mapa Anatômico</h4>
-                            <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
-                          </div>
-                          <div className="space-y-6">
-                             <WoundTimeline entries={entries} photos={photos} />
-                          </div>
-                        </div>
+                        <WoundSummaryDashboard
+                          entries={entries}
+                          photos={photos}
+                          wound={selectedWound}
+                          relatedAnatomicalCodes={selectedCodes}
+                        />
+                        <WoundTimeline entries={entries} photos={photos} />
                       </TabsContent>
 
                       <TabsContent value="photos" className="space-y-4 outline-none">
@@ -572,11 +568,12 @@ const WoundsPage: React.FC = () => {
                       onCloseCase={() => setShowCloseModal(true)}
                       onReopenCase={() => setShowReopenModal(true)}
                     />
-                    <WoundSummaryDashboard entries={entries} photos={photos} wound={selectedWound} />
-                    <div className="rounded-2xl border border-border/50 bg-card/30 p-3">
-                      <h4 className="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mapa Anatômico</h4>
-                      <BodyDiagram value={selectedWound?.anatomical_code} selectedCodes={selectedCodes} disabled />
-                    </div>
+                    <WoundSummaryDashboard
+                      entries={entries}
+                      photos={photos}
+                      wound={selectedWound}
+                      relatedAnatomicalCodes={selectedCodes}
+                    />
                     <WoundTimeline entries={entries} photos={photos} />
                   </motion.div>
                 )}
