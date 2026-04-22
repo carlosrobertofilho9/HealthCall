@@ -15,20 +15,20 @@ describe('CallingOverlay', () => {
     render(<CallingOverlay visible patientName="Maria Silva" room="Triagem" />);
 
     expect(screen.getByTestId('calling-destination')).toHaveAttribute('data-destination-kind', 'triagem');
-    expect(screen.getByText('emergency')).toBeInTheDocument();
+    expect(screen.getByText('Atendimento inicial')).toBeInTheDocument();
   });
 
   it('aplica apresentação de consultório médico', () => {
     render(<CallingOverlay visible patientName="João Souza" room="Consultório Médico" />);
 
     expect(screen.getByTestId('calling-destination')).toHaveAttribute('data-destination-kind', 'medico');
-    expect(screen.getByText('medical_services')).toBeInTheDocument();
+    expect(screen.getByText('Consulta médica')).toBeInTheDocument();
   });
 
   it('usa apresentação padrão para destino desconhecido', () => {
     render(<CallingOverlay visible patientName="Ana Lima" room="Sala Azul" />);
 
     expect(screen.getByTestId('calling-destination')).toHaveAttribute('data-destination-kind', 'padrao');
-    expect(screen.getByText('meeting_room')).toBeInTheDocument();
+    expect(screen.getByText('Destino')).toBeInTheDocument();
   });
 });

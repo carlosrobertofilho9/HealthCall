@@ -1,4 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import {
+  CalendarCheck,
+  ChevronRight,
+  Clock,
+  IdCard,
+  UserRoundCheck,
+  UsersRound,
+} from 'lucide-react';
 import type { Appointment, Patient } from '@/types';
 import { cn } from '@/lib/utils';
 import { DISPLAY_CLASS } from '../utils/displayTheme';
@@ -48,83 +56,146 @@ export const NextPatientsFooter: React.FC<NextPatientsFooterProps> = ({
   }, []);
 
   return (
-    <section className={cn('mt-8 p-6 min-h-[11rem] overflow-hidden', DISPLAY_CLASS.panel)}>
+    <section className={cn('flex h-[clamp(8.75rem,24dvh,13rem)] min-h-0 shrink-0 flex-col overflow-hidden p-3 sm:p-4 lg:p-5', DISPLAY_CLASS.panel)}>
       <div
         key={activePanel}
         data-testid="display-footer-panel"
         data-footer-panel={activePanel}
-        className="animate-in fade-in slide-in-from-bottom-2 duration-500"
+        className="min-h-0 flex-1 animate-in fade-in slide-in-from-bottom-2 duration-500"
       >
         {activePanel === 'queue' && (
           <>
-            <h3 className="text-xl font-bold mb-4">Próximos pacientes</h3>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 lg:mb-3">
+              <div>
+                <p className="text-xs font-black uppercase text-[#00BB94]">Fila de espera</p>
+                <h3 className="text-xl font-black lg:text-2xl">Próximos pacientes</h3>
+              </div>
+              <div className={DISPLAY_CLASS.metricPill}>
+                <UsersRound className="h-4 w-4 text-[#00BB94]" aria-hidden="true" />
+                {upcoming.length} em destaque
+              </div>
+            </div>
             {upcoming.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 lg:gap-3">
                 {upcoming.map((p) => (
-                  <div key={p.id} className={cn('p-4 flex items-center justify-between gap-4 min-h-[5rem]', DISPLAY_CLASS.panelItem)}>
+                  <div
+                    key={p.id}
+                    className={cn(
+                      'flex min-h-[4rem] items-center justify-between gap-3 p-3 lg:min-h-[4.75rem] lg:p-4',
+                      DISPLAY_CLASS.panelItem,
+                      DISPLAY_CLASS.panelItemInteractive
+                    )}
+                  >
                     <div className="min-w-0">
-                      <p className="font-semibold break-words leading-tight">{p.name}</p>
-                      <p className={cn('text-sm break-words leading-snug mt-1', DISPLAY_CLASS.textSoft)}>{p.destination}</p>
+                      <p className="break-words font-black leading-tight">{p.name}</p>
+                      <p className={cn('mt-1 break-words text-sm font-semibold leading-snug', DISPLAY_CLASS.textMuted)}>
+                        {p.destination}
+                      </p>
                     </div>
-                    <span className={cn('material-symbols-outlined shrink-0', DISPLAY_CLASS.iconPrimary)}>chevron_right</span>
+                    <ChevronRight className="h-6 w-6 shrink-0 text-[#00BB94]" aria-hidden="true" />
                   </div>
                 ))}
               </div>
             ) : (
-              <p className={DISPLAY_CLASS.textSoft}>Não há pacientes na fila de espera.</p>
+              <p
+                className={cn(
+                  'rounded-[1.5rem] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-5 text-lg font-bold',
+                  DISPLAY_CLASS.textMuted
+                )}
+              >
+                Não há pacientes na fila de espera.
+              </p>
             )}
           </>
         )}
 
         {activePanel === 'scheduled' && (
           <>
-            <h3 className="text-xl font-bold mb-4">Pacientes agendados aguardando check-in</h3>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 lg:mb-3">
+              <div>
+                <p className="text-xs font-black uppercase text-[#1466F5]">Agenda do dia</p>
+                <h3 className="text-xl font-black lg:text-2xl">Pacientes agendados aguardando check-in</h3>
+              </div>
+              <div className={DISPLAY_CLASS.metricPill}>
+                <CalendarCheck className="h-4 w-4 text-[#1466F5]" aria-hidden="true" />
+                {scheduledUpcoming.length} pendentes
+              </div>
+            </div>
             {scheduledUpcoming.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 lg:gap-3">
                 {scheduledUpcoming.map((appointment) => (
                   <div
                     key={appointment.id}
-                    className={cn('p-4 flex items-center justify-between gap-4 min-h-[5rem]', DISPLAY_CLASS.panelItem)}
+                    className={cn(
+                      'flex min-h-[4rem] items-center justify-between gap-3 p-3 lg:min-h-[4.75rem] lg:p-4',
+                      DISPLAY_CLASS.panelItem,
+                      DISPLAY_CLASS.panelItemInteractive
+                    )}
                   >
                     <div className="min-w-0">
-                      <p className="font-semibold break-words leading-tight">{appointment.patient_name}</p>
-                      <p className={cn('text-sm break-words leading-snug mt-1', DISPLAY_CLASS.textSoft)}>
+                      <p className="break-words font-black leading-tight">{appointment.patient_name}</p>
+                      <p className={cn('mt-1 break-words text-sm font-semibold leading-snug', DISPLAY_CLASS.textMuted)}>
                         Agenda #{appointment.slot_number}
                       </p>
                     </div>
-                    <span className={cn('material-symbols-outlined shrink-0', DISPLAY_CLASS.iconPrimary)}>event_available</span>
+                    <CalendarCheck className="h-6 w-6 shrink-0 text-[#1466F5]" aria-hidden="true" />
                   </div>
                 ))}
               </div>
             ) : (
-              <p className={DISPLAY_CLASS.textSoft}>Não há pacientes agendados aguardando check-in.</p>
+              <p
+                className={cn(
+                  'rounded-[1.5rem] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-5 text-lg font-bold',
+                  DISPLAY_CLASS.textMuted
+                )}
+              >
+                Não há pacientes agendados aguardando check-in.
+              </p>
             )}
           </>
         )}
 
         {activePanel === 'clock' && (
-          <div className="min-h-[8rem] flex items-center justify-center gap-5 text-center">
-            <span className={cn('material-symbols-outlined text-6xl', DISPLAY_CLASS.iconPrimary)}>schedule</span>
+          <div className="flex h-full items-center justify-center gap-4 text-center lg:gap-5">
+            <div className={DISPLAY_CLASS.iconTile}>
+              <Clock className="h-7 w-7 text-[#00BB94]" aria-hidden="true" />
+            </div>
             <div>
-              <h3 className={cn('text-xl font-bold uppercase tracking-[0.18em]', DISPLAY_CLASS.textSoft)}>Horário atual</h3>
-              <p className="text-6xl md:text-7xl font-black leading-none mt-2">{clock}</p>
+              <h3 className="text-base font-black uppercase text-[#64748B] lg:text-xl">Horário atual</h3>
+              <p className="mt-1 text-5xl font-black leading-none md:text-6xl xl:text-7xl">{clock}</p>
             </div>
           </div>
         )}
 
         {activePanel === 'sus' && (
-          <div className="min-h-[8rem] flex items-center justify-center gap-5 text-center">
-            <span className={cn('material-symbols-outlined text-6xl', DISPLAY_CLASS.iconPrimary)}>id_card</span>
-            <p className="text-4xl md:text-5xl font-black leading-tight">Mantenha seu cartão SUS em mãos</p>
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-center sm:flex-row sm:gap-4 lg:gap-5">
+            <div className={DISPLAY_CLASS.iconTile}>
+              <IdCard className="h-7 w-7 text-[#1466F5]" aria-hidden="true" />
+            </div>
+            <p className="text-3xl font-black leading-tight md:text-4xl xl:text-5xl">Mantenha seu cartão SUS em mãos</p>
           </div>
         )}
 
         {activePanel === 'wait' && (
-          <div className="min-h-[8rem] flex items-center justify-center gap-5 text-center">
-            <span className={cn('material-symbols-outlined text-6xl', DISPLAY_CLASS.iconPrimary)}>patient_list</span>
-            <p className="text-4xl md:text-5xl font-black leading-tight">Aguarde ser chamado</p>
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-center sm:flex-row sm:gap-4 lg:gap-5">
+            <div className={DISPLAY_CLASS.iconTile}>
+              <UserRoundCheck className="h-7 w-7 text-[#00BB94]" aria-hidden="true" />
+            </div>
+            <p className="text-3xl font-black leading-tight md:text-4xl xl:text-5xl">Aguarde ser chamado</p>
           </div>
         )}
+      </div>
+
+      <div className="mt-2 flex shrink-0 justify-center gap-2 lg:mt-3">
+        {FOOTER_PANELS.map((panel, index) => (
+          <span
+            key={panel}
+            className={cn(
+              'h-2 rounded-full transition-all duration-300',
+              index === panelIndex ? 'w-8 bg-[#00BB94]' : 'w-2 bg-[#DCE5EE]'
+            )}
+          />
+        ))}
       </div>
     </section>
   );

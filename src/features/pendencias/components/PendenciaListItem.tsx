@@ -1,23 +1,22 @@
 import React from 'react';
 import {
+  CalendarClock,
+  FileText,
+  Flag,
   IdCard,
   Loader2,
   Pencil,
   Save,
+  Tags,
   Trash2,
+  UserCog,
   UserRound,
   X,
-  FileText,
-  CalendarClock,
-  Flag,
-  UserCog,
-  Tags,
 } from 'lucide-react';
 import {
   Input,
   Button,
   Textarea,
-  ActionBar,
   DatePicker,
   Select,
   SelectContent,
@@ -72,6 +71,49 @@ interface PendenciaListItemProps {
   alertLabel: string;
 }
 
+interface MetaTileProps {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}
+
+const MetaTile: React.FC<MetaTileProps> = ({ icon, label, children }) => (
+  <div className="min-w-0 rounded-[1rem] border border-[#E5ECF3] bg-[#F8FAFC] p-3">
+    <p className="mb-1.5 flex min-w-0 items-center gap-1.5 text-xs font-bold text-[#64748B]">
+      <span className="flex size-4 shrink-0 items-center justify-center">{icon}</span>
+      <span className="truncate">{label}</span>
+    </p>
+    {children}
+  </div>
+);
+
+const alertClassByLevel: Record<PendenciaAlertLevel, string> = {
+  none: 'border-[#E5ECF3]',
+  high_priority: 'border-[#BFD8FF]',
+  due_today: 'border-[#F4D38B]',
+  overdue: 'border-[#F4B6BC]',
+};
+
+const alertAccentByLevel: Record<PendenciaAlertLevel, string> = {
+  none: 'bg-[linear-gradient(90deg,#1466F5_0%,#00BB94_100%)] opacity-35',
+  high_priority: 'bg-[#1466F5]',
+  due_today: 'bg-[#F59E0B]',
+  overdue: 'bg-[#D9474F]',
+};
+
+const alertBadgeByLevel: Record<PendenciaAlertLevel, string> = {
+  none: '',
+  high_priority: 'border-[#BFD8FF] bg-[#EAF3FF] text-[#1466F5]',
+  due_today: 'border-[#F4D38B] bg-[#FFF7E6] text-[#9A6300]',
+  overdue: 'border-[#F4B6BC] bg-[#FFF1F2] text-[#B4232B]',
+};
+
+const prioridadeClassByValue: Record<PendenciaPrioridade, string> = {
+  baixa: 'border border-[#DCE5EE] bg-white text-[#64748B]',
+  normal: 'border border-[#BFE8DF] bg-[#E6F7F2] text-[#007A65]',
+  alta: 'border border-[#F4B6BC] bg-[#FFF1F2] text-[#B4232B]',
+};
+
 export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
   item,
   tipoOptions,
@@ -109,50 +151,23 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
   const editingTipos = [...editTiposSelecionados, editTipoPersonalizado.trim()].filter(Boolean);
   const prazoFormatado = item.prazo ? new Date(`${item.prazo}T00:00:00`).toLocaleDateString('pt-BR') : 'Não definido';
 
-  const alertClassByLevel: Record<PendenciaAlertLevel, string> = {
-    none: 'border-border/70',
-    high_priority: 'border-primary/40',
-    due_today: 'border-warning/60',
-    overdue: 'border-destructive/60',
-  };
+  if (isEditing) {
+    return (
+      <article
+        className={cn(
+          'relative min-w-0 overflow-hidden rounded-[1.45rem] border bg-white shadow-[0_14px_38px_rgba(0,27,61,0.06)]',
+          alertClassByLevel[alertLevel],
+        )}
+      >
+        <span className={cn('absolute inset-x-0 top-0 h-1', alertAccentByLevel[alertLevel])} />
 
-  const alertAccentByLevel: Record<PendenciaAlertLevel, string> = {
-    none: 'bg-border/40',
-    high_priority: 'bg-primary/70',
-    due_today: 'bg-warning/80',
-    overdue: 'bg-destructive/80',
-  };
-
-  const alertBadgeByLevel: Record<PendenciaAlertLevel, string> = {
-    none: '',
-    high_priority: 'border-primary/25 bg-primary/10 text-primary',
-    due_today: 'border-warning/30 bg-warning/10 text-warning',
-    overdue: 'border-destructive/30 bg-destructive/10 text-destructive',
-  };
-
-  const prioridadeClassByValue: Record<PendenciaPrioridade, string> = {
-    baixa: 'border border-border bg-muted/40 text-muted-foreground',
-    normal: 'border border-primary/20 bg-primary/10 text-primary',
-    alta: 'border border-destructive/30 bg-destructive/10 text-destructive',
-  };
-
-  return (
-    <article
-      className={cn(
-        'group relative min-w-0 overflow-hidden rounded-xl border bg-card/40 p-3 transition-colors hover:border-primary/30 lg:rounded-lg lg:bg-card/25 lg:p-0 lg:shadow-sm',
-        alertClassByLevel[alertLevel],
-      )}
-    >
-      <span className={cn('pointer-events-none absolute inset-y-0 left-0 hidden w-1 lg:block', alertAccentByLevel[alertLevel])} />
-
-      {isEditing ? (
-        <div className="space-y-3 lg:grid lg:grid-cols-[minmax(0,1fr)_13rem] lg:gap-4 lg:space-y-0 lg:p-4 lg:pl-5">
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem] lg:p-5">
+          <div className="min-w-0 space-y-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Input
                 value={editNomePaciente}
                 onChange={(event) => onEditNomePacienteChange(event.target.value)}
-                className="h-10"
+                className="h-12 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-semibold text-[#001B3D] placeholder:text-[#64748B] focus:bg-white focus:ring-[#00BB94]/20"
                 placeholder="Nome do paciente"
                 icon={<UserRound className="h-4 w-4" />}
               />
@@ -160,7 +175,7 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
               <Input
                 value={editCnsCpf}
                 onChange={(event) => onEditCnsCpfChange(event.target.value)}
-                className="h-10 font-semibold"
+                className="h-12 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-semibold text-[#001B3D] placeholder:text-[#64748B] focus:bg-white focus:ring-[#00BB94]/20"
                 placeholder="CNS ou CPF"
                 icon={<IdCard className="h-4 w-4" />}
               />
@@ -177,17 +192,17 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
             <Textarea
               value={editResumo}
               onChange={(event) => onEditResumoChange(event.target.value)}
-              className="min-h-24 lg:min-h-20"
+              className="min-h-28 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-medium text-[#001B3D] placeholder:text-[#64748B] focus:bg-white focus:ring-[#00BB94]/20 lg:min-h-24"
               placeholder="Descreva os detalhes da pendência"
               icon={<FileText className="h-4 w-4 text-muted-foreground" />}
             />
 
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <Select
                 value={editPrioridade}
                 onValueChange={(value) => onEditPrioridadeChange(value as PendenciaPrioridade)}
               >
-                <SelectTrigger className="h-10 pl-4">
+                <SelectTrigger className="h-12 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-semibold text-[#001B3D] focus:bg-white focus:ring-[#00BB94]/20">
                   <SelectValue placeholder="Prioridade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -201,11 +216,11 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 value={editPrazo}
                 onChange={onEditPrazoChange}
                 placeholder="Prazo"
-                className="w-full"
+                className="w-full [&_button]:h-12 [&_button]:border-[#DCE5EE] [&_button]:bg-[#F8FAFC] [&_button]:font-semibold [&_button]:text-[#001B3D] [&_button]:focus:bg-white [&_button]:focus:ring-[#00BB94]/20"
               />
 
               <Select value={editResponsavel} onValueChange={onEditResponsavelChange}>
-                <SelectTrigger className="h-10 pl-4">
+                <SelectTrigger className="h-12 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-semibold text-[#001B3D] focus:bg-white focus:ring-[#00BB94]/20">
                   <SelectValue placeholder="Responsável" />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,18 +231,142 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
               </Select>
             </div>
 
-            <div className="flex flex-wrap gap-1.5">
-              {editingTipos.map((tipoTag) => (
-                <span key={`${item.id}-editing-tag-${tipoTag}`} className="inline-flex rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-bold">
-                  {tipoTag}
-                </span>
-              ))}
+            {editingTipos.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {editingTipos.map((tipoTag) => (
+                  <span key={`${item.id}-editing-tag-${tipoTag}`} className="inline-flex max-w-full rounded-full border border-[#DCE5EE] bg-[#F8FAFC] px-2.5 py-1 text-xs font-bold text-[#334155]">
+                    <span className="truncate">{tipoTag}</span>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-[#E5ECF3] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+            <div>
+              <p className="mb-1.5 text-xs font-bold text-[#64748B]">Status</p>
+              <Select value={item.status} onValueChange={(value) => onStatusChange(value as PendenciaStatus)}>
+                <SelectTrigger className="h-12 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-semibold text-[#001B3D] focus:bg-white focus:ring-[#00BB94]/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={PENDENCIA_STATUS.ABERTO}>Aberto</SelectItem>
+                  <SelectItem value={PENDENCIA_STATUS.EM_ANDAMENTO}>Em andamento</SelectItem>
+                  <SelectItem value={PENDENCIA_STATUS.RESOLVIDO}>Resolvido</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="mt-auto grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={onSaveEditing}
+                disabled={isUpdating}
+                aria-label="Salvar edição"
+                className="h-11 rounded-[1rem] bg-[#00BB94] text-sm font-extrabold text-white hover:bg-[#00A885]"
+              >
+                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                <span className="hidden sm:inline lg:hidden xl:inline">Salvar</span>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={onCancelEditing}
+                variant="ghost"
+                aria-label="Cancelar edição"
+                className="h-11 rounded-[1rem] border-[#DCE5EE] bg-white text-[#001B3D] hover:bg-[#F8FAFC]"
+              >
+                <X className="h-4 w-4" />
+                <span className="hidden sm:inline lg:hidden xl:inline">Cancelar</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <article
+      className={cn(
+        'group relative min-w-0 overflow-hidden rounded-[1.45rem] border bg-white shadow-[0_14px_38px_rgba(0,27,61,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_46px_rgba(0,27,61,0.08)]',
+        alertClassByLevel[alertLevel],
+      )}
+    >
+      <span className={cn('absolute inset-x-0 top-0 h-1', alertAccentByLevel[alertLevel])} />
+
+      <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_14rem] lg:p-5">
+        <div className="min-w-0 space-y-4">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-[1rem] border border-[#DCE5EE] bg-[#F8FAFC] text-[#1466F5]">
+                <UserRound className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h3 className="min-w-0 truncate text-lg font-extrabold leading-tight text-[#001B3D]">{item.nome_paciente}</h3>
+                  <span className={cn('inline-flex rounded-full px-2.5 py-1 text-xs font-extrabold', statusBadgeClass(item.status))}>
+                    {PENDENCIA_STATUS_LABEL[item.status]}
+                  </span>
+                  {alertLevel !== 'none' ? (
+                    <span className={cn('inline-flex rounded-full border px-2.5 py-1 text-xs font-extrabold', alertBadgeByLevel[alertLevel])}>
+                      {alertLabel}
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#BFD8FF] bg-[#EAF3FF] px-2.5 py-1 text-xs font-bold text-[#1466F5]">
+                    <IdCard className="size-3.5 shrink-0" />
+                    <span className="text-[#64748B]">{getDocumentLabel(item.cns_cpf)}</span>
+                    <span className="truncate">{documentoFormatado}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE5EE] bg-[#F8FAFC] px-2.5 py-1 text-xs font-bold text-[#64748B]">
+                    <Tags className="size-3.5" />
+                    {tipos.length} tipo{tipos.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-row gap-2 lg:flex-col lg:border-l lg:border-border/60 lg:pl-4">
+          <div className="rounded-[1rem] border border-[#E5ECF3] bg-[#F8FAFC] p-3.5">
+            <p className="line-clamp-3 text-sm font-medium leading-6 text-[#334155]">{item.resumo || '-'}</p>
+          </div>
+
+          {tipos.length > 0 ? (
+            <div className="flex min-w-0 flex-wrap gap-2">
+              {tipos.map((tipoTag) => (
+                <span key={`${item.id}-${tipoTag}`} className="inline-flex max-w-full rounded-full border border-[#DCE5EE] bg-white px-2.5 py-1 text-xs font-bold text-[#334155]">
+                  <span className="truncate">{tipoTag}</span>
+                </span>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+            <MetaTile icon={<Flag className="size-4 text-[#1466F5]" />} label="Prioridade">
+              <span className={cn('inline-flex max-w-full rounded-full px-2.5 py-1 text-xs font-extrabold', prioridadeClassByValue[item.prioridade])}>
+                {PENDENCIA_PRIORIDADE_LABEL[item.prioridade]}
+              </span>
+            </MetaTile>
+
+            <MetaTile icon={<CalendarClock className="size-4 text-[#F59E0B]" />} label="Prazo">
+              <p className="truncate text-sm font-extrabold text-[#001B3D]">{prazoFormatado}</p>
+            </MetaTile>
+
+            <MetaTile icon={<UserCog className="size-4 text-[#00A885]" />} label="Responsável">
+              <p className="truncate text-sm font-extrabold text-[#001B3D]">{item.responsavel || 'Não definido'}</p>
+            </MetaTile>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-[#E5ECF3] pt-4 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0">
+          <div>
+            <p className="mb-1.5 text-xs font-bold text-[#64748B]">Atualizar status</p>
             <Select value={item.status} onValueChange={(value) => onStatusChange(value as PendenciaStatus)}>
-              <SelectTrigger className="h-10 min-w-0 flex-1 pl-3 lg:flex-none">
+              <SelectTrigger className="h-12 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-semibold text-[#001B3D] focus:bg-white focus:ring-[#00BB94]/20">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -236,239 +375,34 @@ export const PendenciaListItem: React.FC<PendenciaListItemProps> = ({
                 <SelectItem value={PENDENCIA_STATUS.RESOLVIDO}>Resolvido</SelectItem>
               </SelectContent>
             </Select>
+          </div>
 
-            <ActionBar align="start" className="shrink-0 flex-row gap-2 lg:grid lg:grid-cols-2">
-              <Button
-                type="button"
-                size="sm"
-                onClick={onSaveEditing}
-                disabled={isUpdating}
-                aria-label="Salvar edição"
-                className="h-10 w-10 shrink-0 p-0 sm:w-auto sm:px-4 lg:w-full lg:px-0"
-              >
-                {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                <span className="hidden sm:inline lg:hidden">Salvar edição</span>
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={onCancelEditing}
-                variant="ghost"
-                aria-label="Cancelar edição"
-                className="h-10 w-10 shrink-0 p-0 sm:w-auto sm:px-4 lg:w-full lg:px-0"
-              >
-                <X className="h-4 w-4" />
-                <span className="hidden sm:inline lg:hidden">Cancelar</span>
-              </Button>
-            </ActionBar>
+          <div className="mt-auto flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={onStartEditing}
+              variant="secondary"
+              aria-label="Editar pendência"
+              className="h-11 flex-1 rounded-[1rem] border border-[#CFEDE6] bg-[#E6F7F2] text-sm font-extrabold text-[#007A65] hover:bg-[#DDF4EE]"
+            >
+              <Pencil className="h-4 w-4" />
+              Editar
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={onDelete}
+              disabled={isDeleting}
+              variant="destructive"
+              aria-label="Excluir pendência"
+              className="h-11 w-11 shrink-0 rounded-[1rem] bg-[#D9474F] p-0 text-white hover:brightness-105"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
-      ) : (
-        <>
-          <div className="space-y-2 lg:hidden">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate text-base font-black tracking-tight text-foreground">{item.nome_paciente}</p>
-                <div className="mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{getDocumentLabel(item.cns_cpf)}</span>
-                  <span className="truncate text-xs font-semibold tracking-wide text-primary">{documentoFormatado}</span>
-                </div>
-              </div>
-
-              <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold', statusBadgeClass(item.status))}>
-                {PENDENCIA_STATUS_LABEL[item.status]}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5">
-              {tipos.map((tipoTag) => (
-                <span key={`${item.id}-${tipoTag}`} className="inline-flex rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-bold">
-                  {tipoTag}
-                </span>
-              ))}
-            </div>
-
-            <div className="rounded-lg border border-border/70 bg-background/60 p-2.5">
-              <p className="wrap-break-word max-h-[4.75rem] overflow-hidden text-sm leading-relaxed text-foreground">{item.resumo || '-'}</p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-1.5">
-              <div className="min-w-0 rounded-lg border border-border/60 bg-background/50 p-2">
-                <p className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <Flag className="h-3.5 w-3.5" />
-                </p>
-                <span className={cn('inline-flex max-w-full rounded-full px-1.5 py-0.5 text-[10px] font-bold', prioridadeClassByValue[item.prioridade])}>
-                  {PENDENCIA_PRIORIDADE_LABEL[item.prioridade]}
-                </span>
-              </div>
-
-              <div className="min-w-0 rounded-lg border border-border/60 bg-background/50 p-2">
-                <p className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <CalendarClock className="h-3.5 w-3.5" />
-                </p>
-                <p className="truncate text-[11px] font-semibold text-foreground">{prazoFormatado}</p>
-              </div>
-
-              <div className="min-w-0 rounded-lg border border-border/60 bg-background/50 p-2">
-                <p className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <UserCog className="h-3.5 w-3.5" />
-                </p>
-                <p className="truncate text-[11px] font-semibold text-foreground">{item.responsavel || 'Não definido'}</p>
-              </div>
-            </div>
-
-            {alertLevel !== 'none' ? (
-              <span className="inline-flex w-fit rounded-full border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive">
-                {alertLabel}
-              </span>
-            ) : null}
-
-            <div className="flex w-full flex-row gap-2">
-              <Select value={item.status} onValueChange={(value) => onStatusChange(value as PendenciaStatus)}>
-                <SelectTrigger className="h-10 min-w-0 flex-1 pl-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={PENDENCIA_STATUS.ABERTO}>Aberto</SelectItem>
-                  <SelectItem value={PENDENCIA_STATUS.EM_ANDAMENTO}>Em andamento</SelectItem>
-                  <SelectItem value={PENDENCIA_STATUS.RESOLVIDO}>Resolvido</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <ActionBar align="start" className="shrink-0 flex-row gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={onStartEditing}
-                  variant="ghost"
-                  aria-label="Editar pendência"
-                  className="h-10 w-10 shrink-0 p-0"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={onDelete}
-                  disabled={isDeleting}
-                  variant="destructive"
-                  aria-label="Excluir pendência"
-                  className="h-10 w-10 shrink-0 p-0"
-                >
-                  {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                </Button>
-              </ActionBar>
-            </div>
-          </div>
-
-          <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_13rem] lg:gap-4 lg:p-4 lg:pl-5">
-            <div className="min-w-0 space-y-3">
-              <div className="flex min-w-0 items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <h3 className="min-w-0 truncate text-base font-semibold tracking-tight text-foreground">{item.nome_paciente}</h3>
-                    <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', statusBadgeClass(item.status))}>
-                      {PENDENCIA_STATUS_LABEL[item.status]}
-                    </span>
-                    {alertLevel !== 'none' ? (
-                      <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-bold', alertBadgeByLevel[alertLevel])}>
-                        {alertLabel}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 font-semibold text-primary">
-                      <IdCard className="h-3.5 w-3.5 shrink-0" />
-                      <span className="text-[10px] font-bold uppercase text-muted-foreground">{getDocumentLabel(item.cns_cpf)}</span>
-                      <span className="truncate">{documentoFormatado}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1 font-semibold text-muted-foreground">
-                      <Tags className="h-3.5 w-3.5" />
-                      {tipos.length} tipo{tipos.length === 1 ? '' : 's'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <p className="line-clamp-2 text-sm leading-relaxed text-foreground/90">{item.resumo || '-'}</p>
-
-              <div className="flex min-w-0 flex-wrap gap-1.5">
-                {tipos.map((tipoTag) => (
-                  <span key={`${item.id}-${tipoTag}`} className="inline-flex max-w-full rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[10px] font-semibold text-foreground/80">
-                    <span className="truncate">{tipoTag}</span>
-                  </span>
-                ))}
-              </div>
-
-              <div className="grid min-w-0 grid-cols-3 gap-2 border-t border-border/60 pt-2">
-                <div className="min-w-0">
-                  <p className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <Flag className="h-3.5 w-3.5" />
-                    Prioridade
-                  </p>
-                  <span className={cn('inline-flex max-w-full rounded-full px-2 py-0.5 text-[10px] font-bold', prioridadeClassByValue[item.prioridade])}>
-                    {PENDENCIA_PRIORIDADE_LABEL[item.prioridade]}
-                  </span>
-                </div>
-
-                <div className="min-w-0">
-                  <p className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <CalendarClock className="h-3.5 w-3.5" />
-                    Prazo
-                  </p>
-                  <p className="truncate text-xs font-semibold text-foreground">{prazoFormatado}</p>
-                </div>
-
-                <div className="min-w-0">
-                  <p className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <UserCog className="h-3.5 w-3.5" />
-                    Responsável
-                  </p>
-                  <p className="truncate text-xs font-semibold text-foreground">{item.responsavel || 'Não definido'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between gap-3 border-l border-border/60 pl-4">
-              <Select value={item.status} onValueChange={(value) => onStatusChange(value as PendenciaStatus)}>
-                <SelectTrigger className="h-9 rounded-lg pl-3 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={PENDENCIA_STATUS.ABERTO}>Aberto</SelectItem>
-                  <SelectItem value={PENDENCIA_STATUS.EM_ANDAMENTO}>Em andamento</SelectItem>
-                  <SelectItem value={PENDENCIA_STATUS.RESOLVIDO}>Resolvido</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <ActionBar align="end" className="gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={onStartEditing}
-                  variant="ghost"
-                  aria-label="Editar pendência"
-                  className="h-9 w-9 rounded-lg p-0"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={onDelete}
-                  disabled={isDeleting}
-                  variant="destructive"
-                  aria-label="Excluir pendência"
-                  className="h-9 w-9 rounded-lg p-0"
-                >
-                  {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                </Button>
-              </ActionBar>
-            </div>
-          </div>
-        </>
-      )}
+      </div>
     </article>
   );
 };

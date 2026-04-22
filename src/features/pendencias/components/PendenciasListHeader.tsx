@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileDown, Loader2, Search, ListChecks, ClipboardList, CalendarClock } from 'lucide-react';
+import { CalendarClock, FileDown, ListChecks, Loader2, Search } from 'lucide-react';
 import {
   Input,
   Button,
@@ -14,12 +14,10 @@ import {
 export type StatusFilter = 'todos' | 'em_aberto' | 'resolvido';
 
 interface PendenciasListHeaderProps {
-  openCount: number;
-  totalCount: number;
-  dueTodayCount: number;
   search: string;
   statusFilter: StatusFilter;
   dueTodayOnly: boolean;
+  visibleCount: number;
   isGeneratingPdf: boolean;
   onSearchChange: (value: string) => void;
   onStatusFilterChange: (value: StatusFilter) => void;
@@ -28,12 +26,10 @@ interface PendenciasListHeaderProps {
 }
 
 export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
-  openCount,
-  totalCount,
-  dueTodayCount,
   search,
   statusFilter,
   dueTodayOnly,
+  visibleCount,
   isGeneratingPdf,
   onSearchChange,
   onStatusFilterChange,
@@ -41,16 +37,20 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
   onGenerateOpenPdf,
 }) => {
   return (
-    <div className="shrink-0 space-y-3 border-b border-border p-3 lg:p-4">
-      <div className="flex items-start justify-between gap-2">
+    <div className="shrink-0 space-y-3 border-b border-[#E5ECF3] bg-white px-4 py-4 lg:px-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-black tracking-tight text-foreground lg:text-xl">Fila de Pendências</h2>
-          <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
-            Monitoramento operacional por status, prazo e responsável.
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#DCE5EE] bg-[#F8FAFC] px-3 py-1 text-xs font-bold text-[#64748B]">
+            <ListChecks className="size-3.5 text-[#00A885]" />
+            {visibleCount} em exibição
+          </div>
+          <h2 className="truncate text-xl font-extrabold leading-tight text-[#001B3D]">Fila operacional</h2>
+          <p className="mt-1 text-sm font-medium text-[#64748B]">
+            Acompanhe status, vencimento e responsável com leitura rápida.
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center">
+        <div className="flex shrink-0 items-center sm:pt-1">
           <Button
             type="button"
             size="sm"
@@ -58,53 +58,27 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
             disabled={isGeneratingPdf}
             variant="secondary"
             aria-label="Gerar relatório semanal"
-            className="h-8 w-8 gap-2 rounded-lg p-0 lg:h-9 lg:w-auto lg:px-3"
+            className="h-11 w-full rounded-[1rem] border border-[#CFEDE6] bg-[#E6F7F2] px-4 text-xs font-extrabold text-[#007A65] hover:bg-[#DDF4EE] sm:w-auto"
           >
             {isGeneratingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-            <span className="hidden lg:inline">Relatório semanal</span>
+            <span>Relatório semanal</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 lg:flex lg:items-center">
-        <article className="min-w-0 rounded-lg border border-border/70 bg-card/40 p-2 lg:flex lg:h-9 lg:items-center lg:gap-2 lg:px-3 lg:py-0">
-          <p className="flex min-w-0 items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground lg:gap-1.5 lg:text-[10px]">
-            <ListChecks className="h-3 w-3 shrink-0 lg:h-3.5 lg:w-3.5" />
-            <span className="truncate">Abertas</span>
-          </p>
-          <p className="mt-0.5 text-lg font-black text-foreground lg:mt-0 lg:text-sm">{openCount}</p>
-        </article>
-
-        <article className="min-w-0 rounded-lg border border-border/70 bg-card/40 p-2 lg:flex lg:h-9 lg:items-center lg:gap-2 lg:px-3 lg:py-0">
-          <p className="flex min-w-0 items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground lg:gap-1.5 lg:text-[10px]">
-            <CalendarClock className="h-3 w-3 shrink-0 lg:h-3.5 lg:w-3.5" />
-            <span className="truncate">Hoje</span>
-          </p>
-          <p className="mt-0.5 text-lg font-black text-foreground lg:mt-0 lg:text-sm">{dueTodayCount}</p>
-        </article>
-
-        <article className="min-w-0 rounded-lg border border-border/70 bg-card/40 p-2 lg:flex lg:h-9 lg:items-center lg:gap-2 lg:px-3 lg:py-0">
-          <p className="flex min-w-0 items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground lg:gap-1.5 lg:text-[10px]">
-            <ClipboardList className="h-3 w-3 shrink-0 lg:h-3.5 lg:w-3.5" />
-            <span className="truncate">Total</span>
-          </p>
-          <p className="mt-0.5 text-lg font-black text-foreground lg:mt-0 lg:text-sm">{totalCount}</p>
-        </article>
-      </div>
-
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-2 lg:grid-cols-[minmax(0,1fr)_180px_170px]">
-        <div className="col-span-2 min-w-0 lg:col-span-1">
+      <div className="grid min-w-0 grid-cols-1 gap-2 lg:grid-cols-[minmax(0,1fr)_180px_180px]">
+        <div className="min-w-0">
           <Input
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Buscar por nome, CNS/CPF, tipo ou resumo"
             icon={<Search className="h-4 w-4" />}
-            className="h-10 lg:h-9"
+            className="h-12 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-semibold text-[#001B3D] placeholder:text-[#64748B] focus:bg-white focus:ring-[#00BB94]/20 lg:h-11"
           />
         </div>
 
         <Select value={statusFilter} onValueChange={(value) => onStatusFilterChange(value as StatusFilter)}>
-          <SelectTrigger className="h-10 lg:h-9">
+          <SelectTrigger className="h-12 border-[#DCE5EE] bg-[#F8FAFC] text-sm font-semibold text-[#001B3D] focus:bg-white focus:ring-[#00BB94]/20 lg:h-11">
             <SelectValue placeholder="Filtrar status" />
           </SelectTrigger>
           <SelectContent>
@@ -114,9 +88,11 @@ export const PendenciasListHeader: React.FC<PendenciasListHeaderProps> = ({
           </SelectContent>
         </Select>
 
-        <div className="flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card/40 px-2 lg:h-9 lg:justify-between lg:rounded-lg lg:px-3">
-          <CalendarClock className="h-4 w-4 text-muted-foreground lg:hidden" />
-          <span className="hidden text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:inline">Somente vence hoje</span>
+        <div className="flex h-12 items-center justify-between gap-3 rounded-full border border-[#DCE5EE] bg-[#F8FAFC] px-4 lg:h-11">
+          <span className="inline-flex min-w-0 items-center gap-2 text-sm font-bold text-[#64748B]">
+            <CalendarClock className="size-4 shrink-0 text-[#F59E0B]" />
+            <span className="truncate">Vence hoje</span>
+          </span>
           <Switch checked={dueTodayOnly} onCheckedChange={onDueTodayOnlyChange} />
         </div>
       </div>

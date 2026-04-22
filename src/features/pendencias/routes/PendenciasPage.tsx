@@ -1,6 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { CirclePlus, ListTodo, Loader2 } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  CalendarClock,
+  CheckCircle2,
+  CirclePlus,
+  ClipboardCheck,
+  ListTodo,
+  Loader2,
+  ShieldCheck,
+  UserCheck,
+} from 'lucide-react';
 import { PENDENCIA_RESPONSAVEL_OPTIONS } from '@/constants';
 import { PageShell } from '@/components/layout';
 import { MobileStickyTabs } from '@/components/ui';
@@ -40,10 +51,71 @@ import {
   getCurrentWeekRange,
   isDateInRange,
   isDueToday,
+  isOverdue,
   sortPendenciasByOperationalSeverity,
   toDateInputValue
 } from '../utils/pendenciasOperationalUtils';
 import { printOpenPendenciasPdf } from '../utils/printOpenPendenciasPdf';
+
+type MetricTone = 'teal' | 'blue' | 'warning' | 'danger';
+
+interface OperationalMetricProps {
+  label: string;
+  value: React.ReactNode;
+  helper: string;
+  icon: React.ReactNode;
+  tone: MetricTone;
+}
+
+const metricToneClass: Record<MetricTone, { icon: string; value: string }> = {
+  teal: {
+    icon: 'border-[#BFE8DF] bg-[#E6F7F2] text-[#007A65]',
+    value: 'text-[#007A65]',
+  },
+  blue: {
+    icon: 'border-[#BFD8FF] bg-[#EAF3FF] text-[#1466F5]',
+    value: 'text-[#001B3D]',
+  },
+  warning: {
+    icon: 'border-[#F4D38B] bg-[#FFF7E6] text-[#9A6300]',
+    value: 'text-[#9A6300]',
+  },
+  danger: {
+    icon: 'border-[#F4B6BC] bg-[#FFF1F2] text-[#B4232B]',
+    value: 'text-[#B4232B]',
+  },
+};
+
+const OperationalMetric: React.FC<OperationalMetricProps> = ({ label, value, helper, icon, tone }) => {
+  const toneClass = metricToneClass[tone];
+
+  return (
+    <article className="min-w-0 rounded-[1rem] border border-[#E5ECF3] bg-[#F8FAFC] p-2.5 shadow-[0_8px_20px_rgba(0,27,61,0.035)]">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-bold text-[#64748B]">{label}</p>
+          <p className={`mt-0.5 truncate text-xl font-extrabold leading-none ${toneClass.value}`}>{value}</p>
+        </div>
+        <span className={`flex size-8 shrink-0 items-center justify-center rounded-[0.85rem] border ${toneClass.icon}`}>
+          {icon}
+        </span>
+      </div>
+      <p className="mt-2 truncate text-[11px] font-semibold text-[#64748B]">{helper}</p>
+    </article>
+  );
+};
+
+interface ContextChipProps {
+  icon: React.ReactNode;
+  label: string;
+}
+
+const ContextChip: React.FC<ContextChipProps> = ({ icon, label }) => (
+  <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-[#DCE5EE] bg-white px-2.5 py-1 text-xs font-bold text-[#334155] shadow-[0_6px_14px_rgba(0,27,61,0.035)]">
+    <span className="flex size-4 shrink-0 items-center justify-center">{icon}</span>
+    <span className="truncate">{label}</span>
+  </span>
+);
 
 const PendenciasPage: React.FC = () => {
   usePageTitle('Pendências');
@@ -86,6 +158,32 @@ const PendenciasPage: React.FC = () => {
     () => openPendencias.filter((item) => isDueToday(item)).length,
     [openPendencias],
   );
+
+  const overdueCount = useMemo(
+    () => openPendencias.filter((item) => isOverdue(item)).length,
+    [openPendencias],
+  );
+
+  const highPriorityCount = useMemo(
+    () => openPendencias.filter((item) => item.prioridade === PENDENCIA_PRIORIDADE.ALTA).length,
+    [openPendencias],
+  );
+
+  const inProgressCount = useMemo(
+    () => pendencias.filter((item) => item.status === PENDENCIA_STATUS.EM_ANDAMENTO).length,
+    [pendencias],
+  );
+
+  const resolvedCount = useMemo(
+    () => pendencias.filter((item) => item.status === PENDENCIA_STATUS.RESOLVIDO).length,
+    [pendencias],
+  );
+
+  const weekRangeLabel = useMemo(() => {
+    const { start, end } = getCurrentWeekRange();
+    const formatter = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' });
+    return `${formatter.format(start)} a ${formatter.format(end)}`;
+  }, []);
 
   const filteredPendencias = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -310,9 +408,9 @@ const PendenciasPage: React.FC = () => {
   };
 
   const statusBadgeClass = (status: PendenciaStatus) => {
-    if (status === PENDENCIA_STATUS.ABERTO) return 'border border-warning/20 bg-warning/10 text-warning';
-    if (status === PENDENCIA_STATUS.EM_ANDAMENTO) return 'border border-chart-3/20 bg-chart-3/10 text-chart-3';
-    return 'border border-success/20 bg-success/10 text-success';
+    if (status === PENDENCIA_STATUS.ABERTO) return 'border border-[#F4D38B] bg-[#FFF7E6] text-[#9A6300]';
+    if (status === PENDENCIA_STATUS.EM_ANDAMENTO) return 'border border-[#BFD8FF] bg-[#EAF3FF] text-[#1466F5]';
+    return 'border border-[#BFE8DF] bg-[#E6F7F2] text-[#007A65]';
   };
 
   const getAlertLabel = (item: Pendencia) => {
@@ -326,12 +424,10 @@ const PendenciasPage: React.FC = () => {
   const renderListContent = () => (
     <>
       <PendenciasListHeader
-        openCount={openPendencias.length}
-        totalCount={pendencias.length}
-        dueTodayCount={dueTodayCount}
         search={search}
         statusFilter={statusFilter}
         dueTodayOnly={dueTodayOnly}
+        visibleCount={filteredPendencias.length}
         isGeneratingPdf={isGeneratingPdf}
         onSearchChange={setSearch}
         onStatusFilterChange={setStatusFilter}
@@ -339,18 +435,24 @@ const PendenciasPage: React.FC = () => {
         onGenerateOpenPdf={handleGenerateOpenPdf}
       />
 
-      <div className="custom-scrollbar min-w-0 flex-1 overflow-x-hidden p-3 lg:min-h-0 lg:overflow-y-auto lg:p-4">
+      <div className="custom-scrollbar min-w-0 overflow-x-hidden p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:p-5">
         {loading ? (
-          <div className="flex h-full min-h-64 items-center justify-center gap-2 text-muted-foreground">
+          <div className="flex min-h-64 items-center justify-center gap-2 rounded-[1.25rem] border border-[#E5ECF3] bg-[#F8FAFC] text-[#64748B]">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span>Carregando pendências...</span>
           </div>
         ) : filteredPendencias.length === 0 ? (
-          <div className="flex h-full min-h-64 items-center justify-center px-6 text-center text-muted-foreground">
-            Nenhuma pendência encontrada para os filtros atuais.
+          <div className="flex min-h-64 flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] px-6 text-center">
+            <div className="mb-3 flex size-12 items-center justify-center rounded-[1rem] border border-[#BFE8DF] bg-[#E6F7F2] text-[#007A65]">
+              <CheckCircle2 className="size-6" />
+            </div>
+            <p className="text-base font-extrabold text-[#001B3D]">Nenhuma pendência encontrada</p>
+            <p className="mt-1 max-w-sm text-sm font-medium text-[#64748B]">
+              Ajuste os filtros ou registre uma nova demanda para acompanhar a fila operacional.
+            </p>
           </div>
         ) : (
-          <div className="space-y-3 lg:space-y-2.5">
+          <div className="space-y-3">
             {filteredPendencias.map((item) => {
               const isEditing = editingId === item.id;
 
@@ -399,7 +501,7 @@ const PendenciasPage: React.FC = () => {
   return (
     <PageShell
       desktopContained
-      className="flex min-h-0 flex-col bg-background lg:h-full lg:overflow-hidden"
+      className="flex min-h-0 flex-col gap-4 bg-[linear-gradient(180deg,#F4F6F8_0%,#EFF8F6_100%)] px-4 py-4 pb-6 lg:h-full lg:overflow-hidden lg:px-5 lg:py-4"
     >
       <MobileStickyTabs
         value={mobileTab}
@@ -420,10 +522,67 @@ const PendenciasPage: React.FC = () => {
         ]}
       />
 
-      <div className="flex min-w-0 flex-1 lg:min-h-0 lg:overflow-hidden lg:flex-row">
+      <header className="relative shrink-0 overflow-hidden rounded-[1.35rem] border border-white/80 bg-white px-4 py-3.5 shadow-[0_14px_36px_rgba(0,27,61,0.06)] lg:px-5 lg:py-3.5">
+        <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#1466F5_0%,#00BB94_100%)]" aria-hidden="true" />
+        <div className="relative grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(520px,1.05fr)] xl:items-center">
+          <div className="min-w-0">
+            <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-full border border-[#CFEDE6] bg-[#E6F7F2] px-2.5 py-0.5 text-[11px] font-bold text-[#007A65]">
+              <span className="size-2 rounded-full bg-[#00BB94]" />
+              Operação de pendências
+            </div>
+            <h1 className="text-2xl font-extrabold leading-tight text-[#001B3D] lg:text-[2rem]">
+              Pendências
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm font-medium leading-5 text-[#64748B]">
+              Registro, priorização e acompanhamento das demandas clínicas abertas com foco em prazo, responsável e continuidade do cuidado.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <ContextChip icon={<Activity className="size-4 text-[#00A885]" />} label="Monitoramento em tempo real" />
+              <ContextChip icon={<ShieldCheck className="size-4 text-[#1466F5]" />} label={`Semana: ${weekRangeLabel}`} />
+              <ContextChip
+                icon={overdueCount > 0 ? <AlertTriangle className="size-4 text-[#D9474F]" /> : <CheckCircle2 className="size-4 text-[#00A885]" />}
+                label={overdueCount > 0 ? `${overdueCount} atraso(s) exigem atenção` : 'Fluxo sob controle'}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <OperationalMetric
+              label="Abertas"
+              value={openPendencias.length}
+              helper={`${inProgressCount} em andamento`}
+              icon={<ClipboardCheck className="size-5" />}
+              tone="teal"
+            />
+            <OperationalMetric
+              label="Vence hoje"
+              value={dueTodayCount}
+              helper={dueTodayCount > 0 ? 'priorizar no turno' : 'sem vencimento hoje'}
+              icon={<CalendarClock className="size-5" />}
+              tone={dueTodayCount > 0 ? 'warning' : 'blue'}
+            />
+            <OperationalMetric
+              label="Atrasadas"
+              value={overdueCount}
+              helper={overdueCount > 0 ? 'revisar responsáveis' : 'sem atraso ativo'}
+              icon={<AlertTriangle className="size-5" />}
+              tone={overdueCount > 0 ? 'danger' : 'teal'}
+            />
+            <OperationalMetric
+              label="Resolvidas"
+              value={resolvedCount}
+              helper={`${highPriorityCount} alta prioridade`}
+              icon={<UserCheck className="size-5" />}
+              tone="blue"
+            />
+          </div>
+        </div>
+      </header>
+
+      <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 lg:min-h-0 lg:grid-cols-[minmax(340px,0.38fr)_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[minmax(380px,0.36fr)_minmax(0,1fr)]">
         <aside
           className={cn(
-            'min-w-0 flex-1 flex-col bg-background pb-4 lg:flex lg:h-full lg:min-h-0 lg:w-[360px] lg:flex-none lg:shrink-0 lg:overflow-hidden lg:border-r lg:border-border lg:pb-0 2xl:w-[390px]',
+            'min-w-0 flex-col lg:flex lg:h-full lg:min-h-0 lg:overflow-hidden',
             mobileTab === 'new' ? 'flex' : 'hidden',
           )}
         >
@@ -453,7 +612,7 @@ const PendenciasPage: React.FC = () => {
 
         <section
           className={cn(
-            'min-w-0 flex-1 flex-col bg-background pb-4 lg:flex lg:min-h-0 lg:overflow-hidden lg:pb-0',
+            'min-w-0 flex-col overflow-hidden rounded-[1.6rem] border border-white/80 bg-white shadow-[0_18px_48px_rgba(0,27,61,0.07)] lg:flex lg:min-h-0',
             mobileTab === 'existing' ? 'flex' : 'hidden',
           )}
         >

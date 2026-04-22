@@ -9,13 +9,12 @@ import {
   CalendarDays,
   Flag,
   Users,
+  ShieldCheck,
 } from 'lucide-react';
 import {
-  SectionCard,
   Input,
   Button,
   Textarea,
-  Badge,
   DatePicker,
   Select,
   SelectContent,
@@ -50,6 +49,28 @@ interface PendenciaCreatePanelProps {
   onResponsavelChange: (value: string) => void;
 }
 
+interface FormBlockProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}
+
+const FormBlock: React.FC<FormBlockProps> = ({ title, description, icon, children }) => (
+  <section className="rounded-[1.25rem] border border-[#E5ECF3] bg-[#F8FAFC] p-4">
+    <div className="mb-4 flex items-start gap-3">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-[0.9rem] border border-[#DCE5EE] bg-white text-[#1466F5] shadow-[0_8px_18px_rgba(0,27,61,0.04)]">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-sm font-extrabold text-[#001B3D]">{title}</h3>
+        <p className="mt-0.5 text-xs font-medium leading-5 text-[#64748B]">{description}</p>
+      </div>
+    </div>
+    {children}
+  </section>
+);
+
 export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
   nomePaciente,
   cnsCpf,
@@ -73,32 +94,42 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
   onResponsavelChange,
 }) => {
   return (
-    <SectionCard
-      title="Nova Pendência"
-      icon={<ClipboardList size={20} />}
-      className="min-w-0 overflow-hidden lg:h-full lg:min-h-0"
-      contentClassName="p-4 lg:min-h-0 lg:p-3"
-      headerClassName="lg:p-4 lg:pb-3"
-      iconClassName="lg:p-2"
-      titleClassName="lg:text-base"
-      headerActions={
-        <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest">
-          Cadastro
-        </Badge>
-      }
-    >
-      <form onSubmit={onSubmit} className="flex flex-col lg:min-h-0 lg:flex-1">
-        <div className="custom-scrollbar flex flex-col gap-4 overflow-x-hidden pr-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:gap-3">
-          <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
-            <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Identificação do paciente</p>
+    <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-[1.6rem] border border-white/80 bg-white shadow-[0_18px_48px_rgba(0,27,61,0.07)] lg:h-full lg:min-h-0">
+      <div className="shrink-0 border-b border-[#E5ECF3] px-5 py-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-[1.1rem] border border-[#BFE8DF] bg-[#E6F7F2] text-[#007A65] shadow-[0_12px_24px_rgba(0,187,148,0.12)]">
+              <ClipboardList className="size-6" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-xl font-extrabold leading-tight text-[#001B3D]">Nova pendência</h2>
+              <p className="mt-1 text-sm font-medium leading-5 text-[#64748B]">
+                Cadastre uma demanda com prazo e responsável definidos.
+              </p>
+            </div>
+          </div>
 
-            <div className="space-y-3 lg:space-y-2">
+          <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-[#CFEDE6] bg-[#E6F7F2] px-3 py-1 text-xs font-bold text-[#007A65] sm:inline-flex">
+            <ShieldCheck className="size-3.5" />
+            Cadastro
+          </span>
+        </div>
+      </div>
+
+      <form onSubmit={onSubmit} className="flex flex-col lg:min-h-0 lg:flex-1">
+        <div className="custom-scrollbar flex flex-col gap-4 overflow-x-hidden p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          <FormBlock
+            title="Identificação do paciente"
+            description="Use nome completo e documento para evitar ambiguidade na fila."
+            icon={<UserRound className="size-4" />}
+          >
+            <div className="space-y-3">
               <Input
                 value={nomePaciente}
                 onChange={(event) => onNomePacienteChange(event.target.value)}
                 placeholder="Nome do paciente"
                 icon={<UserRound className="h-4 w-4" />}
-                className="h-11 lg:h-10"
+                className="h-12 border-[#DCE5EE] bg-white text-sm font-semibold text-[#001B3D] placeholder:text-[#64748B] focus:ring-[#00BB94]/20"
               />
 
               <div className="relative">
@@ -107,17 +138,20 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
                   onChange={(event) => onCnsCpfChange(event.target.value)}
                   placeholder="CNS ou CPF"
                   icon={<IdCard className="h-4 w-4" />}
-                  className="h-11 pr-20 font-semibold tracking-wide lg:h-10"
+                  className="h-12 border-[#DCE5EE] bg-white pr-20 text-sm font-semibold text-[#001B3D] placeholder:text-[#64748B] focus:ring-[#00BB94]/20"
                 />
-                <Badge variant="muted" className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-wider">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-[#DCE5EE] bg-[#F8FAFC] px-2 py-0.5 text-xs font-extrabold text-[#64748B]">
                   {getDocumentLabel(cnsCpf)}
-                </Badge>
+                </span>
               </div>
             </div>
-          </div>
+          </FormBlock>
 
-          <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
-            <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Classificação</p>
+          <FormBlock
+            title="Classificação"
+            description="Marque uma ou mais categorias para facilitar busca e encaminhamento."
+            icon={<ClipboardList className="size-4" />}
+          >
             <TipoPendenciaSelector
               options={tipoOptions}
               selectedTipos={selectedTipos}
@@ -125,25 +159,30 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
               onToggleTipo={onToggleTipo}
               onChangeTipoPersonalizado={onTipoPersonalizadoChange}
             />
-          </div>
+          </FormBlock>
 
-          <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
-            <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Descrição</p>
+          <FormBlock
+            title="Descrição"
+            description="Registre apenas o necessário para orientar a próxima ação."
+            icon={<FileText className="size-4" />}
+          >
             <Textarea
               value={resumo}
               onChange={(event) => onResumoChange(event.target.value)}
               placeholder="Descreva os detalhes da pendência"
               icon={<FileText className="h-4 w-4 text-muted-foreground" />}
-              className="min-h-28 lg:min-h-20"
+              className="min-h-28 border-[#DCE5EE] bg-white text-sm font-medium text-[#001B3D] placeholder:text-[#64748B] focus:ring-[#00BB94]/20"
             />
-          </div>
+          </FormBlock>
 
-          <div className="rounded-2xl border border-border/70 bg-card/40 p-4 lg:rounded-lg lg:p-3">
-            <p className="mb-3 text-[11px] font-black uppercase tracking-wider text-muted-foreground lg:mb-2">Planejamento</p>
-
+          <FormBlock
+            title="Planejamento"
+            description="Defina urgência, prazo e responsável antes de salvar."
+            icon={<CalendarDays className="size-4" />}
+          >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
                   <Flag className="h-3.5 w-3.5" />
                   Prioridade
                 </p>
@@ -151,7 +190,7 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
                   value={prioridade}
                   onValueChange={(value) => onPrioridadeChange(value as PendenciaPrioridade)}
                 >
-                  <SelectTrigger className="h-11 lg:h-10">
+                  <SelectTrigger className="h-12 border-[#DCE5EE] bg-white text-sm font-semibold text-[#001B3D] focus:ring-[#00BB94]/20">
                     <SelectValue placeholder="Selecione a prioridade" />
                   </SelectTrigger>
                   <SelectContent>
@@ -163,7 +202,7 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
               </div>
 
               <div>
-                <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
                   <CalendarDays className="h-3.5 w-3.5" />
                   Prazo
                 </p>
@@ -171,36 +210,36 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
                   value={prazo}
                   onChange={onPrazoChange}
                   placeholder="Selecione o prazo"
-                  className="w-full"
+                  className="w-full [&_button]:h-12 [&_button]:border-[#DCE5EE] [&_button]:bg-white [&_button]:font-semibold [&_button]:text-[#001B3D] [&_button]:focus:ring-[#00BB94]/20"
                 />
               </div>
             </div>
 
             <div className="mt-3">
-              <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[#64748B]">
                 <Users className="h-3.5 w-3.5" />
                 Responsável
               </p>
               <Select value={responsavel} onValueChange={onResponsavelChange}>
-                <SelectTrigger className="h-11 lg:h-10">
+                <SelectTrigger className="h-12 border-[#DCE5EE] bg-white text-sm font-semibold text-[#001B3D] focus:ring-[#00BB94]/20">
                   <SelectValue placeholder="Selecione o responsável" />
                 </SelectTrigger>
                 <SelectContent>
                   {responsavelOptions.map((option) => (
                     <SelectItem key={option} value={option}>{option}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                ))}
+              </SelectContent>
+            </Select>
             </div>
-          </div>
+          </FormBlock>
         </div>
 
-        <div className="mt-4 shrink-0 border-t border-border/70 bg-background/95 pt-4 shadow-[0_-12px_28px_rgba(15,23,42,0.12)] backdrop-blur lg:mt-0 lg:bg-background/90 lg:pt-3 lg:shadow-none lg:backdrop-blur-none">
+        <div className="shrink-0 border-t border-[#E5ECF3] bg-white/95 p-4 backdrop-blur">
           <Button
             type="submit"
             size="sm"
             disabled={isSaving}
-            className="h-11 w-full shrink-0 lg:h-10"
+            className="h-12 w-full shrink-0 rounded-[1rem] bg-[#00BB94] text-sm font-extrabold text-white shadow-[0_14px_28px_rgba(0,187,148,0.22)] hover:bg-[#00A885] focus-visible:ring-[#00BB94]/45"
           >
             {isSaving ? (
               <>
@@ -216,6 +255,6 @@ export const PendenciaCreatePanel: React.FC<PendenciaCreatePanelProps> = ({
           </Button>
         </div>
       </form>
-    </SectionCard>
+    </section>
   );
 };

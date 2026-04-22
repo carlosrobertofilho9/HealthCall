@@ -1,3 +1,13 @@
+import {
+  Badge,
+  ClipboardPlus,
+  MapPin,
+  ShieldCheck,
+  SmilePlus,
+  Stethoscope,
+  Syringe,
+  type LucideIcon,
+} from 'lucide-react';
 import { DISPLAY_DESTINATION_COLOR } from './displayTheme';
 
 export type DisplayDestinationKind =
@@ -12,7 +22,7 @@ export type DisplayDestinationKind =
 export type DisplayDestinationPresentation = {
   kind: DisplayDestinationKind;
   label: string;
-  icon: string;
+  Icon: LucideIcon;
   eyebrow: string;
   overlayClassName: string;
   accentTextClassName: string;
@@ -24,49 +34,49 @@ const PRESENTATIONS: Record<DisplayDestinationKind, DisplayDestinationPresentati
   triagem: {
     kind: 'triagem',
     label: 'Triagem',
-    icon: 'emergency',
+    Icon: ShieldCheck,
     eyebrow: 'Atendimento inicial',
     ...DISPLAY_DESTINATION_COLOR.triagem,
   },
   medico: {
     kind: 'medico',
     label: 'Consultório Médico',
-    icon: 'medical_services',
+    Icon: Stethoscope,
     eyebrow: 'Consulta médica',
     ...DISPLAY_DESTINATION_COLOR.medico,
   },
   enfermagem: {
     kind: 'enfermagem',
     label: 'Enfermagem',
-    icon: 'clinical_notes',
+    Icon: ClipboardPlus,
     eyebrow: 'Atendimento de enfermagem',
     ...DISPLAY_DESTINATION_COLOR.enfermagem,
   },
   vacina: {
     kind: 'vacina',
     label: 'Vacina',
-    icon: 'vaccines',
+    Icon: Syringe,
     eyebrow: 'Sala de vacina',
     ...DISPLAY_DESTINATION_COLOR.vacina,
   },
   odonto: {
     kind: 'odonto',
     label: 'Odonto',
-    icon: 'dentistry',
+    Icon: SmilePlus,
     eyebrow: 'Atendimento odontológico',
     ...DISPLAY_DESTINATION_COLOR.odonto,
   },
   administrativo: {
     kind: 'administrativo',
     label: 'Visita/administrativo',
-    icon: 'badge',
+    Icon: Badge,
     eyebrow: 'Setor administrativo',
     ...DISPLAY_DESTINATION_COLOR.administrativo,
   },
   padrao: {
     kind: 'padrao',
     label: 'Destino',
-    icon: 'meeting_room',
+    Icon: MapPin,
     eyebrow: 'Destino',
     ...DISPLAY_DESTINATION_COLOR.padrao,
   },

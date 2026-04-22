@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Activity,
   Search,
   Plus,
   RefreshCw,
@@ -11,13 +10,10 @@ import {
   X,
   CalendarDays,
   CheckCircle2,
-  Clock3,
   FileText,
   Route,
   ShieldCheck,
   Stethoscope,
-  TrendingUp,
-  Users,
   Zap
 } from 'lucide-react';
 import { useAppointments } from '../hooks/useAppointments';
@@ -191,12 +187,6 @@ const AppointmentsPage: React.FC = () => {
   const blockedSlotsCount = slots.filter(slot =>
     slot.appointment && isBlockedAppointment(slot.appointment)
   ).length;
-  const attendedCount = occupiedPatientSlots.filter(slot =>
-    slot.appointment && getAppointmentStatus(slot.appointment) === 'Compareceu'
-  ).length;
-  const scheduledCount = occupiedPatientSlots.filter(slot =>
-    slot.appointment && getAppointmentStatus(slot.appointment) === 'Agendado'
-  ).length;
   const serviceLabel = dayConfig.hasService
     ? dayConfig.serviceType === 'HOME_VISIT'
       ? 'Visitas domiciliares'
@@ -323,7 +313,7 @@ const AppointmentsPage: React.FC = () => {
   return (
     <PageShell
       desktopContained
-      className="flex flex-col gap-5 bg-[linear-gradient(180deg,#F4F6F8_0%,#EFF8F6_100%)] px-4 py-4 pb-6 print:max-w-none md:pb-8 lg:h-full lg:!overflow-y-auto lg:px-5 lg:py-5 lg:pb-5 xl:!overflow-hidden"
+      className="flex flex-col gap-4 bg-[linear-gradient(180deg,#F4F6F8_0%,#EFF8F6_100%)] px-4 py-4 pb-6 print:max-w-none md:pb-8 lg:h-full lg:!overflow-y-auto lg:px-5 lg:py-4 lg:pb-5 xl:!overflow-hidden"
     >
       <AppointmentsNav showDesktop={false} />
 
@@ -331,21 +321,21 @@ const AppointmentsPage: React.FC = () => {
       <PrintHeader selectedDate={selectedDate} dayConfig={dayConfig} slotStats={slotStats} />
 
       {/* ══════════════ OPERATION HEADER ══════════════ */}
-      <header className="relative shrink-0 overflow-hidden rounded-[1.6rem] border border-white/80 bg-white px-5 py-5 shadow-[0_18px_48px_rgba(0,27,61,0.07)] print:hidden lg:px-6">
+      <header className="relative shrink-0 overflow-hidden rounded-[1.35rem] border border-white/80 bg-white px-4 py-3.5 shadow-[0_14px_36px_rgba(0,27,61,0.06)] print:hidden lg:px-5 lg:py-3.5">
         <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#1466F5_0%,#00BB94_100%)]" aria-hidden="true" />
-        <div className="relative grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,0.95fr)] xl:items-center">
+        <div className="relative min-w-0">
           <div className="min-w-0">
-            <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-[#CFEDE6] bg-[#E6F7F2] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#007A65]">
+            <div className="mb-2 inline-flex max-w-full items-center gap-2 rounded-full border border-[#CFEDE6] bg-[#E6F7F2] px-2.5 py-0.5 text-[11px] font-bold text-[#007A65]">
               <span className="size-2 rounded-full bg-[#00BB94]" />
               Agenda APS em tempo real
             </div>
-            <h1 className="text-3xl font-extrabold leading-tight tracking-normal text-[#001B3D] lg:text-[2.25rem]">
+            <h1 className="text-2xl font-extrabold leading-tight tracking-normal text-[#001B3D] lg:text-[2rem]">
               Marcações
             </h1>
-            <p className="mt-2 max-w-2xl text-sm font-medium leading-5 text-[#64748B]">
+            <p className="mt-1 max-w-2xl text-sm font-medium leading-5 text-[#64748B]">
               Controle de fichas, visitas, presença e remarcações com leitura rápida para a rotina da unidade.
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm font-semibold text-[#334155]">
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-[#334155]">
               <StatusChip icon={<Stethoscope className="size-4 text-[#00A885]" />} label={serviceLabel} />
               <StatusChip icon={<ShieldCheck className="size-4 text-[#1466F5]" />} label={selectedDateLabel} />
               {dayConfig.hasService && (
@@ -359,48 +349,17 @@ const AppointmentsPage: React.FC = () => {
               )}
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:gap-3">
-            <MetricCard
-              label={isHomeVisit ? 'Visitas' : 'Fichas'}
-              value={dayConfig.hasService ? slotStats.total : 0}
-              helper={dayConfig.hasService ? 'capacidade do dia' : 'sem agenda'}
-              icon={<Users className="size-4 text-[#1466F5]" />}
-              tone="blue"
-            />
-            <MetricCard
-              label="Ocupação"
-              value={`${occupancyPct}%`}
-              helper={`${slotStats.occupied}/${slotStats.total || 0} em uso`}
-              icon={<TrendingUp className="size-4 text-[#00A885]" />}
-              tone="green"
-            />
-            <MetricCard
-              label="Livres"
-              value={dayConfig.hasService ? slotStats.available : 0}
-              helper={dayConfig.hasService ? nextAvailableLabel : 'indisponível'}
-              icon={<Clock3 className="size-4 text-[#0F5AD8]" />}
-              tone="softBlue"
-            />
-            <MetricCard
-              label="Compareceu"
-              value={attendedCount}
-              helper={`${scheduledCount} agendado(s)`}
-              icon={<Activity className="size-4 text-[#007A65]" />}
-              tone="neutral"
-            />
-          </div>
         </div>
 
-        <div className="relative mt-5 flex flex-col gap-3 border-t border-[#EEF3F7] pt-4 md:flex-row md:items-center md:justify-between">
+        <div className="relative mt-3 flex flex-col gap-2.5 border-t border-[#EEF3F7] pt-3 md:flex-row md:items-center md:justify-between">
           <AppointmentsNav showMobile={false} />
           {dayConfig.hasService && (
             <button
               onClick={() => handleAddClick()}
               disabled={availableSlots.length === 0 || isLoading}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-[1rem] bg-[#00BB94] px-6 text-sm font-extrabold text-white shadow-[0_14px_28px_rgba(0,187,148,0.22)] transition-all hover:bg-[#00A885] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 md:min-w-48"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-[0.95rem] bg-[#00BB94] px-5 text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(0,187,148,0.18)] transition-all hover:bg-[#00A885] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 md:min-w-44"
             >
-              <Plus className="size-5" />
+              <Plus className="size-4" />
               {isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
             </button>
           )}
@@ -408,7 +367,7 @@ const AppointmentsPage: React.FC = () => {
       </header>
 
       {/* ══════════════ MAIN LAYOUT ══════════════ */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 print:block xl:grid-cols-[minmax(300px,0.78fr)_minmax(520px,1.42fr)] xl:overflow-hidden">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 print:block xl:grid-cols-[minmax(300px,0.78fr)_minmax(520px,1.42fr)] xl:overflow-hidden">
 
         {/* ── CONTROLS ── */}
         <aside className="space-y-4 print:hidden xl:min-h-0 xl:overflow-y-auto xl:pr-1 custom-scrollbar">
@@ -710,43 +669,11 @@ const StatusChip = ({
   icon: React.ReactNode;
   label: string;
 }) => (
-  <div className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-[#DCE5EE] bg-[#F8FAFC] px-3 py-1.5">
+  <div className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-[#DCE5EE] bg-[#F8FAFC] px-2.5 py-1 text-xs shadow-[0_6px_14px_rgba(0,27,61,0.035)]">
     <span className="shrink-0">{icon}</span>
     <span className="truncate">{label}</span>
   </div>
 );
-
-const MetricCard = ({
-  label,
-  value,
-  helper,
-  icon,
-  tone,
-}: {
-  label: string;
-  value: React.ReactNode;
-  helper: string;
-  icon: React.ReactNode;
-  tone: 'blue' | 'softBlue' | 'green' | 'neutral';
-}) => {
-  const toneClass = {
-    blue: 'border-[#D5E6FF] bg-[#EAF3FF] text-[#0F5AD8] shadow-[0_10px_28px_rgba(20,102,245,0.06)]',
-    softBlue: 'border-[#DCE5EE] bg-[#F8FAFC] text-[#0F5AD8] shadow-[0_10px_28px_rgba(0,27,61,0.04)]',
-    green: 'border-[#CFEDE6] bg-[#E6F7F2] text-[#007A65] shadow-[0_10px_28px_rgba(0,187,148,0.06)]',
-    neutral: 'border-[#DCE5EE] bg-[#F8FAFC] text-[#334155] shadow-[0_10px_28px_rgba(0,27,61,0.04)]',
-  }[tone];
-
-  return (
-    <div className={`rounded-[1.15rem] border p-3 ${toneClass}`}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-bold uppercase tracking-[0.12em]">{label}</span>
-        {icon}
-      </div>
-      <p className="mt-2 text-2xl font-extrabold leading-none text-[#001B3D]">{value}</p>
-      <p className="mt-1 truncate text-xs font-semibold text-[#64748B]">{helper}</p>
-    </div>
-  );
-};
 
 /* ─── Stat Pill ─────────────────────────────────────────────────────────── */
 
