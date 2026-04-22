@@ -336,11 +336,6 @@ const AppointmentsPage: React.FC = () => {
       {/* Print header */}
       <PrintHeader selectedDate={selectedDate} dayConfig={dayConfig} slotStats={slotStats} />
 
-      {/* ══════════════ STICKY SUBNAV ══════════════ */}
-      <div className="contents md:sticky md:top-16 md:z-30 md:-mx-4 md:-mt-2 md:block md:bg-[#F4F6F8]/92 md:px-4 md:py-2 md:backdrop-blur-xl lg:top-0 lg:-mx-5 lg:px-5 print:hidden">
-        <AppointmentsNav />
-      </div>
-
       {/* ══════════════ OPERATION HEADER ══════════════ */}
       <header className="relative shrink-0 overflow-hidden rounded-[1.6rem] border border-white/80 bg-white px-5 py-5 shadow-[0_18px_48px_rgba(0,27,61,0.07)] print:hidden lg:px-6">
         <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#1466F5_0%,#00BB94_100%)]" aria-hidden="true" />
@@ -403,12 +398,13 @@ const AppointmentsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="relative mt-5 flex flex-col gap-3 border-t border-[#EEF3F7] pt-4 lg:flex-row lg:items-center lg:justify-end">
+        <div className="relative mt-5 flex flex-col gap-3 border-t border-[#EEF3F7] pt-4 md:flex-row md:items-center md:justify-between">
+          <AppointmentsNav />
           {dayConfig.hasService && (
             <button
               onClick={() => handleAddClick()}
               disabled={availableSlots.length === 0 || isLoading}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-[1rem] bg-[#00BB94] px-6 text-sm font-extrabold text-white shadow-[0_14px_28px_rgba(0,187,148,0.22)] transition-all hover:bg-[#00A885] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 lg:min-w-48"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[1rem] bg-[#00BB94] px-6 text-sm font-extrabold text-white shadow-[0_14px_28px_rgba(0,187,148,0.22)] transition-all hover:bg-[#00A885] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55 md:min-w-48"
             >
               <Plus className="size-5" />
               {isHomeVisit ? 'Nova Visita' : 'Nova Marcação'}
