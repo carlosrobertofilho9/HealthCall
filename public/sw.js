@@ -1,4 +1,4 @@
-const CACHE_NAME = 'healthcall-static-v3.1.0';
+const CACHE_NAME = 'healthcall-static-v3.2.0';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -76,6 +76,37 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const url = new URL(event.request.url);
+  const isNavigation = event.request.mode === 'navigate' || 
+                       url.pathname === '/index.html' || 
+                       url.pathname === '/';
+
+  // Estratégia Network First para navegação e HTML principal
+  // Isso garante que o usuário sempre receba a versão mais recente se estiver online
+  if (isNavigation) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Se falhar a rede (offline), busca no cache
+          return caches.match(event.request).then((cached) => {
+            return cached || caches.match('/index.html');
+          });
+        })
+    );
+    return;
+  }
+
+  // Estratégia Cache First para outros recursos estáticos (JS, CSS, Imagens)
+  // Como o Vite gera nomes de arquivos com hashes únicos, o cache aqui é seguro
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) {
@@ -96,12 +127,9 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-
           return new Response('Recurso indisponível offline', { status: 503 });
         });
     })
   );
 });
+

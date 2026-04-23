@@ -29,9 +29,20 @@ if (container) {
 // Registrar Service Worker para PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.warn('Falha ao registrar Service Worker:', error);
-    });
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        // Verifica atualizações sempre que a página é carregada
+        registration.update();
+        
+        // Verifica atualizações quando o app ganha foco (ex: usuário volta para a aba)
+        window.addEventListener('focus', () => {
+          registration.update();
+        });
+      })
+      .catch((error) => {
+        console.warn('Falha ao registrar Service Worker:', error);
+      });
   });
 }
+
 
