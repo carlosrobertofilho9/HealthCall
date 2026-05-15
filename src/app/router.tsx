@@ -10,6 +10,7 @@ import DocumentsPage from '@/features/documents/pages/DocumentsPage';
 import { PendenciasPage } from '@/features/pendencias';
 import { WoundsPage, WoundEvolutionPage, WoundEvolutionTablePage } from '@/features/wounds';
 import { ReceptionPage } from '@/features/reception';
+import { PrescriptionsPage } from '@/features/prescriptions';
 import LoginPage from '@/features/authentication/routes/LoginPage';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: 'wounds', element: <WoundsPage /> },
       { path: 'wounds/evolution/:woundId', element: <WoundEvolutionPage /> },
       { path: 'wounds/table/:woundId', element: <WoundEvolutionTablePage /> },
+      { path: 'prescriptions', element: <PrescriptionsPage /> },
 		],
 	},
 	// Standalone route for the public display screen

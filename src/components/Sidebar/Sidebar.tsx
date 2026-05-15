@@ -16,6 +16,7 @@ import {
   MonitorSmartphone,
   PanelLeftClose,
   PanelLeftOpen,
+  Pill,
   ShieldCheck,
   SlidersHorizontal,
   Users,
@@ -60,6 +61,7 @@ const navigationSections: SidebarSection[] = [
     label: 'Atendimento',
     items: [
       { to: '/wounds', icon: Bandage, label: 'Curativos', description: 'Evolução clínica' },
+      { to: '/prescriptions', icon: Pill, label: 'Receitas', description: 'Prescrições médicas' },
       { to: '/pendencias', icon: ClipboardCheck, label: 'Pendências', description: 'Demandas abertas' },
     ],
   },
