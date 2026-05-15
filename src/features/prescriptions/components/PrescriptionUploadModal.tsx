@@ -86,12 +86,12 @@ export const PrescriptionUploadModal: React.FC<PrescriptionUploadModalProps> = (
       <div className="p-6 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
               <FileUp className="h-5 w-5 text-primary" />
               Enviar PDF da Receita
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Paciente: <strong>{prescriptionName}</strong>
+              Paciente: <span className="font-semibold text-foreground">{prescriptionName}</span>
             </p>
           </div>
           <Button
@@ -100,7 +100,7 @@ export const PrescriptionUploadModal: React.FC<PrescriptionUploadModalProps> = (
             size="icon-sm"
             onClick={handleClose}
             disabled={isUploading}
-            className="rounded-full"
+            className="rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -114,7 +114,7 @@ export const PrescriptionUploadModal: React.FC<PrescriptionUploadModalProps> = (
             'relative rounded-xl border-2 border-dashed p-8 text-center transition-all',
             isDragging
               ? 'border-primary bg-primary/5'
-              : 'border-border bg-muted/30 hover:bg-muted/50'
+              : 'border-border bg-accent/50 hover:bg-accent'
           )}
         >
           <input
@@ -138,7 +138,7 @@ export const PrescriptionUploadModal: React.FC<PrescriptionUploadModalProps> = (
                 size="xs"
                 onClick={() => setSelectedFile(null)}
                 disabled={isUploading}
-                className="mt-1"
+                className="mt-1 text-muted-foreground hover:text-foreground"
               >
                 Remover arquivo
               </Button>
@@ -155,21 +155,21 @@ export const PrescriptionUploadModal: React.FC<PrescriptionUploadModalProps> = (
         </div>
 
         {error && (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive font-medium">
             {error}
           </div>
         )}
 
         <div className="flex items-center gap-3 pt-2">
           <Button
-            className="flex-1"
+            className="flex-1 rounded-xl"
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
           >
             <Upload className="h-4 w-4" />
             {isUploading ? 'Enviando...' : 'Confirmar Upload'}
           </Button>
-          <Button variant="secondary" onClick={handleClose} disabled={isUploading}>
+          <Button variant="secondary" className="rounded-xl" onClick={handleClose} disabled={isUploading}>
             Cancelar
           </Button>
         </div>

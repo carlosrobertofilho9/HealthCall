@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import {
   FileUp,
   Printer,
@@ -19,11 +20,15 @@ import {
   PlusCircle,
   MinusCircle,
   RefreshCw,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import { Button } from '@/components/ui';
+import { Button, Badge, Modal } from '@/components/ui';
 import { cn, formatCPF, formatCNS } from '@/lib/utils';
 import type { Prescription, PrescriptionStatus, PrescriptionFlag } from '../types';
 import { PrescriptionUploadModal } from './PrescriptionUploadModal';
+import { TableCell, TableRow } from '@/components/ui';
 
 interface PrescriptionCardProps {
   prescription: Prescription;
@@ -39,35 +44,28 @@ interface PrescriptionCardProps {
   isUpdatingStatus: boolean;
   isMarkingDelivered: boolean;
   isDenying: boolean;
+  view?: 'card' | 'table';
 }
 
-const statusConfig: Record<PrescriptionStatus, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
+const statusConfig: Record<PrescriptionStatus, { label: string; variant: 'warning' | 'success' | 'secondary' | 'destructive'; icon: React.ReactNode }> = {
   pending: {
     label: 'Pendente',
-    color: 'text-[#92400E]',
-    bg: 'bg-[#FFFBF0]',
-    border: 'border-[#F3E8C8]',
+    variant: 'warning',
     icon: <AlertCircle className="h-3 w-3" />,
   },
   ready: {
     label: 'Pronta',
-    color: 'text-[#007A65]',
-    bg: 'bg-[#F4FBF8]',
-    border: 'border-[#CFEDE6]',
+    variant: 'success',
     icon: <CheckCircle2 className="h-3 w-3" />,
   },
   delivered: {
     label: 'Entregue',
-    color: 'text-[#4A5D73]',
-    bg: 'bg-[#F8FAFC]',
-    border: 'border-[#DCE5EE]',
+    variant: 'secondary',
     icon: <Truck className="h-3 w-3" />,
   },
   denied: {
-    label: 'Renovação negada',
-    color: 'text-[#B4232D]',
-    bg: 'bg-[#FFF7F7]',
-    border: 'border-[#F3D6D8]',
+    label: 'Negada',
+    variant: 'destructive',
     icon: <X className="h-3 w-3" />,
   },
 };
@@ -86,12 +84,55 @@ const prevStatusMap: Record<PrescriptionStatus, PrescriptionStatus | null> = {
   denied: 'ready',
 };
 
-const nextStatusLabel: Record<PrescriptionStatus, string | null> = {
-  pending: null,
-  ready: 'Registrar retirada',
-  delivered: null,
-  denied: null,
+const flagConfig: Record<PrescriptionFlag, { label: string; color: string }> = {
+  dosage_change: { label: 'Mudança de dosagem', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+  new_medication: { label: 'Novo medicamento', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+  medication_suspended: { label: 'Medicamento suspenso', color: 'bg-red-100 text-red-700 border-red-200' },
+  total_change: { label: 'Mudança total', color: 'bg-violet-100 text-violet-700 border-violet-200' },
+  maintenance: { label: 'Manutenção', color: 'bg-blue-100 text-blue-700 border-blue-200' },
 };
+
+/* Portal-based action menu that won't be clipped by table overflow */
+function ActionMenu({
+  triggerRef,
+  isOpen,
+  onClose,
+  children,
+}: {
+  triggerRef: React.RefObject<HTMLButtonElement | null>;
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setPosition({
+      top: rect.bottom + window.scrollY + 4,
+      left: rect.right + window.scrollX - 192,
+    });
+  }, [isOpen, triggerRef]);
+
+  if (!isOpen || !position) return null;
+
+  return createPortal(
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: -4 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -4 }}
+        style={{ top: position.top, left: position.left }}
+        className="fixed z-50 w-48 rounded-xl border border-border bg-popover p-1 shadow-lg"
+      >
+        {children}
+      </motion.div>
+    </>,
+    document.body
+  );
+}
 
 const PrescriptionCard: React.FC<PrescriptionCardProps> = ({
   prescription,
@@ -107,13 +148,17 @@ const PrescriptionCard: React.FC<PrescriptionCardProps> = ({
   isUpdatingStatus,
   isMarkingDelivered,
   isDenying,
+  view = 'card',
 }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeliverModal, setShowDeliverModal] = useState(false);
   const [showDenyModal, setShowDenyModal] = useState(false);
+  const [showActions, setShowActions] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [deliveredTo, setDeliveredTo] = useState('');
   const [denialReason, setDenialReason] = useState('');
+  const actionsButtonRef = useRef<HTMLButtonElement>(null);
 
   const formattedDocument =
     prescription.document_type === 'CPF'
@@ -123,15 +168,6 @@ const PrescriptionCard: React.FC<PrescriptionCardProps> = ({
   const status = statusConfig[prescription.status];
   const next = nextStatusMap[prescription.status];
   const prev = prevStatusMap[prescription.status];
-  const nextLabel = nextStatusLabel[prescription.status];
-
-  const flagConfig: Record<PrescriptionFlag, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
-    dosage_change: { label: 'Mudança de dosagem', color: 'text-[#B45309]', bg: 'bg-[#FFFBF0]', border: 'border-[#F3E8C8]', icon: <AlertTriangle className="h-3 w-3" /> },
-    new_medication: { label: 'Novo medicamento', color: 'text-[#007A65]', bg: 'bg-[#F4FBF8]', border: 'border-[#CFEDE6]', icon: <PlusCircle className="h-3 w-3" /> },
-    medication_suspended: { label: 'Medicamento suspenso', color: 'text-[#D9474F]', bg: 'bg-[#FFF7F7]', border: 'border-[#F3D6D8]', icon: <MinusCircle className="h-3 w-3" /> },
-    total_change: { label: 'Mudança total', color: 'text-[#6D28D9]', bg: 'bg-[#F5EDFF]', border: 'border-[#E9D5FF]', icon: <RefreshCw className="h-3 w-3" /> },
-    maintenance: { label: 'Manutenção', color: 'text-[#1466F5]', bg: 'bg-[#EAF3FF]', border: 'border-[#D5E6FF]', icon: <CheckCircle2 className="h-3 w-3" /> },
-  };
 
   const handlePrint = () => {
     if (prescription.pdf_url) {
@@ -141,7 +177,7 @@ const PrescriptionCard: React.FC<PrescriptionCardProps> = ({
 
   const handleDelete = async () => {
     await onDelete(prescription.id);
-    setShowDeleteConfirm(false);
+    setShowDeleteModal(false);
   };
 
   const handleAdvance = async () => {
@@ -169,218 +205,500 @@ const PrescriptionCard: React.FC<PrescriptionCardProps> = ({
 
   const isActionLoading = isUpdatingStatus || isMarkingDelivered || isDenying || isUploading || isDeleting;
 
-  return (
-    <>
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          'relative rounded-2xl border bg-white p-5 shadow-sm transition-all hover:shadow-md',
-          selected ? 'border-[#1466F5] ring-2 ring-[#1466F5]/20' : 'border-[#E2E8F0]'
+  // Render flags with full names
+  const Flags = ({ limit }: { limit?: number }) => {
+    if (prescription.flags.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+    const displayFlags = limit ? prescription.flags.slice(0, limit) : prescription.flags;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {displayFlags.map((flag) => {
+          const cfg = flagConfig[flag];
+          return (
+            <span
+              key={flag}
+              className={cn('inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold', cfg.color)}
+            >
+              {cfg.label}
+            </span>
+          );
+        })}
+        {limit && prescription.flags.length > limit && (
+          <span className="inline-flex items-center rounded-md border border-border bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            +{prescription.flags.length - limit}
+          </span>
         )}
+      </div>
+    );
+  };
+
+  // Secondary details (expandable)
+  const SecondaryDetails = () => (
+    <div className="space-y-2 text-sm">
+      {prescription.address && (
+        <div className="flex items-start gap-2 text-muted-foreground">
+          <Home className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span className="text-foreground font-medium">Endereço:</span>
+          <span className="line-clamp-1">{prescription.address}</span>
+        </div>
+      )}
+      {prescription.birth_date && (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          <span className="text-foreground font-medium">Nascimento:</span>
+          <span>{new Date(prescription.birth_date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+        </div>
+      )}
+      {prescription.status === 'delivered' && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs">
+          <div className="flex items-center gap-2 font-semibold text-emerald-700">
+            <Truck className="h-3.5 w-3.5" />
+            Entregue
+          </div>
+          {prescription.delivered_to && (
+            <p className="mt-1 text-muted-foreground">
+              Retirado por: <span className="font-semibold text-foreground">{prescription.delivered_to}</span>
+            </p>
+          )}
+          {prescription.delivered_at && (
+            <p className="text-muted-foreground">
+              Em: {new Date(prescription.delivered_at).toLocaleString('pt-BR')}
+            </p>
+          )}
+        </div>
+      )}
+      {prescription.status === 'denied' && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs">
+          <div className="flex items-center gap-2 font-semibold text-red-600">
+            <X className="h-3.5 w-3.5" />
+            Renovação negada
+          </div>
+          {prescription.denial_reason && (
+            <p className="mt-1 text-muted-foreground">
+              Motivo: <span className="font-semibold text-foreground">{prescription.denial_reason}</span>
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // Action buttons for mobile card view
+  const ActionButtons = () => (
+    <div className="flex flex-wrap items-center gap-2">
+      {prescription.status === 'pending' && (
+        <>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-8 gap-1.5 rounded-lg border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+            onClick={() => setShowUploadModal(true)}
+            disabled={isUploading}
+          >
+            <FileUp className="h-3.5 w-3.5" />
+            Enviar PDF
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 rounded-lg text-red-600 hover:bg-red-50"
+            onClick={() => setShowDenyModal(true)}
+            disabled={isDenying}
+          >
+            <X className="h-3.5 w-3.5" />
+            Negar
+          </Button>
+        </>
+      )}
+
+      {prescription.status === 'ready' && (
+        <Button
+          size="sm"
+          variant="default"
+          className="h-8 gap-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+          onClick={handlePrint}
+        >
+          <Printer className="h-3.5 w-3.5" />
+          Imprimir
+        </Button>
+      )}
+
+      {prescription.status === 'ready' && (
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 rounded-lg bg-primary text-white shadow-sm hover:bg-primary/90"
+          onClick={handleAdvance}
+          disabled={isActionLoading}
+        >
+          <ArrowRight className="h-3.5 w-3.5" />
+          {isUpdatingStatus ? 'Processando...' : 'Entregar'}
+        </Button>
+      )}
+
+      {next && prescription.status !== 'ready' && (
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 rounded-lg bg-primary text-white shadow-sm hover:bg-primary/90"
+          onClick={handleAdvance}
+          disabled={isActionLoading}
+        >
+          <ArrowRight className="h-3.5 w-3.5" />
+          {isUpdatingStatus ? 'Processando...' : 'Avançar'}
+        </Button>
+      )}
+
+      {prev && (
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+          onClick={() => onUpdateStatus(prescription.id, prev)}
+          disabled={isActionLoading}
+          title="Voltar status"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+        </Button>
+      )}
+
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        className="h-8 rounded-lg text-destructive hover:bg-destructive/10"
+        onClick={() => setShowDeleteModal(true)}
+        disabled={isDeleting}
       >
-        {/* Checkbox + Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+
+  // Desktop table row view
+  if (view === 'table') {
+    return (
+      <>
+        <TableRow
+          className={cn(
+            'group cursor-pointer transition-colors',
+            selected && 'bg-primary/5'
+          )}
+          onClick={() => setExpanded(!expanded)}
+        >
+          <TableCell onClick={(e) => e.stopPropagation()}>
             {onSelectToggle && (
               <button
                 type="button"
                 onClick={onSelectToggle}
                 className={cn(
-                  'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all',
+                  'flex h-4 w-4 items-center justify-center rounded border transition-all',
                   selected
-                    ? 'border-[#1466F5] bg-[#1466F5] text-white'
-                    : 'border-[#CBD5E1] bg-white hover:border-[#1466F5]'
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border bg-background hover:border-primary'
                 )}
               >
-                {selected && <CheckCircle2 className="h-3.5 w-3.5" />}
+                {selected && <CheckCircle2 className="h-3 w-3" />}
               </button>
             )}
-            <h4 className="truncate text-base font-extrabold text-[#001B3D] flex items-center gap-1.5">
-              <User className="h-4 w-4 shrink-0 text-[#94A3B8]" />
-              {prescription.patient_name}
-            </h4>
-          </div>
-          <span
-            className={cn(
-              'inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-extrabold',
-              status.bg,
-              status.border,
-              status.color
-            )}
-          >
-            {status.icon}
-            {status.label}
-          </span>
-        </div>
-
-        {/* Info */}
-        {/* Flags */}
-        {prescription.flags.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {prescription.flags.map((flag) => {
-              const cfg = flagConfig[flag];
-              return (
-                <span
-                  key={flag}
-                  className={cn(
-                    'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-extrabold',
-                    cfg.bg,
-                    cfg.border,
-                    cfg.color
-                  )}
+          </TableCell>
+          <TableCell>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="font-semibold text-foreground">{prescription.patient_name}</span>
+              </div>
+              {/* Observation always visible when present */}
+              {prescription.observation && (
+                <div className="flex items-start gap-1.5 text-xs text-muted-foreground max-w-md">
+                  <StickyNote className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" />
+                  <span className="line-clamp-2">{prescription.observation}</span>
+                </div>
+              )}
+            </div>
+          </TableCell>
+          <TableCell>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <CreditCard className="h-3.5 w-3.5" />
+              <span className="font-medium text-foreground">{prescription.document_type}</span>
+              <span className="tabular-nums">{formattedDocument}</span>
+            </div>
+          </TableCell>
+          <TableCell>
+            <Flags limit={2} />
+          </TableCell>
+          <TableCell>
+            <Badge variant={status.variant} className="gap-1">
+              {status.icon}
+              {status.label}
+            </Badge>
+          </TableCell>
+          <TableCell className="text-right">
+            <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+              {prescription.status === 'ready' && (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50"
+                  onClick={handlePrint}
+                  title="Imprimir"
                 >
-                  {cfg.icon}
-                  {cfg.label}
-                </span>
-              );
-            })}
-          </div>
+                  <Printer className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {prescription.status === 'pending' && (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-lg text-amber-600 hover:bg-amber-50"
+                  onClick={() => setShowUploadModal(true)}
+                  disabled={isUploading}
+                  title="Enviar PDF"
+                >
+                  <FileUp className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {next && (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-lg text-primary hover:bg-primary/10"
+                  onClick={handleAdvance}
+                  disabled={isActionLoading}
+                  title="Avançar status"
+                >
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <div className="relative">
+                <Button
+                  ref={actionsButtonRef}
+                  size="icon-sm"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-accent"
+                  onClick={() => setShowActions(!showActions)}
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </Button>
+                <ActionMenu
+                  triggerRef={actionsButtonRef}
+                  isOpen={showActions}
+                  onClose={() => setShowActions(false)}
+                >
+                  {prev && (
+                    <button
+                      onClick={() => {
+                        onUpdateStatus(prescription.id, prev);
+                        setShowActions(false);
+                      }}
+                      disabled={isActionLoading}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      Voltar status
+                    </button>
+                  )}
+                  {prescription.status === 'pending' && (
+                    <button
+                      onClick={() => {
+                        setShowDenyModal(true);
+                        setShowActions(false);
+                      }}
+                      disabled={isDenying}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Negar renovação
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(true);
+                      setShowActions(false);
+                    }}
+                    disabled={isDeleting}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remover
+                  </button>
+                </ActionMenu>
+              </div>
+            </div>
+          </TableCell>
+        </TableRow>
+
+        {/* Expanded row for secondary details */}
+        <AnimatePresence>
+          {expanded && (
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={6} className="p-0">
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-border bg-accent/30 px-4 py-4">
+                    <SecondaryDetails />
+                  </div>
+                </motion.div>
+              </TableCell>
+            </TableRow>
+          )}
+        </AnimatePresence>
+
+        {/* Modals */}
+        <PrescriptionUploadModal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          onUpload={(file) => onUpload(prescription.id, file)}
+          isUploading={isUploading}
+          prescriptionName={prescription.patient_name}
+        />
+
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          title="Remover receita?"
+          description={`Tem certeza que deseja remover a receita de ${prescription.patient_name}? Esta ação não pode ser desfeita.`}
+          onConfirm={handleDelete}
+          isLoading={isDeleting}
+          confirmText="Remover"
+          variant="destructive"
+        />
+
+        <InputModal
+          isOpen={showDeliverModal}
+          onClose={() => { setShowDeliverModal(false); setDeliveredTo(''); }}
+          title="Registrar retirada"
+          subtitle={prescription.patient_name}
+          icon={<Truck className="h-5 w-5 text-emerald-600" />}
+          inputLabel="Quem retirou?"
+          inputPlaceholder="Nome completo do responsável"
+          inputValue={deliveredTo}
+          onInputChange={setDeliveredTo}
+          onConfirm={handleRegisterDelivery}
+          isLoading={isMarkingDelivered}
+          confirmText="Confirmar entrega"
+        />
+
+        <InputModal
+          isOpen={showDenyModal}
+          onClose={() => { setShowDenyModal(false); setDenialReason(''); }}
+          title="Negar renovação"
+          subtitle={prescription.patient_name}
+          icon={<X className="h-5 w-5 text-red-500" />}
+          inputLabel="Motivo da negação"
+          inputPlaceholder="Ex: Alteração em sinais vitais, paciente precisa de reavaliação..."
+          inputValue={denialReason}
+          onInputChange={setDenialReason}
+          onConfirm={handleDeny}
+          isLoading={isDenying}
+          confirmText="Confirmar negação"
+          variant="destructive"
+          isTextarea
+        />
+      </>
+    );
+  }
+
+  // Mobile card view
+  return (
+    <>
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(
+          'rounded-2xl border bg-card shadow-sm transition-all',
+          selected ? 'border-primary ring-1 ring-primary/20' : 'border-border'
         )}
-
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-[#64748B]">
-            <CreditCard className="h-3.5 w-3.5 shrink-0" />
-            <span className="font-semibold text-[#001B3D]">{prescription.document_type}:</span>
-            <span className="tabular-nums font-medium">{formattedDocument}</span>
+      >
+        {/* Card header */}
+        <div className="flex items-start justify-between gap-3 p-4">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            {onSelectToggle && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectToggle();
+                }}
+                className={cn(
+                  'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all',
+                  selected
+                    ? 'border-primary bg-primary text-white'
+                    : 'border-border bg-background hover:border-primary'
+                )}
+              >
+                {selected && <CheckCircle2 className="h-3 w-3" />}
+              </button>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <h4 className="truncate text-sm font-bold text-foreground">{prescription.patient_name}</h4>
+              </div>
+              <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <CreditCard className="h-3 w-3" />
+                <span className="font-medium text-foreground">{prescription.document_type}</span>
+                <span className="tabular-nums">{formattedDocument}</span>
+              </div>
+              {/* Observation always visible when present */}
+              {prescription.observation && (
+                <div className="mt-1.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+                  <StickyNote className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" />
+                  <span className="line-clamp-2">{prescription.observation}</span>
+                </div>
+              )}
+            </div>
           </div>
-
-          {prescription.observation && (
-            <div className="flex items-start gap-2 text-[#64748B]">
-              <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span className="font-semibold text-[#001B3D]">Observação:</span>
-              <span className="line-clamp-2">{prescription.observation}</span>
-            </div>
-          )}
-
-          {prescription.address && (
-            <div className="flex items-start gap-2 text-[#64748B]">
-              <Home className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span className="font-semibold text-[#001B3D]">Endereço:</span>
-              <span className="line-clamp-1">{prescription.address}</span>
-            </div>
-          )}
-
-          {prescription.birth_date && (
-            <div className="flex items-center gap-2 text-[#64748B]">
-              <Calendar className="h-3.5 w-3.5 shrink-0" />
-              <span className="font-semibold text-[#001B3D]">Nascimento:</span>
-              <span>{new Date(prescription.birth_date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
-            </div>
-          )}
-
-          {prescription.status === 'delivered' && (
-            <div className="rounded-xl border border-[#CFEDE6] bg-[#F4FBF8] px-3 py-2 text-xs">
-              <div className="flex items-center gap-2 font-extrabold text-[#007A65]">
-                <Truck className="h-3.5 w-3.5" />
-                Entregue
-              </div>
-              {prescription.delivered_to && (
-                <p className="mt-1 text-[#4A5D73]">
-                  Retirado por: <strong>{prescription.delivered_to}</strong>
-                </p>
-              )}
-              {prescription.delivered_at && (
-                <p className="text-[#64748B]">
-                  Em: {new Date(prescription.delivered_at).toLocaleString('pt-BR')}
-                </p>
-              )}
-            </div>
-          )}
-
-          {prescription.status === 'denied' && (
-            <div className="rounded-xl border border-[#F3D6D8] bg-[#FFF7F7] px-3 py-2 text-xs">
-              <div className="flex items-center gap-2 font-extrabold text-[#B4232D]">
-                <X className="h-3.5 w-3.5" />
-                Renovação negada
-              </div>
-              {prescription.denial_reason && (
-                <p className="mt-1 text-[#4A5D73]">
-                  Motivo: <strong>{prescription.denial_reason}</strong>
-                </p>
-              )}
-            </div>
-          )}
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <Badge variant={status.variant} className="gap-1">
+              {status.icon}
+              {status.label}
+            </Badge>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="mt-4 flex items-center gap-2 pt-3 border-t border-[#F1F5F9]">
-          {prescription.status === 'pending' && (
-            <>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="flex-1 rounded-lg border-[#F3E8C8] bg-[#FFFBF0] text-[#92400E] hover:bg-[#F3E8C8]"
-                onClick={() => setShowUploadModal(true)}
-                disabled={isUploading}
+        {/* Card content — flags + actions always visible, secondary details expandable */}
+        <div className="border-t border-border px-4 py-3 space-y-3">
+          <Flags limit={3} />
+          <ActionButtons />
+          {/* Expandable secondary details */}
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
               >
-                <FileUp className="h-4 w-4" />
-                Enviar PDF
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-lg text-[#B4232D] hover:bg-[#FFF7F7]"
-                onClick={() => setShowDenyModal(true)}
-                disabled={isDenying}
-                title="Negar renovação"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-
-          {prescription.status === 'ready' && (
-            <Button
-              size="sm"
-              variant="default"
-              className="flex-1 rounded-lg bg-[#00BB94] text-white hover:bg-[#00A885]"
-              onClick={handlePrint}
+                <div className="pt-2 border-t border-border">
+                  <SecondaryDetails />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {(prescription.address || prescription.birth_date || prescription.status === 'delivered' || prescription.status === 'denied') && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="flex w-full items-center justify-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Printer className="h-4 w-4" />
-              Imprimir
-            </Button>
+              {expanded ? (
+                <>
+                  Menos detalhes <ChevronUp className="h-3.5 w-3.5" />
+                </>
+              ) : (
+                <>
+                  Mais detalhes <ChevronDown className="h-3.5 w-3.5" />
+                </>
+              )}
+            </button>
           )}
-
-          {nextLabel && (
-            <Button
-              size="sm"
-              className="flex-1 rounded-lg bg-[#1466F5] text-white shadow-[0_6px_16px_rgba(20,102,245,0.24)] hover:bg-[#0F5AD8]"
-              onClick={handleAdvance}
-              disabled={isActionLoading}
-            >
-              <ArrowRight className="h-4 w-4" />
-              {isUpdatingStatus ? 'Processando...' : nextLabel}
-            </Button>
-          )}
-
-          {prev && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="rounded-lg text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#001B3D]"
-              onClick={() => onUpdateStatus(prescription.id, prev)}
-              disabled={isActionLoading}
-              title="Voltar status"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
-
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            className="rounded-lg text-[#D9474F] hover:bg-[#FFF7F7]"
-            onClick={() => setShowDeleteConfirm(true)}
-            disabled={isDeleting}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
         </div>
       </motion.div>
 
-      {/* Upload PDF Modal */}
+      {/* Modals */}
       <PrescriptionUploadModal
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
@@ -389,154 +707,184 @@ const PrescriptionCard: React.FC<PrescriptionCardProps> = ({
         prescriptionName={prescription.patient_name}
       />
 
-      {/* Delete Confirm */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-[#001B3D]/40">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-xl"
-          >
-            <h3 className="text-lg font-extrabold text-[#001B3D] mb-2">Remover receita?</h3>
-            <p className="text-sm font-semibold text-[#64748B] mb-6">
-              Tem certeza que deseja remover a receita de <strong>{prescription.patient_name}</strong>?
-              Esta ação não pode ser desfeita.
-            </p>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="destructive"
-                className="flex-1 rounded-xl"
-                onClick={handleDelete}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Removendo...' : 'Remover'}
-              </Button>
-              <Button
-                variant="secondary"
-                className="rounded-xl"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Remover receita?"
+        description={`Tem certeza que deseja remover a receita de ${prescription.patient_name}? Esta ação não pode ser desfeita.`}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}
+        confirmText="Remover"
+        variant="destructive"
+      />
 
-      {/* Deliver Modal */}
-      {showDeliverModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-[#001B3D]/40">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-xl"
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#CFEDE6] bg-[#E6F7F2] text-[#007A65]">
-                <Truck className="h-5 w-5" />
-              </span>
-              <div>
-                <h3 className="text-lg font-extrabold text-[#001B3D]">Registrar retirada</h3>
-                <p className="text-xs font-semibold text-[#64748B]">{prescription.patient_name}</p>
-              </div>
-            </div>
+      <InputModal
+        isOpen={showDeliverModal}
+        onClose={() => { setShowDeliverModal(false); setDeliveredTo(''); }}
+        title="Registrar retirada"
+        subtitle={prescription.patient_name}
+        icon={<Truck className="h-5 w-5 text-emerald-600" />}
+        inputLabel="Quem retirou?"
+        inputPlaceholder="Nome completo do responsável"
+        inputValue={deliveredTo}
+        onInputChange={setDeliveredTo}
+        onConfirm={handleRegisterDelivery}
+        isLoading={isMarkingDelivered}
+        confirmText="Confirmar entrega"
+      />
 
-            <div className="space-y-1.5 mb-5">
-              <label className="block text-[11px] font-black uppercase tracking-[0.14em] text-[#64748B]">
-                Quem retirou? <span className="text-[#D9474F]">*</span>
-              </label>
-              <input
-                type="text"
-                value={deliveredTo}
-                onChange={(e) => setDeliveredTo(e.target.value)}
-                placeholder="Nome completo do responsável"
-                className="h-11 w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 text-sm font-semibold text-[#001B3D] placeholder:text-[#94A3B8] outline-none focus:border-[#1466F5] focus:ring-2 focus:ring-[#1466F5]/20"
-                autoFocus
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                className="flex-1 rounded-xl bg-[#00BB94] text-white hover:bg-[#00A885]"
-                onClick={handleRegisterDelivery}
-                disabled={!deliveredTo.trim() || isMarkingDelivered}
-              >
-                {isMarkingDelivered ? 'Salvando...' : 'Confirmar entrega'}
-              </Button>
-              <Button
-                variant="secondary"
-                className="rounded-xl"
-                onClick={() => {
-                  setShowDeliverModal(false);
-                  setDeliveredTo('');
-                }}
-                disabled={isMarkingDelivered}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Deny Modal */}
-      {showDenyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-[#001B3D]/40">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-xl"
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#F3D6D8] bg-[#FFF7F7] text-[#B4232D]">
-                <X className="h-5 w-5" />
-              </span>
-              <div>
-                <h3 className="text-lg font-extrabold text-[#001B3D]">Negar renovação</h3>
-                <p className="text-xs font-semibold text-[#64748B]">{prescription.patient_name}</p>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 mb-5">
-              <label className="block text-[11px] font-black uppercase tracking-[0.14em] text-[#64748B]">
-                Motivo da negação <span className="text-[#D9474F]">*</span>
-              </label>
-              <textarea
-                value={denialReason}
-                onChange={(e) => setDenialReason(e.target.value)}
-                placeholder="Ex: Alteração em sinais vitais, paciente precisa de reavaliação..."
-                rows={3}
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-sm font-semibold text-[#001B3D] placeholder:text-[#94A3B8] outline-none focus:border-[#1466F5] focus:ring-2 focus:ring-[#1466F5]/20 resize-none"
-                autoFocus
-              />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="destructive"
-                className="flex-1 rounded-xl"
-                onClick={handleDeny}
-                disabled={!denialReason.trim() || isDenying}
-              >
-                {isDenying ? 'Salvando...' : 'Confirmar negação'}
-              </Button>
-              <Button
-                variant="secondary"
-                className="rounded-xl"
-                onClick={() => {
-                  setShowDenyModal(false);
-                  setDenialReason('');
-                }}
-                disabled={isDenying}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      <InputModal
+        isOpen={showDenyModal}
+        onClose={() => { setShowDenyModal(false); setDenialReason(''); }}
+        title="Negar renovação"
+        subtitle={prescription.patient_name}
+        icon={<X className="h-5 w-5 text-red-500" />}
+        inputLabel="Motivo da negação"
+        inputPlaceholder="Ex: Alteração em sinais vitais, paciente precisa de reavaliação..."
+        inputValue={denialReason}
+        onInputChange={setDenialReason}
+        onConfirm={handleDeny}
+        isLoading={isDenying}
+        confirmText="Confirmar negação"
+        variant="destructive"
+        isTextarea
+      />
     </>
   );
 };
+
+/* Reusable Confirm Modal */
+function ConfirmModal({
+  isOpen,
+  onClose,
+  title,
+  description,
+  onConfirm,
+  isLoading,
+  confirmText,
+  variant = 'destructive',
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  description: string;
+  onConfirm: () => void;
+  isLoading: boolean;
+  confirmText: string;
+  variant?: 'destructive' | 'default';
+}) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} panelClassName="max-w-sm rounded-2xl">
+      <div className="p-6">
+        <h3 className="text-base font-bold text-foreground mb-1">{title}</h3>
+        <p className="text-sm text-muted-foreground mb-6">{description}</p>
+        <div className="flex items-center gap-3">
+          <Button
+            variant={variant}
+            className="flex-1 rounded-xl"
+            onClick={onConfirm}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Processando...' : confirmText}
+          </Button>
+          <Button variant="secondary" className="rounded-xl" onClick={onClose}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* Reusable Input Modal */
+function InputModal({
+  isOpen,
+  onClose,
+  title,
+  subtitle,
+  icon,
+  inputLabel,
+  inputPlaceholder,
+  inputValue,
+  onInputChange,
+  onConfirm,
+  isLoading,
+  confirmText,
+  variant = 'default',
+  isTextarea = false,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  inputLabel: string;
+  inputPlaceholder: string;
+  inputValue: string;
+  onInputChange: (value: string) => void;
+  onConfirm: () => void;
+  isLoading: boolean;
+  confirmText: string;
+  variant?: 'destructive' | 'default';
+  isTextarea?: boolean;
+}) {
+  const inputClasses =
+    'w-full rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20';
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} panelClassName="max-w-sm rounded-2xl">
+      <div className="p-6">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
+            {icon}
+          </span>
+          <div>
+            <h3 className="text-base font-bold text-foreground">{title}</h3>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          </div>
+        </div>
+
+        <div className="space-y-1.5 mb-5">
+          <label className="block text-xs font-semibold text-muted-foreground">
+            {inputLabel} <span className="text-destructive">*</span>
+          </label>
+          {isTextarea ? (
+            <textarea
+              value={inputValue}
+              onChange={(e) => onInputChange(e.target.value)}
+              placeholder={inputPlaceholder}
+              rows={3}
+              className={cn(inputClasses, 'py-3 resize-none')}
+              autoFocus
+            />
+          ) : (
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => onInputChange(e.target.value)}
+              placeholder={inputPlaceholder}
+              className={cn(inputClasses, 'h-11')}
+              autoFocus
+            />
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant={variant}
+            className="flex-1 rounded-xl"
+            onClick={onConfirm}
+            disabled={!inputValue.trim() || isLoading}
+          >
+            {isLoading ? 'Salvando...' : confirmText}
+          </Button>
+          <Button variant="secondary" className="rounded-xl" onClick={onClose} disabled={isLoading}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 export default PrescriptionCard;

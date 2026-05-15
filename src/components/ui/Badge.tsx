@@ -25,6 +25,9 @@ const badgeVariants = cva(
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {
   asChild?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+  key?: React.Key;
 }
 
 function Badge({ asChild = false, className, variant, children, ...props }: BadgeProps) {

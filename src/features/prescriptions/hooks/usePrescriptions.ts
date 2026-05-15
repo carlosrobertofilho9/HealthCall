@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import type { Prescription, CreatePrescriptionInput, PrescriptionStatus, MarkDeliveredInput, DenyRenewalInput } from '../types';
+import type { Prescription, CreatePrescriptionInput, PrescriptionStatus } from '../types';
 import {
   fetchPrescriptions,
   createPrescription as createPrescriptionService,
@@ -104,11 +104,11 @@ export function usePrescriptions() {
   );
 
   const markDelivered = useCallback(
-    async (input: MarkDeliveredInput) => {
-      setIsMarkingDelivered(input.prescriptionId);
+    async (prescriptionId: string, deliveredTo: string) => {
+      setIsMarkingDelivered(prescriptionId);
       try {
-        const updated = await markPrescriptionDeliveredService(input);
-        setPrescriptions((prev) => prev.map((p) => (p.id === input.prescriptionId ? updated : p)));
+        const updated = await markPrescriptionDeliveredService({ prescriptionId, deliveredTo });
+        setPrescriptions((prev) => prev.map((p) => (p.id === prescriptionId ? updated : p)));
         toast.success('Entrega registrada com sucesso.');
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao registrar entrega.';
@@ -159,11 +159,11 @@ export function usePrescriptions() {
   );
 
   const denyRenewal = useCallback(
-    async (input: DenyRenewalInput) => {
-      setIsDenying(input.prescriptionId);
+    async (prescriptionId: string, reason: string) => {
+      setIsDenying(prescriptionId);
       try {
-        const updated = await denyPrescriptionRenewalService(input);
-        setPrescriptions((prev) => prev.map((p) => (p.id === input.prescriptionId ? updated : p)));
+        const updated = await denyPrescriptionRenewalService({ prescriptionId, reason });
+        setPrescriptions((prev) => prev.map((p) => (p.id === prescriptionId ? updated : p)));
         toast.success('Renovação negada.');
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao negar renovação.';
