@@ -1,107 +1,57 @@
-import { supabase } from '@/lib/supabaseClient';
-import { Warning, CreateWarningDTO, UpdateWarningDTO } from '../types';
+import type { Warning, CreateWarningDTO, UpdateWarningDTO } from '../types';
+import { apiRequest, deleteLocalMedia, uploadLocalMedia } from '@/lib/apiClient';
 import {
   cacheRemoteWarningMedia,
   deleteLocalWarningMedia,
   isLocalWarningMediaUrl,
 } from './localWarningMedia';
 
-const WARNING_MEDIA_CACHE_CONTROL_SECONDS = '31536000';
+export const getWarnings = async (): Promise<Warning[]> =>
+  apiRequest<Warning[]>('/api/warnings');
 
-export const getWarnings = async (): Promise<Warning[]> => {
-  const { data, error } = await supabase
-    .from('warnings')
-    .select('*')
-    .order('priority_order', { ascending: true })
-    .order('created_at', { ascending: false });
+export const getActiveWarnings = async (): Promise<Warning[]> =>
+  apiRequest<Warning[]>('/api/warnings?active=1');
 
-  if (error) throw error;
-  return data;
-};
-
-export const getActiveWarnings = async (): Promise<Warning[]> => {
-  const { data, error } = await supabase
-    .from('warnings')
-    .select('*')
-    .eq('active', true)
-    .order('priority_order', { ascending: true });
-
-  if (error) throw error;
-  return data;
-};
-
-export const createWarning = async (warning: CreateWarningDTO): Promise<Warning> => {
-  const { data, error } = await supabase
-    .from('warnings')
-    .insert(warning)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-};
+export const createWarning = async (warning: CreateWarningDTO): Promise<Warning> =>
+  apiRequest<Warning>('/api/warnings', {
+    method: 'POST',
+    body: JSON.stringify(warning),
+  });
 
 export const updateWarning = async (warning: UpdateWarningDTO): Promise<Warning> => {
   const { id, ...updates } = warning;
-  const { data, error } = await supabase
-    .from('warnings')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  return apiRequest<Warning>(`/api/warnings/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
 };
+
+function storagePathFromMediaUrl(contentUrl: string): string | null {
+  const match = contentUrl.match(/\/api\/media\/([^/]+)\/([^?#]+)/);
+  if (!match) return null;
+  return `${decodeURIComponent(match[1])}/${decodeURIComponent(match[2])}`;
+}
 
 export const deleteWarningMedia = async (contentUrl?: string | null): Promise<void> => {
   if (!contentUrl) return;
+
   if (isLocalWarningMediaUrl(contentUrl)) {
     await deleteLocalWarningMedia(contentUrl);
     return;
   }
 
   await deleteLocalWarningMedia(contentUrl).catch(() => undefined);
-
-  // Attempt to delete the Supabase Storage file.
-  try {
-    const fileName = contentUrl.split('/').pop();
-    if (fileName) {
-      await supabase.storage.from('warnings').remove([fileName]);
-    }
-  } catch {
-    // Don't throw here, as the record is already deleted
-  }
+  const storagePath = storagePathFromMediaUrl(contentUrl);
+  if (storagePath) await deleteLocalMedia(storagePath).catch(() => undefined);
 };
 
 export const deleteWarning = async (id: string, contentUrl: string): Promise<void> => {
-  // Delete the record first
-  const { error: dbError } = await supabase
-    .from('warnings')
-    .delete()
-    .eq('id', id);
-
-  if (dbError) throw dbError;
-
-  await deleteWarningMedia(contentUrl);
+  await apiRequest<void>(`/api/warnings/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  await deleteLocalWarningMedia(contentUrl).catch(() => undefined);
 };
 
 export const uploadMedia = async (file: File): Promise<string> => {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const filePath = `${fileName}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from('warnings')
-    .upload(filePath, file, {
-      cacheControl: WARNING_MEDIA_CACHE_CONTROL_SECONDS,
-      contentType: file.type || undefined,
-    });
-
-  if (uploadError) throw uploadError;
-
-  const { data } = supabase.storage.from('warnings').getPublicUrl(filePath);
-  await cacheRemoteWarningMedia(data.publicUrl, file, file.name).catch(() => undefined);
-
-  return data.publicUrl;
+  const uploaded = await uploadLocalMedia('warnings', file, file.name);
+  await cacheRemoteWarningMedia(uploaded.url, file, file.name).catch(() => undefined);
+  return uploaded.url;
 };
