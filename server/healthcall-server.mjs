@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHealthCallServer } from './app.mjs';
+import { getLocalNetworkInfo, installNetworkInfoEndpoint } from './network-info.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -10,11 +11,24 @@ const port = Number(process.env.HEALTHCALL_PORT || 3000);
 const host = process.env.HEALTHCALL_HOST || '0.0.0.0';
 
 const app = createHealthCallServer({ dataDir, distDir });
+installNetworkInfoEndpoint(app.server);
 
 app.server.listen(port, host, () => {
+  const network = getLocalNetworkInfo();
+
   console.log(`\nHealthCall Local iniciado.`);
   console.log(`Abra neste computador: http://localhost:${port}`);
-  console.log(`Outros dispositivos da UBS podem acessar pelo IP deste computador na porta ${port}.\n`);
+
+  if (network.addresses.length > 0) {
+    console.log('Acesso pela rede local:');
+    for (const item of network.addresses) {
+      console.log(`  - http://${item.address}:${port} (${item.interface})`);
+    }
+  } else {
+    console.log(`Outros dispositivos da UBS podem acessar pelo IP deste computador na porta ${port}.`);
+  }
+
+  console.log('');
 });
 
 function shutdown() {
