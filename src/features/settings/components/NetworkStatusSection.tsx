@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, Copy, Network, RefreshCw, Server, Wifi } from 'lucide-react';
 import { apiRequest } from '@/lib/apiClient';
 import { SettingsGroup } from './SettingsGroup';
@@ -10,11 +10,7 @@ type NetworkAddress = {
 
 type NetworkInfo = {
   hostname: string;
-  port: number | null;
-  currentUrl: string;
-  currentAddress: string | null;
   addresses: NetworkAddress[];
-  urls: string[];
 };
 
 function CopyButton({ value, label = 'Copiar' }: { value: string; label?: string }) {
@@ -43,6 +39,11 @@ function CopyButton({ value, label = 'Copiar' }: { value: string; label?: string
   );
 }
 
+function buildLanUrl(address: string): string {
+  const port = window.location.port ? `:${window.location.port}` : '';
+  return `${window.location.protocol}//${address}${port}`;
+}
+
 export function NetworkStatusSection() {
   const [info, setInfo] = useState<NetworkInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,6 +65,15 @@ export function NetworkStatusSection() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const currentOrigin = typeof window === 'undefined' ? '' : window.location.origin;
+  const currentHost = typeof window === 'undefined' ? '' : window.location.hostname;
+  const currentIp = /^\d{1,3}(?:\.\d{1,3}){3}$/.test(currentHost) ? currentHost : null;
+
+  const lanAddresses = useMemo(
+    () => (info?.addresses || []).map((item) => ({ ...item, url: buildLanUrl(item.address) })),
+    [info],
+  );
 
   return (
     <SettingsGroup
@@ -109,15 +119,17 @@ export function NetworkStatusSection() {
               </div>
               <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-border bg-background p-3.5">
                 <code className="min-w-0 flex-1 truncate text-sm font-bold text-foreground">
-                  {loading ? 'Carregando…' : info?.currentUrl || window.location.origin}
+                  {currentOrigin || 'Carregando…'}
                 </code>
-                {!loading && info?.currentUrl && <CopyButton value={info.currentUrl} />}
+                {currentOrigin && <CopyButton value={currentOrigin} />}
               </div>
-              {info?.currentAddress && (
-                <p className="px-1 text-xs text-muted-foreground">
-                  IP usado nesta conexão: <span className="font-bold text-foreground">{info.currentAddress}</span>
-                </p>
-              )}
+              <p className="px-1 text-xs text-muted-foreground">
+                {currentIp ? (
+                  <>Este dispositivo abriu o HealthCall pelo IP <span className="font-bold text-foreground">{currentIp}</span>.</>
+                ) : (
+                  <>Este acesso está usando <span className="font-bold text-foreground">{currentHost || 'localhost'}</span>. Para outros dispositivos, use um dos IPs abaixo.</>
+                )}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -130,25 +142,22 @@ export function NetworkStatusSection() {
                 <div className="rounded-2xl border border-border bg-secondary/20 p-4 text-sm text-muted-foreground">
                   Procurando interfaces de rede…
                 </div>
-              ) : info && info.addresses.length > 0 ? (
+              ) : lanAddresses.length > 0 ? (
                 <div className="space-y-2">
-                  {info.addresses.map((item, index) => {
-                    const url = info.urls[index] || `http://${item.address}${info.port ? `:${info.port}` : ''}`;
-                    return (
-                      <div key={`${item.interface}-${item.address}`} className="flex min-w-0 items-center gap-3 rounded-2xl border border-border bg-background p-3.5">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <code className="text-base font-black text-foreground">{item.address}</code>
-                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                              {item.interface}
-                            </span>
-                          </div>
-                          <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{url}</p>
+                  {lanAddresses.map((item) => (
+                    <div key={`${item.interface}-${item.address}`} className="flex min-w-0 items-center gap-3 rounded-2xl border border-border bg-background p-3.5">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <code className="text-base font-black text-foreground">{item.address}</code>
+                          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                            {item.interface}
+                          </span>
                         </div>
-                        <CopyButton value={url} label="Copiar endereço" />
+                        <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{item.url}</p>
                       </div>
-                    );
-                  })}
+                      <CopyButton value={item.url} label="Copiar endereço" />
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-4 text-sm text-muted-foreground">
