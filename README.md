@@ -1,15 +1,17 @@
 <div align="center">
   <img width="128" height="128" alt="HealthCall Logo" src="./public/healthcall-logo.png" />
   <h1>HealthCall</h1>
-  <p><strong>Sistema local de chamada e apoio ao atendimento para UBS, ambulatórios e pequenas unidades de saúde.</strong></p>
-  <p>Local-first · sem login obrigatório · SQLite · rede local · código aberto</p>
+  <p><strong>Plataforma local-first para operação de UBS, ambulatórios e pequenas unidades de saúde.</strong></p>
+  <p>Fluxo de pacientes · agenda · comunicação interna · prescrições · acompanhamento assistencial · rede local</p>
 </div>
 
 ---
 
-O **HealthCall** nasceu para resolver um problema simples e frequente: unidades de saúde que precisam organizar a fila e chamar pacientes para consultórios, triagem ou enfermagem, mas não possuem um sistema de chamada adequado.
+O **HealthCall** é uma plataforma local-first criada para apoiar a operação cotidiana de UBS, ambulatórios e pequenas unidades de saúde.
 
-A versão 4 foi reconstruída para funcionar **dentro da própria unidade de saúde**, com um computador atuando como servidor e os demais computadores, tablets, celulares e televisores acessando o sistema pela mesma rede local.
+O projeto nasceu como um sistema simples de **fila e chamada de pacientes**, mas evoluiu para reunir em uma única aplicação vários fluxos que normalmente ficam espalhados entre papel, planilhas, mensagens e sistemas separados: chamada e acompanhamento do fluxo de pacientes, agenda, recepção, pendências, avisos, prescrições e acompanhamento de feridas.
+
+Na versão 4, toda essa operação foi consolidada em uma arquitetura local: um computador funciona como servidor da unidade e os demais computadores, tablets, celulares e televisores acessam o HealthCall pela mesma rede.
 
 A operação diária não depende de internet, conta externa ou serviço pago.
 
@@ -17,41 +19,97 @@ A operação diária não depende de internet, conta externa ou serviço pago.
 >
 > Esta é uma versão beta. Antes de utilizar em rotina assistencial, valide a instalação e os fluxos da sua unidade em ambiente de teste.
 
-## O que o HealthCall faz
+## O que é o HealthCall hoje
 
-### Fila e chamadas
+O HealthCall funciona como uma **camada operacional para a unidade de saúde**. Ele não pretende substituir um prontuário eletrônico completo; seu foco é organizar fluxos práticos do dia a dia e permitir que diferentes profissionais trabalhem sobre a mesma operação local.
 
-- vários profissionais podem utilizar o sistema ao mesmo tempo;
-- médicos, enfermagem, recepção e outros postos podem chamar pacientes simultaneamente;
+### Fluxo de pacientes e chamadas
+
+- fila compartilhada entre os profissionais;
+- inclusão, pesquisa e reordenação de pacientes;
+- vários médicos, profissionais de enfermagem, recepção e outros postos utilizando o sistema simultaneamente;
 - cada computador preserva sua própria **sala**, **função** e, opcionalmente, o **nome do profissional**;
-- fila compartilhada em tempo real;
-- inclusão e pesquisa de pacientes;
-- reordenação da fila;
-- início e finalização de atendimento;
+- chamada do paciente para a sala configurada naquela estação;
+- início e finalização do atendimento;
 - fichas sequenciais, como `Ficha 1`, `Ficha 2`, etc.;
-- histórico de chamadas com horário, sala e estação responsável.
+- histórico de chamadas com horário, sala e estação responsável;
+- atualização em tempo real dentro da rede local.
 
-### Painel de chamadas
+### Agenda e organização do atendimento
+
+- agenda de pacientes;
+- controle de horários e vagas;
+- bloqueios de agenda;
+- remarcação individual;
+- remarcação em massa;
+- histórico de remarcações;
+- estados operacionais da marcação;
+- suporte a informações de **visita domiciliar**, incluindo endereço, referência e motivo;
+- visualizações diária, semanal e de capacidade.
+
+### Recepção e comunicação interna
+
+- mensagens internas da recepção;
+- comunicação rápida entre os postos da unidade;
+- histórico recente das chamadas;
+- renovação diária do fluxo de mensagens da recepção.
+
+### Pendências operacionais
+
+- registro de pendências relacionadas a pacientes;
+- identificação por nome e documento;
+- classificação por tipo e prioridade;
+- acompanhamento dos estados `aberto`, `em andamento` e `resolvido`;
+- registro automático da resolução.
+
+### Prescrições e documentos
+
+- registro de prescrições por paciente;
+- identificação por CPF ou CNS;
+- acompanhamento do estado da prescrição;
+- armazenamento de PDFs no próprio servidor da unidade;
+- atualização e organização do fluxo de entrega/liberação.
+
+### Acompanhamento de feridas
+
+O HealthCall possui um módulo específico para acompanhamento longitudinal de feridas e curativos, incluindo:
+
+- cadastro do paciente;
+- abertura de casos de ferida;
+- localização anatômica e etiologia;
+- registro de comorbidades;
+- evoluções sucessivas;
+- medidas de comprimento, largura, profundidade e área;
+- aspecto do leito e bordas;
+- exsudato e odor;
+- pele perilesional;
+- escala de dor;
+- uso de antibióticos e pomadas;
+- tipo de cobertura/curativo;
+- observações e próxima troca;
+- registro de não conformidades;
+- fotografias locais;
+- foto principal da ferida;
+- histórico de encerramento e reabertura do caso.
+
+### Avisos e painel de chamadas
 
 - painel dedicado em `/display` para TV, monitor ou computador da recepção;
 - atualização instantânea das chamadas pela rede local;
 - voz utilizando o mecanismo de fala do próprio navegador;
 - aviso sonoro opcional;
-- opção para desligar voz, som e avisos institucionais;
+- avisos institucionais com texto e mídia;
+- opção para desligar voz, som e avisos;
 - modo de tela cheia.
 
-### Outros módulos
+### Configuração da unidade
 
-A versão 4 também mantém os demais fluxos do HealthCall utilizando armazenamento local:
-
-- agenda e marcações;
-- bloqueios e remarcações;
-- recepção e mensagens internas;
-- pendências operacionais;
-- avisos institucionais;
-- receitas e PDFs;
-- acompanhamento de feridas, evoluções e fotografias;
-- perfil e configurações da unidade.
+- perfil da unidade;
+- destino padrão;
+- aparência da interface;
+- configuração individual de cada estação;
+- descoberta automática do hostname e dos IPs da rede local;
+- endereços prontos para copiar e abrir em outros dispositivos.
 
 ## Como funciona
 
@@ -382,5 +440,5 @@ Contribuições, testes em diferentes ambientes e relatos de problemas são bem-
 
 <div align="center">
   <p><strong>HealthCall</strong></p>
-  <p>Tecnologia simples para resolver um problema real da atenção à saúde.</p>
+  <p>Operação local e simples para a rotina da atenção à saúde.</p>
 </div>
