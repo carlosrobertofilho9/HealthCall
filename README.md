@@ -1,57 +1,119 @@
 <div align="center">
-  <img width="128" height="128" alt="HealthCall Logo" src="https://healthcall-23d13.web.app/healthcall-logo.png" />
+  <img width="128" height="128" alt="HealthCall Logo" src="./public/healthcall-logo.png" />
   <h1>HealthCall</h1>
-  <p><strong>Chamadas de pacientes para UBS, ambulatórios e pequenas unidades de saúde.</strong></p>
-  <p>Local-first · sem login obrigatório · sem Supabase obrigatório · funciona na rede local</p>
+  <p><strong>Sistema local de chamada e apoio ao atendimento para UBS, ambulatórios e pequenas unidades de saúde.</strong></p>
+  <p>Local-first · sem login obrigatório · SQLite · rede local · código aberto</p>
 </div>
 
 ---
 
-O **HealthCall** nasceu para resolver um problema simples e frequente: unidades de saúde que precisam chamar pacientes para consultórios, triagem ou enfermagem, mas não possuem um sistema de chamada adequado.
+O **HealthCall** nasceu para resolver um problema simples e frequente: unidades de saúde que precisam organizar a fila e chamar pacientes para consultórios, triagem ou enfermagem, mas não possuem um sistema de chamada adequado.
 
-A instalação aberta do HealthCall foi desenhada para funcionar **dentro da própria rede da unidade**, sem exigir conta, autenticação, serviço pago ou conexão permanente com a internet.
+A versão 4 foi reconstruída para funcionar **dentro da própria unidade de saúde**, com um computador atuando como servidor e os demais computadores, tablets, celulares e televisores acessando o sistema pela mesma rede local.
 
-## Principais recursos do modo local
+A operação diária não depende de internet, conta externa ou serviço pago.
 
-- **Sem login obrigatório:** os profissionais não precisam criar contas.
-- **Vários postos simultâneos:** médicos, enfermagem, recepção e outros profissionais podem chamar pacientes ao mesmo tempo.
-- **Sala preservada:** cada navegador guarda o número/nome da sala e o perfil daquele posto.
-- **Painel de TV em tempo real:** novas chamadas aparecem instantaneamente em `/display`.
-- **Voz local:** o painel usa o mecanismo de voz do próprio navegador; nenhuma API de TTS é necessária.
-- **Som, voz e avisos configuráveis:** podem ser desligados no dispositivo; avisos institucionais também podem ser desligados globalmente.
-- **Fila compartilhada:** adicionar, pesquisar, reordenar, chamar, iniciar/finalizar atendimento e remover pacientes.
-- **Fichas sequenciais:** geração local de `Ficha 1`, `Ficha 2`, etc.
-- **Histórico de chamadas:** registra horário, sala e tipo de profissional que realizou a chamada.
-- **Persistência local:** fila e histórico são armazenados em SQLite no computador servidor.
-- **Tempo real sem serviço externo:** comunicação servidor → painéis por Server-Sent Events (SSE).
+> **Versão atual:** `v4.0.0-beta.1` — Local First Beta.
+>
+> Esta é uma versão beta. Antes de utilizar em rotina assistencial, valide a instalação e os fluxos da sua unidade em ambiente de teste.
 
-## Arquitetura local
+## O que o HealthCall faz
+
+### Fila e chamadas
+
+- vários profissionais podem utilizar o sistema ao mesmo tempo;
+- médicos, enfermagem, recepção e outros postos podem chamar pacientes simultaneamente;
+- cada computador preserva sua própria **sala**, **função** e, opcionalmente, o **nome do profissional**;
+- fila compartilhada em tempo real;
+- inclusão e pesquisa de pacientes;
+- reordenação da fila;
+- início e finalização de atendimento;
+- fichas sequenciais, como `Ficha 1`, `Ficha 2`, etc.;
+- histórico de chamadas com horário, sala e estação responsável.
+
+### Painel de chamadas
+
+- painel dedicado em `/display` para TV, monitor ou computador da recepção;
+- atualização instantânea das chamadas pela rede local;
+- voz utilizando o mecanismo de fala do próprio navegador;
+- aviso sonoro opcional;
+- opção para desligar voz, som e avisos institucionais;
+- modo de tela cheia.
+
+### Outros módulos
+
+A versão 4 também mantém os demais fluxos do HealthCall utilizando armazenamento local:
+
+- agenda e marcações;
+- bloqueios e remarcações;
+- recepção e mensagens internas;
+- pendências operacionais;
+- avisos institucionais;
+- receitas e PDFs;
+- acompanhamento de feridas, evoluções e fotografias;
+- perfil e configurações da unidade.
+
+## Como funciona
 
 ```text
-Computador servidor da UBS
-├── HealthCall Web
-├── API HTTP local
-├── SQLite (data/healthcall.sqlite)
-└── SSE em tempo real
-      │
-      ├── Recepção
-      ├── Médico · Sala 01
-      ├── Médico · Sala 02
-      ├── Enfermagem · Sala 04
-      └── TV / Painel de chamadas
+                 REDE LOCAL DA UBS
+
+          ┌────────────────────────────┐
+          │ Computador servidor        │
+          │                            │
+          │ HealthCall Web             │
+          │ API HTTP local             │
+          │ SQLite                     │
+          │ Arquivos locais            │
+          │ SSE em tempo real          │
+          └──────────────┬─────────────┘
+                         │
+          ───────────────┼────────────────
+                         │
+        ┌────────────────┼──────────────────┐
+        │                │                  │
+   Recepção         Consultório 1      Enfermagem
+                       Sala 01            Sala 04
+        │
+        └────────────────────────── TV / Display
 ```
 
-Os dados clínicos/operacionais usados pela fila não precisam sair da rede da unidade.
+O banco principal fica no computador servidor em:
+
+```text
+data/healthcall.sqlite
+```
+
+Arquivos enviados pelo sistema, como imagens e PDFs, ficam em:
+
+```text
+data/media/
+```
 
 ## Requisitos
 
-- **Node.js 22.13 ou superior**
-- npm
-- computadores/dispositivos conectados à mesma rede local para uso multiestação
+- **Node.js 22.13 ou superior**;
+- npm;
+- um computador para funcionar como servidor;
+- os demais dispositivos conectados à mesma rede local quando houver uso multiestação.
 
-O modo local usa o módulo `node:sqlite` do próprio Node.js, portanto não exige instalar PostgreSQL, Docker ou uma dependência nativa adicional de SQLite.
+O HealthCall utiliza o módulo `node:sqlite` do próprio Node.js. Não é necessário instalar PostgreSQL, Docker ou um servidor de banco de dados separado.
 
-## Instalação rápida
+## Instalação recomendada — versão beta
+
+A forma mais simples de testar é baixar a versão beta mais recente na página de Releases:
+
+**[HealthCall v4.0.0-beta.1 — Local First Beta](https://github.com/carlosrobertofilho9/HealthCall/releases/tag/v4.0.0-beta.1)**
+
+Arquivos disponíveis:
+
+- `HealthCall-4.0.0-beta.1.zip` — recomendado para Windows;
+- `HealthCall-4.0.0-beta.1.tar.gz` — macOS/Linux;
+- `SHA256SUMS.txt` — hashes para conferência da integridade dos arquivos.
+
+É necessário ter o Node.js 22.13+ instalado no computador servidor.
+
+## Instalação pelo código-fonte
 
 ```bash
 git clone https://github.com/carlosrobertofilho9/HealthCall.git
@@ -60,31 +122,124 @@ npm install
 npm run healthcall
 ```
 
-Depois da compilação, o servidor inicia por padrão em:
+O servidor inicia por padrão na porta `3000`.
+
+No próprio computador servidor, abra:
 
 ```text
 http://localhost:3000
 ```
 
-### Primeiro computador / servidor
+## Primeiro uso
 
-1. Abra `http://localhost:3000`.
-2. Vá em **Configurar posto**.
-3. Informe a sala, o tipo de profissional e, opcionalmente, o nome do profissional.
-4. Abra `/display` no monitor ou TV da recepção.
-5. Clique uma vez em **Ativar áudio** no painel para permitir som/voz no navegador.
+No computador que ficará como servidor:
 
-### Outros consultórios
+1. inicie o HealthCall;
+2. abra `http://localhost:3000`;
+3. configure o posto com sala, função e, se desejar, nome do profissional;
+4. abra o painel `/display` no monitor ou TV que exibirá as chamadas;
+5. no painel, clique uma vez em **Ativar áudio** para permitir som e voz no navegador.
 
-Descubra o IP do computador servidor na rede, por exemplo `192.168.0.15`, e acesse nos demais computadores:
+## Como descobrir o IP do HealthCall
+
+Não é mais necessário procurar o IP manualmente nas configurações do Windows, macOS ou Linux.
+
+No próprio HealthCall:
+
+1. abra **Configurações**;
+2. selecione a aba **Rede**;
+3. consulte a seção **IPs para acessar pela rede local**;
+4. copie um dos endereços exibidos.
+
+O HealthCall mostra automaticamente:
+
+- o **hostname** do computador servidor;
+- o endereço utilizado pelo dispositivo atual;
+- os endereços IPv4 encontrados no computador servidor;
+- a interface de rede correspondente;
+- o endereço completo pronto para ser aberto em outro dispositivo.
+
+Exemplo:
+
+```text
+IP do servidor: 192.168.0.15
+
+Endereço para os outros computadores:
+http://192.168.0.15:3000
+```
+
+A própria tela possui o botão **Copiar endereço**.
+
+O servidor também mostra os endereços disponíveis no terminal ao iniciar.
+
+### Acessando de outro computador, tablet ou celular
+
+1. confirme que o dispositivo está conectado à **mesma rede local** do computador servidor;
+2. no servidor, abra **Configurações > Rede**;
+3. copie o endereço indicado;
+4. cole esse endereço no navegador do outro dispositivo.
+
+Por exemplo:
 
 ```text
 http://192.168.0.15:3000
 ```
 
-Cada computador configura sua própria sala uma única vez. Essa configuração fica armazenada no navegador daquele posto.
+Depois disso, configure a sala daquele posto. A configuração da estação fica preservada no navegador daquele dispositivo.
 
-> O HealthCall local deve ser disponibilizado apenas na rede confiável da unidade. Não exponha a porta 3000 diretamente à internet.
+> Se outro dispositivo não conseguir abrir o endereço, verifique primeiro o firewall do computador servidor e se ambos realmente estão na mesma rede Wi-Fi ou cabeada.
+
+## Configuração de cada estação
+
+Cada computador pode representar um posto diferente.
+
+Exemplo:
+
+```text
+Computador A
+Médico
+Sala 01
+
+Computador B
+Médico
+Sala 02
+
+Computador C
+Enfermagem
+Sala 04
+
+Computador D
+Recepção
+```
+
+A sala e a função ficam armazenadas localmente no navegador de cada posto, portanto não precisam ser preenchidas novamente a cada chamada.
+
+## Painel da TV
+
+Abra no navegador da TV ou do computador conectado ao monitor:
+
+```text
+http://IP-DO-SERVIDOR:3000/display
+```
+
+Exemplo:
+
+```text
+http://192.168.0.15:3000/display
+```
+
+Na primeira abertura, clique em **Ativar áudio**. Os navegadores normalmente exigem uma interação do usuário antes de permitir reprodução automática de sons ou voz.
+
+## Configurações de avisos e áudio
+
+O HealthCall permite controlar:
+
+- som das chamadas;
+- voz das chamadas;
+- avisos institucionais naquele dispositivo;
+- avisos institucionais globalmente para a unidade.
+
+Essas opções podem ser alteradas nas configurações sem interromper a fila.
 
 ## Desenvolvimento
 
@@ -95,80 +250,137 @@ npm run dev:local
 
 Esse comando inicia:
 
-- Vite em modo de desenvolvimento;
-- servidor local HealthCall na porta `8787`;
-- proxy automático de `/api` para o backend local.
+- Vite para o frontend;
+- servidor HealthCall local na porta `8787`;
+- proxy de `/api` para o backend local.
 
-Scripts úteis:
+Scripts principais:
 
 ```bash
-npm run dev:local        # frontend + backend local
-npm run healthcall       # build + servidor de produção local
-npm run healthcall:server
-npm run test:local       # testes do backend SQLite/API
-npm run build
+npm run dev:local          # frontend + backend para desenvolvimento
+npm run healthcall         # compila e inicia o HealthCall local
+npm run healthcall:server  # inicia apenas o servidor
+npm run test:local         # testes do backend/API/SQLite
+npm run build              # build do frontend
 ```
 
-## Supabase é opcional
+## Estrutura principal
 
-O código legado com Supabase continua disponível durante a migração, mas **não é necessário para o modo local**.
-
-Para executar explicitamente o modo legado/cloud:
-
-```env
-VITE_DATA_MODE=supabase
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-publicavel
+```text
+HealthCall/
+├── server/
+│   ├── app.mjs                 # servidor HTTP, fila, SQLite e SSE
+│   ├── extended.mjs            # módulos adicionais da API local
+│   ├── network.mjs             # descoberta de hostname e IPs locais
+│   ├── healthcall-server.mjs   # inicialização do servidor
+│   └── __tests__/              # testes do backend
+│
+├── src/
+│   ├── features/
+│   │   ├── dashboard/          # fila e atendimento
+│   │   ├── display/            # componentes do painel
+│   │   ├── appointments/       # agenda
+│   │   ├── reception/          # recepção e mensagens
+│   │   ├── warnings/           # avisos
+│   │   ├── prescriptions/      # receitas
+│   │   ├── wounds/             # acompanhamento de feridas
+│   │   └── settings/           # perfil, aparência e rede
+│   └── lib/
+│       └── apiClient.ts        # cliente da API local
+│
+└── data/
+    ├── healthcall.sqlite       # banco local — criado em execução
+    └── media/                  # arquivos locais — criado em execução
 ```
 
-Use `.env.example` como referência. Nunca versione `.env`, chaves secretas ou `service_role`.
+## Persistência e backup
+
+Os dados importantes ficam concentrados dentro da pasta `data/` do computador servidor.
+
+Para uma cópia de segurança da instalação, preserve principalmente:
+
+```text
+data/healthcall.sqlite
+data/media/
+```
+
+Recomenda-se realizar backups periódicos em local seguro, especialmente antes de atualizar uma instalação utilizada em ambiente real.
+
+Evite colocar o banco ativo diretamente em uma pasta sincronizada em tempo real por serviços de armazenamento, pois isso pode causar conflitos ou corrupção do arquivo SQLite.
 
 ## Segurança e privacidade
 
-- O banco local é criado em `data/healthcall.sqlite` e essa pasta está ignorada pelo Git.
-- O servidor escuta a rede local para permitir múltiplos postos; use uma rede confiável e firewall adequado.
-- Não armazene o banco em pasta sincronizada publicamente.
-- Se você usar o modo Supabase, configure RLS e privilégios mínimos antes de expor qualquer tabela.
-- Chaves `service_role`/secretas nunca devem ser colocadas no frontend.
+O HealthCall foi desenhado para operar em uma **rede local confiável**.
 
-## Testes e CI
+Recomendações:
 
-Há testes automatizados para o modo local cobrindo:
+- não exponha a porta `3000` diretamente à internet;
+- mantenha o computador servidor protegido por senha e com sistema operacional atualizado;
+- utilize firewall;
+- permita acesso apenas à rede da unidade;
+- faça backups periódicos;
+- defina rotinas de retenção e exclusão de dados compatíveis com a realidade da instituição;
+- evite manter dados pessoais por mais tempo que o necessário;
+- antes do uso assistencial rotineiro, valide os fluxos locais de privacidade, segurança e LGPD.
 
-- inicialização sem Supabase;
-- persistência da fila;
-- bloqueio de chamada sem sala configurada;
-- registro de sala e perfil profissional;
-- geração sequencial de fichas;
-- ativação/desativação dos avisos;
-- limpeza da fila e histórico.
+Como não há login obrigatório, qualquer dispositivo que consiga acessar o HealthCall na rede local deve ser considerado um dispositivo autorizado da unidade. Segmentar corretamente a rede é importante.
 
-O workflow `Local-first CI` executa os testes do servidor e o build do modo local em Node 22.13.
+## Testes e integração contínua
 
-## Estrutura relevante
+O backend possui testes automatizados para os principais fluxos locais, incluindo:
 
-```text
-server/
-├── app.mjs                         # API + SQLite + SSE
-├── healthcall-server.mjs           # inicialização do servidor
-└── __tests__/                      # testes do backend local
+- inicialização do servidor;
+- descoberta das informações de rede e IP;
+- fila de pacientes;
+- chamadas a partir de salas configuradas;
+- fichas sequenciais;
+- perfil e configurações;
+- agenda e remarcações;
+- avisos;
+- pendências;
+- recepção;
+- receitas;
+- acompanhamento de feridas;
+- limpeza de fila e histórico.
 
-src/features/local/
-├── localApi.ts                     # cliente HTTP/SSE
-├── stationSettings.ts              # sala/perfil e preferências persistentes
-├── useLocalQueue.ts                # fila em tempo real
-└── routes/
-    ├── LocalHomePage.tsx
-    ├── LocalDisplayPage.tsx
-    └── LocalSettingsPage.tsx
-```
+O GitHub Actions executa os testes em Node.js 22.13 e também valida o build do frontend.
+
+## Releases
+
+Versões beta e futuras versões estáveis são publicadas em:
+
+**[GitHub Releases](https://github.com/carlosrobertofilho9/HealthCall/releases)**
+
+O pipeline de release:
+
+1. instala as dependências;
+2. executa os testes do backend;
+3. compila o frontend;
+4. cria os pacotes portáteis;
+5. gera hashes SHA-256;
+6. publica os arquivos no GitHub Releases.
 
 ## Por que local-first?
 
-Para o caso de uso original do HealthCall, a unidade deve conseguir continuar chamando pacientes mesmo com internet instável e sem depender de uma conta em um fornecedor externo. O servidor local mantém a instalação simples e deixa a infraestrutura sob controle da própria unidade.
+O HealthCall nasceu para unidades que muitas vezes precisam continuar funcionando mesmo quando a internet está instável ou indisponível.
+
+Em uma instalação local:
+
+- a chamada de pacientes continua funcionando sem internet;
+- os dispositivos se comunicam diretamente pela rede da unidade;
+- o banco e os arquivos permanecem sob controle da própria instituição;
+- não existe mensalidade de infraestrutura obrigatória para utilizar o sistema;
+- a implantação pode ser feita em hardware simples já disponível na unidade.
+
+## Status do projeto
+
+A versão `4.0.0-beta.1` representa uma mudança importante de arquitetura e ainda deve ser considerada **beta**.
+
+Contribuições, testes em diferentes ambientes e relatos de problemas são bem-vindos.
 
 ---
 
 <div align="center">
-  <p>HealthCall — tecnologia simples para resolver um problema real da atenção à saúde.</p>
+  <p><strong>HealthCall</strong></p>
+  <p>Tecnologia simples para resolver um problema real da atenção à saúde.</p>
 </div>
