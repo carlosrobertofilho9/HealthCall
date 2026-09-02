@@ -2,7 +2,7 @@
   "name": "healthcall",
   "private": true,
   "version": "4.0.0",
-  "description": "Sistema local-first de fila, chamada e operação clínica para unidades de saúde.",
+  "description": "Plataforma local-first para operação de UBS e ambulatórios, com fluxo e chamada de pacientes, agenda, comunicação interna, pendências, prescrições, avisos e acompanhamento de feridas.",
   "type": "module",
   "engines": {
     "node": ">=22.13.0"
