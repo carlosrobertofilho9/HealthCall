@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { createHealthCallServer } from '../app.mjs';
+import { installNetworkInfoEndpoint } from '../network-info.mjs';
 
 let app;
 let baseUrl;
@@ -12,6 +13,7 @@ let dataDir;
 before(async () => {
   dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'healthcall-'));
   app = createHealthCallServer({ dataDir });
+  installNetworkInfoEndpoint(app.server);
   await new Promise((resolve) => app.server.listen(0, '127.0.0.1', resolve));
   const address = app.server.address();
   baseUrl = `http://127.0.0.1:${address.port}`;
@@ -39,6 +41,22 @@ test('starts in local mode v2 without a cloud account', async () => {
   const response = await api('/api/health');
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true, mode: 'local', version: '2' });
+});
+
+test('exposes the server IPv4 interfaces for local network access', async () => {
+  const response = await api('/api/system/network');
+  assert.equal(response.status, 200);
+
+  const body = await response.json();
+  assert.equal(typeof body.hostname, 'string');
+  assert.ok(body.hostname.length > 0);
+  assert.ok(Array.isArray(body.addresses));
+
+  for (const item of body.addresses) {
+    assert.equal(typeof item.interface, 'string');
+    assert.match(item.address, /^\d{1,3}(?:\.\d{1,3}){3}$/);
+    assert.notEqual(item.address, '127.0.0.1');
+  }
 });
 
 test('persists a patient and calls from a configured room', async () => {
