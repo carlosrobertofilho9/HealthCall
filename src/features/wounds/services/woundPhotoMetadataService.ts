@@ -1,9 +1,8 @@
 import * as ExifReader from 'exifreader';
-import { supabase } from '@/lib/supabaseClient';
+import { localMediaUrl } from '@/lib/apiClient';
 import type { WoundPhoto, WoundPhotoExifMetadata, WoundPhotoMetadataSource } from '../types';
 import { reverseGeocode } from './geocodingService';
 
-const WOUND_STORAGE_BUCKET = 'wound-photos';
 export const LEGACY_GEO_CUTOFF_ISO = '2026-04-21T00:00:00.000Z';
 const LEGACY_GEO_CUTOFF_MS = Date.parse(LEGACY_GEO_CUTOFF_ISO);
 
@@ -35,9 +34,7 @@ export interface ResolveWoundPhotoMetadataResult {
 }
 
 function parseRational(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
 
   if (Array.isArray(value) && value.length >= 2) {
     const numerator = Number(value[0]);
@@ -50,104 +47,72 @@ function parseRational(value: unknown): number | null {
   if (typeof value === 'object' && value != null) {
     const maybe = value as { numerator?: number; denominator?: number };
     if (
-      typeof maybe.numerator === 'number' &&
-      Number.isFinite(maybe.numerator) &&
-      typeof maybe.denominator === 'number' &&
-      Number.isFinite(maybe.denominator) &&
+      typeof maybe.numerator === 'number' && Number.isFinite(maybe.numerator) &&
+      typeof maybe.denominator === 'number' && Number.isFinite(maybe.denominator) &&
       maybe.denominator !== 0
-    ) {
-      return maybe.numerator / maybe.denominator;
-    }
+    ) return maybe.numerator / maybe.denominator;
   }
-
   return null;
 }
 
 function parseDms(tag?: ExifTagLike): [number, number, number] | null {
   if (!tag) return null;
-
   const source = tag.computed ?? tag.value;
   if (!Array.isArray(source) || source.length < 3) return null;
-
   const [rawDeg, rawMin, rawSec] = source as [unknown, unknown, unknown];
   const deg = parseRational(rawDeg);
   const min = parseRational(rawMin);
   const sec = parseRational(rawSec);
-
   if (deg == null || min == null || sec == null) return null;
   return [deg, min, sec];
 }
 
 function parseRef(tag?: ExifTagLike): string | undefined {
   if (!tag) return undefined;
-
   const source = tag.computed ?? tag.value ?? tag.description;
   if (typeof source === 'string') return source.trim().toUpperCase();
-
   if (Array.isArray(source) && source.length > 0 && typeof source[0] === 'string') {
     return source[0].trim().toUpperCase();
   }
-
   return undefined;
 }
 
 function parseCoordinate(valueTag?: ExifTagLike, refTag?: ExifTagLike): number | undefined {
   const dms = parseDms(valueTag);
   if (!dms) return undefined;
-
   const [deg, min, sec] = dms;
   const decimal = Math.abs(deg) + min / 60 + sec / 3600;
   const ref = parseRef(refTag);
-
-  if (ref === 'S' || ref === 'W') return -decimal;
-  return decimal;
+  return ref === 'S' || ref === 'W' ? -decimal : decimal;
 }
 
 function parseString(tag?: ExifTagLike): string | undefined {
   if (!tag) return undefined;
-
-  if (typeof tag.description === 'string' && tag.description.trim()) {
-    return tag.description.trim();
-  }
-
+  if (typeof tag.description === 'string' && tag.description.trim()) return tag.description.trim();
   const source = tag.computed ?? tag.value;
-  if (typeof source === 'string' && source.trim()) {
-    return source.trim();
-  }
-
+  if (typeof source === 'string' && source.trim()) return source.trim();
   if (Array.isArray(source) && source.length > 0 && typeof source[0] === 'string' && source[0].trim()) {
     return source[0].trim();
   }
-
   return undefined;
 }
 
 function hasUsefulMetadata(metadata: WoundPhotoExifMetadata): boolean {
-  return (
-    Boolean(metadata.make) ||
-    Boolean(metadata.model) ||
-    Boolean(metadata.software) ||
-    Boolean(metadata.dateTimeOriginal) ||
+  return Boolean(
+    metadata.make || metadata.model || metadata.software || metadata.dateTimeOriginal ||
     (typeof metadata.latitude === 'number' && typeof metadata.longitude === 'number')
   );
 }
 
 function hasValidCoordinates(latitude?: number | null, longitude?: number | null): boolean {
   return (
-    typeof latitude === 'number' &&
-    Number.isFinite(latitude) &&
-    Math.abs(latitude) <= 90 &&
-    typeof longitude === 'number' &&
-    Number.isFinite(longitude) &&
-    Math.abs(longitude) <= 180
+    typeof latitude === 'number' && Number.isFinite(latitude) && Math.abs(latitude) <= 90 &&
+    typeof longitude === 'number' && Number.isFinite(longitude) && Math.abs(longitude) <= 180
   );
 }
 
 function buildMetadataFromPhotoRow(photo: PhotoMetadataTarget): WoundPhotoExifMetadata | null {
-  if (!hasValidCoordinates(photo.latitude, photo.longitude)) {
-    return null;
-  }
-
+  if (!hasValidCoordinates(photo.latitude, photo.longitude)) return null;
   return {
     latitude: photo.latitude as number,
     longitude: photo.longitude as number,
@@ -165,27 +130,21 @@ export function isLegacyPhotoCreatedAt(createdAt?: string | null): boolean {
 
 async function withBestEffortAddress(metadata: WoundPhotoExifMetadata | null): Promise<WoundPhotoExifMetadata | null> {
   if (!metadata) return null;
-
   if (typeof metadata.latitude === 'number' && typeof metadata.longitude === 'number' && !metadata.address) {
     metadata.address = await reverseGeocode(metadata.latitude, metadata.longitude);
   }
-
   return metadata;
 }
 
 export async function downloadWoundPhotoBlob(storagePath: string): Promise<Blob> {
-  const { data, error } = await supabase.storage.from(WOUND_STORAGE_BUCKET).download(storagePath);
-
-  if (error) throw error;
-  if (!data) throw new Error('Não foi possível baixar foto para extração de metadados.');
-
-  return data;
+  const response = await fetch(localMediaUrl(storagePath));
+  if (!response.ok) throw new Error(`Não foi possível baixar foto (${response.status}).`);
+  return response.blob();
 }
 
 export async function extractWoundPhotoMetadata(blob: Blob): Promise<WoundPhotoExifMetadata | null> {
   const buffer = typeof blob.arrayBuffer === 'function' ? await blob.arrayBuffer() : await new Response(blob).arrayBuffer();
   const tags = ExifReader.load(buffer) as Record<string, ExifTagLike> | null;
-
   if (!tags) return null;
 
   const metadata: WoundPhotoExifMetadata = {
@@ -202,29 +161,22 @@ export async function extractWoundPhotoMetadata(blob: Blob): Promise<WoundPhotoE
   return hasUsefulMetadata(metadata) ? metadata : null;
 }
 
-export async function loadWoundPhotoMetadataFromSupabase(storagePath: string): Promise<WoundPhotoExifMetadata | null> {
+export async function loadWoundPhotoMetadataFromServer(storagePath: string): Promise<WoundPhotoExifMetadata | null> {
   try {
     const blob = await downloadWoundPhotoBlob(storagePath);
     return extractWoundPhotoMetadata(blob);
   } catch (error) {
-    console.error(`Failed to load metadata from Supabase for ${storagePath}:`, error);
+    console.error(`Falha ao carregar metadados da foto ${storagePath}:`, error);
     return null;
   }
 }
 
 function getMemoryCacheEntry(photoId: string): ResolveWoundPhotoMetadataResult | null {
-  if (!metadataMemoryCache.has(photoId)) {
-    return null;
-  }
-
+  if (!metadataMemoryCache.has(photoId)) return null;
   const source = metadataSourceMemoryCache.has(photoId)
     ? (metadataSourceMemoryCache.get(photoId) ?? null)
     : 'memory';
-
-  return {
-    metadata: metadataMemoryCache.get(photoId) ?? null,
-    source,
-  };
+  return { metadata: metadataMemoryCache.get(photoId) ?? null, source };
 }
 
 export async function resolveWoundPhotoMetadataOnDemand(
@@ -242,12 +194,7 @@ export async function resolveWoundPhotoMetadataOnDemand(
     return { metadata: rowMetadata, source: 'photo_row' };
   }
 
-  const exifMetadata = await loadWoundPhotoMetadataFromSupabase(photo.storage_path);
-  if (exifMetadata && hasValidCoordinates(exifMetadata.latitude, exifMetadata.longitude)) {
-    setWoundPhotoMetadataInMemoryCache(photo.id, exifMetadata, 'exif_download');
-    return { metadata: exifMetadata, source: 'exif_download' };
-  }
-
+  const exifMetadata = await loadWoundPhotoMetadataFromServer(photo.storage_path);
   if (exifMetadata) {
     setWoundPhotoMetadataInMemoryCache(photo.id, exifMetadata, 'exif_download');
     return { metadata: exifMetadata, source: 'exif_download' };
