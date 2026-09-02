@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabaseClient';
 import type {
   CloseWoundCaseInput,
   CreateWoundCaseInput,
@@ -14,67 +13,16 @@ import type {
   WoundPhoto,
   WoundStatusEvent,
 } from '../types';
+import { apiRequest, deleteLocalMedia, uploadLocalMedia } from '@/lib/apiClient';
 import { getWoundPhotoCache, saveWoundPhotoCache, deleteWoundPhotoCache } from './woundOfflineStore';
 import { resizeAndCompressImage } from '@/lib/imageUtils';
 
-const WOUND_STORAGE_BUCKET = 'wound-photos';
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const WEB_SAFE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const GEO_COLUMN_KEYS = ['latitude', 'longitude', 'location_source', 'location_captured_at'] as const;
-
-type WoundPhotoInsertPayload = {
-  wound_id: string;
-  entry_id: string | null;
-  storage_path: string;
-  captured_at: string;
-  display_order: number;
-  description: string | null;
-  is_primary: boolean;
-  latitude?: number | null;
-  longitude?: number | null;
-  location_source?: UploadWoundPhotoInput['location_source'] | null;
-  location_captured_at?: string | null;
-};
 
 function assertImageFile(file: File): void {
-  if (!file.type.startsWith('image/')) {
-    throw new Error('Apenas imagens são permitidas para upload.');
-  }
-
-  if (file.size > MAX_IMAGE_SIZE_BYTES) {
-    throw new Error('A imagem excede o limite de 5MB.');
-  }
-}
-
-function buildPhotoPath(woundId: string, fileName: string, extensionHint?: string): string {
-  const extension = extensionHint || (fileName.includes('.') ? fileName.split('.').pop() : 'jpg');
-  const safeExt = (extension?.toLowerCase().replace(/[^a-zA-Z0-9]/g, '') || 'jpg').slice(0, 5);
-  
-  // Use a more robust unique ID for the file path
-  const randomId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `${Math.random().toString(36).slice(2, 11)}-${Math.random().toString(36).slice(2, 11)}`;
-  
-  const timestamp = Date.now();
-  return `${woundId}/${timestamp}-${randomId}.${safeExt}`;
-}
-
-function normalizeCoordinates(
-  latitude?: number | null,
-  longitude?: number | null,
-): { latitude: number; longitude: number } | null {
-  if (
-    typeof latitude !== 'number' ||
-    !Number.isFinite(latitude) ||
-    Math.abs(latitude) > 90 ||
-    typeof longitude !== 'number' ||
-    !Number.isFinite(longitude) ||
-    Math.abs(longitude) > 180
-  ) {
-    return null;
-  }
-
-  return { latitude, longitude };
+  if (!file.type.startsWith('image/')) throw new Error('Apenas imagens são permitidas para upload.');
+  if (file.size > MAX_IMAGE_SIZE_BYTES) throw new Error('A imagem excede o limite de 5MB.');
 }
 
 function extensionFromMimeType(mimeType: string): string {
@@ -83,74 +31,26 @@ function extensionFromMimeType(mimeType: string): string {
   return 'jpg';
 }
 
-function isMissingGeoColumnError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false;
-
-  const code = String((error as { code?: unknown }).code ?? '');
-  const message = String((error as { message?: unknown }).message ?? '');
-  const details = String((error as { details?: unknown }).details ?? '');
-  const text = `${message} ${details}`.toLowerCase();
-  const mentionsGeoColumn = GEO_COLUMN_KEYS.some((column) => text.includes(column));
-
-  if (!mentionsGeoColumn) return false;
-  if (code === 'PGRST204' || code === '42703') return true;
-
-  return text.includes('could not find') || text.includes('column');
-}
-
-function removeGeoColumns(payload: WoundPhotoInsertPayload): WoundPhotoInsertPayload {
-  const { latitude, longitude, location_source, location_captured_at, ...rest } = payload;
-  void latitude;
-  void longitude;
-  void location_source;
-  void location_captured_at;
-  return rest;
-}
-
-function hasGeoColumns(payload: WoundPhotoInsertPayload): boolean {
-  return GEO_COLUMN_KEYS.some((column) => column in payload);
-}
-
-async function insertWoundPhotoRowWithGeoCompatibility(payload: WoundPhotoInsertPayload) {
-  const firstAttempt = await supabase
-    .from('wound_photos')
-    .insert(payload)
-    .select('*')
-    .single();
-
-  if (!firstAttempt.error) {
-    return firstAttempt;
-  }
-
-  if (!hasGeoColumns(payload) || !isMissingGeoColumnError(firstAttempt.error)) {
-    return firstAttempt;
-  }
-
-  const fallbackPayload = removeGeoColumns(payload);
-  return supabase
-    .from('wound_photos')
-    .insert(fallbackPayload)
-    .select('*')
-    .single();
+function normalizeCoordinates(latitude?: number | null, longitude?: number | null): { latitude: number; longitude: number } | null {
+  if (
+    typeof latitude !== 'number' || !Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
+    typeof longitude !== 'number' || !Number.isFinite(longitude) || Math.abs(longitude) > 180
+  ) return null;
+  return { latitude, longitude };
 }
 
 async function normalizeUploadImage(file: File): Promise<{ blob: Blob; contentType: string; extensionHint: string }> {
   const normalizedType = file.type.toLowerCase();
-
   if (WEB_SAFE_IMAGE_TYPES.has(normalizedType)) {
-    return {
-      blob: file,
-      contentType: normalizedType,
-      extensionHint: extensionFromMimeType(normalizedType),
-    };
+    return { blob: file, contentType: normalizedType, extensionHint: extensionFromMimeType(normalizedType) };
   }
-
   const converted = await resizeAndCompressImage(file);
-  return {
-    blob: converted,
-    contentType: 'image/jpeg',
-    extensionHint: 'jpg',
-  };
+  return { blob: converted, contentType: 'image/jpeg', extensionHint: 'jpg' };
+}
+
+function mediaUrl(storagePath: string): string {
+  const [kind, ...rest] = storagePath.split('/');
+  return `/api/media/${encodeURIComponent(kind)}/${encodeURIComponent(rest.join('/'))}`;
 }
 
 export async function listPatientsWithTrackedWounds(filters?: {
@@ -158,406 +58,102 @@ export async function listPatientsWithTrackedWounds(filters?: {
   anatomicalCode?: string;
   includeClosed?: boolean;
 }): Promise<WoundPatientWithSummary[]> {
-  let query = supabase
-    .from('wound_patients')
-    .select(`
-      *,
-      wound_cases (
-        id,
-        status,
-        anatomical_code,
-        updated_at,
-        closure_type
-      )
-    `)
-    .eq('active', true)
-    .order('updated_at', { ascending: false });
-
-  if (filters?.search) {
-    query = query.ilike('full_name', `%${filters.search}%`);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-
-  const patients = (data ?? []) as Array<WoundPatient & { wound_cases?: WoundCase[] }>;
-
-  return patients
-    .map((patient) => {
-      const wounds = (patient.wound_cases ?? []) as Pick<WoundCase, 'id' | 'status' | 'anatomical_code' | 'updated_at' | 'closure_type'>[];
-      const woundsByLocation = filters?.anatomicalCode
-        ? wounds.filter((wound) => wound.anatomical_code === filters.anatomicalCode)
-        : wounds;
-
-      const filteredWounds = filters?.includeClosed
-        ? woundsByLocation
-        : woundsByLocation.filter((wound) => wound.status !== 'encerrada');
-
-      const latestWoundUpdatedAt = filteredWounds
-        .map((wound) => wound.updated_at)
-        .sort()
-        .reverse()[0] ?? null;
-
-      return {
-        ...patient,
-        wounds: filteredWounds,
-        open_wounds_count: filteredWounds.filter((wound) => wound.status !== 'encerrada').length,
-        latest_wound_updated_at: latestWoundUpdatedAt,
-      } satisfies WoundPatientWithSummary;
-    })
-    .filter((patient) => patient.wounds.length > 0 || filters?.includeClosed === true);
+  const params = new URLSearchParams();
+  if (filters?.search) params.set('search', filters.search);
+  if (filters?.anatomicalCode) params.set('anatomicalCode', filters.anatomicalCode);
+  if (filters?.includeClosed) params.set('includeClosed', '1');
+  return apiRequest<WoundPatientWithSummary[]>(`/api/wounds/patients?${params.toString()}`);
 }
 
 export async function createWoundPatient(input: CreateWoundPatientInput): Promise<WoundPatient> {
-  if (!input.full_name.trim()) {
-    throw new Error('Nome do paciente é obrigatório.');
-  }
-
-  if (!input.document_value.trim()) {
-    throw new Error('Documento do paciente é obrigatório.');
-  }
-
-  const { data, error } = await supabase
-    .from('wound_patients')
-    .insert({
-      unit_id: input.unit_id ?? null,
-      full_name: input.full_name.trim(),
-      document_type: input.document_type,
-      document_value: input.document_value.trim(),
-    })
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data as WoundPatient;
+  if (!input.full_name.trim()) throw new Error('Nome do paciente é obrigatório.');
+  if (!input.document_value.trim()) throw new Error('Documento do paciente é obrigatório.');
+  return apiRequest<WoundPatient>('/api/wounds/patients', { method: 'POST', body: JSON.stringify(input) });
 }
 
 export async function updateWoundPatient(patientId: string, input: Partial<CreateWoundPatientInput>): Promise<WoundPatient> {
-  if (input.full_name && !input.full_name.trim()) {
-    throw new Error('Nome do paciente é obrigatório.');
-  }
-
-  if (input.document_value && !input.document_value.trim()) {
-    throw new Error('Documento do paciente é obrigatório.');
-  }
-
-  const { data, error } = await supabase
-    .from('wound_patients')
-    .update({
-      full_name: input.full_name?.trim(),
-      document_type: input.document_type,
-      document_value: input.document_value?.trim(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', patientId)
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data as WoundPatient;
+  return apiRequest<WoundPatient>(`/api/wounds/patients/${encodeURIComponent(patientId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
 }
 
 export async function deleteWoundPatient(patientId: string): Promise<void> {
-  // 1. Get all photos for all wounds of this patient
-  const { data: photos, error: photosError } = await supabase
-    .from('wound_photos')
-    .select('storage_path, wound_cases!inner(patient_id)')
-    .eq('wound_cases.patient_id', patientId);
-
-  if (photosError) throw photosError;
-
-  // 2. Delete files from storage
-  if (photos && photos.length > 0) {
-    const paths = photos.map((p: any) => p.storage_path);
-    const { error: storageError } = await supabase.storage
-      .from(WOUND_STORAGE_BUCKET)
-      .remove(paths);
-
-    if (storageError) {
-      console.warn('Erro ao deletar algumas fotos do storage:', storageError);
-    }
-  }
-
-  // 3. Delete patient (cascades to wound_cases, wound_entries, wound_photos metadata)
-  const { error: deleteError } = await supabase
-    .from('wound_patients')
-    .delete()
-    .eq('id', patientId);
-
-  if (deleteError) throw deleteError;
+  await apiRequest<void>(`/api/wounds/patients/${encodeURIComponent(patientId)}`, { method: 'DELETE' });
 }
 
-export async function listWoundsByPatient(
-  patientId: string,
-  statusFilter: WoundCaseStatus | 'all' = 'all',
-): Promise<WoundCase[]> {
-  let query = supabase
-    .from('wound_cases')
-    .select('*')
-    .eq('patient_id', patientId)
-    .order('updated_at', { ascending: false });
-
-  if (statusFilter !== 'all') {
-    query = query.eq('status', statusFilter);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-
-  return (data ?? []) as WoundCase[];
+export async function listWoundsByPatient(patientId: string, statusFilter: WoundCaseStatus | 'all' = 'all'): Promise<WoundCase[]> {
+  const params = new URLSearchParams({ patientId, status: statusFilter });
+  return apiRequest<WoundCase[]>(`/api/wounds/cases?${params.toString()}`);
 }
 
 export async function getWoundCaseContext(woundId: string): Promise<{
   wound: WoundCase;
   patient: Pick<WoundPatient, 'full_name' | 'document_type' | 'document_value'>;
 }> {
-  const { data, error } = await supabase
-    .from('wound_cases')
-    .select(`
-      *,
-      wound_patients!inner(
-        full_name,
-        document_type,
-        document_value
-      )
-    `)
-    .eq('id', woundId)
-    .single();
-
-  if (error) throw error;
-
-  const row = data as WoundCase & {
-    wound_patients: Pick<WoundPatient, 'full_name' | 'document_type' | 'document_value'>;
-  };
-
-  return {
-    wound: row,
-    patient: row.wound_patients,
-  };
+  return apiRequest(`/api/wounds/cases/${encodeURIComponent(woundId)}`);
 }
 
 export async function createWoundCase(input: CreateWoundCaseInput): Promise<WoundCase> {
-  if (!input.patient_id) {
-    throw new Error('Paciente da ferida é obrigatório.');
-  }
-
-  if (!input.anatomical_code.trim()) {
-    throw new Error('Localização anatômica é obrigatória.');
-  }
-
-  if (!input.started_at) {
-    throw new Error('Data de início da lesão é obrigatória.');
-  }
-
-  if (!input.etiology.trim()) {
-    throw new Error('Etiologia é obrigatória.');
-  }
-
-  const payload = {
-    patient_id: input.patient_id,
-    unit_id: input.unit_id ?? null,
-    started_at: input.started_at,
-    etiology: input.etiology.trim(),
-    classification: input.classification?.trim() || null,
-    anatomical_region: input.anatomical_region || null,
-    anatomical_subregion: input.anatomical_subregion || null,
-    anatomical_code: input.anatomical_code,
-    comorbidities: input.comorbidities ?? [],
-    initial_bed_aspect: input.initial_bed_aspect ?? [],
-    initial_edges: input.initial_edges ?? [],
-  };
-
-  const { data, error } = await supabase
-    .from('wound_cases')
-    .insert(payload)
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data as WoundCase;
-}
-
-export async function addWoundEntry(input: CreateWoundEntryInput): Promise<WoundEntry> {
-  if (!input.wound_id) {
-    throw new Error('Ferida é obrigatória para registrar evolução.');
-  }
-
-  if (input.pain_scale != null && (input.pain_scale < 0 || input.pain_scale > 10)) {
-    throw new Error('Escala de dor deve estar entre 0 e 10.');
-  }
-
-  const payload = {
-    wound_id: input.wound_id,
-    recorded_at: input.recorded_at ?? new Date().toISOString(),
-    professional_id: input.professional_id,
-    measure_length_cm: input.measure_length_cm ?? null,
-    measure_width_cm: input.measure_width_cm ?? null,
-    measure_depth_cm: input.measure_depth_cm ?? null,
-    bed_aspect: input.bed_aspect ?? [],
-    edges: input.edges ?? [],
-    exudate: input.exudate ?? null,
-    odor: input.odor ?? null,
-    perilesional_skin: input.perilesional_skin ?? [],
-    pain_scale: input.pain_scale ?? null,
-    uses_antibiotic: input.uses_antibiotic ?? false,
-    antibiotic_type: input.antibiotic_type || null,
-    uses_ointment: input.uses_ointment ?? false,
-    ointment_type: input.ointment_type || null,
-    dressing_type: input.dressing_type || null,
-    dressing_notes: input.dressing_notes || null,
-    non_conformity_detected: input.non_conformity_detected ?? false,
-    non_conformity_type: input.non_conformity_type || null,
-    non_conformity_description: input.non_conformity_description || null,
-    non_conformity_action: input.non_conformity_action || null,
-    observations: input.observations || null,
-    next_change_date: input.next_change_date || null,
-  };
-
-  const { data, error } = await supabase
-    .from('wound_entries')
-    .insert(payload)
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  
-  // Se for sucesso, atualizar o last_entry_at do wound_case
-  await supabase
-    .from('wound_cases')
-    .update({ 
-      last_entry_at: payload.recorded_at,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', payload.wound_id);
-
-  return data as WoundEntry;
-}
-
-export async function updateWoundEntry(entryId: string, input: Partial<CreateWoundEntryInput>): Promise<WoundEntry> {
-  const { data, error } = await supabase
-    .from('wound_entries')
-    .update({
-      recorded_at: input.recorded_at,
-      professional_id: input.professional_id,
-      measure_length_cm: input.measure_length_cm,
-      measure_width_cm: input.measure_width_cm,
-      measure_depth_cm: input.measure_depth_cm,
-      bed_aspect: input.bed_aspect,
-      edges: input.edges,
-      exudate: input.exudate,
-      odor: input.odor,
-      perilesional_skin: input.perilesional_skin,
-      pain_scale: input.pain_scale,
-      uses_antibiotic: input.uses_antibiotic,
-      antibiotic_type: input.antibiotic_type,
-      uses_ointment: input.uses_ointment,
-      ointment_type: input.ointment_type,
-      dressing_type: input.dressing_type,
-      dressing_notes: input.dressing_notes,
-      non_conformity_detected: input.non_conformity_detected,
-      non_conformity_type: input.non_conformity_type,
-      non_conformity_description: input.non_conformity_description,
-      non_conformity_action: input.non_conformity_action,
-      observations: input.observations,
-      next_change_date: input.next_change_date,
-    })
-    .eq('id', entryId)
-    .select('*')
-    .single();
-
-  if (error) throw error;
-  return data as WoundEntry;
-}
-
-export async function deleteWoundEntry(entryId: string): Promise<void> {
-  // 1. Buscar fotos vinculadas a esta evolução
-  const { data: photos, error: photosError } = await supabase
-    .from('wound_photos')
-    .select('id, storage_path')
-    .eq('entry_id', entryId);
-
-  if (photosError) throw photosError;
-
-  // 2. Deletar fotos do storage e metadados
-  if (photos && photos.length > 0) {
-    const paths = photos.map((p) => p.storage_path);
-    await supabase.storage.from(WOUND_STORAGE_BUCKET).remove(paths);
-    
-    // O delete da entrada vai dar cascade nos metadados da foto se configurado, 
-    // mas vamos garantir deletando os ids de cache local também
-    for (const photo of photos) {
-      await deleteWoundPhotoCache(photo.id).catch(() => undefined);
-    }
-  }
-
-  // 3. Deletar a evolução
-  const { error } = await supabase
-    .from('wound_entries')
-    .delete()
-    .eq('id', entryId);
-
-  if (error) throw error;
+  if (!input.patient_id) throw new Error('Paciente da ferida é obrigatório.');
+  if (!input.anatomical_code.trim()) throw new Error('Localização anatômica é obrigatória.');
+  if (!input.started_at) throw new Error('Data de início da lesão é obrigatória.');
+  if (!input.etiology.trim()) throw new Error('Etiologia é obrigatória.');
+  return apiRequest<WoundCase>('/api/wounds/cases', { method: 'POST', body: JSON.stringify(input) });
 }
 
 export async function updateWoundCase(woundId: string, input: Partial<CreateWoundCaseInput>): Promise<WoundCase> {
-  const payload = {
-    started_at: input.started_at,
-    etiology: input.etiology?.trim(),
-    classification: input.classification?.trim(),
-    anatomical_region: input.anatomical_region,
-    anatomical_subregion: input.anatomical_subregion,
-    anatomical_code: input.anatomical_code,
-    comorbidities: input.comorbidities,
-    updated_at: new Date().toISOString(),
-  };
+  return apiRequest<WoundCase>(`/api/wounds/cases/${encodeURIComponent(woundId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
 
-  const { data, error } = await supabase
-    .from('wound_cases')
-    .update(payload)
-    .eq('id', woundId)
-    .select('*')
-    .single();
+export async function addWoundEntry(input: CreateWoundEntryInput): Promise<WoundEntry> {
+  if (!input.wound_id) throw new Error('Ferida é obrigatória para registrar evolução.');
+  if (input.pain_scale != null && (input.pain_scale < 0 || input.pain_scale > 10)) {
+    throw new Error('Escala de dor deve estar entre 0 e 10.');
+  }
+  return apiRequest<WoundEntry>('/api/wounds/entries', { method: 'POST', body: JSON.stringify(input) });
+}
 
-  if (error) throw error;
-  return data as WoundCase;
+export async function updateWoundEntry(entryId: string, input: Partial<CreateWoundEntryInput>): Promise<WoundEntry> {
+  return apiRequest<WoundEntry>(`/api/wounds/entries/${encodeURIComponent(entryId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteWoundEntry(entryId: string): Promise<void> {
+  await apiRequest<void>(`/api/wounds/entries/${encodeURIComponent(entryId)}`, { method: 'DELETE' });
 }
 
 export async function listWoundEntries(woundId: string): Promise<WoundEntry[]> {
-  const { data, error } = await supabase
-    .from('wound_entries')
-    .select('*')
-    .eq('wound_id', woundId)
-    .order('recorded_at', { ascending: false });
-
-  if (error) throw error;
-
-  return hydrateEntriesWithProfiles(data ?? []);
+  return apiRequest<WoundEntry[]>(`/api/wounds/entries?woundId=${encodeURIComponent(woundId)}`);
 }
 
 export async function closeWoundCase(input: CloseWoundCaseInput): Promise<WoundCase> {
-  const { data, error } = await supabase.rpc('close_wound_case', {
-    p_wound_id: input.wound_id,
-    p_expected_version: input.expected_version,
-    p_closure_type: input.closure_type,
-    p_closure_date: input.closure_date,
-    p_closure_reason: input.closure_reason,
-    p_closed_by: input.closed_by ?? null,
+  return apiRequest<WoundCase>(`/api/wounds/cases/${encodeURIComponent(input.wound_id)}/close`, {
+    method: 'POST',
+    body: JSON.stringify({
+      expected_version: input.expected_version,
+      closure_type: input.closure_type,
+      closure_date: input.closure_date,
+      closure_reason: input.closure_reason,
+      closed_by: input.closed_by ?? null,
+    }),
   });
-
-  if (error) throw error;
-  return data as WoundCase;
 }
 
 export async function reopenWoundCase(input: ReopenWoundCaseInput): Promise<WoundCase> {
-  const { data, error } = await supabase.rpc('reopen_wound_case', {
-    p_wound_id: input.wound_id,
-    p_expected_version: input.expected_version,
-    p_reason: input.reason,
-    p_reopened_by: input.reopened_by ?? null,
+  return apiRequest<WoundCase>(`/api/wounds/cases/${encodeURIComponent(input.wound_id)}/reopen`, {
+    method: 'POST',
+    body: JSON.stringify({
+      expected_version: input.expected_version,
+      reason: input.reason,
+      reopened_by: input.reopened_by ?? null,
+    }),
   });
-
-  if (error) throw error;
-  return data as WoundCase;
 }
 
 export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promise<WoundPhoto[]> {
@@ -566,213 +162,75 @@ export async function uploadWoundPhotos(inputs: UploadWoundPhotoInput[]): Promis
   for (let index = 0; index < inputs.length; index += 1) {
     const item = inputs[index];
     assertImageFile(item.file);
+    const prepared = await normalizeUploadImage(item.file);
+    const coordinates = normalizeCoordinates(item.latitude, item.longitude);
+    const baseName = item.file.name.replace(/\.[^.]+$/, '') || 'ferida';
+    const fileName = `${baseName}.${prepared.extensionHint}`;
+    const media = await uploadLocalMedia('wounds', prepared.blob, fileName);
 
-    const preparedImage = await normalizeUploadImage(item.file);
-    const explicitCoordinates = normalizeCoordinates(item.latitude, item.longitude);
-    const locationSource = explicitCoordinates
-      ? item.location_source ?? null
-      : null;
-    const locationCapturedAt = explicitCoordinates
-      ? item.location_captured_at ?? item.captured_at ?? new Date().toISOString()
-      : null;
-
-    const storagePath = buildPhotoPath(item.wound_id, item.file.name, preparedImage.extensionHint);
-
-    const { error: uploadError } = await supabase.storage
-      .from(WOUND_STORAGE_BUCKET)
-      .upload(storagePath, preparedImage.blob, {
-        cacheControl: '31536000',
-        contentType: preparedImage.contentType,
-        upsert: false,
+    try {
+      const photo = await apiRequest<WoundPhoto>('/api/wounds/photos', {
+        method: 'POST',
+        body: JSON.stringify({
+          wound_id: item.wound_id,
+          entry_id: item.entry_id ?? null,
+          storage_path: media.storagePath,
+          url: media.url,
+          captured_at: item.captured_at ?? new Date().toISOString(),
+          display_order: item.display_order ?? index,
+          description: item.description ?? null,
+          is_primary: item.is_primary ?? false,
+          latitude: coordinates?.latitude ?? null,
+          longitude: coordinates?.longitude ?? null,
+          location_source: coordinates ? (item.location_source ?? null) : null,
+          location_captured_at: coordinates ? (item.location_captured_at ?? item.captured_at ?? new Date().toISOString()) : null,
+        }),
       });
-
-    if (uploadError) {
-      console.error('[uploadWoundPhotos] Erro no upload para storage:', uploadError);
-      throw uploadError;
+      await saveWoundPhotoCache(photo.id, prepared.blob);
+      uploaded.push(photo);
+    } catch (error) {
+      await deleteLocalMedia(media.storagePath).catch(() => undefined);
+      throw error;
     }
-
-    const insertPayload: WoundPhotoInsertPayload = {
-      wound_id: item.wound_id,
-      entry_id: item.entry_id ?? null,
-      storage_path: storagePath,
-      captured_at: item.captured_at ?? new Date().toISOString(),
-      display_order: item.display_order ?? index,
-      description: item.description ?? null,
-      is_primary: item.is_primary ?? false,
-    };
-
-    if (explicitCoordinates) {
-      insertPayload.latitude = explicitCoordinates.latitude;
-      insertPayload.longitude = explicitCoordinates.longitude;
-      insertPayload.location_source = locationSource;
-      insertPayload.location_captured_at = locationCapturedAt;
-    }
-
-    const { data: metadata, error: metadataError } = await insertWoundPhotoRowWithGeoCompatibility(insertPayload);
-
-    if (metadataError) {
-      console.error('[uploadWoundPhotos] Erro ao inserir metadados no banco:', metadataError);
-      // Tentativa de rollback no storage caso o banco falhe
-      await supabase.storage.from(WOUND_STORAGE_BUCKET).remove([storagePath]).catch(() => undefined);
-      throw metadataError;
-    }
-
-    // Cache local com a versão realmente enviada ao storage.
-    const photo = metadata as WoundPhoto;
-    await saveWoundPhotoCache(photo.id, preparedImage.blob);
-
-    uploaded.push(photo);
   }
 
   return uploaded;
 }
 
 export async function deleteWoundPhoto(photoId: string): Promise<void> {
-  const { data: photo, error: photoError } = await supabase
-    .from('wound_photos')
-    .select('*')
-    .eq('id', photoId)
-    .single();
-
-  if (photoError) throw photoError;
-
-  const storagePath = (photo as WoundPhoto).storage_path;
-
-  const { error: dbError } = await supabase
-    .from('wound_photos')
-    .update({
-      deleted_at: new Date().toISOString(),
-      is_primary: false,
-    })
-    .eq('id', photoId);
-
-  if (dbError) throw dbError;
-
-  const { error: storageError } = await supabase.storage.from(WOUND_STORAGE_BUCKET).remove([storagePath]);
-  if (storageError) throw storageError;
-
-  // Clear local cache for this photo
+  await apiRequest<void>(`/api/wounds/photos/${encodeURIComponent(photoId)}`, { method: 'DELETE' });
   await deleteWoundPhotoCache(photoId).catch(() => undefined);
 }
 
 export async function listWoundPhotos(woundId: string): Promise<WoundPhoto[]> {
-  const { data, error } = await supabase
-    .from('wound_photos')
-    .select('*')
-    .eq('wound_id', woundId)
-    .is('deleted_at', null)
-    .order('captured_at', { ascending: false })
-    .order('display_order', { ascending: true });
-
-  if (error) throw error;
-
-  return (data ?? []) as WoundPhoto[];
+  return apiRequest<WoundPhoto[]>(`/api/wounds/photos?woundId=${encodeURIComponent(woundId)}`);
 }
 
 export async function listWoundStatusEvents(woundId: string): Promise<WoundStatusEvent[]> {
-  const { data, error } = await supabase
-    .from('wound_status_events')
-    .select('*')
-    .eq('wound_id', woundId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-
-  return hydrateEventsWithProfiles(data ?? []);
+  return apiRequest<WoundStatusEvent[]>(`/api/wounds/events?woundId=${encodeURIComponent(woundId)}`);
 }
 
-export async function getSignedWoundPhotoUrl(storagePath: string, expiresInSec = 3600): Promise<string> {
-  const { data, error } = await supabase
-    .storage
-    .from(WOUND_STORAGE_BUCKET)
-    .createSignedUrl(storagePath, expiresInSec);
-
-  if (error) throw error;
-
-  if (!data?.signedUrl) {
-    throw new Error('Não foi possível gerar URL assinada da foto.');
-  }
-
-  return data.signedUrl;
+export async function getSignedWoundPhotoUrl(storagePath: string, _expiresInSec = 3600): Promise<string> {
+  return mediaUrl(storagePath);
 }
 
-export async function hydratePhotosWithSignedUrls(photos: WoundPhoto[], expiresInSec = 3600): Promise<WoundPhoto[]> {
-  const signedPhotos = await Promise.all(
+export async function hydratePhotosWithSignedUrls(photos: WoundPhoto[], _expiresInSec = 3600): Promise<WoundPhoto[]> {
+  return Promise.all(
     photos.map(async (photo) => {
       try {
-        // 1. Try to get photo blob from local cache
         const cachedBlob = await getWoundPhotoCache(photo.id);
-        
-        let signed_url: string | null = null;
-        if (cachedBlob) {
-          signed_url = URL.createObjectURL(cachedBlob);
-        } else {
-          // 2. If not in cache, get signed URL and background cache it
-          signed_url = await getSignedWoundPhotoUrl(photo.storage_path, expiresInSec);
-          
-          void fetch(signed_url)
-            .then(res => res.blob())
-            .then(blob => saveWoundPhotoCache(photo.id, blob))
-            .catch(err => console.warn(`Falha ao cachear foto ${photo.id}:`, err));
-        }
+        if (cachedBlob) return { ...photo, signed_url: URL.createObjectURL(cachedBlob) };
 
-        return {
-          ...photo,
-          signed_url,
-        };
-      } catch (err) {
-        console.error(`Erro ao hidratar foto ${photo.id}:`, err);
-        return {
-          ...photo,
-          signed_url: null,
-        };
+        const url = mediaUrl(photo.storage_path);
+        void fetch(url)
+          .then((response) => response.ok ? response.blob() : Promise.reject(new Error(`HTTP ${response.status}`)))
+          .then((blob) => saveWoundPhotoCache(photo.id, blob))
+          .catch((error) => console.warn(`Falha ao cachear foto ${photo.id}:`, error));
+        return { ...photo, signed_url: url };
+      } catch (error) {
+        console.error(`Erro ao hidratar foto ${photo.id}:`, error);
+        return { ...photo, signed_url: null };
       }
     }),
   );
-
-  return signedPhotos;
-}
-
-async function hydrateEntriesWithProfiles(entries: any[]): Promise<WoundEntry[]> {
-  if (entries.length === 0) return [];
-
-  const professionalIds = [...new Set(entries.map((e) => e.professional_id))];
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('id, full_name')
-    .in('id', professionalIds);
-
-  if (error) {
-    console.error('Erro ao buscar perfis dos profissionais:', error);
-    return entries as WoundEntry[];
-  }
-
-  const profileMap = new Map(profiles?.map((p) => [p.id, p]));
-
-  return entries.map((entry) => ({
-    ...entry,
-    profiles: profileMap.get(entry.professional_id) || undefined,
-  })) as WoundEntry[];
-}
-
-async function hydrateEventsWithProfiles(events: any[]): Promise<WoundStatusEvent[]> {
-  if (events.length === 0) return [];
-
-  const performedByBy = [...new Set(events.map((e) => e.performed_by))];
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('id, full_name')
-    .in('id', performedByBy);
-
-  if (error) {
-    console.error('Erro ao buscar perfis dos eventos:', error);
-    return events as WoundStatusEvent[];
-  }
-
-  const profileMap = new Map(profiles?.map((p) => [p.id, p]));
-
-  return events.map((event) => ({
-    ...event,
-    profiles: profileMap.get(event.performed_by) || undefined,
-  })) as WoundStatusEvent[];
 }
