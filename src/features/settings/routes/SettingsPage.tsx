@@ -3,6 +3,7 @@ import { useSettings as useLocalSettings } from '@/features/settings/hooks/useSe
 import { ThemeSelector } from '@/features/settings/components/ThemeSelector';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import { UserProfileSection } from '@/features/settings/components/UserProfileSection';
+import { NetworkStatusSection } from '@/features/settings/components/NetworkStatusSection';
 import { PageShell } from '@/components/layout';
 import {
   Tabs,
@@ -10,12 +11,12 @@ import {
   TabsTrigger,
   TabsContent
 } from '@/components/ui';
-import { Palette, UserCircle2 } from 'lucide-react';
+import { Network, Palette, UserCircle2 } from 'lucide-react';
 
 /**
  * A página de configurações da aplicação.
  *
- * Permite configurar: destino padrão, síntese de voz e tema visual.
+ * Permite configurar: perfil, rede local e tema visual.
  *
  * @returns {React.ReactElement} O componente da página de configurações.
  */
@@ -47,6 +48,10 @@ const SettingsPage: React.FC = () => {
               <UserCircle2 size={18} className="mr-2" />
               Perfil
             </TabsTrigger>
+            <TabsTrigger value="rede" className="min-w-0 flex-1 px-4 py-2.5 transition-all duration-300 data-[state=active]:shadow-lg sm:flex-none sm:px-6">
+              <Network size={18} className="mr-2" />
+              Rede
+            </TabsTrigger>
             <TabsTrigger value="aparencia" className="min-w-0 flex-1 px-4 py-2.5 transition-all duration-300 data-[state=active]:shadow-lg sm:flex-none sm:px-6">
               <Palette size={18} className="mr-2" />
               Aparência
@@ -61,6 +66,10 @@ const SettingsPage: React.FC = () => {
               onSelectedDestinationChange={setSelected}
               destinationsLoading={loading}
             />
+          </TabsContent>
+
+          <TabsContent value="rede" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <NetworkStatusSection />
           </TabsContent>
 
           <TabsContent value="aparencia" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
