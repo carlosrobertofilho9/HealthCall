@@ -1,92 +1,160 @@
-name: Build Electron (.exe + .dmg)
+name: Release HealthCall Local
 
 on:
-  workflow_dispatch:
   push:
     tags:
-      - "v*.*.*"
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to publish (example: v4.0.0-beta.1)"
+        required: true
+        type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+  release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
 
     steps:
-      - name: Checkout
+      - name: Checkout release tag
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
-      - name: Setup Node
+      - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: '22.13.0'
           cache: npm
 
-      - name: Install deps
+      - name: Install dependencies
         run: npm ci
 
-      # (Opcional) Preenche campos ausentes sem commitar
-      - name: Patch package.json metadata (non-committing)
-        shell: bash
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const path = 'package.json';
-          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+      - name: Test local backend
+        run: npm run test:local
 
-          pkg.description = pkg.description || "HealthCall (internal build)";
-          pkg.author = pkg.author || "Internal";
-
-          fs.writeFileSync(path, JSON.stringify(pkg, null, 2));
-          console.log("package.json patched for CI build");
-          NODE
-
-      - name: Build web assets
+      - name: Build web app
         run: npm run build
 
-      - name: Prepare Windows icons (.ico for NSIS)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
+      - name: Prepare portable bundles
+        shell: bash
         run: |
-          New-Item -ItemType Directory -Force -Path build | Out-Null
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          NAME="HealthCall-${VERSION}"
+          ROOT="release/${NAME}"
 
-          $png = "public/healthcall-icon.png"
-          if (!(Test-Path $png)) {
-            Write-Error "Icon PNG not found at $png"
-            exit 1
-          }
+          mkdir -p "$ROOT"
+          cp -R dist server "$ROOT/"
+          cp README.md package.json "$ROOT/"
 
-          magick $png -background none -define icon:auto-resize=256,128,64,48,32,24,16 build/icon.ico
+          cat > "$ROOT/start-healthcall.sh" <<'EOF'
+          #!/usr/bin/env bash
+          set -e
+          cd "$(dirname "$0")"
+          node server/healthcall-server.mjs
+          EOF
+          chmod +x "$ROOT/start-healthcall.sh"
 
-          if (!(Test-Path "build/icon.ico")) {
-            Write-Error "Failed to generate build/icon.ico"
-            exit 1
-          }
+          cat > "$ROOT/start-healthcall.cmd" <<'EOF'
+          @echo off
+          cd /d "%~dp0"
+          node server\healthcall-server.mjs
+          pause
+          EOF
 
-          Write-Host "Generated build/icon.ico successfully"
+          cat > "$ROOT/INSTALL.txt" <<'EOF'
+          HealthCall Local
+          ================
 
-      - name: Build Electron (mac)
-        if: matrix.os == 'macos-latest'
+          Requisito: Node.js 22.13 ou superior.
+
+          Windows:
+          1. Extraia o arquivo ZIP.
+          2. Execute start-healthcall.cmd.
+          3. Abra http://localhost:3000.
+          4. Em Configuracoes > Rede, copie o IP para os outros dispositivos da UBS.
+
+          macOS/Linux:
+          1. Extraia o pacote.
+          2. Execute ./start-healthcall.sh.
+          3. Abra http://localhost:3000.
+          4. Em Configuracoes > Rede, copie o IP para os outros dispositivos da UBS.
+
+          Os dados ficam localmente na pasta data/ criada ao lado do aplicativo.
+          EOF
+
+          (
+            cd release
+            zip -qr "${NAME}.zip" "$NAME"
+            tar -czf "${NAME}.tar.gz" "$NAME"
+            sha256sum "${NAME}.zip" "${NAME}.tar.gz" > SHA256SUMS.txt
+          )
+
+      - name: Write beta release notes
+        if: env.RELEASE_TAG == 'v4.0.0-beta.1'
+        shell: bash
+        run: |
+          cat > RELEASE_NOTES.md <<'EOF'
+          ## HealthCall 4.0 Beta — Local First
+
+          Esta beta marca a nova geração aberta e local-first do HealthCall.
+
+          ### Principais mudanças
+          - funcionamento sem login obrigatório;
+          - remoção da dependência operacional do Supabase;
+          - backend local em Node.js + SQLite;
+          - múltiplos médicos e profissionais de enfermagem usando salas persistentes por estação;
+          - fila e chamadas sincronizadas em tempo real na rede local;
+          - painel `/display` com voz pelo navegador;
+          - opção para desligar avisos, som e voz;
+          - agenda, recepção, pendências, receitas e módulo de feridas persistidos localmente;
+          - mídias e PDFs armazenados no próprio servidor da UBS;
+          - nova aba **Configurações > Rede**, mostrando hostname, IPs IPv4 e endereços prontos para copiar;
+          - suíte de testes do servidor e build automatizado no GitHub Actions.
+
+          ### Instalação do pacote portátil
+          É necessário Node.js 22.13 ou superior. Baixe o ZIP (Windows) ou TAR.GZ (macOS/Linux), extraia e use o inicializador incluído.
+
+          > Esta é uma versão beta. Recomenda-se validação em ambiente de teste antes do uso assistencial rotineiro.
+          EOF
+
+      - name: Create GitHub Release
+        shell: bash
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npx electron-builder --mac --publish never
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          NAME="HealthCall-${VERSION}"
 
-      - name: Build Electron (win)
-        if: matrix.os == 'windows-latest'
-        run: npx electron-builder --win --publish never
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists."
+            exit 0
+          fi
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-${{ matrix.os }}
-          path: |
-            dist-electron/*.exe
-            dist-electron/*.dmg
-            dist-electron/*.blockmap
-            dist-electron/latest.yml
-            dist-electron/*.yml
-          if-no-files-found: warn
+          PRERELEASE=()
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            PRERELEASE=(--prerelease)
+          fi
+
+          TITLE="$RELEASE_TAG — HealthCall Local"
+          NOTES=(--generate-notes)
+          if [[ "$RELEASE_TAG" == "v4.0.0-beta.1" ]]; then
+            TITLE="HealthCall v4.0.0-beta.1 — Local First Beta"
+            NOTES=(--notes-file RELEASE_NOTES.md)
+          fi
+
+          gh release create "$RELEASE_TAG" \
+            "release/${NAME}.zip" \
+            "release/${NAME}.tar.gz" \
+            "release/SHA256SUMS.txt" \
+            --verify-tag \
+            --title "$TITLE" \
+            "${NOTES[@]}" \
+            "${PRERELEASE[@]}"
