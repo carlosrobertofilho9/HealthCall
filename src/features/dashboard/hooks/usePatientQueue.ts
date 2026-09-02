@@ -1,35 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Patient, PatientStatus } from '@/types';
 import * as patientService from '@/features/dashboard/services/patientService';
-import { supabase } from '@/lib/supabaseClient';
+import { subscribeDomain } from '@/lib/apiClient';
 import { toast } from 'sonner';
 
 /**
- * Um hook abrangente para gerenciar o estado e as interações da fila de pacientes.
- *
- * Este hook encapsula toda a lógica relacionada à fila de pacientes, incluindo:
- * - Buscar a lista inicial de pacientes.
- * - Inscrever-se para atualizações em tempo real do Supabase.
- * - Gerenciar os estados de pesquisa e filtro.
- * - Fornecer funções para adicionar, atualizar, remover, chamar e limpar pacientes.
- * - Lidar com o estado de carregamento e exibir notificações de brinde para as ações.
- *
- * @returns {{
- *   patients: Patient[],
- *   searchTerm: string,
- *   setSearchTerm: (term: string) => void,
- *   selectedDestination: string,
- *   setSelectedDestination: (destination: string) => void,
- *   addPatientByName: (name: string, destination: string) => Promise<Patient | null>,
- *   addPatientByNumber: (destination: string) => Promise<void>,
- *   updatePatientStatus: (id: string, status: PatientStatus) => Promise<void>,
- *   updatePatientDestination: (id: string, destination: string) => Promise<void>,
- *   removePatient: (id: string) => Promise<void>,
- *   callPatient: (id: string, destination: string) => Promise<void>,
- *   clearQueue: () => Promise<void>,
- *   updatePatient: (patient: Patient) => Promise<void>,
- *   isAddingPatient: boolean
- * }} Um objeto contendo o estado da fila e as funções para manipulá-la.
+ * Hook para gerenciar a fila compartilhada da unidade usando a API local.
  */
 export function usePatientQueue() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -43,32 +19,27 @@ export function usePatientQueue() {
       setDebouncedSearchTerm(searchTerm);
     }, 300);
 
-    return () => {
-      clearTimeout(timerId);
-    };
+    return () => clearTimeout(timerId);
   }, [searchTerm]);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchPatients = async () => {
       try {
         const data = await patientService.getPatients();
-        setPatients(data);
+        if (mounted) setPatients(data);
       } catch (error: any) {
-        toast.error(error.message);
+        if (mounted) toast.error(error.message);
       }
     };
 
-    fetchPatients();
-
-    const channel = supabase
-      .channel('realtime-patients')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'patients' }, (payload) => {
-        fetchPatients();
-      })
-      .subscribe();
+    void fetchPatients();
+    const unsubscribe = subscribeDomain('patients', () => void fetchPatients());
 
     return () => {
-      supabase.removeChannel(channel);
+      mounted = false;
+      unsubscribe();
     };
   }, []);
 
@@ -111,37 +82,28 @@ export function usePatientQueue() {
 
   const updatePatientStatus = useCallback(async (id: string, status: PatientStatus) => {
     const patient = patients.find((p) => p.id === id);
-    if (patient) {
-      setPatients((current) =>
-        current.map((p) => (p.id === id ? { ...p, status } : p))
-      );
-      
-      try {
-        await patientService.updatePatient({ ...patient, status });
-        toast.info(`Status de ${patient.name} alterado para "${status}"!`);
-      } catch (error: any) {
-        setPatients((current) =>
-          current.map((p) => (p.id === id ? patient : p))
-        );
-        toast.error(error.message);
-      }
+    if (!patient) return;
+
+    setPatients((current) => current.map((p) => (p.id === id ? { ...p, status } : p)));
+    try {
+      await patientService.updatePatient({ ...patient, status });
+      toast.info(`Status de ${patient.name} alterado para "${status}"!`);
+    } catch (error: any) {
+      setPatients((current) => current.map((p) => (p.id === id ? patient : p)));
+      toast.error(error.message);
     }
   }, [patients]);
 
   const updatePatient = useCallback(async (patient: Patient) => {
     const oldPatient = patients.find((p) => p.id === patient.id);
-    setPatients((current) =>
-      current.map((p) => (p.id === patient.id ? patient : p))
-    );
-    
+    setPatients((current) => current.map((p) => (p.id === patient.id ? patient : p)));
+
     try {
       await patientService.updatePatient(patient);
       toast.info('Paciente atualizado com sucesso!');
     } catch (error: any) {
       if (oldPatient) {
-        setPatients((current) =>
-          current.map((p) => (p.id === patient.id ? oldPatient : p))
-        );
+        setPatients((current) => current.map((p) => (p.id === patient.id ? oldPatient : p)));
       }
       toast.error(error.message);
     }
@@ -149,35 +111,27 @@ export function usePatientQueue() {
 
   const updatePatientDestination = useCallback(async (id: string, destination: string) => {
     const patient = patients.find((p) => p.id === id);
-    if (patient) {
-      setPatients((current) =>
-        current.map((p) => (p.id === id ? { ...p, destination } : p))
-      );
-      
-      try {
-        await patientService.updatePatient({ ...patient, destination });
-        toast.info(`Destino de ${patient.name} alterado para "${destination}"!`);
-      } catch (error: any) {
-        setPatients((current) =>
-          current.map((p) => (p.id === id ? patient : p))
-        );
-        toast.error(error.message);
-      }
+    if (!patient) return;
+
+    setPatients((current) => current.map((p) => (p.id === id ? { ...p, destination } : p)));
+    try {
+      await patientService.updatePatient({ ...patient, destination });
+      toast.info(`Destino de ${patient.name} alterado para "${destination}"!`);
+    } catch (error: any) {
+      setPatients((current) => current.map((p) => (p.id === id ? patient : p)));
+      toast.error(error.message);
     }
   }, [patients]);
 
   const removePatient = useCallback(async (id: string) => {
     const removedPatient = patients.find((p) => p.id === id);
-    
     setPatients((current) => current.filter((p) => p.id !== id));
-    
+
     try {
       await patientService.removePatient(id);
       toast('Paciente removido da fila!');
     } catch (error: any) {
-      if (removedPatient) {
-        setPatients((current) => [removedPatient, ...current]);
-      }
+      if (removedPatient) setPatients((current) => [removedPatient, ...current]);
       toast.error(error.message);
     }
   }, [patients]);
@@ -185,36 +139,22 @@ export function usePatientQueue() {
   const callPatient = useCallback(async (id: string, destination: string) => {
     const patient = patients.find((p) => p.id === id);
     if (!patient) return;
-    
-    const updatedPatient = {
-      ...patient,
-      status: 'Chamado' as PatientStatus,
-      callCount: patient.callCount + 1,
-      destination,
-    };
-    setPatients((current) =>
-      current.map((p) => (p.id === id ? updatedPatient : p))
-    );
-    
+
     try {
       const calledPatient = await patientService.callPatient(id, destination);
       if (calledPatient) {
+        setPatients((current) => current.map((p) => (p.id === id ? calledPatient : p)));
         const time = calledPatient.callCount > 1 ? ` pela ${calledPatient.callCount}ª vez` : '';
         toast.success(`${calledPatient.name} foi chamado(a)${time}!`);
       }
     } catch (error: any) {
-      setPatients((current) =>
-        current.map((p) => (p.id === id ? patient : p))
-      );
       toast.error(error.message);
     }
   }, [patients]);
 
   const clearQueue = useCallback(async () => {
     const previousPatients = patients;
-    
     setPatients([]);
-    
     try {
       await patientService.clearQueue();
       toast('Fila de pacientes limpa!');
@@ -237,22 +177,15 @@ export function usePatientQueue() {
   const isFiltering = debouncedSearchTerm !== '' || selectedDestination !== '';
 
   const reorderPatients = useCallback(async (newOrder: Patient[]) => {
-    // Optimistic update
     setPatients(newOrder);
-    
-    // Prepare updates
-    const updates = newOrder.map((patient, index) => ({
-        id: patient.id,
-        queue_order: index + 1
-    }));
-    
+    const updates = newOrder.map((patient, index) => ({ id: patient.id, queue_order: index + 1 }));
+
     try {
-        await patientService.updateQueueOrder(updates);
-    } catch (error: any) {
-        toast.error('Erro ao salvar a nova ordem da fila');
-        // Revert (fetch again or store previous)
-        const data = await patientService.getPatients();
-        setPatients(data);
+      await patientService.updateQueueOrder(updates);
+    } catch {
+      toast.error('Erro ao salvar a nova ordem da fila');
+      const data = await patientService.getPatients();
+      setPatients(data);
     }
   }, []);
 
