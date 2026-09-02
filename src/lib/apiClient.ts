@@ -32,6 +32,11 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
   return response.json() as Promise<T>;
 }
 
+export function localMediaUrl(storagePath: string): string {
+  const [kind, ...rest] = storagePath.split('/');
+  return `${localApiBase}/api/media/${encodeURIComponent(kind)}/${encodeURIComponent(rest.join('/'))}`;
+}
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -74,8 +79,7 @@ export function subscribeHealthCallEvents(listener: (event: HealthCallEvent) => 
     }
   };
   source.onerror = () => {
-    // EventSource reconnects automatically. Keeping this silent avoids
-    // repetitive console noise during brief Wi-Fi interruptions in the UBS.
+    // EventSource reconecta automaticamente após quedas breves de rede.
   };
   return () => source.close();
 }
