@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { subscribeDomain } from '@/lib/apiClient';
 import { getPendencias } from '../services/pendenciasService';
 import type { Pendencia } from '../types';
 
@@ -22,24 +22,9 @@ export const usePendencias = () => {
   }, []);
 
   useEffect(() => {
-    fetchPendencias();
-
-    const channel = supabase
-      .channel('pendencias-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pendencias' }, () => {
-        fetchPendencias();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    void fetchPendencias();
+    return subscribeDomain('pendencias', () => void fetchPendencias());
   }, [fetchPendencias]);
 
-  return {
-    pendencias,
-    loading,
-    error,
-    refetch: fetchPendencias,
-  };
+  return { pendencias, loading, error, refetch: fetchPendencias };
 };

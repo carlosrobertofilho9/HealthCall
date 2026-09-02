@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabaseClient';
+import { subscribeHealthCallEvents } from '@/lib/apiClient';
 import { listReceptionCallHistoryByDate } from '../services/receptionService';
 import type { ReceptionCallHistoryItem } from '../types';
 
@@ -22,17 +22,11 @@ export function useReceptionCallHistory(selectedDate: Date) {
   }, [selectedDate]);
 
   useEffect(() => {
-    loadCallHistory();
-
-    const channel = supabase
-      .channel(`reception-call-history-${selectedDate.toISOString().slice(0, 10)}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'display_call_events' }, loadCallHistory)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [loadCallHistory, selectedDate]);
+    void loadCallHistory();
+    return subscribeHealthCallEvents((event) => {
+      if (event.type === 'call') void loadCallHistory();
+    });
+  }, [loadCallHistory]);
 
   return {
     callHistory,
