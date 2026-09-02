@@ -1,149 +1,174 @@
 <div align="center">
   <img width="128" height="128" alt="HealthCall Logo" src="https://healthcall-23d13.web.app/healthcall-logo.png" />
   <h1>HealthCall</h1>
-  <p><strong>Sistema Avançado de Gestão de Clínicas e Chamada de Pacientes</strong></p>
+  <p><strong>Chamadas de pacientes para UBS, ambulatórios e pequenas unidades de saúde.</strong></p>
+  <p>Local-first · sem login obrigatório · sem Supabase obrigatório · funciona na rede local</p>
 </div>
 
 ---
 
-O **HealthCall** é uma solução completa e moderna desenvolvida para otimizar o fluxo de atendimento em clínicas e unidades de saúde. Mais do que um simples gerenciador de filas, ele integra agendamentos, geração de documentos médicos e um sistema de avisos multimídia, tudo em tempo real.
+O **HealthCall** nasceu para resolver um problema simples e frequente: unidades de saúde que precisam chamar pacientes para consultórios, triagem ou enfermagem, mas não possuem um sistema de chamada adequado.
 
-Projetado com foco na experiência do usuário e eficiência, o sistema permite que a equipe médica e recepcionistas gerenciem pacientes de forma ágil, enquanto oferece uma experiência clara e profissional para os pacientes na sala de espera.
+A instalação aberta do HealthCall foi desenhada para funcionar **dentro da própria rede da unidade**, sem exigir conta, autenticação, serviço pago ou conexão permanente com a internet.
 
-## ✨ Funcionalidades Principais
+## Principais recursos do modo local
 
-### 🏥 Gestão de Fila e Chamada
+- **Sem login obrigatório:** os profissionais não precisam criar contas.
+- **Vários postos simultâneos:** médicos, enfermagem, recepção e outros profissionais podem chamar pacientes ao mesmo tempo.
+- **Sala preservada:** cada navegador guarda o número/nome da sala e o perfil daquele posto.
+- **Painel de TV em tempo real:** novas chamadas aparecem instantaneamente em `/display`.
+- **Voz local:** o painel usa o mecanismo de voz do próprio navegador; nenhuma API de TTS é necessária.
+- **Som, voz e avisos configuráveis:** podem ser desligados no dispositivo; avisos institucionais também podem ser desligados globalmente.
+- **Fila compartilhada:** adicionar, pesquisar, reordenar, chamar, iniciar/finalizar atendimento e remover pacientes.
+- **Fichas sequenciais:** geração local de `Ficha 1`, `Ficha 2`, etc.
+- **Histórico de chamadas:** registra horário, sala e tipo de profissional que realizou a chamada.
+- **Persistência local:** fila e histórico são armazenados em SQLite no computador servidor.
+- **Tempo real sem serviço externo:** comunicação servidor → painéis por Server-Sent Events (SSE).
 
-- **Chamada em Tempo Real:** Convocação instantânea de pacientes para consultórios ou triagem.
-- **Display Público (Painel):** Interface dedicada para TVs e monitores na sala de espera.
-- **Voz Sintetizada (TTS):** Anúncios de voz claros ("Paciente Fulano, comparecer à Sala 1") com suporte otimizado para Chromecast.
-- **Drag & Drop:** Reorganização fácil da fila de espera.
+## Arquitetura local
 
-### 📅 Agendamentos Inteligentes
-
-- **Gestão por Turnos:** Organização automática de pacientes por turnos (Manhã/Tarde).
-- **Busca Rápida:** Localização instantânea de agendamentos e pacientes.
-- **Integração com Fila:** Adicione pacientes agendados diretamente à fila de triagem com um clique.
-
-### 📝 Documentação Clínica (PDF)
-
-- **Geração Automática:** Crie e imprima documentos médicos instantaneamente.
-- **Modelos Personalizados:**
-  - Receitas e Prescrições.
-  - Controle Glicêmico e de Pressão Arterial (MRPA/MAPA).
-  - Solicitações de Fórmulas e Exames.
-- **Layout Otimizado:** Documentos formatados profissionalmente com cabeçalhos e rodapés institucionais.
-
-### 📢 Sistema de Avisos
-
-- **Comunicados Multimídia:** Exiba avisos importantes, vídeos educativos ou campanhas de saúde no Display Público.
-- **Gerenciamento de Mídia:** Upload e agendamento de conteúdos visuais e sonoros.
-
-### 🎨 Experiência do Usuário
-
-- **Interface Moderna:** Design limpo, intuitivo e responsivo.
-- **Tema Escuro (Dark Mode):** Suporte nativo para conforto visual.
-- **PWA (Progressive Web App):** Instalação como aplicativo em desktops e dispositivos móveis.
-
----
-
-## 🛠️ Stack Tecnológico
-
-Este projeto utiliza as tecnologias mais recentes do ecossistema web para garantir performance, segurança e manutenibilidade.
-
-### Frontend
-
-- **Framework:** [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
-- **Linguagem:** [TypeScript](https://www.typescriptlang.org/)
-- **Estilização:** [Tailwind CSS v4](https://tailwindcss.com/) + [Tailwind Merge](https://github.com/dcastil/tailwind-merge)
-- **Componentes:** [Radix UI](https://www.radix-ui.com/) / [shadcn/ui](https://ui.shadcn.com/)
-- **Ícones:** [Lucide React](https://lucide.dev/)
-- **PDF:** [React-PDF](https://react-pdf.org/)
-- **Drag & Drop:** [dnd-kit](https://dndkit.com/)
-
-### Backend & Serviços
-
-- **BaaS:** [Supabase](https://supabase.com/)
-  - **Database:** PostgreSQL
-  - **Auth:** Autenticação segura
-  - **Realtime:** Atualizações instantâneas via WebSockets
-  - **Storage:** Armazenamento de arquivos (avisos, mídias)
-
-### Qualidade & Ferramentas
-
-- **Testes:** [Vitest](https://vitest.dev/) + React Testing Library
-- **Linting:** ESLint
-
----
-
-## 🚀 Como Executar
-
-### Pré-requisitos
-
-- Node.js (v18+)
-- NPM ou Yarn
-- Conta no Supabase
-
-### 1. Instalação
-
-Clone o repositório e instale as dependências:
-
-```bash
-git clone https://github.com/carlosrobertofilho9/healthcall.git
-cd healthcall
-npm install
+```text
+Computador servidor da UBS
+├── HealthCall Web
+├── API HTTP local
+├── SQLite (data/healthcall.sqlite)
+└── SSE em tempo real
+      │
+      ├── Recepção
+      ├── Médico · Sala 01
+      ├── Médico · Sala 02
+      ├── Enfermagem · Sala 04
+      └── TV / Painel de chamadas
 ```
 
-### 2. Configuração do Ambiente
+Os dados clínicos/operacionais usados pela fila não precisam sair da rede da unidade.
 
-Crie um arquivo `.env` na raiz do projeto com suas credenciais do Supabase:
+## Requisitos
+
+- **Node.js 22.13 ou superior**
+- npm
+- computadores/dispositivos conectados à mesma rede local para uso multiestação
+
+O modo local usa o módulo `node:sqlite` do próprio Node.js, portanto não exige instalar PostgreSQL, Docker ou uma dependência nativa adicional de SQLite.
+
+## Instalação rápida
+
+```bash
+git clone https://github.com/carlosrobertofilho9/HealthCall.git
+cd HealthCall
+npm install
+npm run healthcall
+```
+
+Depois da compilação, o servidor inicia por padrão em:
+
+```text
+http://localhost:3000
+```
+
+### Primeiro computador / servidor
+
+1. Abra `http://localhost:3000`.
+2. Vá em **Configurar posto**.
+3. Informe a sala, o tipo de profissional e, opcionalmente, o nome do profissional.
+4. Abra `/display` no monitor ou TV da recepção.
+5. Clique uma vez em **Ativar áudio** no painel para permitir som/voz no navegador.
+
+### Outros consultórios
+
+Descubra o IP do computador servidor na rede, por exemplo `192.168.0.15`, e acesse nos demais computadores:
+
+```text
+http://192.168.0.15:3000
+```
+
+Cada computador configura sua própria sala uma única vez. Essa configuração fica armazenada no navegador daquele posto.
+
+> O HealthCall local deve ser disponibilizado apenas na rede confiável da unidade. Não exponha a porta 3000 diretamente à internet.
+
+## Desenvolvimento
+
+```bash
+npm install
+npm run dev:local
+```
+
+Esse comando inicia:
+
+- Vite em modo de desenvolvimento;
+- servidor local HealthCall na porta `8787`;
+- proxy automático de `/api` para o backend local.
+
+Scripts úteis:
+
+```bash
+npm run dev:local        # frontend + backend local
+npm run healthcall       # build + servidor de produção local
+npm run healthcall:server
+npm run test:local       # testes do backend SQLite/API
+npm run build
+```
+
+## Supabase é opcional
+
+O código legado com Supabase continua disponível durante a migração, mas **não é necessário para o modo local**.
+
+Para executar explicitamente o modo legado/cloud:
 
 ```env
-VITE_SUPABASE_URL=sua_url_do_supabase
-VITE_SUPABASE_ANON_KEY=sua_chave_anonima
+VITE_DATA_MODE=supabase
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-publicavel
 ```
 
-### 3. Executando Localmente
+Use `.env.example` como referência. Nunca versione `.env`, chaves secretas ou `service_role`.
 
-Inicie o servidor de desenvolvimento:
+## Segurança e privacidade
 
-```bash
-npm run dev
+- O banco local é criado em `data/healthcall.sqlite` e essa pasta está ignorada pelo Git.
+- O servidor escuta a rede local para permitir múltiplos postos; use uma rede confiável e firewall adequado.
+- Não armazene o banco em pasta sincronizada publicamente.
+- Se você usar o modo Supabase, configure RLS e privilégios mínimos antes de expor qualquer tabela.
+- Chaves `service_role`/secretas nunca devem ser colocadas no frontend.
+
+## Testes e CI
+
+Há testes automatizados para o modo local cobrindo:
+
+- inicialização sem Supabase;
+- persistência da fila;
+- bloqueio de chamada sem sala configurada;
+- registro de sala e perfil profissional;
+- geração sequencial de fichas;
+- ativação/desativação dos avisos;
+- limpeza da fila e histórico.
+
+O workflow `Local-first CI` executa os testes do servidor e o build do modo local em Node 22.13.
+
+## Estrutura relevante
+
+```text
+server/
+├── app.mjs                         # API + SQLite + SSE
+├── healthcall-server.mjs           # inicialização do servidor
+└── __tests__/                      # testes do backend local
+
+src/features/local/
+├── localApi.ts                     # cliente HTTP/SSE
+├── stationSettings.ts              # sala/perfil e preferências persistentes
+├── useLocalQueue.ts                # fila em tempo real
+└── routes/
+    ├── LocalHomePage.tsx
+    ├── LocalDisplayPage.tsx
+    └── LocalSettingsPage.tsx
 ```
 
-O sistema estará disponível em `http://localhost:5173`.
+## Por que local-first?
 
-### 4. Scripts Úteis
-
-- `npm run build`: Compila o projeto para produção.
-- `npm run preview`: Visualiza a versão de produção localmente.
-- `npm test`: Executa a suíte de testes.
-
----
-
-## 📂 Estrutura do Projeto
-
-A arquitetura é baseada em **Features**, agrupando lógica e componentes por domínio de negócio para facilitar a escalabilidade.
-
-```
-src/
-├── app/               # Configurações globais (Router, Providers)
-├── components/        # Componentes de UI genéricos (Design System)
-├── features/          # Módulos principais do sistema
-│   ├── appointments/  # Agendamentos e Turnos
-│   ├── authentication/# Login e Sessão
-│   ├── dashboard/     # Fila de espera e Triagem
-│   ├── display/       # Tela pública (TV)
-│   ├── documents/     # Gerador de PDFs médicos
-│   ├── settings/      # Configurações do sistema
-│   └── warnings/      # Avisos e Mídias
-├── hooks/             # Hooks globais
-├── lib/               # Utilitários e configurações de liberarias (Supabase, Utils)
-└── styles/            # Estilos globais (Tailwind)
-```
+Para o caso de uso original do HealthCall, a unidade deve conseguir continuar chamando pacientes mesmo com internet instável e sem depender de uma conta em um fornecedor externo. O servidor local mantém a instalação simples e deixa a infraestrutura sob controle da própria unidade.
 
 ---
 
 <div align="center">
-  <p>Desenvolvido com ❤️ para modernizar a saúde.</p>
+  <p>HealthCall — tecnologia simples para resolver um problema real da atenção à saúde.</p>
 </div>

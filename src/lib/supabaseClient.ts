@@ -1,21 +1,20 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
+import { hasSupabaseConfig } from './runtime';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL and Anon Key must be defined in .env.local');
-}
+const configuredUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+const configuredAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 
 /**
- * The Supabase client instance.
- *
- * This singleton instance is configured with the project's URL and anonymous key
- * from the environment variables. It is used throughout the application to
- * interact with Supabase services like Auth, Database, and Realtime.
- *
- * @see https://supabase.com/docs/library/js/client
+ * The Supabase client is kept only for the optional legacy/cloud mode.
+ * Local-first installations intentionally do not need Supabase environment
+ * variables. Placeholder values prevent legacy modules from crashing during
+ * module evaluation; local mode never performs requests through this client.
  */
+const supabaseUrl = configuredUrl || 'http://127.0.0.1:54321';
+const supabaseAnonKey = configuredAnonKey || 'healthcall-local-mode-no-supabase';
+
+export const isSupabaseConfigured = hasSupabaseConfig;
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -29,4 +28,4 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       'X-Client-Info': 'healthcall-web-app',
     },
   },
-})
+});
