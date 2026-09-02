@@ -13,6 +13,18 @@ dist-ssr
 *.local
 node_modules
 
+# Local configuration and data
+.env
+.env.*
+!.env.example
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Supabase local/cache files
+supabase/.temp/
+
 # Firebase
 .firebase/
 firebase-debug.log*
