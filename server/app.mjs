@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
+import { createExtendedApiHandler } from './extended.mjs';
 
 const MAX_BODY_BYTES = 64 * 1024;
 const VALID_STATUSES = new Set(['Em Atendimento', 'Aguardando', 'Atendimento Finalizado', 'Chamado']);
@@ -151,6 +152,8 @@ export function createHealthCallServer({ dataDir, distDir } = {}) {
     noticesEnabled: db.prepare("SELECT value FROM settings WHERE key = 'notices_enabled'").get()?.value !== '0',
   });
 
+  const handleExtendedApi = createExtendedApiHandler({ db, dataDir, broadcast });
+
   async function handleApi(req, res, url) {
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
@@ -163,7 +166,7 @@ export function createHealthCallServer({ dataDir, distDir } = {}) {
     }
 
     if (req.method === 'GET' && url.pathname === '/api/health') {
-      json(res, 200, { ok: true, mode: 'local', version: '1' });
+      json(res, 200, { ok: true, mode: 'local', version: '2' });
       return true;
     }
 
@@ -392,6 +395,7 @@ export function createHealthCallServer({ dataDir, distDir } = {}) {
       return true;
     }
 
+    if (await handleExtendedApi(req, res, url)) return true;
     return false;
   }
 
@@ -437,8 +441,9 @@ export function createHealthCallServer({ dataDir, distDir } = {}) {
           ? 'Requisição muito grande.'
           : error?.message === 'INVALID_JSON'
             ? 'JSON inválido.'
-            : 'Erro interno do servidor local.';
-        json(res, error?.message === 'BODY_TOO_LARGE' ? 413 : 500, { error: message });
+            : error?.message || 'Erro interno do servidor local.';
+        const status = Number(error?.statusCode) || (error?.message === 'BODY_TOO_LARGE' ? 413 : 500);
+        json(res, status, { error: message });
       } else {
         res.end();
       }
