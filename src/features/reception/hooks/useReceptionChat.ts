@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabaseClient';
+import { subscribeDomain } from '@/lib/apiClient';
 import { ensureReceptionChatDailyReset, listReceptionMessages, sendReceptionMessage } from '../services/receptionService';
 import type { ReceptionMessage } from '../types';
 
@@ -31,22 +31,15 @@ export function useReceptionChat() {
       } catch (error) {
         console.warn('Não foi possível confirmar a limpeza diária do chat da recepção:', error);
       }
-
-      if (isMounted) {
-        await loadMessages();
-      }
+      if (isMounted) await loadMessages();
     };
 
-    initializeMessages();
-
-    const channel = supabase
-      .channel('reception-messages-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'reception_messages' }, loadMessages)
-      .subscribe();
+    void initializeMessages();
+    const unsubscribe = subscribeDomain('reception', () => void loadMessages());
 
     return () => {
       isMounted = false;
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
   }, [loadMessages]);
 
@@ -62,11 +55,5 @@ export function useReceptionChat() {
     }
   }, []);
 
-  return {
-    messages,
-    isLoading,
-    isSending,
-    sendMessage,
-    refresh: loadMessages,
-  };
+  return { messages, isLoading, isSending, sendMessage, refresh: loadMessages };
 }
